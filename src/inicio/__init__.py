@@ -1,0 +1,1 @@
+# Paquete src.inicio — pantallas de arranque: login, bienvenida, wizard, tutoriales.

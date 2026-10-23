@@ -1,0 +1,115 @@
+===============================================================================
+               CONTRATO DE LICENCIA DE USO DE SOFTWARE
+                               AcaDeXI
+===============================================================================
+
+IMPORTANTE: LEA DETENIDAMENTE ESTE CONTRATO ANTES DE INSTALAR O
+UTILIZAR AcaDeXI. AL INSTALAR, COPIAR O UTILIZAR ESTE SISTEMA DE
+GESTIÓN ACADÉMICA, USTED DECLARA HABER LEÍDO, COMPRENDIDO Y ACEPTADO
+TODOS LOS TÉRMINOS Y CONDICIONES ESTABLECIDOS EN ESTE DOCUMENTO.
+
+SI NO ESTÁ DE ACUERDO CON ALGUNA DE SUS DISPOSICIONES,
+NO INSTALE NI UTILICE EL SOFTWARE.
+
+-------------------------------------------------------------------------------
+1. CONCESIÓN DE LICENCIA Y DERECHO DE USO
+-------------------------------------------------------------------------------
+
+1.1. AcaDeXI no se vende de forma definitiva. La institución educativa
+adquiere únicamente una licencia de uso limitada, institucional,
+revocable y no exclusiva.
+
+1.2. La licencia concede exclusivamente el derecho de utilizar el
+software en su modalidad configurada (Escuela, Politécnico o Universidad)
+conforme a las condiciones pactadas. En ningún caso implica
+la transferencia de la propiedad del programa.
+
+1.3. Una vez finalizado el período contratado o suscripción, el derecho
+de uso podrá suspenderse hasta que la licencia sea renovada.
+
+-------------------------------------------------------------------------------
+2. PROPIEDAD INTELECTUAL Y DERECHOS DE AUTOR
+-------------------------------------------------------------------------------
+
+2.1. Todo el código fuente, arquitectura modular dinámica, estructura de
+bases de datos, diseño de interfaz (GUI), documentación, logotipos y
+demás componentes de AcaDeXI son propiedad exclusiva de su creador.
+
+2.2. Ninguna disposición de este contrato concede derechos de
+propiedad intelectual al cliente, salvo el derecho de uso expresamente
+otorgado mediante la licencia correspondiente.
+
+-------------------------------------------------------------------------------
+3. RESTRICCIONES DE USO
+-------------------------------------------------------------------------------
+
+La institución y sus usuarios aceptan que NO podrán:
+
+3.1. Revender, alquilar, prestar, sublicenciar o distribuir AcaDeXI a
+terceras entidades.
+
+3.2. Modificar, descompilar, realizar ingeniería inversa o alterar
+el código fuente o cualquier componente del software.
+
+3.3. Eliminar avisos de derechos de autor, marcas registradas o
+mecanismos de protección incorporados al programa.
+
+-------------------------------------------------------------------------------
+4. RESPONSABILIDAD SOBRE LOS DATOS Y SEGURIDAD
+-------------------------------------------------------------------------------
+
+4.1. Aunque AcaDeXI incluye medidas de seguridad avanzadas como el
+cifrado de contraseñas mediante el algoritmo Argon2id, el cliente reconoce
+que es el único responsable de la información de estudiantes, profesores
+y personal ingresada al sistema.
+
+4.2. Es responsabilidad exclusiva del Administrador/Director de la
+institución realizar copias de seguridad periódicas de la base de datos
+utilizando las herramientas integradas y administrar correctamente los
+accesos.
+
+4.3. El creador de AcaDeXI no será responsable por pérdidas de
+información, daños ocasionados por errores humanos, fallos de hardware,
+virus informáticos, interrupciones eléctricas o cualquier otro evento
+ajeno al funcionamiento del software.
+
+-------------------------------------------------------------------------------
+5. MODULARIDAD, ROLES Y DESARROLLOS PERSONALIZADOS
+-------------------------------------------------------------------------------
+
+5.1. El sistema proporciona un modelo de despliegue jerárquico. El
+Administrador asume la responsabilidad de la correcta asignación de roles
+(Directivos, Profesores, Administrativos, Estudiantes) y los permisos
+derivados de los mismos.
+
+5.2. El uso de módulos específicos (ej. Control de Pasantías para
+Politécnicos, o Gestión de Facultades para Universidades) está sujeto a
+la configuración institucional inicial.
+
+5.3. Todo desarrollo modular personalizado deberá acordarse previamente
+con el creador y estará sujeto a una cotización independiente.
+
+-------------------------------------------------------------------------------
+6. TERMINACIÓN DE LA LICENCIA
+-------------------------------------------------------------------------------
+
+El incumplimiento de cualquiera de las disposiciones de este contrato
+facultará al creador para suspender o cancelar la licencia de uso, sin
+perjuicio de las acciones legales que pudieran corresponder.
+
+-------------------------------------------------------------------------------
+7. ACEPTACIÓN
+-------------------------------------------------------------------------------
+
+Al finalizar el Asistente de Configuración Inicial (Wizard), generar la
+estructura de datos o utilizar AcaDeXI, el usuario manifiesta haber leído,
+comprendido y aceptado íntegramente este Contrato de Licencia de Uso.
+
+-------------------------------------------------------------------------------
+8. LEGISLACIÓN APLICABLE Y JURISDICCIÓN
+-------------------------------------------------------------------------------
+
+Este Contrato se regirá e interpretará de acuerdo con las leyes del país
+en el que se celebre, sin tener en cuenta sus principios de conflicto de
+leyes. Las partes se someten a la jurisdicción de los tribunales de dicho
+país para la resolución de cualquier controversia que pudiera surgir.

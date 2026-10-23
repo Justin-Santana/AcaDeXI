@@ -1,0 +1,29 @@
+PySide6>=6.6
+argon2-cffi>=23.1
+reportlab>=4.0
+openpyxl>=3.1
+cryptography>=42.0
+PyMuPDF>=1.24.0
+Pillow>=10.0
+python-docx>=1.2.0
+
+# YA NO SE USA (2026-09-21): hasta esa fecha la app generaba el boletín general
+# y el técnico como DOS PDF y los unía con pypdf al marcar "Incluir también el
+# otro boletín". Eso se reemplazó por dibujar las dos páginas en el MISMO canvas
+# de reportlab (ver boletin_completo.exportar_boletin_completo_estudiante_pdf),
+# así que la app ya no importa pypdf en ningún lado. Se deja en la lista porque
+# no molesta y porque puede haber paquetes/instalaciones viejas que lo incluyan;
+# no es necesario instalarlo.
+pypdf>=4.0
+
+# Opcional: Sincronización Directa (Fase B) — solo necesarias si se usan
+# los métodos avanzados de sincronizacion.py (Google Drive/Dropbox/OneDrive/
+# Servidor institucional) en vez de la carpeta compartida simple.
+google-auth>=2.29
+google-auth-oauthlib>=1.2
+google-api-python-client>=2.126
+dropbox>=11.36
+msal>=1.28
+requests>=2.31
+# Desarrollo / pruebas
+pytest>=8.0

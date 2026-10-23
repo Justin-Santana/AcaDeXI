@@ -1,0 +1,188 @@
+================================================================================
+                      LICENCIA DE USO DE AcaDeXI
+                       AcaDeXI SOFTWARE LICENSE
+                      LICENÇA DE USO DO AcaDeXI
+================================================================================
+
+[ESPAÑOL]
+
+Copyright (c) AcaDeXI – Software Educativo. Todos los derechos reservados.
+
+El software AcaDeXI se distribuye bajo una licencia de uso limitada,
+no exclusiva y no transferible para instituciones educativas. El usuario
+no adquiere ningún derecho de propiedad sobre el software.
+
+Este software incluye bibliotecas de terceros sujetas a otras licencias.
+Las atribuciones correspondientes se listan a continuación.
+
+LICENCIAS DE BIBLIOTECAS DE TERCEROS:
+
+1. PySide6 – LGPL v3
+   Copyright (c) The Qt Company Ltd. All rights reserved.
+
+2. ReportLab – BSD 3-Clause
+   Copyright (c) 2000-2023, ReportLab Inc.
+
+3. OpenPyXL – MIT
+   Copyright (c) 2010-2023, OpenPyXL Team.
+
+4. argon2-cffi – MIT
+   Copyright (c) 2015, Hynek Schlawack.
+
+5. Pillow – HPND
+   Copyright (c) 1995-2011, Fredrik Lundh. Copyright (c) 2010-2023, Pillow Contributors.
+
+6. google-auth-oauthlib – Apache 2.0
+   Copyright (c) 2014, Google Inc.
+
+7. google-api-python-client – Apache 2.0
+   Copyright (c) 2012, Google Inc.
+
+8. dropbox – Apache 2.0 / MIT
+   Copyright (c) 2015, Dropbox, Inc.
+
+9. msal – MIT
+   Copyright (c) 2018, Microsoft Corporation.
+
+10. FastAPI – MIT
+    Copyright (c) 2018, Sebastián Ramírez.
+
+11. Uvicorn – BSD 3-Clause
+    Copyright (c) 2017-present, Encode OSS Ltd.
+
+12. cryptography – Apache 2.0 / BSD
+    Copyright (c) 2013-2023, cryptography contributors.
+
+Los iconos y recursos gráficos utilizados en AcaDeXI son propiedad de
+AcaDeXI – Software Educativo o se utilizan bajo licencias de uso libre.
+Las atribuciones específicas se encuentran en ICON_LICENSES.txt.
+
+ESTE SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍAS DE NINGÚN TIPO.
+EL LICENCIANTE NO SERÁ RESPONSABLE POR DAÑOS DIRECTOS, INDIRECTOS O
+CONSECUENTES DERIVADOS DE SU USO.
+
+Para más información, contacte a soporte@acadexi.com.
+
+---
+
+[ENGLISH]
+
+Copyright (c) AcaDeXI – Software Educativo. All rights reserved.
+
+The AcaDeXI software is distributed under a limited, non-exclusive,
+non-transferable license for educational institutions. The user does not
+acquire any ownership rights in the software.
+
+This software includes third-party libraries subject to other licenses.
+The corresponding attributions are listed below.
+
+THIRD-PARTY LIBRARY LICENSES:
+
+1. PySide6 – LGPL v3
+   Copyright (c) The Qt Company Ltd. All rights reserved.
+
+2. ReportLab – BSD 3-Clause
+   Copyright (c) 2000-2023, ReportLab Inc.
+
+3. OpenPyXL – MIT
+   Copyright (c) 2010-2023, OpenPyXL Team.
+
+4. argon2-cffi – MIT
+   Copyright (c) 2015, Hynek Schlawack.
+
+5. Pillow – HPND
+   Copyright (c) 1995-2011, Fredrik Lundh. Copyright (c) 2010-2023, Pillow Contributors.
+
+6. google-auth-oauthlib – Apache 2.0
+   Copyright (c) 2014, Google Inc.
+
+7. google-api-python-client – Apache 2.0
+   Copyright (c) 2012, Google Inc.
+
+8. dropbox – Apache 2.0 / MIT
+   Copyright (c) 2015, Dropbox, Inc.
+
+9. msal – MIT
+   Copyright (c) 2018, Microsoft Corporation.
+
+10. FastAPI – MIT
+    Copyright (c) 2018, Sebastián Ramírez.
+
+11. Uvicorn – BSD 3-Clause
+    Copyright (c) 2017-present, Encode OSS Ltd.
+
+12. cryptography – Apache 2.0 / BSD
+    Copyright (c) 2013-2023, cryptography contributors.
+
+Icons and graphical resources used in AcaDeXI are owned by AcaDeXI –
+Software Educativo or are used under free-use licenses. Specific
+attributions are found in ICON_LICENSES.txt.
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTIES OF ANY KIND.
+THE LICENSOR SHALL NOT BE LIABLE FOR DIRECT, INDIRECT, OR CONSEQUENTIAL
+DAMAGES ARISING FROM ITS USE.
+
+For more information, contact soporte@acadexi.com.
+
+---
+
+[PORTUGUÊS]
+
+Copyright (c) AcaDeXI – Software Educativo. Todos os direitos reservados.
+
+O software AcaDeXI é distribuído sob uma licença de uso limitada,
+não exclusiva e não transferível para instituições educacionais. O usuário
+não adquire nenhum direito de propriedade sobre o software.
+
+Este software inclui bibliotecas de terceiros sujeitas a outras licenças.
+As atribuições correspondentes estão listadas abaixo.
+
+LICENÇAS DE BIBLIOTECAS DE TERCEIROS:
+
+1. PySide6 – LGPL v3
+   Copyright (c) The Qt Company Ltd. All rights reserved.
+
+2. ReportLab – BSD 3-Clause
+   Copyright (c) 2000-2023, ReportLab Inc.
+
+3. OpenPyXL – MIT
+   Copyright (c) 2010-2023, OpenPyXL Team.
+
+4. argon2-cffi – MIT
+   Copyright (c) 2015, Hynek Schlawack.
+
+5. Pillow – HPND
+   Copyright (c) 1995-2011, Fredrik Lundh. Copyright (c) 2010-2023, Pillow Contributors.
+
+6. google-auth-oauthlib – Apache 2.0
+   Copyright (c) 2014, Google Inc.
+
+7. google-api-python-client – Apache 2.0
+   Copyright (c) 2012, Google Inc.
+
+8. dropbox – Apache 2.0 / MIT
+   Copyright (c) 2015, Dropbox, Inc.
+
+9. msal – MIT
+   Copyright (c) 2018, Microsoft Corporation.
+
+10. FastAPI – MIT
+    Copyright (c) 2018, Sebastián Ramírez.
+
+11. Uvicorn – BSD 3-Clause
+    Copyright (c) 2017-present, Encode OSS Ltd.
+
+12. cryptography – Apache 2.0 / BSD
+    Copyright (c) 2013-2023, cryptography contributors.
+
+Os ícones e recursos gráficos utilizados no AcaDeXI são propriedade de
+AcaDeXI – Software Educativo ou são utilizados sob licenças de uso livre.
+As atribuições específicas estão em ICON_LICENSES.txt.
+
+ESTE SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIAS DE QUALQUER TIPO.
+O LICENCIANTE NÃO SERÁ RESPONSÁVEL POR DANOS DIRETOS, INDIRETOS OU
+CONSEQUENTES DECORRENTES DE SEU USO.
+
+Para mais informações, entre em contato com soporte@acadexi.com.
+
+================================================================================

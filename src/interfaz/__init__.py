@@ -1,0 +1,1 @@
+# Paquete src.interfaz — capas de UI (ventanas, dialogos, widgets).

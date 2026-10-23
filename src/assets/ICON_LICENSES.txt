@@ -1,0 +1,82 @@
+*EN*
+
+This software uses icons sourced from SVG Repo (https://svgrepo.com).
+Most icons are used under the general SVG Repo license, which allows for 
+free commercial use without requiring attribution or visible credits 
+within the user interface.
+
+However, the following icons require mandatory attribution or specific license notices:
+
+1. Creative Commons Attribution License (CC BY):
+- "University Academy School" (https://www.svgrepo.com/svg/428734/university-academy-school) from the "Knowledge Flat Vectors" collection by Sumit Saengthong.
+- "Server Storage Database" (https://www.svgrepo.com/svg/426193/server-storage-database) from the "Yellow Technology Vectors" collection by Sunbzy.
+- "Db Copy" (https://www.svgrepo.com/svg/507118/db-copy) from the "Pixellove Monotone Vectors" collection by pixellove.
+- "Student" (https://www.svgrepo.com/svg/520490/student) from the "Education Flat Vectors" collection by yudhapr.
+- "Cloud Computing" (https://www.svgrepo.com/svg/426198/cloud-computing) from the "Yellow Technology Vectors" collection by Sunbzy.
+- "Picture Photo Image" (https://www.svgrepo.com/svg/382706/picture-photo-image) from the "Flat Multicolor Interface Icons" collection by wishforge.games.
+
+2. MIT License:
+- "Color Wheel" (https://www.svgrepo.com/svg/439109/color-wheel) from the "Web Skills Flat Vectors" collection by Andreas Mehlsen. Copyright (c) Andreas Mehlsen.
+- "Attendance" (https://www.svgrepo.com/svg/335320/attendance) from the "Brightspace Filled Interface Icons" collection by BrightspaceUI. Copyright (c) BrightspaceUI.
+- "Document Edit" (https://www.svgrepo.com/svg/310760/document-edit) from the "Fluent UI Icons Filled" collection by Microsoft. Copyright (c) Microsoft.
+- "Align Justify" (https://www.svgrepo.com/svg/389534/align-justify) from the "Lucide Line Icons" collection by Lucide Contributors. Copyright (c) Lucide Contributors.
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+
+*ES*
+
+Este software utiliza iconos de SVG Repo (https://svgrepo.com).
+La mayoría de los iconos se utilizan bajo la licencia general de SVG Repo, 
+la cual permite su uso comercial gratuito sin obligación de atribución 
+ni mención visible en la interfaz de usuario.
+
+Sin embargo, los siguientes iconos requieren atribución obligatoria o avisos específicos de licencia:
+
+1. Licencia de Atribución de Creative Commons (CC BY):
+- "University Academy School" (https://www.svgrepo.com/svg/428734/university-academy-school) de la colección "Knowledge Flat Vectors" por Sumit Saengthong.
+- "Server Storage Database" (https://www.svgrepo.com/svg/426193/server-storage-database) de la colección "Yellow Technology Vectors" por Sunbzy.
+- "Db Copy" (https://www.svgrepo.com/svg/507118/db-copy) de la colección "Pixellove Monotone Vectors" por pixellove.
+- "Student" (https://www.svgrepo.com/svg/520490/student) de la colección "Education Flat Vectors" por yudhapr.
+- "Cloud Computing" (https://www.svgrepo.com/svg/426198/cloud-computing) de la colección "Yellow Technology Vectors" por Sunbzy.
+- "Picture Photo Image" (https://www.svgrepo.com/svg/382706/picture-photo-image) de la colección "Flat Multicolor Interface Icons" por wishforge.games.
+
+2. Licencia MIT:
+- "Color Wheel" (https://www.svgrepo.com/svg/439109/color-wheel) de la colección "Web Skills Flat Vectors" por Andreas Mehlsen. Copyright (c) Andreas Mehlsen.
+- "Attendance" (https://www.svgrepo.com/svg/335320/attendance) de la colección "Brightspace Filled Interface Icons" por BrightspaceUI. Copyright (c) BrightspaceUI.
+- "Document Edit" (https://www.svgrepo.com/svg/310760/document-edit) de la colección "Fluent UI Icons Filled" por Microsoft. Copyright (c) Microsoft.
+- "Align Justify" (https://www.svgrepo.com/svg/389534/align-justify) de la colección "Lucide Line Icons" por Lucide Contributors. Copyright (c) Lucide Contributors.
+
+  Por la presente se concede permiso, libre de cargos, a cualquier persona que obtenga una copia de este software y de los archivos de documentación asociados (el "Software"), a utilizar el Software sin restricción, incluyendo sin limitación los derechos a usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar, y/o vender copias del Software, y a permitir a las personas a las que se les proporcione el Software a hacer lo mismo, sujeto a las siguientes condiciones:
+  El aviso de copyright anterior y este aviso de permiso se incluirán en todas las copias o partes sustanciales del Software.
+  EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O IMPLÍCITA.
+
+
+*BR*
+
+Este software utiliza ícones obtidos do SVG Repo (https://svgrepo.com).
+A maioria dos ícones são usados sob a licença geral do SVG Repo, que permite 
+o uso comercial gratuito sem a necessidade de atribuição ou créditos 
+visíveis na interface do usuário.
+
+No entanto, os seguintes ícones requerem obrigação de atribuição ou avisos específicos de licença:
+
+1. Licença de Atribuição Creative Commons (CC BY):
+- "University Academy School" (https://www.svgrepo.com/svg/428734/university-academy-school) da coleção "Knowledge Flat Vectors" por Sumit Saengthong.
+- "Server Storage Database" (https://www.svgrepo.com/svg/426193/server-storage-database) da coleção "Yellow Technology Vectors" por Sunbzy.
+- "Db Copy" (https://www.svgrepo.com/svg/507118/db-copy) da coleção "Pixellove Monotone Vectors" por pixellove.
+- "Student" (https://www.svgrepo.com/svg/520490/student) da coleção "Education Flat Vectors" por yudhapr.
+- "Cloud Computing" (https://www.svgrepo.com/svg/426198/cloud-computing) da coleção "Yellow Technology Vectors" por Sunbzy.
+- "Picture Photo Image" (https://www.svgrepo.com/svg/382706/picture-photo-image) da coleção "Flat Multicolor Interface Icons" por wishforge.games.
+
+2. Licença MIT:
+- "Color Wheel" (https://www.svgrepo.com/svg/439109/color-wheel) da coleção "Web Skills Flat Vectors" por Andreas Mehlsen. Copyright (c) Andreas Mehlsen.
+- "Attendance" (https://www.svgrepo.com/svg/335320/attendance) da coleção "Brightspace Filled Interface Icons" por BrightspaceUI. Copyright (c) BrightspaceUI.
+- "Document Edit" (https://www.svgrepo.com/svg/310760/document-edit) da coleção "Fluent UI Icons Filled" por Microsoft. Copyright (c) Microsoft.
+- "Align Justify" (https://www.svgrepo.com/svg/389534/align-justify) da coleção "Lucide Line Icons" por Lucide Contributors. Copyright (c) Lucide Contributors.
+
+  Por meio desta, é concedida permissão, gratuitamente, a qualquer pessoa que obtenha uma cópia deste software e dos arquivos de documentação associados (o "Software"), para lidar no Software sem restrição, incluindo, sem limitação, os direitos de usar, copiar, modificar, mesclar, publicar, distribuir, sublicenciar e/ou vender cópias do Software, e de permitir que as pessoas a quem o Software é fornecido o façam, sujeito às seguintes condições:
+  O aviso de direitos autorais acima e este aviso de permissão devem ser incluídos em todas as cópias ou partes substanciais do Software.
+  O SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER TIPO, EXPRESSA OU IMPLÍCITA.

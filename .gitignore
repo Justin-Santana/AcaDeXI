@@ -1,0 +1,61 @@
+# Bytecode compilado
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Extensiones C
+*.so
+
+# Distribuciones / builds
+build/
+dist/
+*.egg-info/
+*.egg
+installer_output/
+_output/
+
+# Entornos virtuales
+venv/
+.env
+.venv
+
+# PyInstaller / auto-py-to-exe
+configacadexi.json
+*.manifest
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# AcaDeXI: bases de datos y respaldos de usuario (no versionar datos vivos)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+acadexi.db
+backups/
+*_ANTES_*.db
+*_DESPUES_*.db
+
+# Logs
+*.log
+
+# Secretos y datos de ejecución (NUNCA versionar)
+token_acadexi.txt
+acadexi_sync.db
+config.json
+
+# Temporales de análisis/migración
+._*
+_tmp_*
+_tmp_*.json
+_tmp_*.txt
+_tmp_*.py
