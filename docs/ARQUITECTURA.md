@@ -51,4 +51,7 @@ Marcados `xfail` en los tests:
 - Tablas: `secuencias_didacticas`, `secuencia_sesiones`, `secuencia_competencia`, `secuencia_indicador`,
   `secuencia_tarea`. Reutiliza `competencias_especificas` / `indicadores_logro` y vincula `tareas`.
 - Borrar una materia, grado o profesor no borra la secuencia (`SET NULL`); borrar la secuencia no toca tareas ni competencias.
-- Pendiente: edición Single Teacher (usa `bd_single_teacher.py`, no `bd.py`).
+- Single Teacher: `src/nucleo/secuencias_st.py` (datos sobre `bd_single_teacher`) y `src/modulos/secuencias_st.py`
+  (pantalla). Sin catálogo de competencias: se escriben como texto, una por línea. Comparte con la edición
+  institucional las constantes, validación, fechas, la escritura del Word (`escribir_docx`) y la tabla de
+  sesiones (`src/interfaz/secuencias_widgets.py`).

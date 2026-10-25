@@ -15,7 +15,7 @@ respetar -el docente escribe directo.
 Módulos con tabla propia aquí (aprobados en la propuesta):
   Estudiantes, Materias/Secciones, Calificaciones, Calificaciones Técnicas
   (categoria libre dentro de calificaciones), Asistencia, Horario, Banco de
-  Tareas, Observaciones.
+  Tareas, Observaciones, Secuencias Didácticas.
 Excluidos (no tienen sentido para un docente independiente, ver propuesta):
   Personal/Profesores múltiples, Auditoría multiusuario, matrícula masiva
   institucional, Dashboard cross-institución, Politécnico/Universidad como
@@ -180,6 +180,60 @@ def _inicializar(conn):
         tipo TEXT,
         descripcion TEXT,
         FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE
+    )""")
+
+    # Secuencias didácticas (planificación MINERD). Aquí no hay competencias
+    # específicas/indicadores catalogados como en la edición institucional,
+    # así que se escriben como texto (una por línea) dentro de la secuencia.
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencias_didacticas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT NOT NULL,
+        materia_id INTEGER,
+        seccion_id INTEGER,
+        periodo_id INTEGER,
+        anio_academico TEXT DEFAULT '',
+        eje_transversal TEXT DEFAULT '',
+        situacion_aprendizaje TEXT DEFAULT '',
+        competencias_fundamentales TEXT DEFAULT '',
+        competencias_especificas TEXT DEFAULT '',
+        indicadores_logro TEXT DEFAULT '',
+        contenido_conceptos TEXT DEFAULT '',
+        contenido_procedimientos TEXT DEFAULT '',
+        contenido_actitudes TEXT DEFAULT '',
+        estrategia TEXT DEFAULT '',
+        estado TEXT DEFAULT 'Borrador',
+        fecha_inicio TEXT,
+        fecha_fin TEXT,
+        creado TEXT,
+        actualizado TEXT,
+        FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE SET NULL,
+        FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON DELETE SET NULL,
+        FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE SET NULL
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencia_sesiones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        secuencia_id INTEGER NOT NULL,
+        orden INTEGER DEFAULT 1,
+        fecha TEXT,
+        momento TEXT DEFAULT 'Desarrollo',
+        actividad TEXT DEFAULT '',
+        evidencia TEXT DEFAULT '',
+        instrumento TEXT DEFAULT '',
+        metacognicion TEXT DEFAULT '',
+        recursos TEXT DEFAULT '',
+        duracion_min INTEGER DEFAULT 0,
+        realizada INTEGER DEFAULT 0,
+        FOREIGN KEY (secuencia_id) REFERENCES secuencias_didacticas(id) ON DELETE CASCADE
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencia_tarea (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        secuencia_id INTEGER NOT NULL,
+        tarea_id INTEGER NOT NULL,
+        FOREIGN KEY (secuencia_id) REFERENCES secuencias_didacticas(id) ON DELETE CASCADE,
+        FOREIGN KEY (tarea_id) REFERENCES tareas(id) ON DELETE CASCADE,
+        UNIQUE(secuencia_id, tarea_id)
     )""")
 
     conn.commit()

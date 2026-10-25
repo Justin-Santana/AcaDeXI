@@ -237,3 +237,91 @@ SCRIPT_UI = textwrap.dedent("""
 def test_secuencias_interfaz(tmp_path):
     r = _correr(SCRIPT_UI, tmp_path)
     assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-3000:]
+
+
+SCRIPT_ST = textwrap.dedent("""
+    import os, sys
+    from PySide6.QtWidgets import QApplication, QWidget, QCheckBox
+    app = QApplication(sys.argv)
+    from src.nucleo import bd_single_teacher as db
+    from src.nucleo import secuencias_st as S
+    conn = db.get_connection(); c = conn.cursor()
+    c.execute("UPDATE configuracion SET nombre_docente='Luis Mejía' WHERE id=1")
+    c.execute("INSERT INTO secciones (nombre, nivel_educativo) VALUES ('8vo A','Secundaria')"); sec_id = c.lastrowid
+    c.execute("INSERT INTO materias (nombre) VALUES ('Matemática')"); m = c.lastrowid
+    c.execute("INSERT INTO materias (nombre) VALUES ('Física')"); m2 = c.lastrowid
+    c.execute("INSERT INTO tareas (materia_id, seccion_id, titulo, fecha_entrega) VALUES (?,?, 'Taller', '2026-11-12')", (m, sec_id)); t = c.lastrowid
+    c.execute("INSERT INTO tareas (materia_id, titulo) VALUES (?, 'Otra')", (m2,))
+    conn.commit(); conn.close()
+
+    # --- lógica
+    assert [x["id"] for x in S.tareas_de_materia(m, sec_id)] == [t]
+    for malo in ({"titulo": ""}, {"titulo": "x", "fecha_inicio": "2026-12-01", "fecha_fin": "2026-11-01"}):
+        try:
+            S.guardar_secuencia(malo); raise SystemExit("debió fallar")
+        except ValueError:
+            pass
+    ses = S.sesiones_base(3); ses[0].update(actividad="Explorar", evidencia="Esquema", instrumento="Rúbrica")
+    sid = S.guardar_secuencia(
+        {"titulo": "Ecuaciones", "materia_id": m, "seccion_id": sec_id,
+         "situacion_aprendizaje": "Calculan el costo de una fiesta.",
+         "competencias_especificas": " Resuelve ecuaciones \\n\\n Argumenta ", "indicadores_logro": "Plantea la ecuación",
+         "competencias_fundamentales": S.unir_competencias_fundamentales(["Resolución de Problemas"]),
+         "contenido_conceptos": "Ecuación lineal"}, tareas_ids=[t, t], sesiones=ses)
+    sec = S.obtener_secuencia(sid)
+    assert sec["materia"] == "Matemática" and sec["grado"] == "8vo A" and sec["profesor"] == "Luis Mejía"
+    assert [x["descripcion"] for x in sec["competencias"]] == ["Resuelve ecuaciones", "Argumenta"]
+    assert [x["descripcion"] for x in sec["indicadores"]] == ["Plantea la ecuación"]
+    assert [x["titulo"] for x in sec["tareas"]] == ["Taller"] and len(sec["sesiones"]) == 3
+    avisos = S.validar_secuencia(sec)
+    assert any("Sesiones sin actividad" in a for a in avisos) and not any("indicador" in a.lower() for a in avisos), avisos
+    assert [r["titulo"] for r in S.listar_secuencias(materia_id=m)] == ["Ecuaciones"]
+    assert S.listar_secuencias(materia_id=m2) == [] and S.listar_secuencias(texto="fiesta")[0]["total_sesiones"] == 3
+    dup = S.obtener_secuencia(S.duplicar_secuencia(sid))
+    assert dup["titulo"].endswith("(copia)") and dup["estado"] == "Borrador" and len(dup["sesiones"]) == 3
+    ruta = os.path.join(os.environ["HOME"], "st.docx"); S.exportar_docx(sid, ruta)
+    from docx import Document
+    d = Document(ruta); texto = "\\n".join(p.text for p in d.paragraphs)
+    celdas = {cel.text for tb in d.tables for fila in tb.rows for cel in fila.cells}
+    assert "Resuelve ecuaciones" in texto and "Plantea la ecuación" in texto and "Taller" in texto
+    assert {"Explorar", "Rúbrica", "Luis Mejía", "8vo A", "Matemática"} <= celdas, celdas
+    # borrar materia no borra la secuencia; borrar secuencia no borra tareas
+    conn = db.get_connection(); conn.execute("DELETE FROM materias WHERE id=?", (m,)); conn.commit(); conn.close()
+    assert S.obtener_secuencia(sid)["materia_id"] is None
+    S.eliminar_secuencia(dup["id"]); assert S.obtener_secuencia(dup["id"]) is None
+
+    # --- interfaz
+    import src.modulos.secuencias_st as ui
+    ui.mostrar_mensaje = lambda *a, **k: None
+    mw = QWidget()
+    modulo = ui.ModuloSecuenciasST(mw)
+    assert modulo.tabla.rowCount() == 1
+    ed = ui.EditorSecuenciaST(mw, sid, mw)
+    assert ed.in_titulo.text() == "Ecuaciones" and ed.tx_ce.toPlainText() == "Resuelve ecuaciones\\nArgumenta"
+    assert ed.tabla.rowCount() == 3 and ed.cb_curso.currentData() == sec_id
+    ed.in_titulo.setText("Ecuaciones II"); ed.tabla.cellWidget(0, 8).findChild(QCheckBox).setChecked(True)
+    ed._guardar()
+    sec = S.obtener_secuencia(sid)
+    assert sec["titulo"] == "Ecuaciones II" and S.progreso(sec["sesiones"])[0] == 1
+    nuevo = ui.EditorSecuenciaST(mw)
+    nuevo.in_titulo.setText("Funciones")
+    nuevo.cb_materia.setCurrentIndex(nuevo.cb_materia.findData(m2))
+    assert nuevo.lista_tareas.count() == 1           # 'Otra'
+    nuevo.lista_tareas.item(0).setCheckState(ui.Qt.CheckState.Checked)
+    nuevo.tx_ce.setPlainText("Grafica\\nInterpreta")
+    nuevo._guardar()
+    n = S.obtener_secuencia(nuevo.secuencia_id)
+    assert [t["titulo"] for t in n["tareas"]] == ["Otra"] and n["competencias"][1]["descripcion"] == "Interpreta"
+    modulo.refrescar(); assert modulo.tabla.rowCount() == 2
+    modulo.tabla.selectRow(0); modulo._duplicar(); assert modulo.tabla.rowCount() == 3
+    import importlib
+    v = importlib.import_module("src.interfaz.ventana_principal")
+    mod, cls = v._FABRICAS_MODULOS_SINGLE_TEACHER["Secuencias Didácticas"]
+    assert hasattr(importlib.import_module(mod), cls)
+    print("OK")
+""")
+
+
+def test_secuencias_single_teacher(tmp_path):
+    r = _correr(SCRIPT_ST, tmp_path)
+    assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-3000:]

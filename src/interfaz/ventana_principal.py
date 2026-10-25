@@ -75,6 +75,7 @@ _FABRICAS_MODULOS_SINGLE_TEACHER = {
     "Asistencia": ("src.interfaz.single_teacher_ui", "ModuloAsistenciaST"),
     "Calificaciones": ("src.interfaz.single_teacher_ui", "ModuloCalificacionesST"),
     "Banco de Tareas": ("src.interfaz.single_teacher_ui", "ModuloBancoTareasST"),
+    "Secuencias Didácticas": ("src.modulos.secuencias_st", "ModuloSecuenciasST"),
     "Horario": ("src.interfaz.single_teacher_ui", "ModuloHorarioST"),
     "Observaciones": ("src.interfaz.single_teacher_ui", "ModuloObservacionesST"),
     "Reportes": ("src.interfaz.single_teacher_ui", "ModuloReportesST"),
@@ -1202,7 +1203,7 @@ class MainWindow(QMainWindow):
             self.modulos_info = [
                 ("📊", "Dashboard"), ("🎓", "Estudiantes"), ("📘", "Materias"),
                 ("✅", "Asistencia"), ("📊", "Calificaciones"), ("📋", "Banco de Tareas"),
-                ("📅", "Horario"), ("🗒", "Observaciones"), ("📊", "Reportes"), ("⚙", "Configuración"),
+                ("📝", "Secuencias Didácticas"), ("📅", "Horario"), ("🗒", "Observaciones"), ("📊", "Reportes"), ("⚙", "Configuración"),
             ]
             self.modulos = [nombre for _, nombre in self.modulos_info]
             self.nav_list.blockSignals(True)

@@ -400,16 +400,26 @@ def _nombre_centro():
 def exportar_docx(secuencia_id, ruta_salida):
     """Genera el documento Word de la secuencia (horizontal, editable por el
     docente). Devuelve `ruta_salida`. Lanza ValueError si la secuencia no existe."""
+    sec = obtener_secuencia(secuencia_id)
+    if sec is None:
+        raise ValueError("La secuencia ya no existe.")
+    return escribir_docx(sec, ruta_salida, _nombre_centro())
+
+
+def _codigo_y_texto(codigo, descripcion, separador=". "):
+    return f"{codigo}{separador}{descripcion}" if codigo else descripcion
+
+
+def escribir_docx(sec, ruta_salida, centro=""):
+    """Escribe el Word a partir de un dict de secuencia (el de obtener_secuencia
+    o el equivalente de Single Teacher, cuyas competencias/indicadores pueden
+    venir sin código). Compartido por ambas ediciones."""
     from docx import Document
     from docx.enum.section import WD_ORIENT
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.shared import Cm, Pt
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
-
-    sec = obtener_secuencia(secuencia_id)
-    if sec is None:
-        raise ValueError("La secuencia ya no existe.")
 
     doc = Document()
     seccion = doc.sections[0]
@@ -443,7 +453,6 @@ def exportar_docx(secuencia_id, ruta_salida):
 
     cabecera = doc.add_paragraph()
     cabecera.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    centro = _nombre_centro()
     if centro:
         r = cabecera.add_run(centro + "\n"); r.bold = True; r.font.size = Pt(13)
     r = cabecera.add_run("Planificación de Unidad de Aprendizaje — Secuencia Didáctica")
@@ -471,14 +480,14 @@ def exportar_docx(secuencia_id, ruta_salida):
 
     bloque("Eje transversal / Descriptores", sec.get("eje_transversal"))
     bloque("Situación de aprendizaje", sec.get("situacion_aprendizaje"))
-    if sec["competencias_fundamentales_lista"]:
+    if sec.get("competencias_fundamentales_lista"):
         titulo("Competencias fundamentales")
         for x in sec["competencias_fundamentales_lista"]:
             doc.add_paragraph(x, style="List Bullet")
-    if sec["competencias"]:
+    if sec.get("competencias"):
         titulo("Competencias específicas")
         for ce in sec["competencias"]:
-            doc.add_paragraph(f"{ce['codigo']}. {ce['descripcion']}", style="List Bullet")
+            doc.add_paragraph(_codigo_y_texto(ce.get("codigo"), ce["descripcion"]), style="List Bullet")
 
     contenidos = [("Conceptos", sec.get("contenido_conceptos")),
                   ("Procedimientos", sec.get("contenido_procedimientos")),
@@ -491,11 +500,11 @@ def exportar_docx(secuencia_id, ruta_salida):
             texto_celda(tc.rows[0].cells[i], rot, True); sombrear(tc.rows[0].cells[i])
             texto_celda(tc.rows[1].cells[i], val)
 
-    if sec["indicadores"]:
+    if sec.get("indicadores"):
         titulo("Indicadores de logro")
         for il in sec["indicadores"]:
-            doc.add_paragraph(f"{il['codigo_competencia']} · {il['codigo']}: {il['descripcion']}",
-                              style="List Bullet")
+            prefijo = " · ".join(x for x in (il.get("codigo_competencia"), il.get("codigo")) if x)
+            doc.add_paragraph(_codigo_y_texto(prefijo, il["descripcion"], ": "), style="List Bullet")
     bloque("Estrategia de enseñanza y de aprendizaje", sec.get("estrategia"))
 
     titulo("Secuencia didáctica")
@@ -512,7 +521,7 @@ def exportar_docx(secuencia_id, ruta_salida):
                    s.get("metacognicion") or "", s.get("recursos") or ""]
         for celda, v in zip(fila, valores):
             texto_celda(celda, v)
-    if sec["tareas"]:
+    if sec.get("tareas"):
         titulo("Tareas vinculadas del Banco de Tareas")
         for tarea in sec["tareas"]:
             extra = f" (entrega {_fmt_fecha(tarea['fecha_entrega'])})" if tarea.get("fecha_entrega") else ""

@@ -18,30 +18,11 @@ from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_cabecera
 from src.nucleo.permisos import puede_editar, es_profesor_restringido, obtener_profesor_id, obtener_materias_permitidas
 from src.nucleo.formato_hora import formatear_fecha
 from src.interfaz.configuracion import anio_academico_actual
+from src.interfaz.secuencias_widgets import (TablaSesiones, COLORES_ESTADO, fecha_a_iso, iso_a_fecha,
+                                             selector_fecha)
 from src.modulos.calificaciones import competencias_de_materia_grado, grados_de_materia
 
-_FECHA_VACIA = QDate(2000, 1, 1)
-COLORES_ESTADO = {"Borrador": "#64748B", "En curso": "#F59E0B", "Completada": "#10B981", "Archivada": "#94A3B8"}
-
-
-def _fecha_a_iso(qdate):
-    return None if qdate == _FECHA_VACIA else qdate.toString("yyyy-MM-dd")
-
-
-def _iso_a_fecha(iso):
-    d = QDate.fromString(str(iso or "")[:10], "yyyy-MM-dd")
-    return d if d.isValid() else _FECHA_VACIA
-
-
-def _selector_fecha():
-    """QDateEdit que admite "sin fecha": la fecha mínima se muestra como '—'."""
-    w = QDateEdit()
-    w.setCalendarPopup(True)
-    w.setDisplayFormat("dd/MM/yyyy")
-    w.setMinimumDate(_FECHA_VACIA)
-    w.setSpecialValueText("—")
-    w.setDate(_FECHA_VACIA)
-    return w
+_fecha_a_iso, _iso_a_fecha, _selector_fecha = fecha_a_iso, iso_a_fecha, selector_fecha
 
 
 def _materias_disponibles(main_window):
@@ -133,23 +114,14 @@ class EditorSecuencia(QDialog):
     def _tab_sesiones(self):
         w = QWidget(); lay = QVBoxLayout(w)
         barra = QHBoxLayout()
-        for texto, accion in (("Agregar sesión", self._agregar_sesion), ("Quitar sesión", self._quitar_sesion),
-                              ("Subir", lambda: self._mover_sesion(-1)), ("Bajar", lambda: self._mover_sesion(1)),
+        self.tabla = TablaSesiones()
+        for texto, accion in (("Agregar sesión", self._agregar_sesion), ("Quitar sesión", self.tabla.quitar_actual),
+                              ("Subir", lambda: self.tabla.mover_actual(-1)),
+                              ("Bajar", lambda: self.tabla.mover_actual(1)),
                               ("Autocompletar fechas…", self._autocompletar_fechas)):
             b = QPushButton(texto); b.clicked.connect(accion); barra.addWidget(b)
         barra.addStretch(1)
         lay.addLayout(barra)
-        self.col_sesion = ["Fecha", "Momento", "Actividades de aprendizaje", "Evidencias", "Instrumento de evaluación",
-                           "Metacognición", "Recursos", "Min", "Realizada"]
-        self.tabla = QTableWidget(0, len(self.col_sesion))
-        self.tabla.setHorizontalHeaderLabels(self.col_sesion)
-        self.tabla.setWordWrap(True)
-        self.tabla.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.tabla.verticalHeader().setDefaultSectionSize(54)
-        h = self.tabla.horizontalHeader()
-        h.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        for i, ancho in enumerate((110, 110, 260, 160, 170, 160, 140, 60, 80)):
-            self.tabla.setColumnWidth(i, ancho)
         lay.addWidget(self.tabla, 1)
         return w
 
@@ -256,90 +228,21 @@ class EditorSecuencia(QDialog):
 
     # ---------------- sesiones ----------------
     def _tabla_sesiones_poblar(self, sesiones):
-        self.tabla.setRowCount(0)
-        for s in sesiones:
-            self._agregar_fila(s)
-
-    def _agregar_fila(self, s=None, posicion=None):
-        s = s or logica.sesiones_base(2)[1]
-        fila = self.tabla.rowCount() if posicion is None else posicion
-        self.tabla.insertRow(fila)
-        f = _selector_fecha(); f.setDate(_iso_a_fecha(s.get("fecha")))
-        self.tabla.setCellWidget(fila, 0, f)
-        m = QComboBox(); m.addItems(logica.MOMENTOS)
-        m.setCurrentText(s.get("momento") if s.get("momento") in logica.MOMENTOS else "Desarrollo")
-        self.tabla.setCellWidget(fila, 1, m)
-        for col, clave in ((2, "actividad"), (3, "evidencia"), (5, "metacognicion"), (6, "recursos")):
-            self.tabla.setItem(fila, col, QTableWidgetItem(s.get(clave) or ""))
-        inst = QComboBox(); inst.setEditable(True)
-        inst.addItems([""] + logica.INSTRUMENTOS_EVALUACION)
-        inst.setCurrentText(s.get("instrumento") or "")
-        self.tabla.setCellWidget(fila, 4, inst)
-        mins = QSpinBox(); mins.setRange(0, 600); mins.setValue(int(s.get("duracion_min") or 0))
-        self.tabla.setCellWidget(fila, 7, mins)
-        chk = QCheckBox(); chk.setChecked(bool(s.get("realizada")))
-        cont = QWidget(); hl = QHBoxLayout(cont); hl.setContentsMargins(0, 0, 0, 0)
-        hl.setAlignment(Qt.AlignmentFlag.AlignCenter); hl.addWidget(chk)
-        self.tabla.setCellWidget(fila, 8, cont)
+        self.tabla.poblar(sesiones)
 
     def _sesiones_desde_tabla(self):
-        out = []
-        for r in range(self.tabla.rowCount()):
-            txt = lambda c: (self.tabla.item(r, c).text().strip() if self.tabla.item(r, c) else "")
-            out.append({
-                "fecha": _fecha_a_iso(self.tabla.cellWidget(r, 0).date()),
-                "momento": self.tabla.cellWidget(r, 1).currentText(),
-                "actividad": txt(2), "evidencia": txt(3),
-                "instrumento": self.tabla.cellWidget(r, 4).currentText().strip(),
-                "metacognicion": txt(5), "recursos": txt(6),
-                "duracion_min": self.tabla.cellWidget(r, 7).value(),
-                "realizada": self.tabla.cellWidget(r, 8).findChild(QCheckBox).isChecked(),
-            })
-        return out
+        return self.tabla.sesiones()
 
     def _agregar_sesion(self):
-        actual = self.tabla.currentRow()
-        self._agregar_fila(posicion=actual + 1 if actual >= 0 else None)
-
-    def _quitar_sesion(self):
-        r = self.tabla.currentRow()
-        if r >= 0:
-            self.tabla.removeRow(r)
+        self.tabla.agregar_despues_de_la_actual()
 
     def _mover_sesion(self, delta):
-        r = self.tabla.currentRow()
-        nuevo = r + delta
-        if r < 0 or not 0 <= nuevo < self.tabla.rowCount():
-            return
-        sesiones = self._sesiones_desde_tabla()
-        sesiones[r], sesiones[nuevo] = sesiones[nuevo], sesiones[r]
-        self._tabla_sesiones_poblar(sesiones)
-        self.tabla.selectRow(nuevo)
+        self.tabla.mover_actual(delta)
 
     def _autocompletar_fechas(self):
-        inicio = _fecha_a_iso(self.f_inicio.date())
-        if not inicio:
-            mostrar_mensaje("advertencia", "Fechas", "Primero indica la fecha de inicio en la pestaña General.", self)
-            return
-        texto, ok = QInputDialog.getText(
-            self, "Días de clase", "Días de la semana con clase (1=lunes … 5=viernes), separados por coma:",
-            text="1,2,3,4,5")
-        if not ok:
-            return
-        try:
-            dias = [int(x) - 1 for x in texto.replace(" ", "").split(",") if x]
-            if not dias or any(not 0 <= d <= 6 for d in dias):
-                raise ValueError
-            sesiones = self._sesiones_desde_tabla()
-            fechas = logica.distribuir_fechas(inicio, len(sesiones), dias)
-        except ValueError:
-            mostrar_mensaje("advertencia", "Fechas", "Escribe números del 1 al 7 separados por coma.", self)
-            return
-        for s, fch in zip(sesiones, fechas):
-            s["fecha"] = fch
-        self._tabla_sesiones_poblar(sesiones)
-        if fechas:
-            self.f_fin.setDate(_iso_a_fecha(fechas[-1]))
+        ultima = self.tabla.autocompletar_fechas(_fecha_a_iso(self.f_inicio.date()), self)
+        if ultima:
+            self.f_fin.setDate(_iso_a_fecha(ultima))
 
     # ---------------- cargar / guardar ----------------
     def _cargar(self, sec):
