@@ -674,6 +674,7 @@ CONTENIDO_SINGLE_TEACHER = [
     ("", None, "Asistencia: pase de lista de tus cursos, con reportes de ausencias."),
     ("", None, "Calificaciones: registro de notas por periodo, con tu propio sistema de evaluación."),
     ("", None, "Banco de Tareas: crea tareas y califica las entregas."),
+    ("", None, "Secuencias Didácticas: planifica tus unidades con el esquema del MINERD y expórtalas a Word."),
     ("", None, "Horario: tu horario de clases, con sus bloques y aulas."),
     ("", None, "Observaciones: anotaciones de conducta o seguimiento por estudiante."),
     ("", None, "Reportes: exporta a Excel o intercambia datos con otra instalación de AcaDeXI -por "
@@ -706,6 +707,11 @@ PASOS_SINGLE_TEACHER = [
 
     ("", "Banco de Tareas", "Crea una tarea de prueba",
      "Elige curso y materia, escribe un título y presiona Guardar Tarea.", "Guardar Tarea", None),
+
+    ("", "Secuencias Didácticas", "Crea una secuencia de prueba",
+     "Presiona Nueva secuencia, escribe un título y presiona Guardar. Después, con Editar, "
+     "completa la situación de aprendizaje, las competencias y las sesiones (inicio, desarrollo "
+     "y cierre); con Exportar a Word la llevas al formato del MINERD.", "Nueva secuencia", None),
 
     ("", "Horario", "Agrega un bloque a tu horario",
      "Elige curso, materia, día y horas (formato HH:MM) y presiona Guardar Horario.",

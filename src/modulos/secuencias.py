@@ -321,9 +321,10 @@ class EditorSecuencia(QDialog):
         registrar_auditoria("Secuencias Didácticas", "Guardar secuencia",
                             getattr(self.main_window, "usuario_actual", None), self.in_titulo.text().strip())
         avisos = logica.validar_secuencia(logica.obtener_secuencia(self.secuencia_id))
+        texto = "Secuencia guardada."
         if avisos:
-            mostrar_mensaje("info", "Secuencia guardada",
-                            "Se guardó, pero conviene completar:\n\n• " + "\n• ".join(avisos), self)
+            texto += "\n\nConviene completar:\n• " + "\n• ".join(avisos)
+        mostrar_mensaje("exito", "Secuencia guardada", texto, self)
         self.accept()
 
 

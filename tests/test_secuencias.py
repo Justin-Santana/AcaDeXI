@@ -325,3 +325,37 @@ SCRIPT_ST = textwrap.dedent("""
 def test_secuencias_single_teacher(tmp_path):
     r = _correr(SCRIPT_ST, tmp_path)
     assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-3000:]
+
+
+SCRIPT_TOUR = textwrap.dedent("""
+    import sys
+    from PySide6.QtWidgets import QApplication, QWidget, QPushButton
+    app = QApplication(sys.argv)
+    from src.inicio import tutoriales as T
+    from src.interfaz import ventana_principal as V
+    nombres = set(V._FABRICAS_MODULOS_SINGLE_TEACHER)
+    pasos = [p for p in T.PASOS_SINGLE_TEACHER if p[1] == "Secuencias Didácticas"]
+    assert len(pasos) == 1, pasos
+    assert all(p[1] is None or p[1] in nombres for p in T.PASOS_SINGLE_TEACHER)
+    assert any("Secuencias Didácticas" in c[2] for c in T.CONTENIDO_SINGLE_TEACHER)
+    # el texto del botón objetivo debe existir de verdad en la pantalla
+    from src.modulos.secuencias_st import ModuloSecuenciasST
+    pagina = ModuloSecuenciasST(QWidget()); pagina.show()
+    assert T.AsistenteSpotlight._buscar_boton_por_texto(pagina, pasos[0][4]) is not None
+    # el orden del tour sigue el del menú: Banco de Tareas -> Secuencias -> Horario
+    orden = [p[1] for p in T.PASOS_SINGLE_TEACHER if p[1]]
+    assert orden.index("Banco de Tareas") + 1 == orden.index("Secuencias Didácticas") == orden.index("Horario") - 1
+    # guardar reporta ÉXITO (es lo único que hace avanzar un paso con acción pendiente)
+    import src.modulos.secuencias_st as ui
+    from src.nucleo import bd_single_teacher as db
+    tipos = []
+    ui.mostrar_mensaje = lambda tipo, *a, **k: tipos.append(tipo)
+    ed = ui.EditorSecuenciaST(pagina); ed.in_titulo.setText("Tour"); ed._guardar()
+    assert tipos == ["exito"], tipos
+    print("OK")
+""")
+
+
+def test_tour_single_teacher_incluye_secuencias(tmp_path):
+    r = _correr(SCRIPT_TOUR, tmp_path)
+    assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-3000:]

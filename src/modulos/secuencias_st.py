@@ -179,9 +179,10 @@ class EditorSecuenciaST(QDialog):
             mostrar_mensaje("advertencia", "Secuencia didáctica", str(e), self)
             return
         avisos = logica.validar_secuencia(logica.obtener_secuencia(self.secuencia_id, self.main_window))
+        texto = "Secuencia guardada."
         if avisos:
-            mostrar_mensaje("info", "Secuencia guardada",
-                            "Se guardó, pero conviene completar:\n\n• " + "\n• ".join(avisos), self)
+            texto += "\n\nConviene completar:\n• " + "\n• ".join(avisos)
+        mostrar_mensaje("exito", "Secuencia guardada", texto, self)
         self.accept()
 
 
