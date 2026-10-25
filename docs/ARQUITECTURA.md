@@ -44,3 +44,11 @@ Marcados `xfail` en los tests:
 - Ninguna tabla lleva tope fijo de altura (`setMaximumHeight`/`setFixedHeight`). Solo se fija un
   `setMinimumHeight` de usabilidad. Toda tabla se añade a su layout con factor de estirado (`addWidget(tabla, 1)`).
 - Lo fuerzan `tests/test_tablas_altura.py`. El editor de reportes queda fuera, por diseño.
+
+## Secuencias didácticas
+- Datos y exportación Word sin Qt en `src/nucleo/secuencias.py`; pantalla en `src/modulos/secuencias.py`
+  (`ModuloSecuenciasDidacticas`, sección DOCENCIA; roles Administrador, Director, Coordinador y Profesor).
+- Tablas: `secuencias_didacticas`, `secuencia_sesiones`, `secuencia_competencia`, `secuencia_indicador`,
+  `secuencia_tarea`. Reutiliza `competencias_especificas` / `indicadores_logro` y vincula `tareas`.
+- Borrar una materia, grado o profesor no borra la secuencia (`SET NULL`); borrar la secuencia no toca tareas ni competencias.
+- Pendiente: edición Single Teacher (usa `bd_single_teacher.py`, no `bd.py`).

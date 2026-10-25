@@ -110,6 +110,7 @@ ALIAS_ICONOS_SIDEBAR = {
     "Politécnico": ["politecnico"],
     "Universidad": ["universidad"],
     "Banco de Tareas": ["bancodetareas"],
+    "Secuencias Didácticas": ["secuencias", "secuenciasdidacticas"],
     "Horario": ["horario"],
     "Calendario": ["calendaria", "calendario"],
     "Observaciones": ["observaciones"],

@@ -55,6 +55,7 @@ _FABRICAS_MODULOS = {
     "Copias de Seguridad": ("src.modulos.docente", "ModuloCopiasSeguridadDocente"),
     "Sincronización": ("src.sincronizacion.sincronizacion", "ModuloSincronizacion"),
     "Banco de Tareas": ("src.modulos.banco_tareas", "ModuloBancoTareas"),
+    "Secuencias Didácticas": ("src.modulos.secuencias", "ModuloSecuenciasDidacticas"),
     "Horario": ("src.modulos.horario", "ModuloHorario"),
     "Calendario": ("src.modulos.calendario", "ModuloCalendario"),
     "Observaciones": ("src.modulos.observaciones", "ModuloObservaciones"),
@@ -1183,6 +1184,7 @@ class MainWindow(QMainWindow):
         "Calificaciones": "PRINCIPAL", "Politécnico": "PRINCIPAL",
         "Calificaciones Técnicas": "PRINCIPAL", "Universidad": "PRINCIPAL",
         "Mis Materias": "DOCENCIA", "Mis Estudiantes": "DOCENCIA", "Banco de Tareas": "DOCENCIA",
+        "Secuencias Didácticas": "DOCENCIA",
         "Horario": "DOCENCIA", "Calendario": "DOCENCIA", "Observaciones": "DOCENCIA",
         "Psicología": "DOCENCIA", "Materiales": "DOCENCIA",
         "Reportes": "SISTEMA", "Copias de Seguridad": "SISTEMA",
@@ -1242,6 +1244,7 @@ class MainWindow(QMainWindow):
         self.modulos_info.append(("📘", "Mis Materias"))
         self.modulos_info.append(("🎓", "Mis Estudiantes"))
         self.modulos_info.append(("📋", "Banco de Tareas"))
+        self.modulos_info.append(("📝", "Secuencias Didácticas"))
         self.modulos_info.append(("📅", "Horario"))
         self.modulos_info.append(("📆", "Calendario"))
         self.modulos_info.append(("🗒", "Observaciones"))

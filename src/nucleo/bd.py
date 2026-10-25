@@ -997,6 +997,89 @@ def inicializar_bd():
         UNIQUE(tarea_id, resultado_aprendizaje_id)
     )""")
 
+    # ============================================================
+    # SECUENCIAS DIDÁCTICAS (formato de planificación MINERD)
+    # ------------------------------------------------------------
+    # Una secuencia es la planificación de una unidad de aprendizaje de UNA
+    # materia en UN grado: situación de aprendizaje, competencias
+    # fundamentales y específicas, contenidos (conceptos / procedimientos /
+    # actitudes y valores), indicadores de logro, estrategia, y una lista
+    # ordenada de sesiones (fecha, momento Inicio/Desarrollo/Cierre,
+    # actividad, evidencia, instrumento, metacognición, recursos).
+    # Reutiliza competencias_especificas / indicadores_logro (los mismos que
+    # ya usa Calificaciones) y se puede vincular a tareas del Banco de Tareas.
+    # ============================================================
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencias_didacticas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT NOT NULL,
+        materia_id INTEGER,
+        grado_id INTEGER,
+        seccion_id INTEGER,
+        profesor_id INTEGER,
+        periodo_id INTEGER,
+        anio_academico TEXT DEFAULT '',
+        eje_transversal TEXT DEFAULT '',
+        situacion_aprendizaje TEXT DEFAULT '',
+        competencias_fundamentales TEXT DEFAULT '',
+        contenido_conceptos TEXT DEFAULT '',
+        contenido_procedimientos TEXT DEFAULT '',
+        contenido_actitudes TEXT DEFAULT '',
+        estrategia TEXT DEFAULT '',
+        estado TEXT DEFAULT 'Borrador',
+        fecha_inicio TEXT,
+        fecha_fin TEXT,
+        creado TEXT,
+        actualizado TEXT,
+        FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE SET NULL,
+        FOREIGN KEY (grado_id) REFERENCES grados(id) ON DELETE SET NULL,
+        FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON DELETE SET NULL,
+        FOREIGN KEY (profesor_id) REFERENCES profesores(id) ON DELETE SET NULL,
+        FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE SET NULL
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencia_competencia (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        secuencia_id INTEGER NOT NULL,
+        competencia_id INTEGER NOT NULL,
+        FOREIGN KEY (secuencia_id) REFERENCES secuencias_didacticas(id) ON DELETE CASCADE,
+        FOREIGN KEY (competencia_id) REFERENCES competencias_especificas(id) ON DELETE CASCADE,
+        UNIQUE(secuencia_id, competencia_id)
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencia_indicador (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        secuencia_id INTEGER NOT NULL,
+        indicador_id INTEGER NOT NULL,
+        FOREIGN KEY (secuencia_id) REFERENCES secuencias_didacticas(id) ON DELETE CASCADE,
+        FOREIGN KEY (indicador_id) REFERENCES indicadores_logro(id) ON DELETE CASCADE,
+        UNIQUE(secuencia_id, indicador_id)
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencia_sesiones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        secuencia_id INTEGER NOT NULL,
+        orden INTEGER DEFAULT 1,
+        fecha TEXT,
+        momento TEXT DEFAULT 'Desarrollo',
+        actividad TEXT DEFAULT '',
+        evidencia TEXT DEFAULT '',
+        instrumento TEXT DEFAULT '',
+        metacognicion TEXT DEFAULT '',
+        recursos TEXT DEFAULT '',
+        duracion_min INTEGER DEFAULT 0,
+        realizada INTEGER DEFAULT 0,
+        FOREIGN KEY (secuencia_id) REFERENCES secuencias_didacticas(id) ON DELETE CASCADE
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS secuencia_tarea (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        secuencia_id INTEGER NOT NULL,
+        tarea_id INTEGER NOT NULL,
+        FOREIGN KEY (secuencia_id) REFERENCES secuencias_didacticas(id) ON DELETE CASCADE,
+        FOREIGN KEY (tarea_id) REFERENCES tareas(id) ON DELETE CASCADE,
+        UNIQUE(secuencia_id, tarea_id)
+    )""")
+
     # Paquetes de calificaciones compartidos entre docentes: cada vez que alguien
     # IMPORTA un archivo exportado por otro docente, se guarda una fila aquí con
     # el resumen del paquete. Sirve para (a) mostrar de dónde salió cada nota
@@ -1676,6 +1759,11 @@ def inicializar_bd():
     c.execute("CREATE INDEX IF NOT EXISTS idx_tarea_competencia_tarea ON tarea_competencia(tarea_id)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_tarea_ra_tarea ON tarea_ra(tarea_id)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_paquetes_calif_seccion ON paquetes_calificaciones(seccion_id, materia_id)")
+
+    # Secuencias didácticas
+    c.execute("CREATE INDEX IF NOT EXISTS idx_secuencias_materia ON secuencias_didacticas(materia_id, grado_id)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_secuencias_profesor ON secuencias_didacticas(profesor_id)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_secuencia_sesiones_sec ON secuencia_sesiones(secuencia_id, orden)")
 
     # Calificaciones Técnicas (Resultados de Aprendizaje - RA, Politécnico)
     c.execute("CREATE INDEX IF NOT EXISTS idx_ra_materia ON resultados_aprendizaje(materia_id)")
