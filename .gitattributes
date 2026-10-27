@@ -1,0 +1,27 @@
+# Establecer LF como salto de linea en el repositorio (evita advertencias
+# LF/CRLF en Windows con core.autocrlf).
+* text=auto eol=lf
+
+# Archivos de texto comunes: forzar LF
+*.py text eol=lf
+*.pyw text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# Binarios: no tocar
+*.db binary
+*.db-journal binary
+*.db-wal binary
+*.db-shm binary
+*.exe binary
+*.dll binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.manifest binary
