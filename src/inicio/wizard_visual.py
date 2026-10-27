@@ -31,7 +31,7 @@ from src.interfaz.configuracion import (WizardStepper, PanelAparienciaWizard, _f
 try:
     from src.inicio.bienvenida import _pixmap_logo_base
 except Exception:
-    _pixmap_logo_base = None
+    _pixmap_logo_base= None
 
 
 class WizardEstilizado(QDialog):
@@ -42,109 +42,102 @@ class WizardEstilizado(QDialog):
     def __init__(self, main_window, titulo_ventana, tamano=(760, 620),
                  icono_ventana=ICONO_SETUP, parent=None):
         super().__init__(parent if parent is not None else main_window)
-        self.main_window = main_window
+        self.main_window= main_window
         self.setWindowTitle(titulo_ventana)
         if icono_ventana:
             aplicar_icono_ventana(self, icono_ventana)
         else:
             aplicar_icono_ventana(self)
         self.setMinimumSize(*tamano)
-        self._titulos_pasos = []
-        self._iconos_pasos = []
+        self._titulos_pasos= []
+        self._iconos_pasos= []
         self._build_ui()
         self._apply_theme()
-        # Wizard SOLAMENTE centrado (sin WindowStaysOnTopHint): ver
-        # centrar_y_al_frente y _FiltroCentradoDialogos en main.py.
+        #Wizard SOLAMENTE centrado (sin WindowStaysOnTopHint): ver centrar_y_al_frente y _FiltroCentradoDialogos en
+        #main.py.
         centrar_y_al_frente(self, main_window, siempre_encima=False)
 
-    # ------------------------------------------------------------
-    # Construcción del esqueleto (header / stack / pie)
-    # ------------------------------------------------------------
+    #Construcción del esqueleto (header / stack / pie)
     def _build_ui(self):
-        layout = QVBoxLayout(self)
+        layout= QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        header = QFrame()
+        header= QFrame()
         header.setObjectName("WizardHeader")
         header.setFixedHeight(104)
-        header_v = QVBoxLayout(header)
+        header_v= QVBoxLayout(header)
         header_v.setContentsMargins(34, 16, 34, 16)
         header_v.setSpacing(12)
 
-        h_layout = QHBoxLayout()
+        h_layout= QHBoxLayout()
         h_layout.setSpacing(12)
-        # Logo real de AcaDeXI (mismo `_pixmap_logo_base` que ya usa el
-        # sidebar en main.py, con el mismo fallback: si el archivo no
-        # aparece -dev sin assets o algún empaquetado raro-, cae al
-        # emblema de graduación 🎓 en vez de dejar un hueco vacío). Va
-        # ANTES del badge del paso actual: el badge cambia de emoji en
-        # cada paso (es "dónde estoy"), el logo es fijo (es "qué app es
-        # esta") -por eso son dos elementos separados, no uno reemplazando
-        # al otro.
-        self.lbl_logo_wizard = QLabel()
+        #Logo real de AcaDeXI (mismo `_pixmap_logo_base` que ya usa el sidebar en main.py, con el mismo fallback: si el
+        #archivo no aparece -dev sin assets o algún empaquetado raro-, cae al emblema de graduación 🎓 en vez de dejar
+        #un hueco vacío). Va ANTES del badge del paso actual: el badge cambia de emoji en cada paso (es "dónde estoy"),
+        #el logo es fijo (es "qué app es esta") -por eso son dos elementos separados, no uno reemplazando al otro.
+        self.lbl_logo_wizard= QLabel()
         self.lbl_logo_wizard.setObjectName("WizardLogo")
         self.lbl_logo_wizard.setFixedSize(38, 38)
         self.lbl_logo_wizard.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        _pixmap_base_logo = _pixmap_logo_base() if _pixmap_logo_base else None
+        _pixmap_base_logo= _pixmap_logo_base() if _pixmap_logo_base else None
         if _pixmap_base_logo is not None:
             self.lbl_logo_wizard.setPixmap(_pixmap_base_logo.scaled(
                 28, 28, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
             self.lbl_logo_wizard.setPixmap(pixmap_emoji("🎓", 20))
         h_layout.addWidget(self.lbl_logo_wizard)
-        self.lbl_badge_paso = QLabel()
+        self.lbl_badge_paso= QLabel()
         self.lbl_badge_paso.setPixmap(pixmap_emoji("🧭", 20))
         self.lbl_badge_paso.setObjectName("WizardBadgePaso")
         self.lbl_badge_paso.setFixedSize(38, 38)
         self.lbl_badge_paso.setAlignment(Qt.AlignmentFlag.AlignCenter)
         h_layout.addWidget(self.lbl_badge_paso)
-        self.lbl_paso = QLabel("")
+        self.lbl_paso= QLabel("")
         self.lbl_paso.setObjectName("WizardPasoLabel")
         h_layout.addWidget(self.lbl_paso)
         h_layout.addStretch()
-        self.lbl_contador = QLabel("")
+        self.lbl_contador= QLabel("")
         self.lbl_contador.setObjectName("WizardContador")
         h_layout.addWidget(self.lbl_contador)
         header_v.addLayout(h_layout)
 
-        # El stepper se agrega DESPUÉS de construir las páginas, porque el
-        # total de pasos lo define cuántas veces llamó agregar_pagina() la
-        # subclase (mismo comportamiento que WizardStepper(9) del wizard
-        # institucional, pero calculado solo).
-        self.stepper = None
+        #El stepper se agrega DESPUÉS de construir las páginas, porque el total de pasos lo define cuántas veces llamó
+        #agregar_pagina() la
+        #subclase (mismo comportamiento que WizardStepper(9) del wizard
+        #institucional, pero calculado solo).
+        self.stepper= None
         layout.addWidget(header)
 
-        # Contenedor con margen alrededor del stack: dentro se ve la tarjeta
-        # elevada de cada paso (ver agregar_pagina) "flotando" sobre el fondo
-        # del diálogo, en vez de pegada borde a borde.
-        contenedor_stack = QWidget()
+        #Contenedor con margen alrededor del stack: dentro se ve la tarjeta elevada de cada paso (ver agregar_pagina)
+        #"flotando" sobre el fondo del diálogo, en vez de pegada borde a borde.
+        contenedor_stack= QWidget()
         contenedor_stack.setObjectName("WizardStackContenedor")
-        contenedor_stack_layout = QVBoxLayout(contenedor_stack)
+        contenedor_stack_layout= QVBoxLayout(contenedor_stack)
         contenedor_stack_layout.setContentsMargins(26, 20, 26, 10)
-        self.stack = QStackedWidget()
+        self.stack= QStackedWidget()
         contenedor_stack_layout.addWidget(self.stack)
         layout.addWidget(contenedor_stack, 1)
 
-        # Las páginas las crea la subclase (hook).
+        #Las páginas las crea la subclase (hook).
         self._construir_paginas()
 
-        self.stepper = WizardStepper(max(self.stack.count(), 1))
+        self.stepper= WizardStepper(max(self.stack.count(), 1))
         header_v.addWidget(self.stepper)
 
-        pie = QFrame()
+        pie= QFrame()
         pie.setObjectName("WizardPie")
         pie.setFixedHeight(68)
-        pie_layout = QHBoxLayout(pie)
+        pie_layout= QHBoxLayout(pie)
         pie_layout.setContentsMargins(30, 0, 30, 0)
-        self.btn_atras = QPushButton("Atrás")
+        self.btn_atras= QPushButton("Atrás")
         self.btn_atras.setIcon(icono_emoji("⬅"))
         self.btn_atras.setIconSize(_QSize_emoji(16, 16))
         self.btn_atras.setObjectName("BtnAccionNeutro")
         self.btn_atras.clicked.connect(self._anterior)
         pie_layout.addWidget(self.btn_atras)
         pie_layout.addStretch()
-        self.btn_siguiente = QPushButton("Siguiente ")
+        self.btn_siguiente= QPushButton("Siguiente ")
         self.btn_siguiente.setIcon(icono_emoji("➡"))
         self.btn_siguiente.setIconSize(_QSize_emoji(16, 16))
         self.btn_siguiente.clicked.connect(self._siguiente)
@@ -153,20 +146,18 @@ class WizardEstilizado(QDialog):
 
         self.stack.currentChanged.connect(self._actualizar_encabezado)
         self._actualizar_encabezado(0)
-        # Fundido de entrada solo para la primera página al abrir el asistente;
-        # los cambios de página posteriores usan la transición direccional de
-        # _ir_a_paso (más barata: solo anima la página entrante).
+        #Fundido de entrada solo para la primera página al abrir el asistente; los cambios de página posteriores usan
+        #la transición direccional de
+        #_ir_a_paso (más barata: solo anima la página entrante).
         _fundido_entrada(self.stack.currentWidget())
 
-        # Realce (sombra que se eleva) al pasar el mouse sobre los botones.
-        self._realce_wizard = _RealceHover(0, 18, 5, self)
+        #Realce (sombra que se eleva) al pasar el mouse sobre los botones.
+        self._realce_wizard= _RealceHover(0, 18, 5, self)
         for boton in self.findChildren(QPushButton):
             boton.installEventFilter(self._realce_wizard)
 
 
-    # ------------------------------------------------------------
-    # Hooks para las subclases
-    # ------------------------------------------------------------
+    #Hooks para las subclases
     def _construir_paginas(self):
         """La subclase crea aquí sus páginas con self.agregar_pagina(...)."""
         raise NotImplementedError
@@ -181,28 +172,26 @@ class WizardEstilizado(QDialog):
         aceptar el diálogo)."""
         self.accept()
 
-    # ------------------------------------------------------------
-    # Páginas (tarjetas elevadas, igual que _nueva_pagina del wizard Full)
-    # ------------------------------------------------------------
+    #Páginas (tarjetas elevadas, igual que _nueva_pagina del wizard Full)
     def agregar_pagina(self, titulo, icono="🧭"):
         """Registra un paso y crea su tarjeta elevada. Devuelve (contenedor,
         layout_interno) para que la subclase llene el formulario igual que
         hacen los _crear_pasoN de WizardConfiguracion."""
         self._titulos_pasos.append(titulo)
         self._iconos_pasos.append(icono)
-        contenedor = QWidget()
-        externo = QVBoxLayout(contenedor)
+        contenedor= QWidget()
+        externo= QVBoxLayout(contenedor)
         externo.setContentsMargins(0, 0, 0, 0)
-        tarjeta = QFrame()
+        tarjeta= QFrame()
         tarjeta.setObjectName("WizardCard")
         tarjeta.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        sombra = QGraphicsDropShadowEffect(tarjeta)
+        sombra= QGraphicsDropShadowEffect(tarjeta)
         sombra.setColor(QColor(0, 0, 0, 55))
         sombra.setOffset(0, 3)
         sombra.setBlurRadius(24)
         tarjeta.setGraphicsEffect(sombra)
         externo.addWidget(tarjeta)
-        l = QVBoxLayout(tarjeta)
+        l= QVBoxLayout(tarjeta)
         l.setContentsMargins(46, 36, 46, 32)
         l.setSpacing(12)
         self.stack.addWidget(contenedor)
@@ -210,35 +199,33 @@ class WizardEstilizado(QDialog):
 
     def titulo_paso(self, texto):
         """Título grande de paso (mismo objectName/QSS que el wizard Full)."""
-        lbl = QLabel(texto)
+        lbl= QLabel(texto)
         lbl.setObjectName("WizardSubtitulo")
         return lbl
 
     def hero_paso(self, emoji, titulo, descripcion):
         """Centro de una página tipo 'Bienvenida'/'Finalización': emoji grande
         + título WizardTitulo + descripción WizardDesc, todo centrado."""
-        lbl_hero = QLabel()
+        lbl_hero= QLabel()
         lbl_hero.setPixmap(pixmap_emoji(emoji, 64))
         lbl_hero.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        t = QLabel(titulo)
+        t= QLabel(titulo)
         t.setObjectName("WizardTitulo")
         t.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        d = QLabel(descripcion)
+        d= QLabel(descripcion)
         d.setObjectName("WizardDesc")
         d.setWordWrap(True)
         d.setAlignment(Qt.AlignmentFlag.AlignCenter)
         return lbl_hero, t, d
 
-    # ------------------------------------------------------------
-    # Navegación
-    # ------------------------------------------------------------
+    #Navegación
     def _actualizar_encabezado(self, index):
         self.lbl_paso.setText(self._titulos_pasos[index])
-        icono = self._iconos_pasos[index] if index < len(self._iconos_pasos) else "🧭"
+        icono= self._iconos_pasos[index] if index < len(self._iconos_pasos) else "🧭"
         self.lbl_badge_paso.setPixmap(pixmap_emoji(icono, 20))
         self.lbl_contador.setText(f"Paso {index + 1} de {len(self._titulos_pasos)}")
         self.btn_atras.setEnabled(index > 0)
-        ultimo = index == len(self._titulos_pasos) - 1
+        ultimo= index == len(self._titulos_pasos) - 1
         self.btn_siguiente.setText("Finalizar " if ultimo else "Siguiente ")
         self.btn_siguiente.setIcon(icono_emoji("🏁" if ultimo else "➡"))
         self.btn_siguiente.setIconSize(_QSize_emoji(16, 16))
@@ -250,20 +237,20 @@ class WizardEstilizado(QDialog):
         fundido (~220ms), en el sentido del avance —la misma mecánica del
         wizard institucional (ver WizardConfiguracion._ir_a_paso)."""
         self.stack.setCurrentIndex(nuevo_idx)
-        pagina = self.stack.currentWidget()
-        ancho = max(self.stack.width(), 1)
-        offset = int(ancho * 0.05) * (1 if direccion > 0 else -1)
+        pagina= self.stack.currentWidget()
+        ancho= max(self.stack.width(), 1)
+        offset= int(ancho * 0.05) * (1 if direccion > 0 else -1)
         pagina.move(offset, 0)
-        efecto = QGraphicsOpacityEffect(pagina)
+        efecto= QGraphicsOpacityEffect(pagina)
         pagina.setGraphicsEffect(efecto)
 
-        anim_pos = QPropertyAnimation(pagina, b"pos", pagina)
+        anim_pos= QPropertyAnimation(pagina, b"pos", pagina)
         anim_pos.setDuration(220)
         anim_pos.setStartValue(QPoint(offset, 0))
         anim_pos.setEndValue(QPoint(0, 0))
         anim_pos.setEasingCurve(QEasingCurve.Type.OutCubic)
 
-        anim_op = QPropertyAnimation(efecto, b"opacity", pagina)
+        anim_op= QPropertyAnimation(efecto, b"opacity", pagina)
         anim_op.setDuration(200)
         anim_op.setStartValue(0.0)
         anim_op.setEndValue(1.0)
@@ -272,10 +259,10 @@ class WizardEstilizado(QDialog):
         def _limpiar():
             pagina.setGraphicsEffect(None)
         anim_pos.finished.connect(_limpiar)
-        # Se guardan las referencias en la página para que Python no las
-        # recolecte a mitad de camino (mismo patrón que _fundido_entrada).
-        pagina._anim_pos_wizard = anim_pos
-        pagina._anim_op_wizard = anim_op
+        #Se guardan las referencias en la página para que Python no las recolecte a mitad de camino (mismo patrón que
+        #_fundido_entrada).
+        pagina._anim_pos_wizard= anim_pos
+        pagina._anim_op_wizard= anim_op
         anim_pos.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
         anim_op.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
@@ -284,7 +271,7 @@ class WizardEstilizado(QDialog):
             self._ir_a_paso(self.stack.currentIndex() - 1, direccion=-1)
 
     def _siguiente(self):
-        idx = self.stack.currentIndex()
+        idx= self.stack.currentIndex()
         if not self.validar_paso(idx):
             return
         if idx == self.stack.count() - 1:
@@ -294,17 +281,15 @@ class WizardEstilizado(QDialog):
 
 
 
-    # ------------------------------------------------------------
-    # Tema (mismo QSS que WizardConfiguracion._apply_theme)
-    # ------------------------------------------------------------
+    #Tema (mismo QSS que WizardConfiguracion._apply_theme)
     def _apply_theme(self):
-        paleta = self.main_window.theme_palettes.get(
+        paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
-        idx = 1 if self.main_window.modo_oscuro else 0
+        idx= 1 if self.main_window.modo_oscuro else 0
         bg_window, bg_panel = paleta["window_bg"][idx], paleta["display_bg"][idx]
         txt_prim, txt_sec = paleta["text_primary"][idx], paleta["text_secondary"][idx]
         bg_btn, accent = paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
-        hv_accent = paleta["btn_op_hover"][idx]
+        hv_accent= paleta["btn_op_hover"][idx]
         self.setStyleSheet(f"""
             QDialog {{ background-color: {bg_window}; }}
             QFrame#WizardHeader, QFrame#WizardPie {{ background-color: {bg_panel}; }}

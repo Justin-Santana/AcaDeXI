@@ -3,15 +3,15 @@ Corre en un subproceso con una base temporal para no tocar datos reales."""
 import subprocess, sys, textwrap
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[1]
+RAIZ= Path(__file__).resolve().parents[1]
 
-SCRIPT = textwrap.dedent("""
+SCRIPT= textwrap.dedent("""
     import sys
     from PySide6.QtWidgets import QApplication, QComboBox
     app = QApplication(sys.argv)
-    from src.nucleo.bd import inicializar_bd, get_connection
+    from src.nucleo.bd import inicializar_bd, obtener_conexion
     inicializar_bd()
-    conn = get_connection(); c = conn.cursor()
+    conn = obtener_conexion(); c = conn.cursor()
     c.execute("INSERT INTO especialidades (nombre, codigo) VALUES ('Informática','IFC')"); a = c.lastrowid
     c.execute("INSERT INTO especialidades (nombre, codigo) VALUES ('Mecatrónica','MEC')"); m = c.lastrowid
     c.execute("INSERT INTO grados (nombre, nivel_educativo, ciclo_secundaria, orden) VALUES ('4to','Secundaria','Segundo Ciclo',4)"); g4 = c.lastrowid
@@ -35,7 +35,7 @@ SCRIPT = textwrap.dedent("""
 """)
 
 def test_filtrado_modulos_por_area_y_curso(tmp_path):
-    env = {"HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "QT_QPA_PLATFORM": "offscreen",
+    env= {"HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "QT_QPA_PLATFORM": "offscreen",
            "PYTHONDONTWRITEBYTECODE": "1", "PATH": "/usr/bin:/bin"}
-    r = subprocess.run([sys.executable, "-c", SCRIPT], cwd=RAIZ, env=env, capture_output=True, text=True, timeout=180)
+    r= subprocess.run([sys.executable, "-c", SCRIPT], cwd=RAIZ, env=env, capture_output=True, text=True, timeout=180)
     assert r.returncode == 0 and "OK" in r.stdout, r.stderr[-1500:]

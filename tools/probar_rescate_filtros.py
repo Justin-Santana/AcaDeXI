@@ -9,7 +9,7 @@ import sys
 from PySide6.QtWidgets import QApplication, QDialog, QComboBox, QVBoxLayout
 from PySide6.QtCore import Qt
 
-app = QApplication(sys.argv)
+app= QApplication(sys.argv)
 
 
 def vivo(objeto):
@@ -19,10 +19,10 @@ def vivo(objeto):
 
 class Modulo:
     def __init__(self):
-        self.combo = QComboBox()
+        self.combo= QComboBox()
         self.combo.addItem("A", 1)
-        self.dialogo = QDialog()
-        lay = QVBoxLayout(self.dialogo)
+        self.dialogo= QDialog()
+        lay= QVBoxLayout(self.dialogo)
         lay.addWidget(self.combo)
 
     def abrir(self, fc):
@@ -31,19 +31,19 @@ class Modulo:
             fc.aboutToBeDestroyed.connect(self.rescatar)
 
     def rescatar(self, *_):
-        d = self.dialogo
+        d= self.dialogo
         if not vivo(d):
             return
         d.setParent(self)
         d.hide()
 
 
-m = Modulo()
-fc = QDialog()
+m= Modulo()
+fc= QDialog()
 fc.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 m.abrir(fc)
 assert m.dialogo.parent() is fc
-fc.deleteLater()          # mismo efecto que cerrar el diálogo de pantalla completa
+fc.deleteLater()          #mismo efecto que cerrar el diálogo de pantalla completa
 app.processEvents()
 assert vivo(m.dialogo), "el diálogo de filtros murió: no se rescató"
 assert vivo(m.combo), "el combo murió: no se rescató"

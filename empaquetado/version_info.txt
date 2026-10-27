@@ -1,23 +1,28 @@
-# UTF-8
+#UTF-8, archivo de información de versión para PyInstaller. Windows lee estos datos en las
+#Propiedades del .exe (pestaña "Detalles") y en el tooltip del Explorador de Archivos.
 #
-# Archivo de información de versión para PyInstaller.
-# Se referencia con --version-file en los argumentos manuales de PyInstaller
-# (o en auto-py-to-exe, en "Argumentos adicionales").
+#Se referencia con --version-file en los argumentos manuales de PyInstaller, que ya están
+#puestos en configacadexi.json (auto-py-to-exe, "Argumentos adicionales").
 #
-# Genera los datos que Windows muestra en las Propiedades del .exe
-# (pestaña "Detalles") y en el tooltip del Explorador de Archivos.
+#Si subes la versión hay que cambiarla en los CUATRO lugares donde aparece, y los cuatro
+#tienen que decir exactamente lo mismo: acá (filevers/prodvers y los FileVersion/ProductVersion
+#de texto), en empaquetado/instaladores/AcaDeXI.iss (#define MyAppVersion y VersionInfoVersion),
+#en los otros tres .iss (AcaDeXI_Docentes, AcaDeXI_SideStepper, AcaDeXI_SingleTeacher, ahí solo
+#MyAppVersion) y en src/interfaz/ventana_principal.py (VERSION, que es el número que muestra la
+#ventana "Acerca de"). El nombre del .exe solo se toca en configacadexi.json.
 
 VSVersionInfo(
   ffi=FixedFileInfo(
-    # filevers y prodvers van en 4 números: (Mayor, Menor, Parche, Build)
+    #filevers y prodvers van en 4 números: (Mayor, Menor, Parche, Build). Tienen que ser enteros,
+    #no texto: si pones "1.0.0" acá el build falla.
     filevers=(1, 0, 0, 0),
     prodvers=(1, 0, 0, 0),
-    # Máscara y flags de depuración/estado. 0x3f/0x0 = build de producción, sin flags especiales.
+    #Máscara y flags de depuración/estado. 0x3f/0x0 = build de producción, sin flags especiales.
     mask=0x3f,
     flags=0x0,
-    # OS objetivo: 0x40004 = VOS_NT_WINDOWS32
+    #OS objetivo: 0x40004 = VOS_NT_WINDOWS32, o sea un .exe de Windows de 32 o 64 bits.
     OS=0x40004,
-    # Tipo de archivo: 0x1 = VFT_APP (aplicación ejecutable)
+    #Tipo de archivo: 0x1 = VFT_APP, una aplicación ejecutable normal.
     fileType=0x1,
     subtype=0x0,
     date=(0, 0)

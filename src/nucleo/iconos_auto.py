@@ -37,14 +37,11 @@ from PySide6.QtWidgets import (QPushButton, QToolButton, QDialog, QMessageBox,
                                QMainWindow, QTabWidget)
 from src.nucleo.iconos_emoji import EMOJI_IMPORTAR, EMOJI_EXPORTAR
 
-TAM_ICONO = QSize(18, 18)
+TAM_ICONO= QSize(18, 18)
 
-# ---------------------------------------------------------------
-# MAPA SEMÁNTICO ÚNICO (normalizado: minúsculas, sin tildes).
-# Orden = prioridad: primero las acciones concretas, después los
-# sustantivos. Todo apunta a dibujos existentes en iconos_emoji.
-# ---------------------------------------------------------------
-_MAPA = [
+#Mapa semántico único (normalizado: minúsculas, sin tildes). Orden = prioridad: primero las acciones concretas,
+#después los sustantivos. Todo apunta a dibujos existentes en iconos_emoji.
+_MAPA= [
     ('guardar', '💾'), ('eliminar', '🗑'), ('borrar', '🗑'),
     ('quitar', '🗑'), ('suprimir', '🗑'),
     ('limpiar', '🧹'), ('vaciar', '🧹'), ('despejar', '🧹'),
@@ -54,11 +51,10 @@ _MAPA = [
     ('restaurar', '♻'), ('restablecer', '♻'), ('recuperar', '♻'),
     ('actualizar', '🔄'), ('recargar', '🔄'), ('refrescar', '🔄'),
     ('verificar', '🔄'), ('comprobar', '🔄'), ('sincronizar', '🔄'),
-    # 'importar'/'exportar' (y sinónimos) usan el icono dedicado de bandeja
-    # con flecha (EMOJI_IMPORTAR/EMOJI_EXPORTAR, ver iconos_emoji.py), NO el
-    # sobre de correo (📥/📤): ese sobre es el mismo dibujo que usa el icono
-    # real de "correo/email" más abajo, y mezclaba "traer/enviar datos" con
-    # "enviar un correo" en cualquier botón que no trajera su propio icono.
+    #'importar'/'exportar' (y sinónimos) usan el icono dedicado de bandeja con flecha
+    #(EMOJI_IMPORTAR/EMOJI_EXPORTAR, ver iconos_emoji.py), NO el sobre de correo (📥/📤): ese sobre es el mismo
+    #dibujo que usa el icono real de "correo/email" más abajo, y mezclaba "traer/enviar datos" con "enviar un
+    #correo" en cualquier botón que no trajera su propio icono.
     ('importar', EMOJI_IMPORTAR), ('descargar', EMOJI_IMPORTAR),
     ('exportar', EMOJI_EXPORTAR), ('subir', EMOJI_EXPORTAR),
     ('cargar', '📂'), ('examinar', '📁'), ('carpeta', '📁'), ('abrir', '📂'),
@@ -79,13 +75,13 @@ _MAPA = [
     ('contrasena', '🔒'), ('pass', '🔑'), ('clave', '🔑'), ('candado', '🔒'),
     ('bloquear', '🔒'), ('desbloquear', '🔓'), ('permiso', '🔑'),
     ('seguridad', '🛡'), ('privacidad', '🛡'), ('auditor', '🛡'),
-    # ---- personas ----
+    #---- personas ----
     ('usuario', '👤'), ('perfil', '👤'), ('cuenta', '👤'), ('rol', '👤'),
     ('docente', '🧑'), ('profesor', '👥'), ('personal', '👥'),
     ('estudiante', '🎓'), ('alumno', '🎓'), ('matricula', '🎓'),
     ('inscribir', '🎓'), ('inscripcion', '🎓'),
     ('familia', '🏠'), ('acudiente', '🏠'), ('representante', '🏠'),
-    # ---- académico ----
+    #---- académico ----
     ('materia', '📘'), ('asignatura', '📘'), ('area', '📘'),
     ('curso', '📚'), ('grado', '📚'), ('nivel', '📚'),
     ('seccion', '🏫'), ('aula', '🏫'), ('sala', '🏫'),
@@ -112,7 +108,7 @@ _MAPA = [
     ('constancia', '📜'), ('certificado', '📜'), ('diploma', '📜'),
     ('acta', '📜'), ('documento', '📄'), ('archivo', '📁'),
     ('plantilla', '📄'), ('formato', '📄'), ('firma', '✍'),
-    # ---- configuración / sistema / varios ----
+    #---- configuración / sistema / varios ----
     ('configuracion', '⚙'), ('ajustes', '⚙'), ('preferencia', '⚙'),
     ('opciones', '⚙'), ('herramienta', '🧰'),
     ('idioma', '🔤'), ('fuente', '🔤'), ('texto', '🔤'),
@@ -138,9 +134,8 @@ _MAPA = [
     ('dinero', '💼'), ('pago', '💼'), ('factura', '💼'), ('presupuesto', '💼'),
     ('agua', '💧'), ('clima', '🌤'), ('salir', '✖'), ('cerrar', '✖'),
 
-    # ---- ampliaciones (huecos detectados: módulos/botones sin ningún
-    # keyword que los cubriera) — se agregan AL FINAL para no adelantarse
-    # en prioridad a ningún grupo ya existente arriba ----
+    #---- ampliaciones (huecos detectados: módulos/botones sin ningún keyword que los cubriera) — se agregan AL
+    #FINAL para no adelantarse en prioridad a ningún grupo ya existente arriba ----
     ('panel', '▦'), ('dashboard', '▦'),
     ('sincronizacion', '🔄'),
     ('vincular', '🔗'), ('desvincular', '🔌'),
@@ -159,27 +154,24 @@ _MAPA = [
 
 def _normalizar(texto):
     """Minúsculas y sin tildes, para que 'Cálcular' == 'calcular'."""
-    texto = texto.strip().lower()
-    texto = unicodedata.normalize('NFD', texto)
+    texto= texto.strip().lower()
+    texto= unicodedata.normalize('NFD', texto)
     return ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
 
 
-# Cache: texto normalizado -> QIcon (evita rebuscar el mapa mil veces)
-_cache_texto = {}
+#Cache: texto normalizado -> QIcon (evita rebuscar el mapa mil veces)
+_cache_texto= {}
 
-# Cache de patrones compilados por palabra clave (evita recompilar el mismo
-# regex en cada llamada; ver _coincide más abajo).
-_cache_patrones = {}
+#Cache de patrones compilados por palabra clave (evita recompilar el mismo regex en cada llamada; ver _coincide
+#más abajo).
+_cache_patrones= {}
 
-# Excepciones puntuales: palabras clave que necesitan una condición extra
-# además del límite de palabra normal, porque forman parte de una locución
-# de uso muy común en español que NO debe iconizarse con su sentido literal.
-# 'nuevo' es el caso real encontrado: "Ver tutorial ... de nuevo" usa "de
-# nuevo" con el sentido de "otra vez", no el de "elemento nuevo" -sin esto,
-# 'nuevo' (que aparece antes que 'tutorial' en el mapa) se adelantaría y le
-# pondría el icono de "➕ crear" a un botón que en realidad trata de un
-# tutorial.
-_PATRONES_EXCEPCION = {
+#Excepciones puntuales: palabras clave que necesitan una condición extra además del límite de palabra normal,
+#porque forman parte de una locución de uso muy común en español que NO debe iconizarse con su sentido literal.
+#'nuevo' es el caso real encontrado: "Ver tutorial ... de nuevo" usa "de nuevo" con el sentido de "otra vez",
+#no el de "elemento nuevo" -sin esto, 'nuevo' (que aparece antes que 'tutorial' en el mapa) se adelantaría y le
+#pondría el icono de "➕ crear" a un botón que en realidad trata de un tutorial.
+_PATRONES_EXCEPCION= {
     'nuevo': r'(?<!de )\bnuevo',
 }
 
@@ -191,11 +183,11 @@ def _patron_de(kw):
     pero SÍ permite que la palabra siga después (para seguir cubriendo
     plurales/formas como 'materia' -> 'materias', 'estudiante' ->
     'estudiantes'), ya que solo se exige el límite ANTES de la palabra."""
-    patron = _cache_patrones.get(kw)
+    patron= _cache_patrones.get(kw)
     if patron is None:
-        expresion = _PATRONES_EXCEPCION.get(kw, r'\b' + re.escape(kw))
-        patron = re.compile(expresion)
-        _cache_patrones[kw] = patron
+        expresion= _PATRONES_EXCEPCION.get(kw, r'\b' + re.escape(kw))
+        patron= re.compile(expresion)
+        _cache_patrones[kw]= patron
     return patron
 
 
@@ -206,16 +198,16 @@ def icono_para_texto(texto):
     mismo icono en cualquier módulo. Si nada coincide, devuelve un QIcon
     nulo (mejor un botón sin icono que un icono sin sentido).
     """
-    clave = _normalizar(texto)
+    clave= _normalizar(texto)
     if clave in _cache_texto:
         return _cache_texto[clave]
-    icono = QIcon()
+    icono= QIcon()
     for kw, emoji in _MAPA:
         if _patron_de(kw).search(clave):
             from src.nucleo.iconos_emoji import icono_emoji
-            icono = icono_emoji(emoji)
+            icono= icono_emoji(emoji)
             break
-    _cache_texto[clave] = icono
+    _cache_texto[clave]= icono
     return icono
 
 
@@ -240,10 +232,10 @@ class _Iconizador(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._botones = set()
-        self._tabs = set()
-        self._ventanas = set()
-        self._timer = QTimer(self)
+        self._botones= set()
+        self._tabs= set()
+        self._ventanas= set()
+        self._timer= QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.setInterval(0)
         self._timer.timeout.connect(self._procesar_pendientes)
@@ -260,18 +252,18 @@ class _Iconizador(QObject):
         for btn in botones:
             try:
                 if btn.icon().isNull() and btn.text():
-                    icono = icono_para_texto(btn.text())
+                    icono= icono_para_texto(btn.text())
                     if not icono.isNull():
                         btn.setIcon(icono)
                         btn.setIconSize(TAM_ICONO)
             except RuntimeError:
-                pass  # el widget C++ ya fue destruido
+                pass  #el widget C++ ya fue destruido
         for tabs_w in tabs:
             try:
-                barra = tabs_w.tabBar()
+                barra= tabs_w.tabBar()
                 for i in range(tabs_w.count()):
                     if barra.tabIcon(i).isNull() and tabs_w.tabText(i):
-                        icono = icono_para_texto(tabs_w.tabText(i))
+                        icono= icono_para_texto(tabs_w.tabText(i))
                         if not icono.isNull():
                             tabs_w.setTabIcon(i, icono)
             except RuntimeError:
@@ -279,17 +271,17 @@ class _Iconizador(QObject):
         for win in ventanas:
             try:
                 if win.windowIcon().isNull() and win.windowTitle():
-                    icono = icono_para_texto(win.windowTitle())
+                    icono= icono_para_texto(win.windowTitle())
                     if not icono.isNull():
                         win.setWindowIcon(icono)
             except RuntimeError:
                 pass
 
-    # Caché de clases: evita encadenar isinstance por CADA evento de CADA
-    # widget (durante un cambio de tema Qt re-pule miles de widgets). Para
-    # cada clase Python se calcula UNA vez si es relevante (botón / tabs /
-    # ventana) y después es solo una búsqueda en diccionario.
-    _cache_clases = {}
+    #Caché de clases: evita encadenar isinstance por CADA evento de CADA
+    #widget (durante un cambio de tema Qt re-pule miles de widgets). Para
+    #cada clase Python se calcula UNA vez si es relevante (botón / tabs / ventana) y después es solo una búsqueda
+    #en diccionario.
+    _cache_clases= {}
     _TAG_BOTON, _TAG_TABS, _TAG_VENTANA = 1, 2, 3
 
     @classmethod
@@ -306,14 +298,14 @@ class _Iconizador(QObject):
         return 0
 
     def eventFilter(self, obj, event):
-        t = event.type()
+        t= event.type()
         if t != QEvent.Type.Polish and t != QEvent.Type.Show:
             return False
-        clase = obj.__class__
-        cache = self._cache_clases
-        tag = cache.get(clase)
+        clase= obj.__class__
+        cache= self._cache_clases
+        tag= cache.get(clase)
         if tag is None:
-            tag = cache[clase] = self._tag_de_clase(clase)
+            tag= cache[clase]= self._tag_de_clase(clase)
         if not tag:
             return False
         try:
@@ -329,11 +321,11 @@ class _Iconizador(QObject):
                 self._ventanas.add(obj)
                 self._agendar()
         except RuntimeError:
-            pass  # el widget C++ ya fue destruido; no importa
+            pass  #el widget C++ ya fue destruido; no importa
         return False
 
 
-_instalado = False
+_instalado= False
 
 
 def instalar_iconos_automaticos(app):
@@ -341,10 +333,10 @@ def instalar_iconos_automaticos(app):
     global _instalado
     if _instalado:
         return
-    filtro = _Iconizador()
-    # Referencia viva en la propia app para que no lo recoja el GC
-    app._iconizador_auto = filtro
+    filtro= _Iconizador()
+    #Referencia viva en la propia app para que no lo recoja el GC
+    app._iconizador_auto= filtro
     app.installEventFilter(filtro)
-    _instalado = True
+    _instalado= True
 
 

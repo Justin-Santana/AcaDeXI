@@ -29,39 +29,39 @@ from PySide6.QtWidgets import QHBoxLayout, QPushButton, QWidget
 from src.nucleo.deshacer_rehacer import deshacer_rehacer as _d
 from src.nucleo.feedback import mostrar_toast
 
-MAX_NIVELES = 10
+MAX_NIVELES= 10
 
 
 class GestorDeshacer(QObject):
     def __init__(self, pagina, main_window, refrescar=None, nombre="registro",
                  atajo=True, solo_no_docente=True, parent_boton=None):
         super().__init__(pagina)
-        self._pagina = pagina
-        self._main = main_window
-        self._refrescar = refrescar
-        self._nombre = nombre
-        self._pila = []            # [(Grabacion, etiqueta)] -> se pueden DESHACER
-        self._pila_rehacer = []    # [(Grabacion, etiqueta)] -> se pueden REHACER
-        self._grupos = []          # [(contenedor, btn_deshacer, btn_rehacer)]
-        self.boton = self.nuevo_boton(parent_boton)
+        self._pagina= pagina
+        self._main= main_window
+        self._refrescar= refrescar
+        self._nombre= nombre
+        self._pila= []            #[(Grabacion, etiqueta)] -> se pueden DESHACER
+        self._pila_rehacer= []    #[(Grabacion, etiqueta)] -> se pueden REHACER
+        self._grupos= []          #[(contenedor, btn_deshacer, btn_rehacer)]
+        self.boton= self.nuevo_boton(parent_boton)
         if atajo:
             self._registrar_atajos(solo_no_docente)
 
-    # --------------------------------------------------------
+    #--------------------------------------------------------
     def nuevo_boton(self, parent=None):
         """Crea un par de botones (Deshacer + Rehacer) dentro de un único widget
         para añadirlo a un layout con UNA línea. Varios pares comparten la MISMA
         pila: p. ej. una pantalla con varias pestañas pone uno por tabla."""
-        cont = QWidget(parent)
+        cont= QWidget(parent)
         cont.setObjectName("ContenedorDeshacerRehacer")
-        lay = QHBoxLayout(cont)
+        lay= QHBoxLayout(cont)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(6)
-        bd_ = QPushButton("Deshacer", cont)
+        bd_= QPushButton("Deshacer", cont)
         bd_.setObjectName("BtnAccionDeshacer")
         bd_.setCursor(Qt.CursorShape.PointingHandCursor)
         bd_.clicked.connect(self.deshacer)
-        br = QPushButton("Rehacer", cont)
+        br= QPushButton("Rehacer", cont)
         br.setObjectName("BtnAccionRehacer")
         br.setCursor(Qt.CursorShape.PointingHandCursor)
         br.clicked.connect(self.rehacer)
@@ -71,24 +71,24 @@ class GestorDeshacer(QObject):
         self._actualizar_botones()
         return cont
 
-    # --------------------------------------------------------
+    #--------------------------------------------------------
     def _registrar_atajos(self, solo_no_docente):
         try:
             from src.nucleo.atajos import registrar_atajo
-            existentes = {s for s, _ in getattr(self._pagina, "_atajos_registrados", [])}
+            existentes= {s for s, _ in getattr(self._pagina, "_atajos_registrados", [])}
             if "Ctrl+Z" not in existentes:
                 registrar_atajo(self._pagina, self._main, "Ctrl+Z", "Deshacer", self.deshacer,
                                 solo_no_docente=solo_no_docente)
             if "Ctrl+Y" not in existentes:
                 registrar_atajo(self._pagina, self._main, "Ctrl+Y", "Rehacer", self.rehacer,
                                 solo_no_docente=solo_no_docente)
-                # Variante habitual en otros editores; sin descripción = no se lista aparte.
+                #Variante habitual en otros editores; sin descripción = no se lista aparte.
                 registrar_atajo(self._pagina, self._main, "Ctrl+Shift+Z", "", self.rehacer,
                                 solo_no_docente=solo_no_docente)
         except Exception:
             pass
 
-    # --------------------------------------------------------
+    #--------------------------------------------------------
     @contextmanager
     def grabar(self, etiqueta="Eliminó un registro"):
         """Envuelve el borrado/edición. Al salir sin error, si hubo algo
@@ -108,13 +108,13 @@ class GestorDeshacer(QObject):
             return
         self._pila.append((g, g.etiqueta))
         del self._pila[:-MAX_NIVELES]
-        self._pila_rehacer.clear()          # una acción nueva invalida lo "rehacible"
+        self._pila_rehacer.clear()          #una acción nueva invalida lo "rehacible"
         self._actualizar_botones()
         if aviso:
             mostrar_toast(self._pagina, g.etiqueta.rstrip(".") + ".", "exito",
                           accion=self.deshacer, texto_accion="Deshacer")
-        # Los tutoriales (Modo Detallado) esperan este evento para saber que
-        # la acción real ocurrió; antes lo emitía el cuadro modal "Eliminado".
+        #Los tutoriales (Modo Detallado) esperan este evento para saber que la acción real ocurrió; antes lo emitía el
+        #cuadro modal "Eliminado".
         try:
             from src.nucleo.iconos import eventos_ui
             eventos_ui.exito_reportado.emit(self._pagina, "Eliminado", g.etiqueta)
@@ -132,7 +132,7 @@ class GestorDeshacer(QObject):
         self._pila_rehacer.clear()
         self._actualizar_botones()
 
-    # --------------------------------------------------------
+    #--------------------------------------------------------
     def _actualizar_botones(self):
         nu, nr = len(self._pila), len(self._pila_rehacer)
         for grupo in list(self._grupos):
@@ -142,24 +142,24 @@ class GestorDeshacer(QObject):
                 br.setVisible(nr > 0)
                 cont.setVisible(nu > 0 or nr > 0)
                 if nu:
-                    ultima = self._pila[-1][1]
+                    ultima= self._pila[-1][1]
                     bd_.setText("Deshacer" + (f" ({nu})" if nu > 1 else ""))
                     bd_.setToolTip(f"Deshacer: {ultima}  (Ctrl+Z)")
                     bd_.setAccessibleName(f"Deshacer: {ultima}")
                 if nr:
-                    sig = self._pila_rehacer[-1][1]
+                    sig= self._pila_rehacer[-1][1]
                     br.setText("Rehacer" + (f" ({nr})" if nr > 1 else ""))
                     br.setToolTip(f"Rehacer: {sig}  (Ctrl+Y)")
                     br.setAccessibleName(f"Rehacer: {sig}")
             except RuntimeError:
-                self._grupos.remove(grupo)   # widget ya destruido
+                self._grupos.remove(grupo)   #widget ya destruido
 
     def _auditar(self, texto):
         try:
             from src.nucleo.bd import registrar_auditoria
-            usuario = getattr(self._main, "usuario_actual", None)
-            # Mismo nombre de módulo que usan los demás registros de auditoría
-            # (p. ej. "Materias"), para que los filtros del visor los agrupen.
+            usuario= getattr(self._main, "usuario_actual", None)
+            #Mismo nombre de módulo que usan los demás registros de auditoría (p. ej. "Materias"), para que los filtros del
+            #visor los agrupen.
             registrar_auditoria(getattr(self._pagina, "NOMBRE_AUDITORIA", self._nombre),
                                 texto, usuario, "")
         except Exception:
@@ -173,7 +173,7 @@ class GestorDeshacer(QObject):
                 import traceback
                 traceback.print_exc()
 
-    # --------------------------------------------------------
+    #--------------------------------------------------------
     def deshacer(self):
         if not self._pila:
             mostrar_toast(self._pagina, "No hay nada que deshacer.", "info")
@@ -218,7 +218,7 @@ class GestorDeshacer(QObject):
 
 
 def _traducir_error(msg):
-    m = str(msg)
+    m= str(msg)
     if "UNIQUE" in m.upper():
         return "ya existe otro registro con los mismos datos únicos"
     if "FOREIGN KEY" in m.upper():

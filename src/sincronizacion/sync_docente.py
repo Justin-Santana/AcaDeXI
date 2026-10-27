@@ -31,21 +31,20 @@ Importa (en la instalación del docente):
 import json
 from datetime import datetime
 from PySide6.QtWidgets import QFileDialog
-from src.nucleo.bd import get_connection, registrar_auditoria
+from src.nucleo.bd import obtener_conexion, registrar_auditoria
 from src.nucleo.iconos import mostrar_mensaje
 from src.nucleo.permisos import puede_editar, es_profesor_restringido
 
-TIPO_PAQUETE = "acadexi_paquete_docente"
-VERSION_PAQUETE = 2
+TIPO_PAQUETE= "acadexi_paquete_docente"
+VERSION_PAQUETE= 2
 
-# Orden de exportación/importación: respeta dependencias de llaves foráneas
-# (grados/especialidades/aulas antes que secciones; secciones/materias antes
-# que estudiantes/materia_profesores/horarios).
-TABLAS_PAQUETE = ["grados", "especialidades", "aulas", "secciones", "materias",
+#Orden de exportación/importación: respeta dependencias de llaves foráneas (grados/especialidades/aulas antes
+#que secciones; secciones/materias antes que estudiantes/materia_profesores/horarios).
+TABLAS_PAQUETE= ["grados", "especialidades", "aulas", "secciones", "materias",
                    "estudiantes", "materia_profesores", "horarios"]
 
-# Nombre de hoja de Excel por tabla.
-HOJAS = {
+#Nombre de hoja de Excel por tabla.
+HOJAS= {
     "grados": "Grados",
     "especialidades": "Especialidades",
     "aulas": "Aulas",
@@ -56,9 +55,9 @@ HOJAS = {
     "horarios": "Horarios",
 }
 
-# Columnas por tabla que se incluyen en el paquete (se excluyen datos sensibles
-# como usuario_id / cuentas de acceso, que no le corresponden al docente).
-COLUMNAS = {
+#Columnas por tabla que se incluyen en el paquete (se excluyen datos sensibles como usuario_id / cuentas de
+#acceso, que no le corresponden al docente).
+COLUMNAS= {
     "grados": ["id", "nombre", "tipo", "orden"],
     "especialidades": ["id", "nombre", "codigo", "color"],
     "aulas": ["id", "nombre", "tipo", "capacidad", "especialidad_id"],
@@ -77,7 +76,7 @@ def _calcular_alcance_profesor(conn, profesor_id):
     """IDs de materias/secciones/grados/aulas/especialidades relacionados con un
     profesor específico (como titular o como co-docente vía materia_profesores),
     para poder generar un paquete acotado solo a lo que ese profesor imparte."""
-    c = conn.cursor()
+    c= conn.cursor()
     materia_ids, seccion_ids = set(), set()
     grado_ids, aula_ids, especialidad_ids = set(), set(), set()
 
@@ -112,7 +111,7 @@ def _calcular_alcance_profesor(conn, profesor_id):
                     aula_ids.add(r["aula_id"])
 
     if seccion_ids:
-        marcadores = ", ".join(["?"] * len(seccion_ids))
+        marcadores= ", ".join(["?"] * len(seccion_ids))
         c.execute(f"""SELECT id, grado_id, aula_id, especialidad_id FROM secciones
                       WHERE id IN ({marcadores})""", tuple(seccion_ids))
         for r in c.fetchall():
@@ -137,16 +136,16 @@ def _filas_tabla(c, tabla, columnas, profesor_id, alcance):
         return c.fetchall()
 
     if tabla in ("grados", "aulas", "especialidades", "secciones", "materias"):
-        ids = alcance.get(tabla, set())
+        ids= alcance.get(tabla, set())
         if not ids:
             return []
-        marcadores = ", ".join(["?"] * len(ids))
+        marcadores= ", ".join(["?"] * len(ids))
         c.execute(f"SELECT {', '.join(columnas)} FROM {tabla} WHERE id IN ({marcadores})", tuple(ids))
         return c.fetchall()
     if tabla == "estudiantes":
         if not alcance["secciones"]:
             return []
-        marcadores = ", ".join(["?"] * len(alcance["secciones"]))
+        marcadores= ", ".join(["?"] * len(alcance["secciones"]))
         c.execute(f"""SELECT {', '.join(columnas)} FROM estudiantes
                       WHERE seccion_id IN ({marcadores})""", tuple(alcance["secciones"]))
         return c.fetchall()
@@ -156,7 +155,7 @@ def _filas_tabla(c, tabla, columnas, profesor_id, alcance):
     if tabla == "horarios":
         if not alcance["materias"]:
             return []
-        marcadores = ", ".join(["?"] * len(alcance["materias"]))
+        marcadores= ", ".join(["?"] * len(alcance["materias"]))
         c.execute(f"""SELECT {', '.join(columnas)} FROM horarios
                       WHERE materia_id IN ({marcadores})""", tuple(alcance["materias"]))
         return c.fetchall()
@@ -183,11 +182,11 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
                        "Instala 'openpyxl' (pip install openpyxl) para exportar el paquete en Excel.", parent)
         return
 
-    sufijo = ""
+    sufijo= ""
     if profesor_id is not None and profesor_nombre:
-        limpio = "".join(ch if ch.isalnum() else "_" for ch in profesor_nombre.strip())
-        sufijo = f"_{limpio}"
-    nombre_sugerido = f"acadexi_docente{sufijo}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+        limpio= "".join(ch if ch.isalnum() else "_" for ch in profesor_nombre.strip())
+        sufijo= f"_{limpio}"
+    nombre_sugerido= f"acadexi_docente{sufijo}_{datetime.now().strftime('%Y%m%d')}.xlsx"
 
     ruta, _ = QFileDialog.getSaveFileName(
         parent, "Exportar Estudiantes y Cursos (Modo Docente)",
@@ -197,11 +196,11 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
     if not ruta.lower().endswith(".xlsx"):
         ruta += ".xlsx"
 
-    conn = get_connection()
-    c = conn.cursor()
-    total_filas = 0
+    conn= obtener_conexion()
+    c= conn.cursor()
+    total_filas= 0
     try:
-        alcance = _calcular_alcance_profesor(conn, profesor_id) if profesor_id is not None else None
+        alcance= _calcular_alcance_profesor(conn, profesor_id) if profesor_id is not None else None
 
         if profesor_id is not None and alcance is not None and not alcance["materias"]:
             conn.close()
@@ -211,22 +210,22 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
                            "exportar para él.", parent)
             return
 
-        wb = openpyxl.Workbook()
-        hoja_info = wb.active
-        hoja_info.title = "Info"
+        wb= openpyxl.Workbook()
+        hoja_info= wb.active
+        hoja_info.title= "Info"
         hoja_info.append(["tipo", "version", "generado", "alcance", "profesor_id"])
         hoja_info.append([TIPO_PAQUETE, VERSION_PAQUETE, datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                           "Individual" if profesor_id is not None else "Institucional",
                           profesor_id if profesor_id is not None else ""])
 
         for tabla in TABLAS_PAQUETE:
-            columnas = COLUMNAS[tabla]
-            hoja = wb.create_sheet(HOJAS[tabla])
+            columnas= COLUMNAS[tabla]
+            hoja= wb.create_sheet(HOJAS[tabla])
             hoja.append(columnas)
             try:
-                filas = _filas_tabla(c, tabla, columnas, profesor_id, alcance)
+                filas= _filas_tabla(c, tabla, columnas, profesor_id, alcance)
             except Exception:
-                # La tabla/columna puede no existir según el tipo de institución; se omite.
+                #La tabla/columna puede no existir según el tipo de institución; se omite.
                 continue
             for fila in filas:
                 hoja.append([fila[col] for col in columnas])
@@ -238,8 +237,8 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
         return
     conn.close()
 
-    detalle_auditoria = f"{total_filas} registros - {ruta}"
-    accion = "Exportó paquete de estudiantes/cursos para Modo Docente"
+    detalle_auditoria= f"{total_filas} registros - {ruta}"
+    accion= "Exportó paquete de estudiantes/cursos para Modo Docente"
     if profesor_id is not None:
         accion += f" (individual: {profesor_nombre or profesor_id})"
     registrar_auditoria("Sincronización", accion, main_window.usuario_actual, detalle_auditoria)
@@ -268,9 +267,9 @@ def importar_paquete_docente(main_window, parent=None):
         return
     try:
         if ruta.lower().endswith(".json"):
-            tablas = _leer_paquete_json(ruta)
+            tablas= _leer_paquete_json(ruta)
         else:
-            tablas = _leer_paquete_xlsx(ruta)
+            tablas= _leer_paquete_xlsx(ruta)
     except _PaqueteInvalido as e:
         mostrar_mensaje("advertencia", "Archivo inválido", str(e), parent)
         return
@@ -278,27 +277,26 @@ def importar_paquete_docente(main_window, parent=None):
         mostrar_mensaje("error", "Error", f"No se pudo leer el archivo:\n{e}", parent)
         return
 
-    conn = get_connection()
-    c = conn.cursor()
-    total_filas = 0
+    conn= obtener_conexion()
+    c= conn.cursor()
+    total_filas= 0
     try:
-        # Orden que respeta dependencias (grados/especialidades/aulas -> secciones ->
-        # materias -> estudiantes -> resto)
+        #Orden que respeta dependencias (grados/especialidades/aulas -> secciones ->
+        #materias -> estudiantes -> resto)
         for tabla in TABLAS_PAQUETE:
-            registros = tablas.get(tabla) or []
+            registros= tablas.get(tabla) or []
             if not registros:
                 continue
-            columnas = COLUMNAS[tabla]
-            marcadores = ", ".join(["?"] * len(columnas))
-            sql = f"INSERT OR REPLACE INTO {tabla} ({', '.join(columnas)}) VALUES ({marcadores})"
+            columnas= COLUMNAS[tabla]
+            marcadores= ", ".join(["?"] * len(columnas))
+            sql= f"INSERT OR REPLACE INTO {tabla} ({', '.join(columnas)}) VALUES ({marcadores})"
             for reg in registros:
-                valores = tuple(reg.get(col) for col in columnas)
+                valores= tuple(reg.get(col) for col in columnas)
                 try:
                     c.execute(sql, valores)
                     total_filas += 1
                 except Exception:
-                    # Se omite el registro puntual si no calza con el esquema local,
-                    # sin abortar el resto de la importación.
+                    #Se omite el registro puntual si no calza con el esquema local, sin abortar el resto de la importación.
                     continue
         conn.commit()
     except Exception as e:
@@ -327,41 +325,41 @@ def _leer_paquete_xlsx(ruta):
         import openpyxl
     except ImportError:
         raise RuntimeError("Instala 'openpyxl' (pip install openpyxl) para importar paquetes en Excel.")
-    wb = openpyxl.load_workbook(ruta, data_only=True)
+    wb= openpyxl.load_workbook(ruta, data_only=True)
     if "Info" not in wb.sheetnames:
         raise _PaqueteInvalido(
             "Este archivo no es un paquete válido de Estudiantes/Cursos de AcaDeXI "
             "(falta la hoja 'Info').")
-    hoja_info = wb["Info"]
-    encabezados_info = [str(v or "").strip().lower() for v in next(hoja_info.iter_rows(values_only=True), [])]
-    valores_info = next(hoja_info.iter_rows(min_row=2, max_row=2, values_only=True), None)
+    hoja_info= wb["Info"]
+    encabezados_info= [str(v or "").strip().lower() for v in next(hoja_info.iter_rows(values_only=True), [])]
+    valores_info= next(hoja_info.iter_rows(min_row=2, max_row=2, values_only=True), None)
     if not valores_info or "tipo" not in encabezados_info:
         raise _PaqueteInvalido("Este archivo no es un paquete válido de Estudiantes/Cursos de AcaDeXI.")
-    tipo = valores_info[encabezados_info.index("tipo")]
+    tipo= valores_info[encabezados_info.index("tipo")]
     if tipo != TIPO_PAQUETE:
         raise _PaqueteInvalido(
             "Este archivo no es un paquete válido de Estudiantes/Cursos de AcaDeXI.")
 
-    tablas = {}
+    tablas= {}
     for tabla in TABLAS_PAQUETE:
-        nombre_hoja = HOJAS[tabla]
+        nombre_hoja= HOJAS[tabla]
         if nombre_hoja not in wb.sheetnames:
-            tablas[tabla] = []
+            tablas[tabla]= []
             continue
-        hoja = wb[nombre_hoja]
-        filas_iter = hoja.iter_rows(values_only=True)
-        encabezados = next(filas_iter, None)
+        hoja= wb[nombre_hoja]
+        filas_iter= hoja.iter_rows(values_only=True)
+        encabezados= next(filas_iter, None)
         if not encabezados:
-            tablas[tabla] = []
+            tablas[tabla]= []
             continue
-        claves = [str(e or "").strip() for e in encabezados]
-        registros = []
+        claves= [str(e or "").strip() for e in encabezados]
+        registros= []
         for cruda in filas_iter:
             if not any(v not in (None, "") for v in cruda):
                 continue
             registros.append({claves[i]: (cruda[i] if i < len(cruda) else None)
                              for i in range(len(claves)) if claves[i]})
-        tablas[tabla] = registros
+        tablas[tabla]= registros
     return tablas
 
 
@@ -369,7 +367,7 @@ def _leer_paquete_json(ruta):
     """Compatibilidad con paquetes generados por versiones antiguas de AcaDeXI (.json).
     Los paquetes antiguos no incluían 'aulas' ni 'especialidades'; se omiten sin error."""
     with open(ruta, "r", encoding="utf-8") as f:
-        paquete = json.load(f)
+        paquete= json.load(f)
     if paquete.get("tipo") != TIPO_PAQUETE:
         raise _PaqueteInvalido("Este archivo no es un paquete válido de Estudiantes/Cursos de AcaDeXI.")
     return paquete.get("tablas", {})

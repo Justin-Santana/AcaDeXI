@@ -1,18 +1,12 @@
-# ============================================================
-# reportes.py - Reportes y Analítica
-# ------------------------------------------------------------
-# Rediseño visual: cabecera tipo "hero", tarjetas KPI e indicadores
-# circulares dibujados a mano con QPainter, mini-gráfico de barras propio,
-# transiciones animadas entre pestañas, y barra de filtros (búsqueda +
-# curso + sección) con paginación de 25 resultados en cada tabla. También
-# incorpora una pestaña de "Vista previa y edición" (reportes_editor.py)
-# para abrir, previsualizar y editar en el momento los CSV/Excel/PDF que
-# este módulo exporta.
+#Reportes.py - Reportes y Analítica Rediseño visual: cabecera tipo "hero", tarjetas KPI e indicadores
+#circulares dibujados a mano con QPainter, mini-gráfico de barras propio, transiciones animadas entre pestañas,
+#y barra de filtros (búsqueda + curso + sección) con paginación de 25 resultados en cada tabla. También
+#incorpora una pestaña de "Vista previa y edición" (reportes_editor.py) para abrir, previsualizar y editar en
+#el momento los CSV/Excel/PDF que este módulo exporta.
 #
-# Toda la lógica de datos/exportación original se conserva; lo que cambia
-# es la presentación, el filtrado/paginación de las tablas y la aparición
-# del visor de archivos.
-# ============================================================
+#Toda la lógica de datos/exportación original se conserva; lo que cambia es la presentación, el
+#filtrado/paginación de las tablas y la aparición del visor de archivos.
+#============================================================
 import csv
 import os
 import unicodedata
@@ -27,7 +21,7 @@ from PySide6.QtCore import (Qt, QTimer, QRectF, QPointF, QPropertyAnimation, QEa
     QVariantAnimation, Property)
 from PySide6.QtGui import QPainter, QPainterPath, QColor, QPen, QLinearGradient, QFontMetrics, QPixmap, QIcon
 
-from src.nucleo.bd import get_connection, registrar_auditoria
+from src.nucleo.bd import obtener_conexion, registrar_auditoria
 from src.interfaz.filtros_curso_seccion import (poblar_combo_curso, cascada_seccion_por_curso,
     poblar_combo_nivel_educativo, secciones_del_nivel_educativo)
 from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_cabecera, aplicar_icono_ventana, ICONO_FILTRO
@@ -47,14 +41,12 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_te
                           EMOJI_PROFESOR, EMOJI_VISTA_EDICION, EMOJI_SECCIONES_GRUPOS,
                           html_icono_emoji)
 
-TAM_PAGINA_REPORTES = 25
+TAM_PAGINA_REPORTES= 25
 
 
-# ============================================================
-# UTILIDADES VISUALES — puramente estéticas, no tocan datos ni lógica.
-# ============================================================
+#Utilidades visuales — puramente estéticas, no tocan datos ni lógica.
 def _hex_a_rgba(color_hex, alpha):
-    color_hex = (color_hex or "#2563EB").lstrip("#")
+    color_hex= (color_hex or "#2563EB").lstrip("#")
     r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
@@ -63,8 +55,8 @@ def _colores_tema(main_window):
     """Lee la paleta/tema activo de la ventana principal para que las tarjetas
     de este módulo respeten el tema y el modo claro/oscuro elegidos."""
     try:
-        paleta = main_window.theme_palettes[main_window.tema_actual]
-        idx = 1 if getattr(main_window, "modo_oscuro", False) else 0
+        paleta= main_window.theme_palettes[main_window.tema_actual]
+        idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
             "bg_panel": paleta["display_bg"][idx],
             "bg_btn": paleta["btn_num_bg"][idx],
@@ -82,8 +74,8 @@ def _normalizar(texto):
     """Quita mayúsculas y acentos para que la búsqueda no sea estricta."""
     if not texto:
         return ""
-    descompuesto = unicodedata.normalize("NFKD", str(texto))
-    sin_acentos = "".join(c for c in descompuesto if not unicodedata.combining(c))
+    descompuesto= unicodedata.normalize("NFKD", str(texto))
+    sin_acentos= "".join(c for c in descompuesto if not unicodedata.combining(c))
     return sin_acentos.lower()
 
 
@@ -93,22 +85,22 @@ def _icono_estudiante_gris(tamano=16, color="#94A3B8"):
     color -a diferencia del emoji EMOJI_ESTUDIANTE_RIESGO (colorido) que usan
     Dashboard y el resto de la app-, para que en la barra de pestañas se vea
     como un icono plano y sobrio en vez de un emoji llamativo."""
-    pix = QPixmap(tamano, tamano)
+    pix= QPixmap(tamano, tamano)
     pix.fill(Qt.GlobalColor.transparent)
-    p = QPainter(pix)
+    p= QPainter(pix)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
     p.setBrush(QColor(color))
     p.setPen(Qt.PenStyle.NoPen)
     p.setClipRect(0, 0, tamano, tamano)
-    # Cabeza: círculo en el tercio superior.
-    radio_cabeza = tamano * 0.19
-    cx = tamano / 2
-    cy_cabeza = tamano * 0.30
+    #Cabeza: círculo en el tercio superior.
+    radio_cabeza= tamano * 0.19
+    cx= tamano / 2
+    cy_cabeza= tamano * 0.30
     p.drawEllipse(QPointF(cx, cy_cabeza), radio_cabeza, radio_cabeza)
-    # Hombros/cuerpo: círculo grande cuya mitad superior queda recortada por
-    # el borde del pixmap, dejando ver solo el "arco" de los hombros.
-    radio_cuerpo = tamano * 0.34
-    cy_cuerpo = tamano * 0.92
+    #Hombros/cuerpo: círculo grande cuya mitad superior queda recortada por el borde del pixmap, dejando ver solo
+    #el "arco" de los hombros.
+    radio_cuerpo= tamano * 0.34
+    cy_cuerpo= tamano * 0.92
     p.drawEllipse(QPointF(cx, cy_cuerpo), radio_cuerpo, radio_cuerpo)
     p.end()
     return QIcon(pix)
@@ -131,16 +123,16 @@ class IconoLupa(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedSize(17, 17)
-        self._color = "#64748B"
+        self._color= "#64748B"
 
     def establecer_color(self, color):
-        self._color = color
+        self._color= color
         self.update()
 
     def paintEvent(self, event):
-        painter = QPainter(self)
+        painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen = QPen(QColor(self._color), 1.7)
+        pen= QPen(QColor(self._color), 1.7)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -155,12 +147,12 @@ class BotonAnimado(QPushButton):
     def __init__(self, texto="", parent=None):
         super().__init__(texto, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._sombra = QGraphicsDropShadowEffect(self)
+        self._sombra= QGraphicsDropShadowEffect(self)
         self._sombra.setColor(QColor(0, 0, 0, 70))
         self._sombra.setOffset(0, 3)
         self._sombra.setBlurRadius(0)
         self.setGraphicsEffect(self._sombra)
-        self._anim = QPropertyAnimation(self._sombra, b"blurRadius", self)
+        self._anim= QPropertyAnimation(self._sombra, b"blurRadius", self)
         self._anim.setDuration(180)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
@@ -187,59 +179,59 @@ class AnilloProgreso(QWidget):
 
     def __init__(self, color="#2563EB", grosor=9, parent=None):
         super().__init__(parent)
-        self._valor = 0.0
-        self._color = QColor(color)
-        self._color_fondo = QColor(127, 127, 127, 55)
-        self._color_texto = QColor("#0F172A")
-        self._grosor = grosor
+        self._valor= 0.0
+        self._color= QColor(color)
+        self._color_fondo= QColor(127, 127, 127, 55)
+        self._color_texto= QColor("#0F172A")
+        self._grosor= grosor
         self.setMinimumSize(84, 84)
-        self._anim = None
+        self._anim= None
 
-    def _get_valor(self):
+    def _leer_valor(self):
         return self._valor
 
-    def _set_valor(self, v):
-        self._valor = max(0.0, min(100.0, v))
+    def _poner_valor(self, v):
+        self._valor= max(0.0, min(100.0, v))
         self.update()
 
-    valor = Property(float, _get_valor, _set_valor)
+    valor= Property(float, _leer_valor, _poner_valor)
 
     def establecer_color(self, color_hex):
-        self._color = QColor(color_hex)
+        self._color= QColor(color_hex)
         self.update()
 
     def establecer_color_texto(self, color_hex):
-        self._color_texto = QColor(color_hex)
+        self._color_texto= QColor(color_hex)
         self.update()
 
     def animar_a(self, nuevo_valor, duracion=700):
-        nuevo_valor = max(0.0, min(100.0, nuevo_valor or 0.0))
-        anim = QPropertyAnimation(self, b"valor", self)
+        nuevo_valor= max(0.0, min(100.0, nuevo_valor or 0.0))
+        anim= QPropertyAnimation(self, b"valor", self)
         anim.setStartValue(self._valor)
         anim.setEndValue(nuevo_valor)
         anim.setDuration(duracion)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         anim.start()
-        self._anim = anim
+        self._anim= anim
 
     def paintEvent(self, event):
-        painter = QPainter(self)
+        painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        lado = min(self.width(), self.height()) - self._grosor
+        lado= min(self.width(), self.height()) - self._grosor
         if lado <= 0:
             return
-        rect = QRectF((self.width() - lado) / 2, (self.height() - lado) / 2, lado, lado)
-        pen_fondo = QPen(self._color_fondo, self._grosor)
+        rect= QRectF((self.width() - lado) / 2, (self.height() - lado) / 2, lado, lado)
+        pen_fondo= QPen(self._color_fondo, self._grosor)
         pen_fondo.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen_fondo)
         painter.drawArc(rect, 0, 360 * 16)
-        pen_valor = QPen(self._color, self._grosor)
+        pen_valor= QPen(self._color, self._grosor)
         pen_valor.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen_valor)
-        angulo_span = int(-self._valor / 100 * 360 * 16)
+        angulo_span= int(-self._valor / 100 * 360 * 16)
         painter.drawArc(rect, 90 * 16, angulo_span)
         painter.setPen(self._color_texto)
-        fuente = painter.font()
+        fuente= painter.font()
         fuente.setBold(True)
         fuente.setPointSize(max(9, int(lado / 6)))
         painter.setFont(fuente)
@@ -252,85 +244,83 @@ class MiniBarras(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._categorias = []
-        self._valores = []
-        self._maximo = 1
-        self._color = QColor("#6366F1")
-        self._color_texto = QColor("#334155")
-        self._progreso = 0.0
+        self._categorias= []
+        self._valores= []
+        self._maximo= 1
+        self._color= QColor("#6366F1")
+        self._color_texto= QColor("#334155")
+        self._progreso= 0.0
         self.setMinimumHeight(170)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self._anim = None
-        # Zonas (rect por columna, nombre completo) usadas para mostrar un
-        # tooltip con el nombre íntegro de la materia al pasar el mouse:
-        # las etiquetas debajo de cada barra se elide dinámicamente en
-        # paintEvent según el espacio disponible, así que en varios casos
-        # el texto visible queda cortado ("Lengua Esp…") y solo el tooltip
-        # deja ver el nombre completo -mismo comportamiento que ya tienen
-        # los mini-gráficos de materias.py y personal.py-.
-        self._zonas_barras = []
+        self._anim= None
+        #Zonas (rect por columna, nombre completo) usadas para mostrar un
+        #tooltip con el nombre íntegro de la materia al pasar el mouse:
+        #las etiquetas debajo de cada barra se elide dinámicamente en paintEvent según el espacio disponible, así que
+        #en varios casos el texto visible queda cortado ("Lengua Esp…") y solo el tooltip deja ver el nombre completo
+        #-mismo comportamiento que ya tienen los mini-gráficos de materias.py y personal.py-.
+        self._zonas_barras= []
         self.setMouseTracking(True)
 
-    def _get_progreso(self):
+    def _leer_progreso(self):
         return self._progreso
 
-    def _set_progreso(self, v):
-        self._progreso = v
+    def _poner_progreso(self, v):
+        self._progreso= v
         self.update()
 
-    progreso = Property(float, _get_progreso, _set_progreso)
+    progreso= Property(float, _leer_progreso, _poner_progreso)
 
     def establecer_color(self, color_hex):
-        self._color = QColor(color_hex)
+        self._color= QColor(color_hex)
         self.update()
 
     def establecer_color_texto(self, color_hex):
-        self._color_texto = QColor(color_hex)
+        self._color_texto= QColor(color_hex)
         self.update()
 
     def establecer_datos(self, categorias, valores, maximo=None):
-        self._categorias = list(categorias)
-        self._valores = list(valores)
-        self._maximo = maximo or (max(valores) if valores else 1) or 1
-        self._progreso = 0.0
-        anim = QPropertyAnimation(self, b"progreso", self)
+        self._categorias= list(categorias)
+        self._valores= list(valores)
+        self._maximo= maximo or (max(valores) if valores else 1) or 1
+        self._progreso= 0.0
+        anim= QPropertyAnimation(self, b"progreso", self)
         anim.setStartValue(0.0)
         anim.setEndValue(1.0)
         anim.setDuration(600)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         anim.start()
-        self._anim = anim
+        self._anim= anim
         self.update()
 
     def paintEvent(self, event):
-        painter = QPainter(self)
+        painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if not self._valores:
-            self._zonas_barras = []
+            self._zonas_barras= []
             painter.setPen(self._color_texto)
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter,
                             "Todavía no hay suficientes calificaciones para graficar.")
             return
-        n = len(self._valores)
-        margen = 12
-        ancho_disp = max(1, self.width() - margen * 2)
-        alto_disp = max(1, self.height() - 46)
-        espacio = ancho_disp / n
-        ancho_barra = max(10, espacio * 0.5)
-        fuente_val = painter.font()
+        n= len(self._valores)
+        margen= 12
+        ancho_disp= max(1, self.width() - margen * 2)
+        alto_disp= max(1, self.height() - 46)
+        espacio= ancho_disp / n
+        ancho_barra= max(10, espacio * 0.5)
+        fuente_val= painter.font()
         fuente_val.setBold(True)
         fuente_val.setPointSize(9)
-        fuente_cat = painter.font()
+        fuente_cat= painter.font()
         fuente_cat.setPointSize(8)
-        self._zonas_barras = []
+        self._zonas_barras= []
         for i, (cat, val) in enumerate(zip(self._categorias, self._valores)):
-            factor = (val / self._maximo) if self._maximo else 0
-            h = alto_disp * max(0.0, min(1.0, factor)) * self._progreso
-            x = margen + i * espacio + (espacio - ancho_barra) / 2
-            y = alto_disp - h + 14
-            ruta = QPainterPath()
+            factor= (val / self._maximo) if self._maximo else 0
+            h= alto_disp * max(0.0, min(1.0, factor)) * self._progreso
+            x= margen + i * espacio + (espacio - ancho_barra) / 2
+            y= alto_disp - h + 14
+            ruta= QPainterPath()
             ruta.addRoundedRect(QRectF(x, y, ancho_barra, max(h, 0.0)), 6, 6)
-            gradiente = QLinearGradient(0, y, 0, y + max(h, 1))
+            gradiente= QLinearGradient(0, y, 0, y + max(h, 1))
             gradiente.setColorAt(0, self._color.lighter(125))
             gradiente.setColorAt(1, self._color)
             painter.fillPath(ruta, gradiente)
@@ -339,25 +329,21 @@ class MiniBarras(QWidget):
             painter.drawText(QRectF(x - 12, y - 16, ancho_barra + 24, 14),
                             Qt.AlignmentFlag.AlignCenter, f"{val:.1f}")
             painter.setFont(fuente_cat)
-            # Antes se cortaba a un número fijo de caracteres (10-11) sin
-            # importar el espacio real disponible, así que con pocas barras
-            # (mucho espacio libre) el nombre de la materia se veía
-            # "entrecortado" de forma innecesaria (p. ej. "Lengua Esp…").
-            # Ahora se elide dinámicamente según el ancho real de cada
-            # columna, usando todo el espacio disponible.
-            ancho_etiqueta = ancho_barra + 32
-            fm = QFontMetrics(fuente_cat)
-            rect_etiqueta = QRectF(x - 16, alto_disp + 16, ancho_etiqueta, 20)
-            texto_cat = fm.elidedText(cat, Qt.TextElideMode.ElideRight, int(ancho_etiqueta))
+            #Antes se cortaba a un número fijo de caracteres (10-11) sin importar el espacio real disponible, así que con
+            #pocas barras (mucho espacio libre) el nombre de la materia se veía "entrecortado" de forma innecesaria (p. ej.
+            #"Lengua Esp…"). Ahora se elide dinámicamente según el ancho real de cada columna, usando todo el espacio
+            #disponible.
+            ancho_etiqueta= ancho_barra + 32
+            fm= QFontMetrics(fuente_cat)
+            rect_etiqueta= QRectF(x - 16, alto_disp + 16, ancho_etiqueta, 20)
+            texto_cat= fm.elidedText(cat, Qt.TextElideMode.ElideRight, int(ancho_etiqueta))
             painter.drawText(rect_etiqueta, Qt.AlignmentFlag.AlignCenter, texto_cat)
-            # Zona sensible para el tooltip: solo el texto de la etiqueta
-            # (no la barra ni el resto de la columna), para que el tooltip
-            # con el nombre completo aparezca únicamente al pasar el mouse
-            # sobre el texto, no sobre el gráfico.
+            #Zona sensible para el tooltip: solo el texto de la etiqueta (no la barra ni el resto de la columna), para que
+            #el tooltip con el nombre completo aparezca únicamente al pasar el mouse sobre el texto, no sobre el gráfico.
             self._zonas_barras.append((rect_etiqueta, cat))
 
     def mouseMoveEvent(self, event):
-        pos = event.position() if hasattr(event, "position") else event.pos()
+        pos= event.position() if hasattr(event, "position") else event.pos()
         for rect, cat in self._zonas_barras:
             if rect.contains(pos):
                 QToolTip.showText(event.globalPosition().toPoint(), cat, self)
@@ -378,53 +364,53 @@ class TarjetaKPI(QFrame):
     def __init__(self, icono, titulo, color_acento="#2563EB", parent=None):
         super().__init__(parent)
         self.setObjectName("TarjetaKPI")
-        self._color_acento = color_acento
-        self._valor_actual = 0
-        self._anim_valor = None
+        self._color_acento= color_acento
+        self._valor_actual= 0
+        self._anim_valor= None
 
-        self._sombra = QGraphicsDropShadowEffect(self)
+        self._sombra= QGraphicsDropShadowEffect(self)
         self._sombra.setColor(QColor(0, 0, 0, 45))
         self._sombra.setOffset(0, 3)
         self._sombra.setBlurRadius(14)
         self.setGraphicsEffect(self._sombra)
-        self._anim_sombra = QPropertyAnimation(self._sombra, b"blurRadius", self)
+        self._anim_sombra= QPropertyAnimation(self._sombra, b"blurRadius", self)
         self._anim_sombra.setDuration(180)
         self._anim_sombra.setEasingCurve(QEasingCurve.Type.OutCubic)
 
-        layout = QVBoxLayout(self)
+        layout= QVBoxLayout(self)
         layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(4)
 
-        self.lbl_icono = QLabel()
+        self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji(icono, 26))
         self.lbl_icono.setObjectName("IconoKPI")
         self.lbl_icono.setFixedSize(38, 38)
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.lbl_icono)
 
-        self.lbl_valor = QLabel("--")
+        self.lbl_valor= QLabel("--")
         self.lbl_valor.setObjectName("ValorKPI")
         layout.addWidget(self.lbl_valor)
 
-        self.lbl_titulo = QLabel(titulo)
+        self.lbl_titulo= QLabel(titulo)
         self.lbl_titulo.setObjectName("TituloKPI")
         self.lbl_titulo.setWordWrap(True)
         layout.addWidget(self.lbl_titulo)
 
     def establecer_valor_animado(self, valor_final, sufijo=""):
-        valor_inicial = self._valor_actual
-        self._valor_actual = valor_final
+        valor_inicial= self._valor_actual
+        self._valor_actual= valor_final
         if valor_inicial == valor_final:
             self.lbl_valor.setText(f"{valor_final}{sufijo}")
             return
-        anim = QVariantAnimation(self)
+        anim= QVariantAnimation(self)
         anim.setStartValue(valor_inicial)
         anim.setEndValue(valor_final)
         anim.setDuration(500)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         anim.valueChanged.connect(lambda v: self.lbl_valor.setText(f"{int(v)}{sufijo}"))
         anim.start()
-        self._anim_valor = anim
+        self._anim_valor= anim
 
     def enterEvent(self, event):
         self._anim_sombra.stop()
@@ -449,31 +435,31 @@ class TarjetaKPIAnillo(QFrame):
         super().__init__(parent)
         self.setObjectName("TarjetaKPI")
 
-        self._sombra = QGraphicsDropShadowEffect(self)
+        self._sombra= QGraphicsDropShadowEffect(self)
         self._sombra.setColor(QColor(0, 0, 0, 45))
         self._sombra.setOffset(0, 3)
         self._sombra.setBlurRadius(14)
         self.setGraphicsEffect(self._sombra)
-        self._anim_sombra = QPropertyAnimation(self._sombra, b"blurRadius", self)
+        self._anim_sombra= QPropertyAnimation(self._sombra, b"blurRadius", self)
         self._anim_sombra.setDuration(180)
         self._anim_sombra.setEasingCurve(QEasingCurve.Type.OutCubic)
 
-        layout = QHBoxLayout(self)
+        layout= QHBoxLayout(self)
         layout.setContentsMargins(18, 14, 18, 14)
         layout.setSpacing(16)
 
-        self.anillo = AnilloProgreso(color=color)
+        self.anillo= AnilloProgreso(color=color)
         layout.addWidget(self.anillo)
 
-        bloque = QVBoxLayout()
+        bloque= QVBoxLayout()
         bloque.setSpacing(4)
-        self.lbl_icono = QLabel()
+        self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji(icono, 24))
         self.lbl_icono.setObjectName("IconoKPI")
         self.lbl_icono.setFixedSize(34, 34)
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         bloque.addWidget(self.lbl_icono)
-        self.lbl_titulo = QLabel(titulo)
+        self.lbl_titulo= QLabel(titulo)
         self.lbl_titulo.setObjectName("TituloKPI")
         self.lbl_titulo.setWordWrap(True)
         bloque.addWidget(self.lbl_titulo)
@@ -498,85 +484,78 @@ class TarjetaKPIAnillo(QFrame):
         super().leaveEvent(event)
 
 
-# ============================================================
-# MÓDULO PRINCIPAL
-# ============================================================
+#Módulo principal
 class ModuloReportes(QWidget):
     def __init__(self, main_window):
         super().__init__(main_window)
-        self.main_window = main_window
-        self._paneles = {}
-        self._cache_materias_docente = None
-        self._indices_pestanas = {}
-        # Se define ANTES de _build_ui(): al agregar la primera pestaña con
-        # self.tabs.addTab(...), Qt puede disparar currentChanged de
-        # inmediato (para la pestaña 0), y ese handler
-        # (_construir_visor_editor_diferido) ya comprueba self.visor_editor
-        # -si el atributo todavía no existiera en ese punto, reventaba con
-        # AttributeError apenas se abría el módulo.
-        self.visor_editor = None
-        self._rutas_recientes_reportes = []
+        self.main_window= main_window
+        self._paneles= {}
+        self._cache_materias_docente= None
+        self._indices_pestanas= {}
+        #Se define ANTES de _build_ui(): al agregar la primera pestaña con
+        #self.tabs.addTab(...), Qt puede disparar currentChanged de
+        #inmediato (para la pestaña 0), y ese handler
+        #(_construir_visor_editor_diferido) ya comprueba self.visor_editor -si el atributo todavía no existiera en ese
+        #punto, reventaba con AttributeError apenas se abría el módulo.
+        self.visor_editor= None
+        self._rutas_recientes_reportes= []
         self._build_ui()
         self.refrescar()
         self.actualizar_tema()
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
-        self._titulo_modulo_atajos = "Reportes"
+        self._titulo_modulo_atajos= "Reportes"
         registrar_atajo(self, self.main_window, "F5", "Actualizar todos los reportes", self.refrescar)
         registrar_atajo(self, self.main_window, "Ctrl+Shift+X", "Exportar reporte institucional (CSV)",
                          self._exportar_institucional_csv)
 
-    # ------------------------------------------------------------
-    # NAVEGACIÓN DESDE OTROS MÓDULOS (p. ej. la tarjeta KPI "Estudiantes en
-    # Riesgo" del Dashboard, tanto el institucional como el de Docentes)
-    # ------------------------------------------------------------
+    #Navegación desde otros módulos (p. ej. la tarjeta KPI "Estudiantes en Riesgo" del Dashboard, tanto el
+    #institucional como el de Docentes)
     def showEvent(self, event):
         super().showEvent(event)
-        pendiente = getattr(self.main_window, "_pestana_pendiente_dashboard", None)
+        pendiente= getattr(self.main_window, "_pestana_pendiente_dashboard", None)
         if pendiente:
-            self.main_window._pestana_pendiente_dashboard = None
-            indice = self._indices_pestanas.get(pendiente)
+            self.main_window._pestana_pendiente_dashboard= None
+            indice= self._indices_pestanas.get(pendiente)
             if indice is not None:
                 self.tabs.setCurrentIndex(indice)
 
-    # ------------------------------------------------------------
-    # CONSTRUCCIÓN DE LA INTERFAZ
-    # ------------------------------------------------------------
+    #Construcción de la interfaz
     def _build_ui(self):
-        layout_raiz = QVBoxLayout(self)
+        layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
-        scroll = QScrollArea()
+        scroll= QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
-        contenido = QWidget()
-        layout = QVBoxLayout(contenido)
+        contenido= QWidget()
+        layout= QVBoxLayout(contenido)
         layout.setContentsMargins(30, 25, 30, 25)
         layout.setSpacing(18)
 
-        # --- Cabecera tipo "hero" ---
-        self.frame_cabecera = QFrame()
+        #--- Cabecera tipo "hero" ---
+        self.frame_cabecera= QFrame()
         self.frame_cabecera.setObjectName("TarjetaCabecera")
-        cabecera_layout = QHBoxLayout(self.frame_cabecera)
+        cabecera_layout= QHBoxLayout(self.frame_cabecera)
         cabecera_layout.setContentsMargins(22, 18, 22, 18)
         cabecera_layout.setSpacing(14)
 
-        self.lbl_icono_modulo = QLabel()
+        self.lbl_icono_modulo= QLabel()
         self.lbl_icono_modulo.setObjectName("IconoCabeceraModulo")
         self.lbl_icono_modulo.setFixedSize(46, 46)
         self.lbl_icono_modulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         aplicar_icono_cabecera(self.lbl_icono_modulo, "Reportes")
         cabecera_layout.addWidget(self.lbl_icono_modulo)
 
-        bloque_titulo = QVBoxLayout()
+        bloque_titulo= QVBoxLayout()
         bloque_titulo.setSpacing(2)
-        self.lbl_titulo_cabecera = QLabel("Reportes y Analítica")
+        self.lbl_titulo_cabecera= QLabel("Reportes y Analítica")
         self.lbl_titulo_cabecera.setObjectName("TituloCabeceraModulo")
-        self.lbl_subtitulo_cabecera = QLabel(
+        self.lbl_subtitulo_cabecera= QLabel(
             "Indicadores institucionales, rendimiento académico y exportación de reportes")
         self.lbl_subtitulo_cabecera.setObjectName("SubtituloCabeceraModulo")
         self.lbl_subtitulo_cabecera.setWordWrap(True)
@@ -584,30 +563,28 @@ class ModuloReportes(QWidget):
         bloque_titulo.addWidget(self.lbl_subtitulo_cabecera)
         cabecera_layout.addLayout(bloque_titulo, 1)
 
-        self.chip_actualizado = QLabel("--")
+        self.chip_actualizado= QLabel("--")
         self.chip_actualizado.setObjectName("ChipContador")
         cabecera_layout.addWidget(self.chip_actualizado, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self.btn_actualizar_todo = BotonAnimado("Actualizar todo")
+        self.btn_actualizar_todo= BotonAnimado("Actualizar todo")
         self.btn_actualizar_todo.clicked.connect(self.refrescar)
         cabecera_layout.addWidget(self.btn_actualizar_todo)
 
         layout.addWidget(self.frame_cabecera)
 
-        # --- Pestañas con transición animada ---
-        # TabWidgetNavegable (la misma que usan Configuración y el consolidado
-        # de Asistencia) para poder moverse entre pestañas con las flechas
-        # izquierda/derecha del teclado, sin importar dónde haya quedado el foco.
-        self.tabs = TabWidgetNavegable()
+        #--- Pestañas con transición animada ---
+        #TabWidgetNavegable (la misma que usan Configuración y el consolidado
+        #de Asistencia) para poder moverse entre pestañas con las flechas izquierda/derecha del teclado, sin importar
+        #dónde haya quedado el foco.
+        self.tabs= TabWidgetNavegable()
         self.tabs.currentChanged.connect(self._animar_cambio_tab)
         self.tabs.currentChanged.connect(self._construir_visor_editor_diferido)
         layout.addWidget(self.tabs)
         if self._es_docente():
-            # Un docente NO debería ver analítica de todo el colegio
-            # (Institucional, Cuadro de Honor, Rendimiento Técnico, PDF con
-            # gráficos institucionales): solo lo que le compete a él mismo, y
-            # ya filtrado a sus propias materias.
-            self._indices_pestanas["riesgo"] = self.tabs.count()
+            #Un docente NO debería ver analítica de todo el colegio (Institucional, Cuadro de Honor, Rendimiento Técnico,
+            #PDF con gráficos institucionales): solo lo que le compete a él mismo, y ya filtrado a sus propias materias.
+            self._indices_pestanas["riesgo"]= self.tabs.count()
             self.tabs.addTab(self._tab_riesgo(), "Estudiantes en Riesgo")
             self.tabs.addTab(self._tab_excelencia(), "Mis Mejores Estudiantes")
             self.tabs.addTab(self._tab_asistencia(), "Consolidado de Asistencia")
@@ -615,7 +592,7 @@ class ModuloReportes(QWidget):
             self.tabs.addTab(self._tab_vista_previa(), "Vista Previa y Edición")
         else:
             self.tabs.addTab(self._tab_institucional(), "Institucional")
-            self._indices_pestanas["riesgo"] = self.tabs.count()
+            self._indices_pestanas["riesgo"]= self.tabs.count()
             self.tabs.addTab(self._tab_riesgo(), "Estudiantes en Riesgo")
             self.tabs.addTab(self._tab_excelencia(), "Cuadro de Honor")
             self.tabs.addTab(self._tab_asistencia(), "Consolidado de Asistencia")
@@ -625,11 +602,9 @@ class ModuloReportes(QWidget):
             self.tabs.addTab(self._tab_exportacion_masiva(), "Exportación Masiva (Excel)")
             self.tabs.addTab(self._tab_vista_previa(), "Vista Previa y Edición")
 
-        # Iconos explícitos de pestaña (con prioridad sobre el iconizador
-        # automático de iconos_auto.py): "Estudiantes en Riesgo" reutiliza
-        # el mismo icono de estudiante+alerta del Dashboard, y "Vista Previa
-        # y Edición" tiene un icono propio -un archivo que se ve y se edita
-        # a la vez- en vez de quedar sin ninguno o con uno genérico.
+        #Iconos explícitos de pestaña (con prioridad sobre el iconizador automático de iconos_auto.py): "Estudiantes en
+        #Riesgo" reutiliza el mismo icono de estudiante+alerta del Dashboard, y "Vista Previa y Edición" tiene un icono
+        #propio -un archivo que se ve y se edita a la vez- en vez de quedar sin ninguno o con uno genérico.
         self.tabs.setTabIcon(self._indices_pestanas["riesgo"], _icono_estudiante_gris())
         self.tabs.setTabIcon(self.tabs.count() - 1, icono_emoji(EMOJI_VISTA_EDICION))
 
@@ -665,10 +640,9 @@ class ModuloReportes(QWidget):
         return tipo == "Personalizado" and "Politécnico" in personalizados and "Universidad" in personalizados
 
     def _es_docente(self):
-        # OJO: el rol se guarda/compara en toda la app como "Profesor" (ver
-        # configuracion.py: `rol in ("Profesor", "Administrativo")`), no como
-        # "Docente". Con el valor equivocado esta función nunca daba True y
-        # el profesor terminaba viendo TODAS las pestañas institucionales.
+        #OJO: el rol se guarda/compara en toda la app como "Profesor" (ver configuracion.py: `rol in ("Profesor",
+        #"Administrativo")`), no como "Docente". Con el valor equivocado esta función nunca daba True y el profesor
+        #terminaba viendo TODAS las pestañas institucionales.
         return getattr(self.main_window, "rol_actual", None) == "Profesor"
 
     def _materias_docente(self):
@@ -678,20 +652,20 @@ class ModuloReportes(QWidget):
         exportaciones) y las materias de alguien no cambian mientras tiene la
         sesión abierta."""
         if not self._es_docente():
-            return None  # None = "sin restricción" (no es docente)
+            return None  #None = "sin restricción" (no es docente)
         if self._cache_materias_docente is not None:
             return self._cache_materias_docente
-        profesor_id = obtener_profesor_id(self.main_window)
+        profesor_id= obtener_profesor_id(self.main_window)
         if profesor_id is None:
-            self._cache_materias_docente = set()
+            self._cache_materias_docente= set()
             return self._cache_materias_docente
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("""SELECT DISTINCT materias.id FROM materias
                      LEFT JOIN materia_profesores ON materia_profesores.materia_id = materias.id
                      WHERE materias.profesor_id=? OR materia_profesores.profesor_id=?""",
                   (profesor_id, profesor_id))
-        self._cache_materias_docente = {f["id"] for f in c.fetchall()}
+        self._cache_materias_docente= {f["id"] for f in c.fetchall()}
         conn.close()
         return self._cache_materias_docente
 
@@ -701,50 +675,47 @@ class ModuloReportes(QWidget):
         Si no es docente (o no tiene materias), devuelve ("", []) -sin
         restricción- para no tocar el comportamiento de Administrador/
         Director/Coordinador."""
-        materias = self._materias_docente()
+        materias= self._materias_docente()
         if materias is None:
             return "", []
         if not materias:
-            return f" AND {columna_materia_id} IS NULL AND 0", []  # docente sin materias: no ve nada
-        placeholders = ",".join("?" for _ in materias)
+            return f" AND {columna_materia_id} IS NULL AND 0", []  #docente sin materias: no ve nada
+        placeholders= ",".join("?" for _ in materias)
         return f" AND {columna_materia_id} IN ({placeholders})", list(materias)
 
     def _animar_cambio_tab(self, indice):
-        widget = self.tabs.widget(indice)
+        widget= self.tabs.widget(indice)
         if widget is None:
             return
-        efecto = QGraphicsOpacityEffect(widget)
+        efecto= QGraphicsOpacityEffect(widget)
         widget.setGraphicsEffect(efecto)
-        anim = QPropertyAnimation(efecto, b"opacity", self)
+        anim= QPropertyAnimation(efecto, b"opacity", self)
         anim.setStartValue(0.0)
         anim.setEndValue(1.0)
         anim.setDuration(220)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         anim.finished.connect(lambda: widget.setGraphicsEffect(None))
         anim.start()
-        self._anim_tab = anim
+        self._anim_tab= anim
 
     def _animar_chip(self, chip, valor, singular, plural=None):
-        plural = plural or (singular + "s")
-        texto = f"🔎 {valor} " + (singular if valor == 1 else plural)
+        plural= plural or (singular + "s")
+        texto= f"🔎 {valor} " + (singular if valor == 1 else plural)
         chip.setText(texto)
 
     def _animar_fundido_tabla(self, tabla):
-        efecto = QGraphicsOpacityEffect(tabla)
+        efecto= QGraphicsOpacityEffect(tabla)
         tabla.setGraphicsEffect(efecto)
-        anim = QPropertyAnimation(efecto, b"opacity", self)
+        anim= QPropertyAnimation(efecto, b"opacity", self)
         anim.setStartValue(0.55)
         anim.setEndValue(1.0)
         anim.setDuration(160)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         anim.finished.connect(lambda: tabla.setGraphicsEffect(None))
         anim.start()
-        tabla._anim_fundido = anim  # referencia viva mientras corre la animación
+        tabla._anim_fundido= anim  #referencia viva mientras corre la animación
 
-    # ------------------------------------------------------------
-    # BARRA DE FILTROS REUTILIZABLE (búsqueda + curso + sección /
-    # búsqueda + especialidad, según la tabla)
-    # ------------------------------------------------------------
+    #Barra de filtros reutilizable (búsqueda + curso + sección / búsqueda + especialidad, según la tabla)
     def _crear_barra_filtros(self, placeholder_busqueda, con_curso_seccion=True, con_especialidad=False,
                               titulo_filtros="Filtros"):
         """Crea la barra de filtros compartida por las pestañas de listado
@@ -756,128 +727,128 @@ class ModuloReportes(QWidget):
         calendario.py/banco_tareas.py/observaciones.py. Los widgets viven
         exactamente igual que antes (mismos objetos, mismas señales); lo
         único que cambia es dónde se dibujan."""
-        frame = QFrame()
+        frame= QFrame()
         frame.setObjectName("TarjetaFiltros")
-        lay_frame = QVBoxLayout(frame)
+        lay_frame= QVBoxLayout(frame)
         lay_frame.setContentsMargins(14, 10, 14, 10)
         lay_frame.setSpacing(8)
 
-        combo_nivel = None
+        combo_nivel= None
         if con_curso_seccion:
-            combo_nivel = QComboBox()
+            combo_nivel= QComboBox()
             conectar_tooltip_seleccion(combo_nivel, "Filtrar por nivel educativo (se combina con Curso/Sección)")
 
-        lbl_filtro_especialidad_rep = None
-        combo_filtro_especialidad_rep = None
-        lbl_filtro_carrera_rep = None
-        combo_filtro_carrera_rep = None
+        lbl_filtro_especialidad_rep= None
+        combo_filtro_especialidad_rep= None
+        lbl_filtro_carrera_rep= None
+        combo_filtro_carrera_rep= None
         if con_curso_seccion:
-            lbl_filtro_especialidad_rep = QLabel("Área Técnica:")
-            combo_filtro_especialidad_rep = QComboBox()
+            lbl_filtro_especialidad_rep= QLabel("Área Técnica:")
+            combo_filtro_especialidad_rep= QComboBox()
             combo_filtro_especialidad_rep.setToolTip("Filtrar por área técnica del estudiante (Politécnico)")
             conectar_tooltip_seleccion(combo_filtro_especialidad_rep,
                 "Filtrar por área técnica del estudiante (Politécnico)")
 
-            lbl_filtro_carrera_rep = QLabel("Carrera:")
-            combo_filtro_carrera_rep = QComboBox()
+            lbl_filtro_carrera_rep= QLabel("Carrera:")
+            combo_filtro_carrera_rep= QComboBox()
             combo_filtro_carrera_rep.setToolTip("Filtrar por carrera del estudiante (Universidad)")
             conectar_tooltip_seleccion(combo_filtro_carrera_rep, "Filtrar por carrera del estudiante (Universidad)")
 
-            es_poli = self._es_politecnico()
-            es_uni = self._es_universidad()
+            es_poli= self._es_politecnico()
+            es_uni= self._es_universidad()
             lbl_filtro_especialidad_rep.setVisible(es_poli)
             combo_filtro_especialidad_rep.setVisible(es_poli)
             lbl_filtro_carrera_rep.setVisible(es_uni)
             combo_filtro_carrera_rep.setVisible(es_uni)
 
-        combo_curso = None
-        combo_seccion = None
+        combo_curso= None
+        combo_seccion= None
         if con_curso_seccion:
-            combo_curso = QComboBox()
+            combo_curso= QComboBox()
             combo_curso.setToolTip("Filtrar por curso/grado")
-            combo_seccion = QComboBox()
+            combo_seccion= QComboBox()
             combo_seccion.setToolTip("Filtrar por sección")
 
-        combo_especialidad = None
+        combo_especialidad= None
         if con_especialidad:
-            combo_especialidad = QComboBox()
+            combo_especialidad= QComboBox()
             conectar_tooltip_seleccion(combo_especialidad, "Filtrar por especialidad")
 
-        fila = QHBoxLayout()
+        fila= QHBoxLayout()
         fila.setSpacing(10)
         lay_frame.addLayout(fila)
 
-        marco_busqueda = QFrame()
+        marco_busqueda= QFrame()
         marco_busqueda.setObjectName("MarcoBusqueda")
-        lay_busqueda = QHBoxLayout(marco_busqueda)
+        lay_busqueda= QHBoxLayout(marco_busqueda)
         lay_busqueda.setContentsMargins(12, 0, 10, 0)
         lay_busqueda.setSpacing(6)
-        icono = IconoLupa()
+        icono= IconoLupa()
         lay_busqueda.addWidget(icono)
-        in_buscar = QLineEdit()
+        in_buscar= QLineEdit()
         limitar_campo_texto(in_buscar, 150)
         in_buscar.setPlaceholderText(placeholder_busqueda)
         in_buscar.setObjectName("InputBusquedaFiltro")
         lay_busqueda.addWidget(in_buscar, 1)
         fila.addWidget(marco_busqueda, 1)
 
-        btn_limpiar = QPushButton("Limpiar")
+        btn_limpiar= QPushButton("Limpiar")
         btn_limpiar.setIcon(icono_emoji("🧹"))
         btn_limpiar.setIconSize(_QSize_emoji(16, 16))
         btn_limpiar.setObjectName("BtnLimpiarFiltro")
         btn_limpiar.setCursor(Qt.CursorShape.PointingHandCursor)
         fila.addWidget(btn_limpiar)
 
-        chip_resultado = QLabel("0 resultados")
+        chip_resultado= QLabel("0 resultados")
         chip_resultado.setObjectName("ChipResultadoFiltro")
         fila.addWidget(chip_resultado)
 
-        dialogo_filtros = None
-        btn_filtros = None
+        dialogo_filtros= None
+        btn_filtros= None
         if con_curso_seccion or con_especialidad:
-            btn_filtros = QPushButton("Filtros")
+            btn_filtros= QPushButton("Filtros")
             icono_boton_filtro(btn_filtros)
             btn_filtros.setIconSize(_QSize_emoji(16, 16))
             btn_filtros.setObjectName("BtnAccionNeutro")
             btn_filtros.setCursor(Qt.CursorShape.PointingHandCursor)
             fila.addWidget(btn_filtros)
 
-            dialogo_filtros = QDialog(self)
+            dialogo_filtros= QDialog(self)
             dialogo_filtros.setObjectName("DialogoFiltrosReportes")
             dialogo_filtros.setWindowTitle(titulo_filtros)
             aplicar_icono_ventana(dialogo_filtros, ICONO_FILTRO)
             dialogo_filtros.setModal(False)
             dialogo_filtros.setMinimumWidth(340)
-            lay_dialogo = QVBoxLayout(dialogo_filtros)
+            lay_dialogo= QVBoxLayout(dialogo_filtros)
             lay_dialogo.setContentsMargins(20, 18, 20, 18)
             lay_dialogo.setSpacing(12)
 
-            fila_encabezado = QHBoxLayout()
+            fila_encabezado= QHBoxLayout()
             fila_encabezado.setSpacing(8)
-            icono_encabezado = QLabel()
+            icono_encabezado= QLabel()
             pixmap_boton_filtro(icono_encabezado, 20)
             icono_encabezado.setObjectName("IconoEncabezadoFiltrosRep")
             fila_encabezado.addWidget(icono_encabezado)
-            titulo_encabezado = QLabel("Filtros")
+            titulo_encabezado= QLabel("Filtros")
             titulo_encabezado.setObjectName("TituloEncabezadoFiltrosRep")
             fila_encabezado.addWidget(titulo_encabezado)
             fila_encabezado.addStretch()
             lay_dialogo.addLayout(fila_encabezado)
 
-            subtitulo = QLabel("Todos son opcionales; se combinan con la búsqueda.")
+            subtitulo= QLabel("Todos son opcionales; se combinan con la búsqueda.")
             subtitulo.setObjectName("SubtituloFiltrosRep")
             subtitulo.setWordWrap(True)
             lay_dialogo.addWidget(subtitulo)
 
-            separador = QFrame()
+            separador= QFrame()
             separador.setFrameShape(QFrame.Shape.HLine)
             separador.setObjectName("SeparadorFiltrosRep")
             lay_dialogo.addWidget(separador)
 
-            grid = QGridLayout()
+            grid= QGridLayout()
             grid.setSpacing(10)
             grid.setColumnStretch(1, 1)
-            fila_grid = 0
+            fila_grid= 0
             if con_curso_seccion:
                 grid.addWidget(QLabel("Nivel Educativo:"), fila_grid, 0)
                 grid.addWidget(combo_nivel, fila_grid, 1)
@@ -900,9 +871,9 @@ class ModuloReportes(QWidget):
                 fila_grid += 1
             lay_dialogo.addLayout(grid)
 
-            fila_botones = QHBoxLayout()
+            fila_botones= QHBoxLayout()
             fila_botones.addStretch()
-            btn_cerrar = QPushButton("Cerrar")
+            btn_cerrar= QPushButton("Cerrar")
             btn_cerrar.setIcon(icono_emoji("✖"))
             btn_cerrar.setIconSize(_QSize_emoji(16, 16))
             btn_cerrar.setObjectName("BtnAccionNeutro")
@@ -915,7 +886,7 @@ class ModuloReportes(QWidget):
                 d.raise_()
                 d.activateWindow()
             btn_filtros.clicked.connect(_abrir_dialogo)
-            self._dialogos_filtros_reportes = getattr(self, "_dialogos_filtros_reportes", [])
+            self._dialogos_filtros_reportes= getattr(self, "_dialogos_filtros_reportes", [])
             self._dialogos_filtros_reportes.append(dialogo_filtros)
 
         return {
@@ -931,7 +902,7 @@ class ModuloReportes(QWidget):
         }
 
     def _conectar_filtros(self, panel, recargar_fn):
-        debounce = QTimer(self)
+        debounce= QTimer(self)
         debounce.setSingleShot(True)
         debounce.setInterval(180)
 
@@ -940,7 +911,7 @@ class ModuloReportes(QWidget):
             recargar_fn()
 
         debounce.timeout.connect(_al_disparar_debounce)
-        panel["_debounce"] = debounce
+        panel["_debounce"]= debounce
         panel["buscar"].textChanged.connect(lambda _t: debounce.start())
 
         if panel.get("combo_nivel") is not None:
@@ -954,7 +925,7 @@ class ModuloReportes(QWidget):
 
         if panel.get("combo_curso") is not None:
             def _en_cambio_curso():
-                grado_id = panel["combo_curso"].currentData()
+                grado_id= panel["combo_curso"].currentData()
                 if panel.get("combo_seccion") is not None:
                     self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"], panel.get("combo_nivel"))
                 panel["paginacion"].reiniciar()
@@ -1020,34 +991,34 @@ class ModuloReportes(QWidget):
     def _cargar_combo_cursos(self, combo, combo_nivel=None):
         if combo_nivel is not None:
             poblar_combo_nivel_educativo(combo_nivel)
-        nivel = combo_nivel.currentData() if combo_nivel is not None else None
+        nivel= combo_nivel.currentData() if combo_nivel is not None else None
         poblar_combo_curso(combo, incluir_todos=False, secciones_permitidas=secciones_del_nivel_educativo(nivel))
 
     def _cargar_combo_secciones(self, combo_seccion, combo_curso=None, combo_nivel=None):
         """Repuebla combo_seccion en cascada según combo_curso (o "Todas las
         secciones" mezcladas si no se pasa combo_curso / está en "Todos")."""
         if combo_curso is None:
-            combo_curso = QComboBox()
+            combo_curso= QComboBox()
             combo_curso.addItem("Todos los cursos", None)
-        nivel = combo_nivel.currentData() if combo_nivel is not None else None
+        nivel= combo_nivel.currentData() if combo_nivel is not None else None
         cascada_seccion_por_curso(combo_curso, combo_seccion, secciones_permitidas=secciones_del_nivel_educativo(nivel))
 
     def _cargar_combo_especialidades(self, combo):
         combo.blockSignals(True)
-        seleccion_previa = combo.currentData()
+        seleccion_previa= combo.currentData()
         combo.clear()
         combo.addItem("Todas las especialidades", None)
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         try:
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            filas = c.fetchall()
+            filas= c.fetchall()
         except Exception:
-            filas = []
+            filas= []
         conn.close()
         for fila in filas:
             combo.addItem(fila["nombre"], fila["id"])
-        idx = combo.findData(seleccion_previa)
+        idx= combo.findData(seleccion_previa)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
@@ -1057,47 +1028,47 @@ class ModuloReportes(QWidget):
         de la app: solo se muestran si la institución tiene ese módulo
         activo, y en modo Personalizado se agrega la opción "No Área
         Técnica"/"No Carrera" (dato=0, distinto de None='Todas')."""
-        combo_esp = panel.get("combo_filtro_especialidad_rep")
-        combo_car = panel.get("combo_filtro_carrera_rep")
+        combo_esp= panel.get("combo_filtro_especialidad_rep")
+        combo_car= panel.get("combo_filtro_carrera_rep")
         if combo_esp is None:
             return
-        es_poli = self._es_politecnico()
-        es_uni = self._es_universidad()
+        es_poli= self._es_politecnico()
+        es_uni= self._es_universidad()
         panel["lbl_filtro_especialidad_rep"].setVisible(es_poli)
         combo_esp.setVisible(es_poli)
         if es_poli:
-            actual = combo_esp.currentData()
+            actual= combo_esp.currentData()
             combo_esp.blockSignals(True)
             combo_esp.clear()
             combo_esp.addItem("Todas las áreas técnicas", None)
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
             for f in c.fetchall():
                 combo_esp.addItem(f["nombre"], f["id"])
             conn.close()
             if self._es_personalizado():
                 combo_esp.addItem("No Área Técnica", 0)
-            idx = combo_esp.findData(actual)
+            idx= combo_esp.findData(actual)
             combo_esp.setCurrentIndex(idx if idx >= 0 else 0)
             combo_esp.blockSignals(False)
 
         panel["lbl_filtro_carrera_rep"].setVisible(es_uni)
         combo_car.setVisible(es_uni)
         if es_uni:
-            actual = combo_car.currentData()
+            actual= combo_car.currentData()
             combo_car.blockSignals(True)
             combo_car.clear()
             combo_car.addItem("Todas las carreras", None)
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
             for f in c.fetchall():
                 combo_car.addItem(f["nombre"], f["id"])
             conn.close()
             if self._es_personalizado():
                 combo_car.addItem("No Carrera", 0)
-            idx = combo_car.findData(actual)
+            idx= combo_car.findData(actual)
             combo_car.setCurrentIndex(idx if idx >= 0 else 0)
             combo_car.blockSignals(False)
 
@@ -1105,18 +1076,18 @@ class ModuloReportes(QWidget):
         """Filtra en Python una lista de sqlite3.Row de estudiantes según la
         búsqueda de texto y los combos de curso/sección/área técnica/carrera
         del panel dado."""
-        texto = _normalizar(panel["buscar"].text().strip())
-        grado_id = panel["combo_curso"].currentData() if panel.get("combo_curso") else None
-        seccion_id = panel["combo_seccion"].currentData() if panel.get("combo_seccion") else None
-        especialidad_id = (panel["combo_filtro_especialidad_rep"].currentData()
+        texto= _normalizar(panel["buscar"].text().strip())
+        grado_id= panel["combo_curso"].currentData() if panel.get("combo_curso") else None
+        seccion_id= panel["combo_seccion"].currentData() if panel.get("combo_seccion") else None
+        especialidad_id= (panel["combo_filtro_especialidad_rep"].currentData()
                             if panel.get("combo_filtro_especialidad_rep") is not None
                             and self._es_politecnico() else None)
-        carrera_id = (panel["combo_filtro_carrera_rep"].currentData()
+        carrera_id= (panel["combo_filtro_carrera_rep"].currentData()
                       if panel.get("combo_filtro_carrera_rep") is not None
                       and self._es_universidad() else None)
-        resultado = []
+        resultado= []
         for f in filas:
-            claves = f.keys()
+            claves= f.keys()
             if grado_id is not None and "grado_id" in claves and f["grado_id"] != grado_id:
                 continue
             if seccion_id is not None and "seccion_id" in claves and f["seccion_id"] != seccion_id:
@@ -1132,53 +1103,52 @@ class ModuloReportes(QWidget):
                 if carrera_id != 0 and f["carrera_id"] != carrera_id:
                     continue
             if texto:
-                partes = [f["nombre"] if "nombre" in claves else "",
+                partes= [f["nombre"] if "nombre" in claves else "",
                           f["apellidos"] if "apellidos" in claves else "",
                           f["matricula"] if "matricula" in claves else ""]
-                objetivo = _normalizar(" ".join(p or "" for p in partes))
+                objetivo= _normalizar(" ".join(p or "" for p in partes))
                 if texto not in objetivo:
                     continue
             resultado.append(f)
         return resultado
 
-    # ---------------- INSTITUCIONAL ----------------
+    #---------------- INSTITUCIONAL ----------------
     def _tab_institucional(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         l.setSpacing(16)
 
-        grid = QGridLayout()
+        grid= QGridLayout()
         grid.setSpacing(14)
-        self.kpi_estudiantes = TarjetaKPI("🎓", "Estudiantes inscritos", "#2563EB")
-        # Mismo icono de "profesor" que usa la Tarjeta de Indicador de
-        # Profesores en el Dashboard (antes: 👥 genérico), para que la
-        # misma idea se vea igual en toda la app.
-        self.kpi_profesores = TarjetaKPI(EMOJI_PROFESOR, "Docentes activos", "#7C3AED")
-        self.kpi_materias = TarjetaKPI("📘", "Materias impartidas", "#0EA5E9")
-        self.kpi_secciones = TarjetaKPI(EMOJI_SECCIONES_GRUPOS, "Secciones / Grupos", "#F59E0B")
+        self.kpi_estudiantes= TarjetaKPI("🎓", "Estudiantes inscritos", "#2563EB")
+        #Mismo icono de "profesor" que usa la Tarjeta de Indicador de Profesores en el Dashboard (antes: 👥 genérico),
+        #para que la misma idea se vea igual en toda la app.
+        self.kpi_profesores= TarjetaKPI(EMOJI_PROFESOR, "Docentes activos", "#7C3AED")
+        self.kpi_materias= TarjetaKPI("📘", "Materias impartidas", "#0EA5E9")
+        self.kpi_secciones= TarjetaKPI(EMOJI_SECCIONES_GRUPOS, "Secciones / Grupos", "#F59E0B")
         grid.addWidget(self.kpi_estudiantes, 0, 0)
         grid.addWidget(self.kpi_profesores, 0, 1)
         grid.addWidget(self.kpi_materias, 0, 2)
         grid.addWidget(self.kpi_secciones, 0, 3)
 
-        self.kpi_asistencia = TarjetaKPIAnillo("✅", "Asistencia promedio global", "#22C55E")
-        self.kpi_reprobacion = TarjetaKPIAnillo("📉", "Tasa de reprobación", "#EF4444")
+        self.kpi_asistencia= TarjetaKPIAnillo("✅", "Asistencia promedio global", "#22C55E")
+        self.kpi_reprobacion= TarjetaKPIAnillo("📉", "Tasa de reprobación", "#EF4444")
         grid.addWidget(self.kpi_asistencia, 1, 0, 1, 2)
         grid.addWidget(self.kpi_reprobacion, 1, 2, 1, 2)
         l.addLayout(grid)
 
-        panel_grafico = QFrame()
+        panel_grafico= QFrame()
         panel_grafico.setObjectName("TarjetaFormulario")
-        lay_graf = QVBoxLayout(panel_grafico)
+        lay_graf= QVBoxLayout(panel_grafico)
         lay_graf.setContentsMargins(20, 16, 20, 16)
-        lbl_graf_titulo = QLabel("Promedio general por materia (Top 6)")
+        lbl_graf_titulo= QLabel("Promedio general por materia (Top 6)")
         lbl_graf_titulo.setObjectName("TituloTarjetaInterna")
         lay_graf.addWidget(lbl_graf_titulo)
-        self.mini_barras_materias = MiniBarras()
+        self.mini_barras_materias= MiniBarras()
         lay_graf.addWidget(self.mini_barras_materias)
         l.addWidget(panel_grafico)
 
-        btn_exportar = BotonAnimado("Exportar Reporte Institucional (CSV)")
+        btn_exportar= BotonAnimado("Exportar Reporte Institucional (CSV)")
         btn_exportar.setObjectName("BtnAccionEditar")
         btn_exportar.clicked.connect(self._exportar_institucional_csv)
         l.addWidget(btn_exportar)
@@ -1186,28 +1156,26 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_institucional(self):
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("SELECT COUNT(*) n FROM estudiantes WHERE estado='Activo'")
-        total_estudiantes = c.fetchone()["n"]
+        total_estudiantes= c.fetchone()["n"]
         c.execute("SELECT COUNT(*) n FROM profesores WHERE estado='Activo'")
-        total_profesores = c.fetchone()["n"]
+        total_profesores= c.fetchone()["n"]
         c.execute("SELECT COUNT(*) n FROM materias WHERE estado='Activa'")
-        total_materias = c.fetchone()["n"]
+        total_materias= c.fetchone()["n"]
         c.execute("SELECT COUNT(*) n FROM secciones")
-        total_secciones = c.fetchone()["n"]
+        total_secciones= c.fetchone()["n"]
         c.execute("SELECT COUNT(*) n FROM asistencia")
-        total_asistencia = c.fetchone()["n"]
+        total_asistencia= c.fetchone()["n"]
         c.execute("SELECT COUNT(*) n FROM asistencia WHERE estado='Presente'")
-        presentes = c.fetchone()["n"]
+        presentes= c.fetchone()["n"]
         c.execute("""SELECT nota_minima, nota_minima_primaria, nota_minima_secundaria,
                      sistema_calificacion FROM configuracion WHERE id=1""")
-        cfg = c.fetchone()
-        # Reprobación institucional: la nota mínima ya no es un único número —
-        # en el Sistema Dominicano depende del nivel educativo (Primaria/
-        # Secundaria) del Grado de cada estudiante (ver resolver_nota_minima en
-        # configuracion.py), así que el promedio de cada estudiante se compara
-        # contra SU nota mínima, no una global.
+        cfg= c.fetchone()
+        #Reprobación institucional: la nota mínima ya no es un único número — en el Sistema Dominicano depende del
+        #nivel educativo (Primaria/ Secundaria) del Grado de cada estudiante (ver resolver_nota_minima en
+        #configuracion.py), así que el promedio de cada estudiante se compara contra SU nota mínima, no una global.
         c.execute("""SELECT calificaciones.estudiante_id as estudiante_id, AVG(calificaciones.valor) as prom,
                      grados.nivel_educativo as nivel
                      FROM calificaciones
@@ -1216,21 +1184,21 @@ class ModuloReportes(QWidget):
                      LEFT JOIN grados ON secciones.grado_id = grados.id
                      WHERE calificaciones.estado_publicacion != 'Borrador'
                      GROUP BY calificaciones.estudiante_id""")
-        promedios = c.fetchall()
+        promedios= c.fetchall()
         c.execute("""SELECT materias.nombre as materia, AVG(calificaciones.valor) as promedio
                      FROM calificaciones LEFT JOIN materias ON calificaciones.materia_id = materias.id
                      WHERE materias.nombre IS NOT NULL AND calificaciones.estado_publicacion != 'Borrador'
                      GROUP BY calificaciones.materia_id ORDER BY promedio DESC LIMIT 6""")
-        top_materias = c.fetchall()
+        top_materias= c.fetchall()
         conn.close()
 
-        porcentaje_asistencia = round((presentes / total_asistencia) * 100, 1) if total_asistencia else 0.0
+        porcentaje_asistencia= round((presentes / total_asistencia) * 100, 1) if total_asistencia else 0.0
         if promedios:
-            reprobados = sum(1 for p in promedios
+            reprobados= sum(1 for p in promedios
                               if (p["prom"] or 0) < resolver_nota_minima(cfg, nivel_educativo=p["nivel"]))
-            tasa_reprobacion = round((reprobados / len(promedios)) * 100, 1)
+            tasa_reprobacion= round((reprobados / len(promedios)) * 100, 1)
         else:
-            tasa_reprobacion = 0.0
+            tasa_reprobacion= 0.0
 
         self.kpi_estudiantes.establecer_valor_animado(total_estudiantes)
         self.kpi_profesores.establecer_valor_animado(total_profesores)
@@ -1239,21 +1207,19 @@ class ModuloReportes(QWidget):
         self.kpi_asistencia.establecer_porcentaje(porcentaje_asistencia)
         self.kpi_reprobacion.establecer_porcentaje(tasa_reprobacion)
 
-        # Se guardan como texto plano para la exportación CSV, independiente
-        # de la animación visual de las tarjetas.
-        self._texto_total_estudiantes = str(total_estudiantes)
-        self._texto_total_profesores = str(total_profesores)
-        self._texto_total_materias = str(total_materias)
-        self._texto_total_secciones = str(total_secciones)
-        self._texto_asistencia = f"{porcentaje_asistencia}%"
-        self._texto_reprobacion = f"{tasa_reprobacion}%"
+        #Se guardan como texto plano para la exportación CSV, independiente de la animación visual de las tarjetas.
+        self._texto_total_estudiantes= str(total_estudiantes)
+        self._texto_total_profesores= str(total_profesores)
+        self._texto_total_materias= str(total_materias)
+        self._texto_total_secciones= str(total_secciones)
+        self._texto_asistencia= f"{porcentaje_asistencia}%"
+        self._texto_reprobacion= f"{tasa_reprobacion}%"
 
         if top_materias:
-            # Se pasa el nombre completo de la materia; MiniBarras.paintEvent
-            # se encarga de elidirlo dinámicamente según el espacio real
-            # disponible para cada barra (ver comentario en esa clase).
-            categorias = [m["materia"] for m in top_materias]
-            valores = [round(m["promedio"], 1) for m in top_materias]
+            #Se pasa el nombre completo de la materia; MiniBarras.paintEvent se encarga de elidirlo dinámicamente según el
+            #espacio real disponible para cada barra (ver comentario en esa clase).
+            categorias= [m["materia"] for m in top_materias]
+            valores= [round(m["promedio"], 1) for m in top_materias]
             self.mini_barras_materias.establecer_datos(categorias, valores, maximo=100)
         else:
             self.mini_barras_materias.establecer_datos([], [])
@@ -1263,7 +1229,7 @@ class ModuloReportes(QWidget):
         if not ruta:
             return
         with open(ruta, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
+            writer= csv.writer(f)
             writer.writerow(["Indicador", "Valor"])
             writer.writerow(["Estudiantes inscritos", getattr(self, "_texto_total_estudiantes", "0")])
             writer.writerow(["Docentes activos", getattr(self, "_texto_total_profesores", "0")])
@@ -1277,29 +1243,29 @@ class ModuloReportes(QWidget):
         mostrar_mensaje("exito", "Exportado", f"Reporte guardado en:\n{ruta}", self)
         self._registrar_archivo_reciente(ruta)
 
-    # ---------------- RIESGO ----------------
+    #---------------- RIESGO ----------------
     def _tab_riesgo(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         if self._es_docente():
             l.addWidget(QLabel("Tus estudiantes con promedio por debajo de la nota mínima aprobatoria, "
                                "calculado solo con las materias que tú impartes:"))
         else:
             l.addWidget(QLabel("Estudiantes con promedio por debajo de la nota mínima aprobatoria:"))
 
-        panel = self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
+        panel= self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
                                            titulo_filtros="Filtros de Estudiantes en Riesgo")
         l.addWidget(panel["frame"])
 
-        fila_cabecera_tabla_riesgo = QHBoxLayout()
+        fila_cabecera_tabla_riesgo= QHBoxLayout()
         fila_cabecera_tabla_riesgo.addStretch()
         l.addLayout(fila_cabecera_tabla_riesgo)
 
-        self.tabla_riesgo = QTableWidget(0, 4)
+        self.tabla_riesgo= QTableWidget(0, 4)
         aplicar_estructura_tabla(self.tabla_riesgo)
 
         self.tabla_riesgo.setHorizontalHeaderLabels(["Estudiante", "Promedio General", "Curso", "Sección"])
-        header = self.tabla_riesgo.horizontalHeader()
+        header= self.tabla_riesgo.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(True)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -1312,27 +1278,27 @@ class ModuloReportes(QWidget):
         self.tabla_riesgo.verticalHeader().setVisible(False)
         l.addWidget(self.tabla_riesgo, 1)
 
-        panel["paginacion"] = ControlPaginacion()
+        panel["paginacion"]= ControlPaginacion()
         _forzar_tam_pagina(panel["paginacion"])
         panel["paginacion"].cambio.connect(self._cargar_riesgo)
-        panel["tabla"] = self.tabla_riesgo
+        panel["tabla"]= self.tabla_riesgo
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_riesgo, [self.tabla_riesgo, panel["paginacion"]],
             titulo="Estudiantes en Riesgo", parent=self)
-        self._paneles["riesgo"] = panel
+        self._paneles["riesgo"]= panel
         self._conectar_filtros(panel, self._cargar_riesgo)
         self._cargar_combo_cursos(panel["combo_curso"], panel.get("combo_nivel"))
         self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"])
         self._cargar_combo_especialidad_carrera_rep(panel)
 
-        fila_botones = QHBoxLayout()
-        btn_actualizar = BotonAnimado("Actualizar")
+        fila_botones= QHBoxLayout()
+        btn_actualizar= BotonAnimado("Actualizar")
         btn_actualizar.setObjectName("BtnAccionNeutro")
         btn_actualizar.clicked.connect(self._cargar_riesgo)
         fila_botones.addWidget(btn_actualizar)
 
-        btn_detalle = agregar_boton_detalle(fila_botones, self.tabla_riesgo, self, titulo="Detalle del Estudiante en Riesgo")
+        btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_riesgo, self, titulo="Detalle del Estudiante en Riesgo")
         self.tabla_riesgo.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
@@ -1341,21 +1307,19 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_riesgo(self):
-        panel = self._paneles["riesgo"]
-        conn = get_connection()
-        c = conn.cursor()
+        panel= self._paneles["riesgo"]
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("""SELECT nota_minima, nota_minima_primaria, nota_minima_secundaria,
                      sistema_calificacion FROM configuracion WHERE id=1""")
-        cfg = c.fetchone()
-        # Umbral de riesgo por nivel educativo (ver resolver_nota_minima en
-        # configuracion.py): si el sistema no es el Dominicano, los tres valores
-        # resultan iguales (nota_minima general), igual que antes de este cambio.
-        nota_min_primaria = resolver_nota_minima(cfg, nivel_educativo="Primaria")
-        nota_min_secundaria = resolver_nota_minima(cfg, nivel_educativo="Secundaria")
-        nota_min_general = resolver_nota_minima(cfg, nivel_educativo=None)
-        # Si es un docente, el promedio "de riesgo" se calcula SOLO con las
-        # calificaciones de las materias que él imparte -no con el promedio
-        # general del estudiante en todas sus materias, que no le compete.
+        cfg= c.fetchone()
+        #Umbral de riesgo por nivel educativo (ver resolver_nota_minima en configuracion.py): si el sistema no es el
+        #Dominicano, los tres valores resultan iguales (nota_minima general), igual que antes de este cambio.
+        nota_min_primaria= resolver_nota_minima(cfg, nivel_educativo="Primaria")
+        nota_min_secundaria= resolver_nota_minima(cfg, nivel_educativo="Secundaria")
+        nota_min_general= resolver_nota_minima(cfg, nivel_educativo=None)
+        #Si es un docente, el promedio "de riesgo" se calcula SOLO con las calificaciones de las materias que él
+        #imparte -no con el promedio general del estudiante en todas sus materias, que no le compete.
         filtro_materia, params_materia = self._filtro_sql_materias_docente("calificaciones.materia_id")
         c.execute(f"""SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellidos, estudiantes.matricula,
                      secciones.id as seccion_id, secciones.grado_id,
@@ -1374,13 +1338,13 @@ class ModuloReportes(QWidget):
                                             ELSE ? END)
                      ORDER BY promedio ASC""",
                   (*params_materia, nota_min_primaria, nota_min_secundaria, nota_min_general))
-        filas = c.fetchall()
+        filas= c.fetchall()
         conn.close()
 
-        filas_filtradas = self._aplicar_filtros_estudiante(filas, panel)
+        filas_filtradas= self._aplicar_filtros_estudiante(filas, panel)
         panel["paginacion"].establecer_total(len(filas_filtradas))
         inicio, fin = panel["paginacion"].rango_actual()
-        pagina = filas_filtradas[inicio:fin]
+        pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_riesgo):
             self.tabla_riesgo.setRowCount(len(pagina))
@@ -1393,30 +1357,30 @@ class ModuloReportes(QWidget):
         self._animar_chip(panel["chip"], len(filas_filtradas), "estudiante en riesgo", "estudiantes en riesgo")
         self._animar_fundido_tabla(self.tabla_riesgo)
 
-    # ---------------- EXCELENCIA ----------------
+    #---------------- EXCELENCIA ----------------
     def _tab_excelencia(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         if self._es_docente():
             l.addWidget(QLabel("Tus estudiantes con mejor promedio, calculado solo con las materias que "
                                "tú impartes:"))
         else:
             l.addWidget(QLabel("Ranking de Excelencia Académica (mejores promedios):"))
 
-        panel = self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
+        panel= self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
                                            titulo_filtros="Filtros del Cuadro de Honor")
         l.addWidget(panel["frame"])
 
-        fila_cabecera_tabla_excelencia = QHBoxLayout()
+        fila_cabecera_tabla_excelencia= QHBoxLayout()
         fila_cabecera_tabla_excelencia.addStretch()
         l.addLayout(fila_cabecera_tabla_excelencia)
 
-        self.tabla_excelencia = QTableWidget(0, 5)
+        self.tabla_excelencia= QTableWidget(0, 5)
         aplicar_estructura_tabla(self.tabla_excelencia)
 
         self.tabla_excelencia.setHorizontalHeaderLabels(["Puesto", "Estudiante", "Promedio General", "Curso",
                                                            "Sección"])
-        header = self.tabla_excelencia.horizontalHeader()
+        header= self.tabla_excelencia.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(True)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
@@ -1429,27 +1393,27 @@ class ModuloReportes(QWidget):
         self.tabla_excelencia.verticalHeader().setVisible(False)
         l.addWidget(self.tabla_excelencia, 1)
 
-        panel["paginacion"] = ControlPaginacion()
+        panel["paginacion"]= ControlPaginacion()
         _forzar_tam_pagina(panel["paginacion"])
         panel["paginacion"].cambio.connect(self._cargar_excelencia)
-        panel["tabla"] = self.tabla_excelencia
+        panel["tabla"]= self.tabla_excelencia
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_excelencia, [self.tabla_excelencia, panel["paginacion"]],
             titulo="Cuadro de Honor", parent=self)
-        self._paneles["excelencia"] = panel
+        self._paneles["excelencia"]= panel
         self._conectar_filtros(panel, self._cargar_excelencia)
         self._cargar_combo_cursos(panel["combo_curso"], panel.get("combo_nivel"))
         self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"])
         self._cargar_combo_especialidad_carrera_rep(panel)
 
-        fila_botones = QHBoxLayout()
-        btn_actualizar = BotonAnimado("Actualizar")
+        fila_botones= QHBoxLayout()
+        btn_actualizar= BotonAnimado("Actualizar")
         btn_actualizar.setObjectName("BtnAccionNeutro")
         btn_actualizar.clicked.connect(self._cargar_excelencia)
         fila_botones.addWidget(btn_actualizar)
 
-        btn_detalle = agregar_boton_detalle(fila_botones, self.tabla_excelencia, self, titulo="Detalle del Estudiante Destacado")
+        btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_excelencia, self, titulo="Detalle del Estudiante Destacado")
         self.tabla_excelencia.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
@@ -1458,16 +1422,13 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_excelencia(self):
-        panel = self._paneles["excelencia"]
-        conn = get_connection()
-        c = conn.cursor()
-        # Sin LIMIT fijo: con la paginación de 25 por página el "Cuadro de
-        # Honor" completo queda navegable en vez de truncarse a los primeros
-        # 20 lugares como antes.
-        # Si es un docente, igual que en "Estudiantes en Riesgo", el promedio
-        # se calcula SOLO con las calificaciones de las materias que él
-        # imparte -no con el promedio general del estudiante en todas sus
-        # materias, que no le compete.
+        panel= self._paneles["excelencia"]
+        conn= obtener_conexion()
+        c= conn.cursor()
+        #Sin LIMIT fijo: con la paginación de 25 por página el "Cuadro de Honor" completo queda navegable en vez de
+        #truncarse a los primeros 20 lugares como antes. Si es un docente, igual que en "Estudiantes en Riesgo", el
+        #promedio se calcula SOLO con las calificaciones de las materias que él imparte -no con el promedio general del
+        #estudiante en todas sus materias, que no le compete.
         filtro_materia, params_materia = self._filtro_sql_materias_docente("calificaciones.materia_id")
         c.execute(f"""SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellidos, estudiantes.matricula,
                      secciones.id as seccion_id, secciones.grado_id,
@@ -1481,17 +1442,17 @@ class ModuloReportes(QWidget):
                      WHERE calificaciones.estado_publicacion != 'Borrador'{filtro_materia}
                      GROUP BY calificaciones.estudiante_id
                      ORDER BY promedio DESC""", params_materia)
-        filas = c.fetchall()
+        filas= c.fetchall()
         conn.close()
 
-        # El "puesto" se calcula sobre el ranking COMPLETO antes de filtrar,
-        # para que no cambie según lo que el usuario esté buscando.
-        puestos = {f["id"]: i + 1 for i, f in enumerate(filas)}
+        #El "puesto" se calcula sobre el ranking COMPLETO antes de filtrar, para que no cambie según lo que el usuario
+        #esté buscando.
+        puestos= {f["id"]: i + 1 for i, f in enumerate(filas)}
 
-        filas_filtradas = self._aplicar_filtros_estudiante(filas, panel)
+        filas_filtradas= self._aplicar_filtros_estudiante(filas, panel)
         panel["paginacion"].establecer_total(len(filas_filtradas))
         inicio, fin = panel["paginacion"].rango_actual()
-        pagina = filas_filtradas[inicio:fin]
+        pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_excelencia):
             self.tabla_excelencia.setRowCount(len(pagina))
@@ -1505,35 +1466,34 @@ class ModuloReportes(QWidget):
         self._animar_chip(panel["chip"], len(filas_filtradas), "estudiante destacado", "estudiantes destacados")
         self._animar_fundido_tabla(self.tabla_excelencia)
 
-    # NOTA: btn_detalle en _tab_excelencia reutiliza el mismo diálogo de
-    # detalle para Administrador/Director y Docente; el título del diálogo
-    # ("Detalle del Estudiante Destacado") es suficientemente genérico como
-    # para no requerir texto distinto según el rol.
+    #NOTA: btn_detalle en _tab_excelencia reutiliza el mismo diálogo de detalle para Administrador/Director y
+    #Docente; el título del diálogo ("Detalle del Estudiante Destacado") es suficientemente genérico como para no
+    #requerir texto distinto según el rol.
 
-    # ---------------- ASISTENCIA ----------------
+    #---------------- ASISTENCIA ----------------
     def _tab_asistencia(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         if self._es_docente():
             l.addWidget(QLabel("Porcentaje de asistencia por estudiante, contando solo las clases de "
                                "las materias que tú impartes:"))
         else:
             l.addWidget(QLabel("Porcentaje de asistencia por estudiante:"))
 
-        panel = self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
+        panel= self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
                                            titulo_filtros="Filtros de Asistencia")
         l.addWidget(panel["frame"])
 
-        fila_cabecera_tabla_asistencia_rep = QHBoxLayout()
+        fila_cabecera_tabla_asistencia_rep= QHBoxLayout()
         fila_cabecera_tabla_asistencia_rep.addStretch()
         l.addLayout(fila_cabecera_tabla_asistencia_rep)
 
-        self.tabla_asistencia = QTableWidget(0, 4)
+        self.tabla_asistencia= QTableWidget(0, 4)
         aplicar_estructura_tabla(self.tabla_asistencia)
 
         self.tabla_asistencia.setHorizontalHeaderLabels(
             ["Estudiante", "Presente", "Ausente/Tardanza", "% Asistencia"])
-        header = self.tabla_asistencia.horizontalHeader()
+        header= self.tabla_asistencia.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(True)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -1546,27 +1506,27 @@ class ModuloReportes(QWidget):
         self.tabla_asistencia.verticalHeader().setVisible(False)
         l.addWidget(self.tabla_asistencia, 1)
 
-        panel["paginacion"] = ControlPaginacion()
+        panel["paginacion"]= ControlPaginacion()
         _forzar_tam_pagina(panel["paginacion"])
         panel["paginacion"].cambio.connect(self._cargar_asistencia)
-        panel["tabla"] = self.tabla_asistencia
+        panel["tabla"]= self.tabla_asistencia
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_asistencia_rep, [self.tabla_asistencia, panel["paginacion"]],
             titulo="Asistencia por Estudiante", parent=self)
-        self._paneles["asistencia"] = panel
+        self._paneles["asistencia"]= panel
         self._conectar_filtros(panel, self._cargar_asistencia)
         self._cargar_combo_cursos(panel["combo_curso"], panel.get("combo_nivel"))
         self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"])
         self._cargar_combo_especialidad_carrera_rep(panel)
 
-        fila_botones = QHBoxLayout()
-        btn_actualizar = BotonAnimado("Actualizar")
+        fila_botones= QHBoxLayout()
+        btn_actualizar= BotonAnimado("Actualizar")
         btn_actualizar.setObjectName("BtnAccionNeutro")
         btn_actualizar.clicked.connect(self._cargar_asistencia)
         fila_botones.addWidget(btn_actualizar)
 
-        btn_detalle = agregar_boton_detalle(fila_botones, self.tabla_asistencia, self, titulo="Detalle de Asistencia del Estudiante")
+        btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_asistencia, self, titulo="Detalle de Asistencia del Estudiante")
         self.tabla_asistencia.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
@@ -1575,17 +1535,15 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_asistencia(self):
-        panel = self._paneles["asistencia"]
-        conn = get_connection()
-        c = conn.cursor()
-        # Si es un docente, el consolidado solo debe contar la asistencia
-        # tomada en SUS materias -cada registro de asistencia ya está atado a
-        # una materia y una fecha concretas, así que filtrar por materia_id
-        # ya deja fuera, automáticamente, cualquier día/clase que no sea suya.
+        panel= self._paneles["asistencia"]
+        conn= obtener_conexion()
+        c= conn.cursor()
+        #Si es un docente, el consolidado solo debe contar la asistencia tomada en SUS materias -cada registro de
+        #asistencia ya está atado a una materia y una fecha concretas, así que filtrar por materia_id ya deja fuera,
+        #automáticamente, cualquier día/clase que no sea suya.
         filtro_materia, params_materia = self._filtro_sql_materias_docente("asistencia.materia_id")
-        # Una sola consulta agregada en vez de 2 SELECT por estudiante: con
-        # cientos de estudiantes esto evita cientos de idas y vueltas a la
-        # base de datos y mantiene la tabla fluida al filtrar/paginar.
+        #Una sola consulta agregada en vez de 2 SELECT por estudiante: con cientos de estudiantes esto evita cientos de
+        #idas y vueltas a la base de datos y mantiene la tabla fluida al filtrar/paginar.
         c.execute(f"""SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellidos, estudiantes.matricula,
                      secciones.id as seccion_id, secciones.grado_id,
                      estudiantes.especialidad_id, estudiantes.carrera_id,
@@ -1597,21 +1555,21 @@ class ModuloReportes(QWidget):
                      WHERE estudiantes.estado='Activo'
                      GROUP BY estudiantes.id
                      ORDER BY estudiantes.apellidos, estudiantes.nombre""", params_materia)
-        filas = c.fetchall()
+        filas= c.fetchall()
         conn.close()
 
-        filas_filtradas = self._aplicar_filtros_estudiante(filas, panel)
+        filas_filtradas= self._aplicar_filtros_estudiante(filas, panel)
         panel["paginacion"].establecer_total(len(filas_filtradas))
         inicio, fin = panel["paginacion"].rango_actual()
-        pagina = filas_filtradas[inicio:fin]
+        pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_asistencia):
             self.tabla_asistencia.setRowCount(len(pagina))
             for i, f in enumerate(pagina):
-                presentes = f["presentes"] or 0
-                ausencias = f["ausencias"] or 0
-                total = presentes + ausencias
-                porcentaje = round((presentes / total) * 100, 1) if total else 0
+                presentes= f["presentes"] or 0
+                ausencias= f["ausencias"] or 0
+                total= presentes + ausencias
+                porcentaje= round((presentes / total) * 100, 1) if total else 0
                 self.tabla_asistencia.setItem(i, 0, QTableWidgetItem(f"{f['nombre']} {f['apellidos'] or ''}"))
                 self.tabla_asistencia.setItem(i, 1, QTableWidgetItem(str(presentes)))
                 self.tabla_asistencia.setItem(i, 2, QTableWidgetItem(str(ausencias)))
@@ -1620,31 +1578,31 @@ class ModuloReportes(QWidget):
         self._animar_chip(panel["chip"], len(filas_filtradas), "estudiante", "estudiantes")
         self._animar_fundido_tabla(self.tabla_asistencia)
 
-    # ---------------- RENDIMIENTO TÉCNICO (Politécnico) ----------------
+    #---------------- RENDIMIENTO TÉCNICO (Politécnico) ----------------
     def _tab_rendimiento_tecnico(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
-        info = QLabel("Rendimiento académico desglosado por materia técnica y especialidad, "
+        w= QWidget()
+        l= QVBoxLayout(w)
+        info= QLabel("Rendimiento académico desglosado por materia técnica y especialidad, "
                       "independiente del reporte general de rendimiento institucional.")
         info.setObjectName("DescModulo")
         info.setWordWrap(True)
         l.addWidget(info)
 
-        panel = self._crear_barra_filtros("Buscar por materia o especialidad…",
+        panel= self._crear_barra_filtros("Buscar por materia o especialidad…",
                                           con_curso_seccion=False, con_especialidad=True,
                                           titulo_filtros="Filtros de Rendimiento Técnico")
         l.addWidget(panel["frame"])
 
-        fila_cabecera_tabla_rend_tecnico = QHBoxLayout()
+        fila_cabecera_tabla_rend_tecnico= QHBoxLayout()
         fila_cabecera_tabla_rend_tecnico.addStretch()
         l.addLayout(fila_cabecera_tabla_rend_tecnico)
 
-        self.tabla_rendimiento_tecnico = QTableWidget(0, 6)
+        self.tabla_rendimiento_tecnico= QTableWidget(0, 6)
         aplicar_estructura_tabla(self.tabla_rendimiento_tecnico)
 
         self.tabla_rendimiento_tecnico.setHorizontalHeaderLabels(
             ["Especialidad", "Materia Técnica", "Evaluados", "Promedio", "Aprobados", "Reprobados"])
-        header = self.tabla_rendimiento_tecnico.horizontalHeader()
+        header= self.tabla_rendimiento_tecnico.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(True)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
@@ -1657,25 +1615,25 @@ class ModuloReportes(QWidget):
         self.tabla_rendimiento_tecnico.verticalHeader().setVisible(False)
         l.addWidget(self.tabla_rendimiento_tecnico, 1)
 
-        panel["paginacion"] = ControlPaginacion()
+        panel["paginacion"]= ControlPaginacion()
         _forzar_tam_pagina(panel["paginacion"])
         panel["paginacion"].cambio.connect(self._cargar_rendimiento_tecnico)
-        panel["tabla"] = self.tabla_rendimiento_tecnico
+        panel["tabla"]= self.tabla_rendimiento_tecnico
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_rend_tecnico, [self.tabla_rendimiento_tecnico, panel["paginacion"]],
             titulo="Rendimiento Técnico", parent=self)
-        self._paneles["rendimiento_tecnico"] = panel
+        self._paneles["rendimiento_tecnico"]= panel
 
         def _recargar():
             panel["paginacion"].reiniciar()
             self._cargar_rendimiento_tecnico()
 
-        debounce = QTimer(self)
+        debounce= QTimer(self)
         debounce.setSingleShot(True)
         debounce.setInterval(180)
         debounce.timeout.connect(_recargar)
-        panel["_debounce"] = debounce
+        panel["_debounce"]= debounce
         panel["buscar"].textChanged.connect(lambda _t: debounce.start())
         panel["combo_especialidad"].currentIndexChanged.connect(lambda _i: _recargar())
 
@@ -1690,19 +1648,19 @@ class ModuloReportes(QWidget):
         panel["btn_limpiar"].clicked.connect(_limpiar)
         self._cargar_combo_especialidades(panel["combo_especialidad"])
 
-        fila_botones = QHBoxLayout()
-        btn_actualizar = BotonAnimado("Actualizar")
+        fila_botones= QHBoxLayout()
+        btn_actualizar= BotonAnimado("Actualizar")
         btn_actualizar.setObjectName("BtnAccionNeutro")
         btn_actualizar.clicked.connect(self._cargar_rendimiento_tecnico)
         fila_botones.addWidget(btn_actualizar)
 
-        btn_detalle = agregar_boton_detalle(fila_botones, self.tabla_rendimiento_tecnico, self, titulo="Detalle de Rendimiento Técnico")
+        btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_rendimiento_tecnico, self, titulo="Detalle de Rendimiento Técnico")
         self.tabla_rendimiento_tecnico.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
         l.addLayout(fila_botones)
 
-        btn_pdf = BotonAnimado("Exportar Rendimiento Técnico (PDF)")
+        btn_pdf= BotonAnimado("Exportar Rendimiento Técnico (PDF)")
         btn_pdf.setObjectName("BtnAccionAgregar")
         btn_pdf.clicked.connect(self._exportar_rendimiento_tecnico_pdf)
         l.addWidget(btn_pdf)
@@ -1710,22 +1668,21 @@ class ModuloReportes(QWidget):
         return w
 
     def _obtener_rendimiento_tecnico(self):
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("SELECT nota_minima FROM configuracion WHERE id=1")
-        fila_cfg = c.fetchone()
-        # Fuera de alcance del cambio de nota mínima por nivel (Primaria/
-        # Secundaria): esto es Rendimiento Técnico de Educación Técnico-
-        # Profesional (ETP, Politécnico) — post-secundaria y ajena a esa
-        # clasificación, igual que calificaciones_tecnicas.py. Sigue usando la
-        # nota mínima general de siempre.
-        nota_minima = (fila_cfg["nota_minima"] if fila_cfg else None) or 70
-        anio = anio_academico_actual()
-        # Las materias con modelo_evaluacion='Técnica (RA)' (Politécnico) NUNCA guardan
-        # filas en `calificaciones` -su nota se calcula siempre en caliente a partir de
-        # calificacion_ra + resultados_aprendizaje, igual que en 📐 Calificaciones
-        # Técnicas (ver calificaciones_tecnicas.py). La Calificación Final (C.F.) de un
-        # estudiante en una materia es el promedio ponderado por peso de sus RA.
+        fila_cfg= c.fetchone()
+        #Fuera de alcance del cambio de nota mínima por nivel (Primaria/ Secundaria): esto es Rendimiento Técnico de
+        #Educación Técnico-
+        #Profesional (ETP, Politécnico) — post-secundaria y ajena a esa
+        #clasificación, igual que calificaciones_tecnicas.py. Sigue usando la nota mínima general de siempre.
+        nota_minima= (fila_cfg["nota_minima"] if fila_cfg else None) or 70
+        anio= anio_academico_actual()
+        #Las materias con modelo_evaluacion='Técnica (RA)' (Politécnico) NUNCA guardan
+        #filas en `calificaciones` -su nota se calcula siempre en caliente a partir de calificacion_ra +
+        #resultados_aprendizaje, igual que en 📐 Calificaciones
+        #Técnicas (ver calificaciones_tecnicas.py). La Calificación Final (C.F.) de un
+        #estudiante en una materia es el promedio ponderado por peso de sus RA.
         c.execute("""SELECT calificacion_ra.estudiante_id as estudiante_id,
                      resultados_aprendizaje.materia_id as materia_id,
                      resultados_aprendizaje.peso as peso, calificacion_ra.nota as nota
@@ -1735,39 +1692,38 @@ class ModuloReportes(QWidget):
                      WHERE calificacion_ra.anio_academico=? AND calificacion_ra.nota IS NOT NULL
                        AND materias.modelo_evaluacion=? AND materias.especialidad_id IS NOT NULL
                      ORDER BY materia_id, estudiante_id""", (anio, MODELO_EVALUACION_TECNICA))
-        filas_ra = c.fetchall()
+        filas_ra= c.fetchall()
 
         c.execute("""SELECT materias.id, materias.nombre as materia,
                      especialidades.id as especialidad_id, especialidades.nombre as especialidad
                      FROM materias LEFT JOIN especialidades ON materias.especialidad_id = especialidades.id
                      WHERE materias.modelo_evaluacion=? AND materias.especialidad_id IS NOT NULL""",
                   (MODELO_EVALUACION_TECNICA,))
-        info_materias = {f["id"]: dict(f) for f in c.fetchall()}
+        info_materias= {f["id"]: dict(f) for f in c.fetchall()}
         conn.close()
 
-        # Agrupa (materia_id, estudiante_id) -> lista de (nota, peso), luego calcula
-        # la C.F. de cada estudiante como promedio ponderado (igual criterio que
-        # 📐 Calificaciones Técnicas). Solo se cuenta un estudiante como "evaluado"
-        # si tiene al menos un RA calificado en esa materia.
-        agrupado = {}
+        #Agrupa (materia_id, estudiante_id) -> lista de (nota, peso), luego calcula
+        #la C.F. de cada estudiante como promedio ponderado (igual criterio que 📐 Calificaciones Técnicas). Solo se
+        #cuenta un estudiante como "evaluado" si tiene al menos un RA calificado en esa materia.
+        agrupado= {}
         for f in filas_ra:
-            clave = (f["materia_id"], f["estudiante_id"])
+            clave= (f["materia_id"], f["estudiante_id"])
             agrupado.setdefault(clave, []).append((f["nota"], f["peso"] or 0))
 
-        por_materia = {}
+        por_materia= {}
         for (materia_id, estudiante_id), notas_pesos in agrupado.items():
-            suma_pesos = sum(p for _, p in notas_pesos)
-            cf = (sum(n * p for n, p in notas_pesos) / suma_pesos) if suma_pesos > 0\
+            suma_pesos= sum(p for _, p in notas_pesos)
+            cf= (sum(n * p for n, p in notas_pesos) / suma_pesos) if suma_pesos > 0\
                 else (sum(n for n, _ in notas_pesos) / len(notas_pesos))
             por_materia.setdefault(materia_id, []).append(cf)
 
-        resultado = []
+        resultado= []
         for materia_id, cfs in por_materia.items():
-            info = info_materias.get(materia_id)
+            info= info_materias.get(materia_id)
             if not info:
                 continue
-            evaluados = len(cfs)
-            aprobados = sum(1 for cf in cfs if cf >= nota_minima)
+            evaluados= len(cfs)
+            aprobados= sum(1 for cf in cfs if cf >= nota_minima)
             resultado.append({
                 "especialidad_id": info["especialidad_id"],
                 "especialidad": info["especialidad"] or "Sin especialidad",
@@ -1781,14 +1737,14 @@ class ModuloReportes(QWidget):
         return resultado
 
     def _filtrar_rendimiento_tecnico(self, filas, panel):
-        texto = _normalizar(panel["buscar"].text().strip())
-        especialidad_id = panel["combo_especialidad"].currentData() if panel.get("combo_especialidad") else None
-        resultado = []
+        texto= _normalizar(panel["buscar"].text().strip())
+        especialidad_id= panel["combo_especialidad"].currentData() if panel.get("combo_especialidad") else None
+        resultado= []
         for f in filas:
             if especialidad_id is not None and f["especialidad_id"] != especialidad_id:
                 continue
             if texto:
-                objetivo = _normalizar(f"{f['materia']} {f['especialidad']}")
+                objetivo= _normalizar(f"{f['materia']} {f['especialidad']}")
                 if texto not in objetivo:
                     continue
             resultado.append(f)
@@ -1797,13 +1753,13 @@ class ModuloReportes(QWidget):
     def _cargar_rendimiento_tecnico(self):
         if not hasattr(self, "tabla_rendimiento_tecnico"):
             return
-        panel = self._paneles.get("rendimiento_tecnico")
-        filas = self._obtener_rendimiento_tecnico()
-        filas_filtradas = self._filtrar_rendimiento_tecnico(filas, panel) if panel else filas
+        panel= self._paneles.get("rendimiento_tecnico")
+        filas= self._obtener_rendimiento_tecnico()
+        filas_filtradas= self._filtrar_rendimiento_tecnico(filas, panel) if panel else filas
 
         panel["paginacion"].establecer_total(len(filas_filtradas))
         inicio, fin = panel["paginacion"].rango_actual()
-        pagina = filas_filtradas[inicio:fin]
+        pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_rendimiento_tecnico):
             self.tabla_rendimiento_tecnico.setRowCount(len(pagina))
@@ -1819,11 +1775,11 @@ class ModuloReportes(QWidget):
         self._animar_fundido_tabla(self.tabla_rendimiento_tecnico)
 
     def _exportar_rendimiento_tecnico_pdf(self):
-        recursos = self._cargar_reportlab_graphics()
+        recursos= self._cargar_reportlab_graphics()
         if recursos is None:
             return
         letter, canvas, Drawing, String, VerticalBarChart, Pie, colors = recursos
-        filas = self._obtener_rendimiento_tecnico()
+        filas= self._obtener_rendimiento_tecnico()
         if not filas:
             mostrar_mensaje("advertencia", "Sin datos",
                            "No hay calificaciones registradas en materias técnicas para generar el reporte.", self)
@@ -1832,12 +1788,12 @@ class ModuloReportes(QWidget):
                                                "reporte_rendimiento_tecnico.pdf", "PDF (*.pdf)")
         if not ruta:
             return
-        total_aprobados = sum(f["aprobados"] for f in filas)
-        total_reprobados = sum(f["reprobados"] for f in filas)
-        institucion = _datos_institucion()
+        total_aprobados= sum(f["aprobados"] for f in filas)
+        total_reprobados= sum(f["reprobados"] for f in filas)
+        institucion= _datos_institucion()
         ancho, alto = letter
-        cvs = canvas.Canvas(ruta, pagesize=letter)
-        y = _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte de Rendimiento por Materia Técnica")
+        cvs= canvas.Canvas(ruta, pagesize=letter)
+        y= _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte de Rendimiento por Materia Técnica")
         cvs.setFont("Helvetica", 9)
         cvs.drawString(50, y, f"Generado: {formatear_fecha_hora(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), self.main_window)}   |   "
                               f"Materias técnicas evaluadas: {len(filas)}")
@@ -1846,13 +1802,13 @@ class ModuloReportes(QWidget):
                           "Aprobados vs. Reprobados (Técnica)", ["Aprobados", "Reprobados"],
                           [total_aprobados, total_reprobados],
                           [colors.HexColor("#22C55E"), colors.HexColor("#EF4444")])
-        top_materias = sorted(filas, key=lambda f: f["promedio"], reverse=True)[:8]
-        categorias = [f["materia"][:12] for f in top_materias]
-        valores = [f["promedio"] for f in top_materias]
+        top_materias= sorted(filas, key=lambda f: f["promedio"], reverse=True)[:8]
+        categorias= [f["materia"][:12] for f in top_materias]
+        valores= [f["promedio"] for f in top_materias]
         self._dibujar_barras(cvs, Drawing, VerticalBarChart, colors, 310, y - 220, 250, 240,
                             "Promedio por Materia Técnica (Top 8)", categorias, valores,
                             colors.HexColor("#F59E0B"))
-        y2 = y - 250
+        y2= y - 250
         cvs.setFont("Helvetica-Bold", 11)
         cvs.drawString(50, y2, "Detalle por Especialidad / Materia Técnica")
         y2 -= 16
@@ -1867,7 +1823,7 @@ class ModuloReportes(QWidget):
         for f in filas:
             if y2 < 60:
                 cvs.showPage()
-                y2 = alto - 60
+                y2= alto - 60
             cvs.drawString(50, y2, f["especialidad"][:24])
             cvs.drawString(200, y2, f["materia"][:24])
             cvs.drawString(355, y2, str(f["evaluados"]))
@@ -1882,21 +1838,21 @@ class ModuloReportes(QWidget):
         mostrar_mensaje("exito", "Exportado", f"Reporte guardado en:\n{ruta}", self)
         self._registrar_archivo_reciente(ruta)
 
-    # ---------------- REPORTES PDF CON GRÁFICOS ----------------
+    #---------------- REPORTES PDF CON GRÁFICOS ----------------
     def _tab_pdf_graficos(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
-        info = QLabel("Genera reportes PDF con el logotipo institucional y gráficos de barras/pastel "
+        w= QWidget()
+        l= QVBoxLayout(w)
+        info= QLabel("Genera reportes PDF con el logotipo institucional y gráficos de barras/pastel "
                       "sobre el rendimiento académico y la asistencia general. Los archivos generados "
                       "quedan disponibles al instante en la pestaña «Vista Previa y Edición».")
         info.setObjectName("DescModulo")
         info.setWordWrap(True)
         l.addWidget(info)
-        btn_rendimiento = BotonAnimado("Exportar Reporte de Rendimiento Académico (PDF)")
+        btn_rendimiento= BotonAnimado("Exportar Reporte de Rendimiento Académico (PDF)")
         btn_rendimiento.setObjectName("BtnAccionAgregar")
         btn_rendimiento.clicked.connect(self._exportar_rendimiento_pdf)
         l.addWidget(btn_rendimiento)
-        btn_asistencia_pdf = BotonAnimado("Exportar Reporte de Asistencia General (PDF)")
+        btn_asistencia_pdf= BotonAnimado("Exportar Reporte de Asistencia General (PDF)")
         btn_asistencia_pdf.setObjectName("BtnAccionEditar")
         btn_asistencia_pdf.clicked.connect(self._exportar_asistencia_pdf)
         l.addWidget(btn_asistencia_pdf)
@@ -1919,19 +1875,19 @@ class ModuloReportes(QWidget):
 
     def _dibujar_pie(self, cvs, Drawing, Pie, colors, x, y, ancho, alto, titulo, etiquetas, valores, paleta_colores):
         from reportlab.graphics.shapes import String
-        dibujo = Drawing(ancho, alto)
-        pie = Pie()
-        pie.x = 40
-        pie.y = 15
-        pie.width = min(ancho, alto) - 60
-        pie.height = pie.width
-        pie.data = valores
-        pie.labels = [f"{e} ({v})" for e, v in zip(etiquetas, valores)]
-        pie.simpleLabels = 1
-        pie.slices.strokeWidth = 0.5
+        dibujo= Drawing(ancho, alto)
+        pie= Pie()
+        pie.x= 40
+        pie.y= 15
+        pie.width= min(ancho, alto) - 60
+        pie.height= pie.width
+        pie.data= valores
+        pie.labels= [f"{e} ({v})" for e, v in zip(etiquetas, valores)]
+        pie.simpleLabels= 1
+        pie.slices.strokeWidth= 0.5
         for i, color in enumerate(paleta_colores):
             if i < len(pie.data):
-                pie.slices[i].fillColor = color
+                pie.slices[i].fillColor= color
         dibujo.add(pie)
         dibujo.add(String(ancho / 2, alto - 14, titulo, textAnchor="middle", fontSize=10, fontName="Helvetica-Bold"))
         dibujo.drawOn(cvs, x, y)
@@ -1939,37 +1895,37 @@ class ModuloReportes(QWidget):
     def _dibujar_barras(self, cvs, Drawing, VerticalBarChart, colors, x, y, ancho, alto, titulo,
                         categorias, valores, color_barra):
         from reportlab.graphics.shapes import String
-        dibujo = Drawing(ancho, alto)
-        grafico = VerticalBarChart()
-        grafico.x = 45
-        grafico.y = 30
-        grafico.width = ancho - 65
-        grafico.height = alto - 55
-        grafico.data = [valores]
-        grafico.categoryAxis.categoryNames = categorias
-        grafico.categoryAxis.labels.angle = 25
-        grafico.categoryAxis.labels.dy = -10
-        grafico.categoryAxis.labels.fontSize = 6.5
-        grafico.valueAxis.valueMin = 0
-        maximo = max(valores) if valores else 100
-        grafico.valueAxis.valueMax = max(10, maximo * 1.15)
-        grafico.bars[0].fillColor = color_barra
+        dibujo= Drawing(ancho, alto)
+        grafico= VerticalBarChart()
+        grafico.x= 45
+        grafico.y= 30
+        grafico.width= ancho - 65
+        grafico.height= alto - 55
+        grafico.data= [valores]
+        grafico.categoryAxis.categoryNames= categorias
+        grafico.categoryAxis.labels.angle= 25
+        grafico.categoryAxis.labels.dy= -10
+        grafico.categoryAxis.labels.fontSize= 6.5
+        grafico.valueAxis.valueMin= 0
+        maximo= max(valores) if valores else 100
+        grafico.valueAxis.valueMax= max(10, maximo * 1.15)
+        grafico.bars[0].fillColor= color_barra
         dibujo.add(grafico)
         dibujo.add(String(ancho / 2, alto - 14, titulo, textAnchor="middle", fontSize=10, fontName="Helvetica-Bold"))
         dibujo.drawOn(cvs, x, y)
 
     def _exportar_rendimiento_pdf(self):
-        recursos = self._cargar_reportlab_graphics()
+        recursos= self._cargar_reportlab_graphics()
         if recursos is None:
             return
         letter, canvas, Drawing, String, VerticalBarChart, Pie, colors = recursos
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("""SELECT nota_minima, nota_minima_primaria, nota_minima_secundaria,
                      sistema_calificacion FROM configuracion WHERE id=1""")
-        cfg = c.fetchone()
-        # Igual que en _cargar_institucional: cada estudiante se compara contra
-        # la nota mínima de SU nivel educativo, no una sola global.
+        cfg= c.fetchone()
+        #Igual que en _cargar_institucional: cada estudiante se compara contra la nota mínima de SU nivel educativo, no
+        #una sola global.
         c.execute("""SELECT calificaciones.estudiante_id as estudiante_id,
                      AVG(calificaciones.valor) as promedio, grados.nivel_educativo as nivel
                      FROM calificaciones
@@ -1978,13 +1934,13 @@ class ModuloReportes(QWidget):
                      LEFT JOIN grados ON secciones.grado_id = grados.id
                      WHERE calificaciones.estado_publicacion != 'Borrador'
                      GROUP BY calificaciones.estudiante_id""")
-        filas_promedios = c.fetchall()
-        promedios = [f["promedio"] for f in filas_promedios]
+        filas_promedios= c.fetchall()
+        promedios= [f["promedio"] for f in filas_promedios]
         c.execute("""SELECT materias.nombre as materia, AVG(calificaciones.valor) as promedio
                      FROM calificaciones LEFT JOIN materias ON calificaciones.materia_id = materias.id
                      WHERE materias.nombre IS NOT NULL AND calificaciones.estado_publicacion != 'Borrador'
                      GROUP BY calificaciones.materia_id ORDER BY promedio DESC LIMIT 8""")
-        materias_prom = c.fetchall()
+        materias_prom= c.fetchall()
         conn.close()
         if not promedios:
             mostrar_mensaje("advertencia", "Sin datos", "No hay calificaciones registradas para generar el reporte.", self)
@@ -1993,22 +1949,21 @@ class ModuloReportes(QWidget):
                                                "reporte_rendimiento.pdf", "PDF (*.pdf)")
         if not ruta:
             return
-        aprobados = sum(1 for f in filas_promedios
+        aprobados= sum(1 for f in filas_promedios
                          if (f["promedio"] or 0) >= resolver_nota_minima(cfg, nivel_educativo=f["nivel"]))
-        reprobados = len(promedios) - aprobados
-        # La nota mínima ya no es un único número institucional cuando el sistema
-        # es el Dominicano (Primaria/Secundaria difieren) — se muestra ambos
-        # valores en ese caso en vez de uno solo que podría no aplicarle a todos
-        # los estudiantes evaluados.
+        reprobados= len(promedios) - aprobados
+        #La nota mínima ya no es un único número institucional cuando el sistema es el Dominicano (Primaria/Secundaria
+        #difieren) — se muestra ambos valores en ese caso en vez de uno solo que podría no aplicarle a todos los
+        #estudiantes evaluados.
         if cfg and es_sistema_dominicano(cfg["sistema_calificacion"]):
-            texto_nota_minima = (f"Primaria {resolver_nota_minima(cfg, nivel_educativo='Primaria')} / "
+            texto_nota_minima= (f"Primaria {resolver_nota_minima(cfg, nivel_educativo='Primaria')} / "
                                   f"Secundaria {resolver_nota_minima(cfg, nivel_educativo='Secundaria')}")
         else:
-            texto_nota_minima = str(resolver_nota_minima(cfg, nivel_educativo=None))
-        institucion = _datos_institucion()
+            texto_nota_minima= str(resolver_nota_minima(cfg, nivel_educativo=None))
+        institucion= _datos_institucion()
         ancho, alto = letter
-        cvs = canvas.Canvas(ruta, pagesize=letter)
-        y = _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte de Rendimiento Académico")
+        cvs= canvas.Canvas(ruta, pagesize=letter)
+        y= _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte de Rendimiento Académico")
         cvs.setFont("Helvetica", 9)
         cvs.drawString(50, y, f"Generado: {formatear_fecha_hora(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), self.main_window)}   |   "
                               f"Estudiantes evaluados: {len(promedios)}   |   Nota mínima: {texto_nota_minima}")
@@ -2017,18 +1972,18 @@ class ModuloReportes(QWidget):
                           "Aprobados vs. Reprobados", ["Aprobados", "Reprobados"],
                           [aprobados, reprobados], [colors.HexColor("#22C55E"), colors.HexColor("#EF4444")])
         if materias_prom:
-            categorias = [m["materia"][:12] for m in materias_prom]
-            valores = [round(m["promedio"], 1) for m in materias_prom]
+            categorias= [m["materia"][:12] for m in materias_prom]
+            valores= [round(m["promedio"], 1) for m in materias_prom]
             self._dibujar_barras(cvs, Drawing, VerticalBarChart, colors, 310, y - 220, 250, 240,
                                 "Promedio por Materia (Top 8)", categorias, valores,
                                 colors.HexColor("#6366F1"))
-        y2 = y - 250
+        y2= y - 250
         cvs.setFont("Helvetica-Bold", 11)
         cvs.drawString(50, y2, "Resumen")
         y2 -= 16
         cvs.setFont("Helvetica", 9)
-        promedio_general = sum(promedios) / len(promedios)
-        tasa_reprobacion = round((reprobados / len(promedios)) * 100, 1)
+        promedio_general= sum(promedios) / len(promedios)
+        tasa_reprobacion= round((reprobados / len(promedios)) * 100, 1)
         cvs.drawString(50, y2, f"Promedio general institucional: {promedio_general:.2f}")
         y2 -= 14
         cvs.drawString(50, y2, f"Tasa de reprobación: {tasa_reprobacion}%")
@@ -2041,14 +1996,14 @@ class ModuloReportes(QWidget):
         self._registrar_archivo_reciente(ruta)
 
     def _exportar_asistencia_pdf(self):
-        recursos = self._cargar_reportlab_graphics()
+        recursos= self._cargar_reportlab_graphics()
         if recursos is None:
             return
         letter, canvas, Drawing, String, VerticalBarChart, Pie, colors = recursos
-        conn = get_connection()
-        c = conn.cursor()
-        estados = ["Presente", "Ausente", "Tardanza", "Excusado"]
-        conteos = []
+        conn= obtener_conexion()
+        c= conn.cursor()
+        estados= ["Presente", "Ausente", "Tardanza", "Excusado"]
+        conteos= []
         for estado in estados:
             c.execute("SELECT COUNT(*) n FROM asistencia WHERE estado=?", (estado,))
             conteos.append(c.fetchone()["n"])
@@ -2060,7 +2015,7 @@ class ModuloReportes(QWidget):
                      LEFT JOIN grados ON secciones.grado_id = grados.id
                      GROUP BY asistencia.seccion_id
                      ORDER BY seccion_nombre""")
-        por_seccion = c.fetchall()
+        por_seccion= c.fetchall()
         conn.close()
         if sum(conteos) == 0:
             mostrar_mensaje("advertencia", "Sin datos", "No hay registros de asistencia para generar el reporte.", self)
@@ -2069,21 +2024,21 @@ class ModuloReportes(QWidget):
                                                "reporte_asistencia.pdf", "PDF (*.pdf)")
         if not ruta:
             return
-        institucion = _datos_institucion()
+        institucion= _datos_institucion()
         ancho, alto = letter
-        cvs = canvas.Canvas(ruta, pagesize=letter)
-        y = _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte General de Asistencia")
+        cvs= canvas.Canvas(ruta, pagesize=letter)
+        y= _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte General de Asistencia")
         cvs.setFont("Helvetica", 9)
         cvs.drawString(50, y, f"Generado: {formatear_fecha_hora(datetime.now().strftime('%Y-%m-%d %H:%M:%S'), self.main_window)}   |   "
                               f"Registros totales: {sum(conteos)}")
         y -= 20
-        colores_estados = [colors.HexColor("#22C55E"), colors.HexColor("#EF4444"),
+        colores_estados= [colors.HexColor("#22C55E"), colors.HexColor("#EF4444"),
                           colors.HexColor("#F59E0B"), colors.HexColor("#3B82F6")]
         self._dibujar_pie(cvs, Drawing, Pie, colors, 50, y - 220, 250, 240,
                           "Distribución de Asistencia", estados, conteos, colores_estados)
         if por_seccion:
-            categorias = [f["seccion_nombre"][:12] if f["seccion_nombre"] else "—" for f in por_seccion][:8]
-            valores = [round((f["presentes"] / f["total"]) * 100, 1) if f["total"] else 0
+            categorias= [f["seccion_nombre"][:12] if f["seccion_nombre"] else "—" for f in por_seccion][:8]
+            valores= [round((f["presentes"] / f["total"]) * 100, 1) if f["total"] else 0
                       for f in por_seccion][:8]
             self._dibujar_barras(cvs, Drawing, VerticalBarChart, colors, 310, y - 220, 250, 240,
                                 "% Asistencia por Sección", categorias, valores,
@@ -2096,31 +2051,31 @@ class ModuloReportes(QWidget):
         mostrar_mensaje("exito", "Exportado", f"Reporte guardado en:\n{ruta}", self)
         self._registrar_archivo_reciente(ruta)
 
-    # ---------------- EXPORTACIÓN MASIVA (XLSX) ----------------
+    #---------------- EXPORTACIÓN MASIVA (XLSX) ----------------
     def _tab_exportacion_masiva(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         if self._es_docente():
-            info = QLabel("Genera listados en formato Excel (.xlsx) con estilos, encabezados congelados y "
+            info= QLabel("Genera listados en formato Excel (.xlsx) con estilos, encabezados congelados y "
                           "anchos de columna ajustados. Las calificaciones y la asistencia se exportan "
                           "solo de las materias que tú impartes. Ábrelos directamente en «Vista Previa y "
                           "Edición» para revisarlos o retocarlos sin salir de AcaDeXI.")
         else:
-            info = QLabel("Genera listados institucionales completos en formato Excel (.xlsx) con estilos, "
+            info= QLabel("Genera listados institucionales completos en formato Excel (.xlsx) con estilos, "
                           "encabezados congelados y anchos de columna ajustados. Ábrelos directamente en "
                           "«Vista Previa y Edición» para revisarlos o retocarlos sin salir de AcaDeXI.")
         info.setObjectName("DescModulo")
         info.setWordWrap(True)
         l.addWidget(info)
-        btn_estudiantes = BotonAnimado("Exportar Listado de Estudiantes (XLSX)")
+        btn_estudiantes= BotonAnimado("Exportar Listado de Estudiantes (XLSX)")
         btn_estudiantes.setObjectName("BtnAccionAgregar")
         btn_estudiantes.clicked.connect(self._exportar_estudiantes_xlsx)
         l.addWidget(btn_estudiantes)
-        btn_notas = BotonAnimado("Exportar Notas / Calificaciones (XLSX)")
+        btn_notas= BotonAnimado("Exportar Notas / Calificaciones (XLSX)")
         btn_notas.setObjectName("BtnAccionEditar")
         btn_notas.clicked.connect(self._exportar_notas_xlsx)
         l.addWidget(btn_notas)
-        btn_asistencia = BotonAnimado("Exportar Consolidado de Asistencia (XLSX)")
+        btn_asistencia= BotonAnimado("Exportar Consolidado de Asistencia (XLSX)")
         btn_asistencia.setObjectName("BtnAccionAjustar")
         btn_asistencia.clicked.connect(self._exportar_asistencia_xlsx)
         l.addWidget(btn_asistencia)
@@ -2139,36 +2094,36 @@ class ModuloReportes(QWidget):
 
     def _hoja_con_estilos(self, wb, titulo_hoja, encabezados, filas, anchos=None):
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-        ws = wb.active
-        ws.title = titulo_hoja
-        color_encabezado = PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
-        fuente_encabezado = Font(color="FFFFFF", bold=True, size=11)
-        alineacion_centro = Alignment(horizontal="center", vertical="center")
-        borde_fino = Border(bottom=Side(style="thin", color="CBD5E1"))
+        ws= wb.active
+        ws.title= titulo_hoja
+        color_encabezado= PatternFill(start_color="2563EB", end_color="2563EB", fill_type="solid")
+        fuente_encabezado= Font(color="FFFFFF", bold=True, size=11)
+        alineacion_centro= Alignment(horizontal="center", vertical="center")
+        borde_fino= Border(bottom=Side(style="thin", color="CBD5E1"))
         for col_idx, encabezado in enumerate(encabezados, start=1):
-            celda = ws.cell(row=1, column=col_idx, value=encabezado)
-            celda.fill = color_encabezado
-            celda.font = fuente_encabezado
-            celda.alignment = alineacion_centro
+            celda= ws.cell(row=1, column=col_idx, value=encabezado)
+            celda.fill= color_encabezado
+            celda.font= fuente_encabezado
+            celda.alignment= alineacion_centro
         for fila_idx, fila in enumerate(filas, start=2):
             for col_idx, valor in enumerate(fila, start=1):
-                celda = ws.cell(row=fila_idx, column=col_idx, value=valor)
-                celda.border = borde_fino
+                celda= ws.cell(row=fila_idx, column=col_idx, value=valor)
+                celda.border= borde_fino
                 if fila_idx % 2 == 0:
-                    celda.fill = PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
-        ws.freeze_panes = "A2"
-        anchos = anchos or [18] * len(encabezados)
+                    celda.fill= PatternFill(start_color="F1F5F9", end_color="F1F5F9", fill_type="solid")
+        ws.freeze_panes= "A2"
+        anchos= anchos or [18] * len(encabezados)
         for col_idx, ancho in enumerate(anchos, start=1):
-            ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = ancho
-        ws.auto_filter.ref = ws.dimensions
+            ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width= ancho
+        ws.auto_filter.ref= ws.dimensions
         return ws
 
     def _exportar_estudiantes_xlsx(self):
         if self._cargar_openpyxl() is None:
             return
         import openpyxl
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("""SELECT estudiantes.matricula, estudiantes.nombre, estudiantes.apellidos, estudiantes.sexo,
                      estudiantes.fecha_nacimiento, estudiantes.documento, estudiantes.telefono, estudiantes.correo,
                      estudiantes.tutor, (grados.nombre || ' - ' || secciones.nombre) as seccion_nombre,
@@ -2177,15 +2132,15 @@ class ModuloReportes(QWidget):
                      LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
                      LEFT JOIN grados ON secciones.grado_id = grados.id
                      ORDER BY estudiantes.apellidos, estudiantes.nombre""")
-        filas = [tuple(f) for f in c.fetchall()]
+        filas= [tuple(f) for f in c.fetchall()]
         conn.close()
         ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Estudiantes", "estudiantes.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
-        wb = openpyxl.Workbook()
-        encabezados = ["Matrícula", "Nombre", "Apellidos", "Sexo", "Fecha Nac.", "Documento",
+        wb= openpyxl.Workbook()
+        encabezados= ["Matrícula", "Nombre", "Apellidos", "Sexo", "Fecha Nac.", "Documento",
                        "Teléfono", "Correo", "Tutor/Padre", "Sección", "Estado"]
-        anchos = [14, 18, 18, 12, 12, 16, 14, 24, 20, 22, 10]
+        anchos= [14, 18, 18, 12, 12, 16, 14, 24, 20, 22, 10]
         self._hoja_con_estilos(wb, "Estudiantes", encabezados, filas, anchos)
         wb.save(ruta)
         registrar_auditoria("Reportes", "Exportó listado de estudiantes (XLSX)", self.main_window.usuario_actual, ruta)
@@ -2196,10 +2151,10 @@ class ModuloReportes(QWidget):
         if self._cargar_openpyxl() is None:
             return
         import openpyxl
-        conn = get_connection()
-        c = conn.cursor()
-        # Igual que en la pestaña de Vista/Riesgo: si quien exporta es un
-        # docente, el Excel de calificaciones solo debe traer SUS materias.
+        conn= obtener_conexion()
+        c= conn.cursor()
+        #Igual que en la pestaña de Vista/Riesgo: si quien exporta es un docente, el Excel de calificaciones solo debe
+        #traer SUS materias.
         filtro_materia, params_materia = self._filtro_sql_materias_docente("calificaciones.materia_id")
         c.execute(f"""SELECT (estudiantes.nombre || ' ' || IFNULL(estudiantes.apellidos,'')) as estudiante,
                      materias.nombre as materia, periodos.nombre as periodo, calificaciones.categoria,
@@ -2210,14 +2165,14 @@ class ModuloReportes(QWidget):
                      LEFT JOIN periodos ON calificaciones.periodo_id = periodos.id
                      WHERE calificaciones.estado_publicacion != 'Borrador'{filtro_materia}
                      ORDER BY estudiantes.apellidos, periodos.orden""", params_materia)
-        filas = [tuple(f) for f in c.fetchall()]
+        filas= [tuple(f) for f in c.fetchall()]
         conn.close()
         ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Notas", "calificaciones.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
-        wb = openpyxl.Workbook()
-        encabezados = ["Estudiante", "Materia", "Periodo", "Categoría", "Descripción", "Valor", "Peso (%)"]
-        anchos = [22, 18, 14, 14, 26, 10, 10]
+        wb= openpyxl.Workbook()
+        encabezados= ["Estudiante", "Materia", "Periodo", "Categoría", "Descripción", "Valor", "Peso (%)"]
+        anchos= [22, 18, 14, 14, 26, 10, 10]
         self._hoja_con_estilos(wb, "Calificaciones", encabezados, filas, anchos)
         wb.save(ruta)
         registrar_auditoria("Reportes", "Exportó notas (XLSX)", self.main_window.usuario_actual, ruta)
@@ -2228,15 +2183,13 @@ class ModuloReportes(QWidget):
         if self._cargar_openpyxl() is None:
             return
         import openpyxl
-        conn = get_connection()
-        c = conn.cursor()
-        # Mismo criterio que en el consolidado en pantalla: si es un docente,
-        # solo su/s materia/s (lo que automáticamente limita esto a los días
-        # que él impartió esa clase, porque cada registro de asistencia ya
-        # está atado a una materia y una fecha concretas).
+        conn= obtener_conexion()
+        c= conn.cursor()
+        #Mismo criterio que en el consolidado en pantalla: si es un docente, solo su/s materia/s (lo que
+        #automáticamente limita esto a los días que él impartió esa clase, porque cada registro de asistencia ya está
+        #atado a una materia y una fecha concretas).
         filtro_materia, params_materia = self._filtro_sql_materias_docente("asistencia.materia_id")
-        # Igual que en la tabla en pantalla: una sola consulta agregada en
-        # vez de 4 SELECT por estudiante.
+        #Igual que en la tabla en pantalla: una sola consulta agregada en vez de 4 SELECT por estudiante.
         c.execute(f"""SELECT estudiantes.nombre, estudiantes.apellidos,
                      (grados.nombre || ' - ' || secciones.nombre) as seccion_nombre,
                      SUM(CASE WHEN asistencia.estado='Presente' THEN 1 ELSE 0 END) as presentes,
@@ -2250,31 +2203,31 @@ class ModuloReportes(QWidget):
                      WHERE estudiantes.estado='Activo'
                      GROUP BY estudiantes.id
                      ORDER BY estudiantes.apellidos""", params_materia)
-        filas_bd = c.fetchall()
+        filas_bd= c.fetchall()
         conn.close()
-        filas = []
+        filas= []
         for est in filas_bd:
-            presentes = est["presentes"] or 0
-            ausentes = est["ausentes"] or 0
-            tardanzas = est["tardanzas"] or 0
-            excusados = est["excusados"] or 0
-            total = presentes + ausentes + tardanzas + excusados
-            porcentaje = round((presentes / total) * 100, 1) if total else 0
+            presentes= est["presentes"] or 0
+            ausentes= est["ausentes"] or 0
+            tardanzas= est["tardanzas"] or 0
+            excusados= est["excusados"] or 0
+            total= presentes + ausentes + tardanzas + excusados
+            porcentaje= round((presentes / total) * 100, 1) if total else 0
             filas.append((f"{est['nombre']} {est['apellidos'] or ''}", est["seccion_nombre"] or "",
                           presentes, ausentes, tardanzas, excusados, f"{porcentaje}%"))
         ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Asistencia", "consolidado_asistencia.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
-        wb = openpyxl.Workbook()
-        encabezados = ["Estudiante", "Sección", "Presente", "Ausente", "Tardanza", "Excusado", "% Asistencia"]
-        anchos = [22, 22, 10, 10, 10, 10, 14]
+        wb= openpyxl.Workbook()
+        encabezados= ["Estudiante", "Sección", "Presente", "Ausente", "Tardanza", "Excusado", "% Asistencia"]
+        anchos= [22, 22, 10, 10, 10, 10, 14]
         self._hoja_con_estilos(wb, "Asistencia", encabezados, filas, anchos)
         wb.save(ruta)
         registrar_auditoria("Reportes", "Exportó consolidado de asistencia (XLSX)", self.main_window.usuario_actual, ruta)
         mostrar_mensaje("exito", "Exportado", f"Consolidado de asistencia guardado en:\n{ruta}", self)
         self._registrar_archivo_reciente(ruta)
 
-    # ---------------- VISTA PREVIA Y EDICIÓN ----------------
+    #---------------- VISTA PREVIA Y EDICIÓN ----------------
     def _tab_vista_previa(self):
         """OJO -causa real del "congelamiento"/ventana fantasma al entrar a
         Reportes-: antes VisorEditorReportes (un widget pesado, con CUATRO
@@ -2289,22 +2242,22 @@ class ModuloReportes(QWidget):
         editor pesado real se construye la PRIMERA vez que el usuario
         realmente entra a esta pestaña (ver _construir_visor_editor_diferido,
         conectado a tabs.currentChanged)."""
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
-        info = QLabel("Abre aquí los reportes que generes (CSV, Excel, Word o PDF): se abren en una vista "
+        info= QLabel("Abre aquí los reportes que generes (CSV, Excel, Word o PDF): se abren en una vista "
                       "grande y cómoda donde puedes escribir directamente, dar formato, filtrar/ordenar, "
                       "exportarlos a otros formatos e imprimirlos, y en PDF navegar, rotar, insertar o "
                       "eliminar páginas, añadir una marca de agua o combinar documentos.")
         info.setObjectName("DescModulo")
         info.setWordWrap(True)
         l.addWidget(info)
-        self._contenedor_visor_editor = QWidget()
+        self._contenedor_visor_editor= QWidget()
         QVBoxLayout(self._contenedor_visor_editor).setContentsMargins(0, 0, 0, 0)
         l.addWidget(self._contenedor_visor_editor, 1)
-        self.visor_editor = None  # se crea de verdad recién al elegir un archivo (ver más abajo)
-        self._rutas_recientes_reportes = getattr(self, "_rutas_recientes_reportes", [])
-        self._indice_pestana_vista_previa = self.tabs.count() if hasattr(self, "tabs") else None
+        self.visor_editor= None  #se crea de verdad recién al elegir un archivo (ver más abajo)
+        self._rutas_recientes_reportes= getattr(self, "_rutas_recientes_reportes", [])
+        self._indice_pestana_vista_previa= self.tabs.count() if hasattr(self, "tabs") else None
         return w
 
     def _construir_visor_editor_diferido(self, indice):
@@ -2324,7 +2277,7 @@ class ModuloReportes(QWidget):
             return
         if indice != getattr(self, "_indice_pestana_vista_previa", None):
             return
-        self._placeholder_visor_construido = True
+        self._placeholder_visor_construido= True
         self._mostrar_placeholder_visor_editor()
 
     def _mostrar_placeholder_visor_editor(self):
@@ -2335,44 +2288,44 @@ class ModuloReportes(QWidget):
         "Terminar de editar" y se destruye el editor pesado -ver
         _terminar_editor_reportes()-, no solo la primera vez que se entra
         a la pestaña."""
-        contenedor = QWidget()
-        cl = QVBoxLayout(contenedor)
+        contenedor= QWidget()
+        cl= QVBoxLayout(contenedor)
         cl.addStretch()
-        icono = QLabel("")
+        icono= QLabel("")
         icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         from src.nucleo.iconos_emoji import pixmap_emoji
         icono.setPixmap(pixmap_emoji("📄", 46))
         cl.addWidget(icono)
-        texto = QLabel("Abre un PDF, Excel, Word o CSV para previsualizarlo y editarlo aquí.")
+        texto= QLabel("Abre un PDF, Excel, Word o CSV para previsualizarlo y editarlo aquí.")
         texto.setAlignment(Qt.AlignmentFlag.AlignCenter)
         texto.setObjectName("DescModulo")
         texto.setWordWrap(True)
         cl.addWidget(texto)
-        btn_abrir = BotonAnimado("Abrir archivo")
+        btn_abrir= BotonAnimado("Abrir archivo")
         btn_abrir.setObjectName("BtnAccionAgregar")
-        fila_btn = QHBoxLayout()
+        fila_btn= QHBoxLayout()
         fila_btn.addStretch()
         fila_btn.addWidget(btn_abrir)
         fila_btn.addStretch()
         cl.addLayout(fila_btn)
         btn_abrir.clicked.connect(self._placeholder_elegir_archivo)
         if self._rutas_recientes_reportes:
-            lbl_rec = QLabel("O abre un reporte reciente de esta sesión:")
+            lbl_rec= QLabel("O abre un reporte reciente de esta sesión:")
             lbl_rec.setObjectName("DescModulo")
             lbl_rec.setAlignment(Qt.AlignmentFlag.AlignCenter)
             cl.addWidget(lbl_rec)
             for ruta in self._rutas_recientes_reportes[:5]:
-                btn_rec = QPushButton(f"📄 {os.path.basename(ruta)}")
+                btn_rec= QPushButton(f"📄 {os.path.basename(ruta)}")
                 btn_rec.setCursor(Qt.CursorShape.PointingHandCursor)
                 btn_rec.clicked.connect(lambda _=False, r=ruta: self._terminar_de_abrir_editor(r))
-                fila_rec = QHBoxLayout()
+                fila_rec= QHBoxLayout()
                 fila_rec.addStretch()
                 fila_rec.addWidget(btn_rec)
                 fila_rec.addStretch()
                 cl.addLayout(fila_rec)
         cl.addStretch()
         self._contenedor_visor_editor.layout().addWidget(contenedor)
-        self._placeholder_visor_editor = contenedor
+        self._placeholder_visor_editor= contenedor
 
     def _placeholder_elegir_archivo(self):
         """Botón "Abrir archivo" del marcador de posición liviano: el
@@ -2394,28 +2347,27 @@ class ModuloReportes(QWidget):
         if self.visor_editor is not None:
             self.visor_editor.abrir_archivo(ruta)
             return
-        layout = self._contenedor_visor_editor.layout()
+        layout= self._contenedor_visor_editor.layout()
         if getattr(self, "_placeholder_visor_editor", None) is not None:
             layout.removeWidget(self._placeholder_visor_editor)
             self._placeholder_visor_editor.deleteLater()
-            self._placeholder_visor_editor = None
-        etiqueta_carga = QLabel("⏳ Cargando editor…")
+            self._placeholder_visor_editor= None
+        etiqueta_carga= QLabel("⏳ Cargando editor…")
         etiqueta_carga.setObjectName("DescModulo")
         etiqueta_carga.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(etiqueta_carga)
         QApplication.processEvents()
 
         def _construir_de_verdad():
-            self.visor_editor = VisorEditorReportes(self.main_window)
+            self.visor_editor= VisorEditorReportes(self.main_window)
             self.visor_editor.solicitud_terminar_edicion.connect(self._terminar_editor_reportes)
             layout.removeWidget(etiqueta_carga)
             etiqueta_carga.deleteLater()
             layout.addWidget(self.visor_editor)
             self.visor_editor.actualizar_tema()
-            # Los reportes que se exportaron desde otras pestañas ANTES de
-            # que este editor existiera (ver _registrar_archivo_reciente)
-            # se le pasan ahora, para que aparezcan en su combo de
-            # "Archivos recientes" como si siempre hubiera estado abierto.
+            #Los reportes que se exportaron desde otras pestañas ANTES de que este editor existiera (ver
+            #_registrar_archivo_reciente) se le pasan ahora, para que aparezcan en su combo de "Archivos recientes" como si
+            #siempre hubiera estado abierto.
             for r in reversed(self._rutas_recientes_reportes):
                 self.visor_editor.agregar_reciente(r)
             self.visor_editor.abrir_archivo(ruta)
@@ -2435,10 +2387,10 @@ class ModuloReportes(QWidget):
         entra a ella, para no seguir gastando memoria/CPU sin necesidad."""
         if getattr(self, "visor_editor", None) is None:
             return
-        layout = self._contenedor_visor_editor.layout()
+        layout= self._contenedor_visor_editor.layout()
         layout.removeWidget(self.visor_editor)
         self.visor_editor.deleteLater()
-        self.visor_editor = None
+        self.visor_editor= None
         self._mostrar_placeholder_visor_editor()
 
     def _registrar_archivo_reciente(self, ruta):
@@ -2452,23 +2404,21 @@ class ModuloReportes(QWidget):
         _terminar_de_abrir_editor)."""
         if not ruta:
             return
-        self._rutas_recientes_reportes = getattr(self, "_rutas_recientes_reportes", [])
-        self._rutas_recientes_reportes = [r for r in self._rutas_recientes_reportes if r != ruta]
+        self._rutas_recientes_reportes= getattr(self, "_rutas_recientes_reportes", [])
+        self._rutas_recientes_reportes= [r for r in self._rutas_recientes_reportes if r != ruta]
         self._rutas_recientes_reportes.insert(0, ruta)
-        self._rutas_recientes_reportes = self._rutas_recientes_reportes[:10]
+        self._rutas_recientes_reportes= self._rutas_recientes_reportes[:10]
         if getattr(self, "visor_editor", None) is not None:
             self.visor_editor.agregar_reciente(ruta)
 
-    # ------------------------------------------------------------
+    #------------------------------------------------------------
     def refrescar(self):
-        # Para un docente, varias de estas pestañas ni siquiera se
-        # construyeron (ver _build_ui): solo refrescamos lo que exista.
-        # OJO: antes se comprobaba `hasattr(self, "tabla_institucional")`,
-        # pero esa pestaña nunca crea ninguna tabla con ese nombre -crea
-        # tarjetas KPI (self.kpi_estudiantes, etc.)-, así que esa condición
-        # era SIEMPRE False y _cargar_institucional() nunca se llamaba: la
-        # pestaña "Institucional" se quedaba en blanco/con ceros para
-        # siempre, incluso pulsando "🔄 Actualizar todo".
+        #Para un docente, varias de estas pestañas ni siquiera se
+        #construyeron (ver _build_ui): solo refrescamos lo que exista.
+        #OJO: antes se comprobaba `hasattr(self, "tabla_institucional")`, pero esa pestaña nunca crea ninguna tabla con
+        #ese nombre -crea tarjetas KPI (self.kpi_estudiantes, etc.)-, así que esa condición era SIEMPRE False y
+        #_cargar_institucional() nunca se llamaba: la pestaña "Institucional" se quedaba en blanco/con ceros para
+        #siempre, incluso pulsando "🔄 Actualizar todo".
         if hasattr(self, "kpi_estudiantes"):
             self._cargar_institucional()
         self._cargar_riesgo()
@@ -2477,19 +2427,17 @@ class ModuloReportes(QWidget):
         self._cargar_asistencia()
         if hasattr(self, "tabla_rendimiento_tecnico"):
             self._cargar_rendimiento_tecnico()
-        # Icono de reloj dibujado con QPainter (mismo dibujo que ya usa el
-        # resto de la app), insertado como <img> inline en vez del emoji
-        # real para no depender de una fuente de emojis del sistema.
+        #Icono de reloj dibujado con QPainter (mismo dibujo que ya usa el resto de la app), insertado como <img> inline
+        #en vez del emoji real para no depender de una fuente de emojis del sistema.
         self.chip_actualizado.setText(
             f"{html_icono_emoji('🕒', 14)} Actualizado "
             f"{formatear_hora(datetime.now().strftime('%H:%M'), self.main_window)}")
 
     def actualizar_tema(self):
-        colores = _colores_tema(self.main_window)
-        # Barra de pestañas: mismo diseño "píldora" con degradado que en
-        # Configuración y Asistencia (se estiliza aparte, solo sobre self.tabs,
-        # para no forzar un repintado de todo el módulo).
-        accent_suave = _hex_a_rgba(colores['accent'], 0.16)
+        colores= _colores_tema(self.main_window)
+        #Barra de pestañas: mismo diseño "píldora" con degradado que en Configuración y Asistencia (se estiliza aparte,
+        #solo sobre self.tabs, para no forzar un repintado de todo el módulo).
+        accent_suave= _hex_a_rgba(colores['accent'], 0.16)
         self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{
                 border: none;
@@ -2632,7 +2580,7 @@ class ModuloReportes(QWidget):
         if getattr(self, "visor_editor", None) is not None:
             self.visor_editor.actualizar_tema()
 
-        estilo_dialogo_filtros = f"""
+        estilo_dialogo_filtros= f"""
             QDialog#DialogoFiltrosReportes {{
                 background-color: {colores['bg_panel']};
             }}

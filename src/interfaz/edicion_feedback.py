@@ -18,9 +18,9 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QScrollArea,
 
 from src.nucleo.iconos_emoji import pixmap_emoji
 
-_DURACION_FADE = 220
-_DURACION_SCROLL = 320
-_ESPERA_SCROLL = 90  # ms: espera a que el layout asiente tras cargar datos
+_DURACION_FADE= 220
+_DURACION_SCROLL= 320
+_ESPERA_SCROLL= 90  #ms: espera a que el layout asiente tras cargar datos
 
 
 class BannerEdicion(QFrame):
@@ -31,20 +31,20 @@ class BannerEdicion(QFrame):
         self.setObjectName("BannerEdicion")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFixedHeight(34)
-        lay = QHBoxLayout(self)
+        lay= QHBoxLayout(self)
         lay.setContentsMargins(10, 4, 10, 4)
         lay.setSpacing(8)
-        self.lbl_icono = QLabel()
+        self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji("✏", 15))
         self.lbl_icono.setFixedSize(18, 18)
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_texto = QLabel("")
+        self.lbl_texto= QLabel("")
         self.lbl_texto.setStyleSheet("font-weight: 600;")
         lay.addWidget(self.lbl_icono)
         lay.addWidget(self.lbl_texto)
         lay.addStretch()
-        self._anim_fade = None
-        self._anim_scroll = None
+        self._anim_fade= None
+        self._anim_scroll= None
         self.hide()
 
     def activar(self, texto):
@@ -52,19 +52,19 @@ class BannerEdicion(QFrame):
         self._aplicar_estilo()
         if not self.isVisible():
             self.show()
-            # Fundido de entrada (una sola vez por activación, muy barato)
+            #Fundido de entrada (una sola vez por activación, muy barato)
             try:
                 from PySide6.QtWidgets import QGraphicsOpacityEffect
-                efecto = QGraphicsOpacityEffect(self)
+                efecto= QGraphicsOpacityEffect(self)
                 self.setGraphicsEffect(efecto)
-                anim = QPropertyAnimation(efecto, b"opacity", self)
+                anim= QPropertyAnimation(efecto, b"opacity", self)
                 anim.setDuration(_DURACION_FADE)
                 anim.setStartValue(0.0)
                 anim.setEndValue(1.0)
                 anim.setEasingCurve(QEasingCurve.Type.OutCubic)
                 anim.finished.connect(lambda: self.setGraphicsEffect(None))
                 anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
-                self._anim_fade = anim
+                self._anim_fade= anim
             except Exception:
                 self.setGraphicsEffect(None)
 
@@ -73,50 +73,39 @@ class BannerEdicion(QFrame):
 
     def changeEvent(self, event):
         super().changeEvent(event)
-        # _aplicar_estilo() se llamaba solo desde activar() -al mostrar el
-        # banner por primera vez para un formulario-, así que si el usuario
-        # cambiaba de tema con el banner YA abierto (formulario en edición
-        # mientras se togglea modo claro/oscuro), el color se quedaba
-        # congelado con el que tenía al momento de aparecer, aunque el
-        # resto de la app sí se hubiera puesto al día.
+        #_aplicar_estilo() se llamaba solo desde activar() -al mostrar el
+        #banner por primera vez para un formulario-, así que si el usuario cambiaba de tema con el banner YA abierto
+        #(formulario en edición mientras se togglea modo claro/oscuro), el color se quedaba congelado con el que tenía
+        #al momento de aparecer, aunque el resto de la app sí se hubiera puesto al día.
         #
-        # Cuando main_window cambia de tema, aplica un nuevo stylesheet
-        # sobre sí misma (ver main.py ▸ _aplicar_estilos_globales_tema), y
-        # Qt propaga eso como un StyleChange también hacia los
-        # descendientes -aunque, como este banner, tengan su propio
-        # stylesheet puesto-, para que puedan recalcular lo que dependa de
-        # reglas heredadas. Enganchando ese evento, el banner se repinta
-        # solo, sin que main.py (ni cada módulo con un formulario) tenga
-        # que acordarse de este widget en particular.
+        #Cuando main_window cambia de tema, aplica un nuevo stylesheet sobre sí misma (ver main.py ▸
+        #_aplicar_estilos_globales_tema), y Qt propaga eso como un StyleChange también hacia los descendientes -aunque,
+        #como este banner, tengan su propio stylesheet puesto-, para que puedan recalcular lo que dependa de reglas
+        #heredadas. Enganchando ese evento, el banner se repinta solo, sin que main.py (ni cada módulo con un
+        #formulario) tenga que acordarse de este widget en particular.
         #
-        # Guard de reentrancia: _aplicar_estilo() llama a self.setStyleSheet(),
-        # que a su vez DISPARA otro StyleChange sobre sí mismo -sin este
-        # guard, quedaría llamándose a sí mismo sin parar.
+        #Guard de reentrancia: _aplicar_estilo() llama a self.setStyleSheet(), que a su vez DISPARA otro StyleChange
+        #sobre sí mismo -sin este guard, quedaría llamándose a sí mismo sin parar.
         if event.type() in (QEvent.Type.StyleChange, QEvent.Type.PaletteChange):
             if not getattr(self, "_actualizando_estilo_por_tema", False):
-                self._actualizando_estilo_por_tema = True
+                self._actualizando_estilo_por_tema= True
                 try:
                     self._aplicar_estilo()
                 finally:
-                    self._actualizando_estilo_por_tema = False
+                    self._actualizando_estilo_por_tema= False
 
     def _aplicar_estilo(self):
-        # Antes se tomaba el color de texto de self.palette().color(WindowText),
-        # asumiendo que reflejaría el tema activo -pero un QFrame anclado
-        # dentro de un formulario no siempre hereda una paleta actualizada al
-        # vuelo (ver el mismo problema que resuelve formato_hora.py subiendo
-        # la cadena de padres en vez de confiar en la paleta local), así que
-        # en modo oscuro el texto podía quedar oscuro sobre el fondo azulado
-        # translúcido del banner -difícil de leer-. Ahora se sube por la
-        # cadena de padres buscando main_window.modo_oscuro directamente
-        # (la misma fuente de verdad que usa el resto de la app para pintar
-        # sus temas), y se fija el color en consecuencia: blanco en modo
-        # oscuro, negro en modo claro -igual que el resto de "etiquetas
-        # planas" de la app (ver main_window._aplicar_estilos_globales_tema,
-        # "color_etiqueta_plana")-. El texto además pasa a bold (antes 600,
-        # ahora 700) para que el banner se note más de un vistazo -el color
-        # solo no bastaba para que resaltara lo suficiente sobre el fondo-.
-        color_txt = "#FFFFFF" if self._modo_oscuro_activo() else "#000000"
+        #Antes se tomaba el color de texto de self.palette().color(WindowText), asumiendo que reflejaría el tema activo
+        #-pero un QFrame anclado dentro de un formulario no siempre hereda una paleta actualizada al
+        #vuelo (ver el mismo problema que resuelve formato_hora.py subiendo
+        #la cadena de padres en vez de confiar en la paleta local), así que en modo oscuro el texto podía quedar oscuro
+        #sobre el fondo azulado translúcido del banner -difícil de leer-. Ahora se sube por la cadena de padres
+        #buscando main_window.modo_oscuro directamente (la misma fuente de verdad que usa el resto de la app para
+        #pintar sus temas), y se fija el color en consecuencia: blanco en modo oscuro, negro en modo claro -igual que
+        #el resto de "etiquetas planas" de la app (ver main_window._aplicar_estilos_globales_tema,
+        #"color_etiqueta_plana")-. El texto además pasa a bold (antes 600, ahora 700) para que el banner se note más de
+        #un vistazo -el color solo no bastaba para que resaltara lo suficiente sobre el fondo-.
+        color_txt= "#FFFFFF" if self._modo_oscuro_activo() else "#000000"
         self.setStyleSheet(f"""
             QFrame#BannerEdicion {{
                 background-color: rgba(37, 99, 235, 0.10);
@@ -140,16 +129,15 @@ class BannerEdicion(QFrame):
         ninguno -banner huérfano, o llamado antes de insertarse en un
         árbol real-, se cae a la paleta activa como respaldo, igual que
         antes."""
-        vistos = set()
-        actual = self.parentWidget()
+        vistos= set()
+        actual= self.parentWidget()
         while actual is not None and id(actual) not in vistos:
             vistos.add(id(actual))
             if hasattr(actual, "modo_oscuro"):
                 return bool(actual.modo_oscuro)
-            actual = actual.parentWidget()
-        # Respaldo: como antes, se infiere del brillo del color de texto
-        # que trae la paleta activa (si es un color claro, se asume tema
-        # oscuro de fondo).
+            actual= actual.parentWidget()
+        #Respaldo: como antes, se infiere del brillo del color de texto que trae la paleta activa (si es un color
+        #claro, se asume tema oscuro de fondo).
         return self.palette().color(QPalette.ColorRole.WindowText).lightness() > 128
 
 
@@ -158,7 +146,7 @@ def _contiene(lay, widget, prof=0):
     if lay is None or prof > 4:
         return False
     for i in range(lay.count()):
-        it = lay.itemAt(i)
+        it= lay.itemAt(i)
         if it.widget() is widget:
             return True
         if it.layout() is not None and _contiene(it.layout(), widget, prof + 1):
@@ -167,27 +155,27 @@ def _contiene(lay, widget, prof=0):
 
 
 def _banner_de(widget):
-    b = widget.property("_banner_edicion")
+    b= widget.property("_banner_edicion")
     return b if isinstance(b, BannerEdicion) else None
 
 
 def anclar_banner(ancla):
     """Devuelve el banner del formulario de `ancla`, creándolo la primera vez
     e insertándolo justo encima de la fila de botones del formulario."""
-    padre = ancla.parentWidget() or ancla
-    b = _banner_de(padre)
+    padre= ancla.parentWidget() or ancla
+    b= _banner_de(padre)
     if b is not None:
         return b
-    b = BannerEdicion()
-    lay = padre.layout()
-    colocado = False
+    b= BannerEdicion()
+    lay= padre.layout()
+    colocado= False
     if lay is not None:
         for i in range(lay.count()):
-            it = lay.itemAt(i)
+            it= lay.itemAt(i)
             if it.widget() is ancla or (it.layout() is not None
                                         and _contiene(it.layout(), ancla)):
                 lay.insertWidget(i, b)
-                colocado = True
+                colocado= True
                 break
         if not colocado:
             lay.insertWidget(0, b)
@@ -199,11 +187,11 @@ def anclar_banner(ancla):
 
 
 def _es_descendiente(hijo, ancestro):
-    w = hijo
+    w= hijo
     while w is not None:
         if w is ancestro:
             return True
-        w = w.parentWidget()
+        w= w.parentWidget()
     return False
 
 
@@ -213,31 +201,31 @@ def _desplazar_todo(banner, animado):
     (puede haber scrolls anidados) desplaza su barra vertical hasta dejar el
     banner visible arriba. Devuelve True si ya no queda nada por desplazar
     (todo en su sitio y con la geometría asentada)."""
-    en_sitio = True
-    anims = []
-    actual = banner.parentWidget()
-    saltos = 0
+    en_sitio= True
+    anims= []
+    actual= banner.parentWidget()
+    saltos= 0
     while actual is not None and saltos < 15:
         if isinstance(actual, QTabWidget):
             for i in range(actual.count()):
                 if _es_descendiente(banner, actual.widget(i)):
                     if actual.currentIndex() != i:
                         actual.setCurrentIndex(i)
-                        en_sitio = False  # geometría recién cambiada
+                        en_sitio= False  #geometría recién cambiada
                     break
         elif isinstance(actual, QScrollArea):
-            contenido = actual.widget()
+            contenido= actual.widget()
             if contenido is not None:
                 try:
-                    destino = banner.mapTo(contenido, QPoint(0, 0)).y() - 14
+                    destino= banner.mapTo(contenido, QPoint(0, 0)).y() - 14
                 except RuntimeError:
                     return False
-                bar = actual.verticalScrollBar()
-                destino = max(0, min(destino, bar.maximum()))
+                bar= actual.verticalScrollBar()
+                destino= max(0, min(destino, bar.maximum()))
                 if bar.value() != destino:
-                    en_sitio = False
+                    en_sitio= False
                     if animado:
-                        anim = QPropertyAnimation(bar, b"value", banner)
+                        anim= QPropertyAnimation(bar, b"value", banner)
                         anim.setDuration(_DURACION_SCROLL)
                         anim.setStartValue(bar.value())
                         anim.setEndValue(destino)
@@ -246,10 +234,10 @@ def _desplazar_todo(banner, animado):
                         anims.append(anim)
                     else:
                         bar.setValue(destino)
-        actual = actual.parentWidget()
+        actual= actual.parentWidget()
         saltos += 1
     if anims:
-        banner._anim_scroll = anims[0]
+        banner._anim_scroll= anims[0]
     return en_sitio
 
 
@@ -260,8 +248,8 @@ def _desplazar_hasta(banner, _pase=0):
     así que se corrige al instante en varios pases hasta que ya no quede
     nada por ajustar."""
     _desplazar_todo(banner, animado=True)
-    # Pases de corrección (sin animación): cubren tanto el final de la propia
-    # animación de scroll como cualquier reacomodo tardío del layout.
+    #Pases de corrección (sin animación): cubren tanto el final de la propia animación de scroll como cualquier
+    #reacomodo tardío del layout.
     for retardo in (400, 800, 1400):
         QTimer.singleShot(retardo, lambda: _desplazar_todo(banner, animado=False))
 
@@ -276,26 +264,24 @@ def _expandir_paneles_ancestros(ancla):
 
     Devuelve True si expandió al menos uno (el scroll debe esperar a que
     termine la animación de apertura antes de calcular el destino)."""
-    expandido = False
-    w = ancla.parentWidget()
-    saltos = 0
+    expandido= False
+    w= ancla.parentWidget()
+    saltos= 0
     while w is not None and saltos < 15:
-        expandir = getattr(w, "expandir", None)
+        expandir= getattr(w, "expandir", None)
         if callable(expandir) and getattr(w, "_expandido", None) is False:
             try:
-                # animar=False: al llegar aquí por "editar", el panel se abre
-                # DE GOLPE. Con la animación de apertura (260 ms de
-                # maximumHeight) el contenido se ve entrecortado/recortado
-                # mientras crece, y además obligaba a esperar antes de poder
-                # scrollear con destino confiable.
+                #animar=False: al llegar aquí por "editar", el panel se abre
+                #DE GOLPE. Con la animación de apertura (260 ms de maximumHeight) el contenido se ve entrecortado/recortado
+                #mientras crece, y además obligaba a esperar antes de poder scrollear con destino confiable.
                 try:
                     expandir(True, animar=False)
                 except TypeError:
-                    expandir(True)  # variante sin parámetro `animar`
-                expandido = True
+                    expandir(True)  #variante sin parámetro `animar`
+                expandido= True
             except Exception:
                 pass
-        w = w.parentWidget()
+        w= w.parentWidget()
         saltos += 1
     return expandido
 
@@ -308,12 +294,11 @@ def activar_modo_edicion(ancla, texto):
     if ancla is None:
         return
     _expandir_paneles_ancestros(ancla)
-    banner = anclar_banner(ancla)
+    banner= anclar_banner(ancla)
     banner.activar(texto)
-    # El desplazamiento se difiere un instante para que el layout ya haya
-    # asentado los cambios del formulario (combos repoblados, panel que se
-    # acaba de abrir DE GOLPE, etc.). La corrección post-animación de
-    # _desplazar_hasta cubre cualquier reacomodo tardío que quede.
+    #El desplazamiento se difiere un instante para que el layout ya haya asentado los cambios del formulario
+    #(combos repoblados, panel que se acaba de abrir DE GOLPE, etc.). La corrección post-animación de
+    #_desplazar_hasta cubre cualquier reacomodo tardío que quede.
     QTimer.singleShot(_ESPERA_SCROLL, lambda: _desplazar_hasta(banner))
 
 
@@ -321,9 +306,9 @@ def desactivar_modo_edicion(ancla):
     """Oculta el banner al limpiar/guardar el formulario."""
     if ancla is None:
         return
-    padre = ancla.parentWidget()
+    padre= ancla.parentWidget()
     if padre is None:
         return
-    b = _banner_de(padre)
+    b= _banner_de(padre)
     if b is not None:
         b.desactivar()

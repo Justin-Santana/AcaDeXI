@@ -22,7 +22,7 @@ tamaño exacto (reportlab permite tamaño de página por página) -no se
 fuerza un tamaño único para toda la sección que recortaría a unos y
 sobraría a otros.
 """
-from src.nucleo.bd import get_connection
+from src.nucleo.bd import obtener_conexion
 from src.boletines.boletin_minerd import (construir_boletin_general, dibujar_boletin_secundaria_oficial,
                              _dimensiones_pagina_secundaria)
 from src.boletines.boletin_primaria_minerd import dibujar_informe_primaria_oficial, _dimensiones_pagina_primaria
@@ -31,11 +31,11 @@ from src.boletines.boletin_tecnico_minerd import (construir_boletin_tecnico, dib
 
 
 def estudiantes_de_seccion(seccion_id):
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("""SELECT id FROM estudiantes WHERE seccion_id=? AND estado='Activo'
                  ORDER BY apellidos, nombre""", (seccion_id,))
-    ids = [r["id"] for r in c.fetchall()]
+    ids= [r["id"] for r in c.fetchall()]
     conn.close()
     return ids
 
@@ -44,8 +44,8 @@ def secciones_de_grado_o_todas(grado_id=None, anio_academico=None):
     """Lista de secciones a ofrecer en el selector de "Boletín completo":
     todas si no se filtra, o solo las de un grado (para Secretaría que
     quiere imprimir "todo 4to de Secundaria", por ejemplo)."""
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     condiciones, parametros = [], []
     if grado_id is not None:
         condiciones.append("grado_id=?")
@@ -53,9 +53,9 @@ def secciones_de_grado_o_todas(grado_id=None, anio_academico=None):
     if anio_academico is not None:
         condiciones.append("anio_academico=?")
         parametros.append(anio_academico)
-    where = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+    where= f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
     c.execute(f"SELECT id, nombre, grado_id FROM secciones {where} ORDER BY grado_id, nombre", parametros)
-    filas = [dict(f) for f in c.fetchall()]
+    filas= [dict(f) for f in c.fetchall()]
     conn.close()
     return filas
 
@@ -68,7 +68,7 @@ def _agregar_pagina(cvs_ref, ancho, alto, dibujar_fn, *args):
     página a página dentro del mismo documento)."""
     from reportlab.pdfgen import canvas as _canvas_mod
     if cvs_ref[0] is None:
-        cvs_ref[0] = _canvas_mod.Canvas(cvs_ref[1], pagesize=(ancho, alto))
+        cvs_ref[0]= _canvas_mod.Canvas(cvs_ref[1], pagesize=(ancho, alto))
     else:
         cvs_ref[0].setPageSize((ancho, alto))
     dibujar_fn(cvs_ref[0], *args)
@@ -82,10 +82,10 @@ def exportar_boletines_multiples_secciones_pdf(seccion_ids, ruta_pdf, institucio
     puede tener más de una sección A/B/C) -se usa la misma función interna
     de una sola sección, compartiendo el mismo canvas entre todas para que
     quede un solo PDF y no uno por sección."""
-    cvs_ref = [None, ruta_pdf]
+    cvs_ref= [None, ruta_pdf]
     generados, con_tecnico, omitidos = 0, 0, []
-    total_estudiantes = sum(len(estudiantes_de_seccion(sid)) for sid in seccion_ids)
-    indice_global = 0
+    total_estudiantes= sum(len(estudiantes_de_seccion(sid)) for sid in seccion_ids)
+    indice_global= 0
 
     for seccion_id in seccion_ids:
         for estudiante_id in estudiantes_de_seccion(seccion_id):
@@ -93,7 +93,7 @@ def exportar_boletines_multiples_secciones_pdf(seccion_ids, ruta_pdf, institucio
                 progreso_cb(indice_global, total_estudiantes, estudiante_id)
             indice_global += 1
 
-            boletin = construir_boletin_general(estudiante_id, metodo=metodo)
+            boletin= construir_boletin_general(estudiante_id, metodo=metodo)
             if boletin is None:
                 omitidos.append(estudiante_id)
                 continue
@@ -107,7 +107,7 @@ def exportar_boletines_multiples_secciones_pdf(seccion_ids, ruta_pdf, institucio
             generados += 1
 
             if incluir_tecnico:
-                boletin_tec = construir_boletin_tecnico(estudiante_id)
+                boletin_tec= construir_boletin_tecnico(estudiante_id)
                 if boletin_tec and boletin_tec["modulos"]:
                     ancho_t, alto_t = _dimensiones_pagina_tecnico(boletin_tec)
 

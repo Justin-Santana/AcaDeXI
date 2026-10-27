@@ -65,49 +65,43 @@ from PySide6.QtCore import Qt, QObject, QEvent, QTimer, QPropertyAnimation, QEas
 from PySide6.QtGui import QShortcut, QKeySequence, QFont
 
 
-# ============================================================
-# TECLAS DISPONIBLES PARA ACTIVAR LA VENTANITA (configurable en Configuración)
-# ============================================================
-# Teclas modificadoras "puras" (mantenerlas presionadas no escribe nada ni
-# dispara menús del sistema operativo de forma agresiva) MÁS F1, que
-# funciona igual para este gesto de "mantener para ver": no imprime texto y
-# no tiene un efecto nativo agresivo en Windows/Qt al mantenerla sola (a
-# diferencia de Alt "pelada" -ver docstring del módulo-, así que ni
-# siquiera hace falta el manejo especial de mnemónicos para esta opción).
-TECLAS_ATAJO_DISPONIBLES = {
+#Teclas disponibles para activar la ventanita (configurable en Configuración) Teclas modificadoras "puras"
+#(mantenerlas presionadas no escribe nada ni dispara menús del sistema operativo de forma agresiva) MÁS F1, que
+#funciona igual para este gesto de "mantener para ver": no imprime texto y no tiene un efecto nativo agresivo
+#en Windows/Qt al mantenerla sola (a diferencia de Alt "pelada" -ver docstring del módulo-, así que ni siquiera
+#hace falta el manejo especial de mnemónicos para esta opción).
+TECLAS_ATAJO_DISPONIBLES= {
     "Alt": Qt.Key.Key_Alt,
     "Ctrl": Qt.Key.Key_Control,
     "Shift": Qt.Key.Key_Shift,
     "F1": Qt.Key.Key_F1,
 }
-TECLA_ATAJO_POR_DEFECTO = "Alt"
+TECLA_ATAJO_POR_DEFECTO= "Alt"
 
-# Mismo mapeo, pero como bandera de Qt.KeyboardModifier — lo usa el sondeo
-# de respaldo de GestorAtajos, que le pregunta directamente al sistema
-# operativo qué modificadores están abajo (más confiable que llevar la
-# cuenta a mano de KeyPress/KeyRelease para una tecla que, sola, tiene
-# comportamiento especial en Windows — ver docstring del módulo).
+#Mismo mapeo, pero como bandera de Qt.KeyboardModifier — lo usa el sondeo de respaldo de GestorAtajos, que le
+#pregunta directamente al sistema operativo qué modificadores están abajo (más confiable que llevar la cuenta a
+#mano de KeyPress/KeyRelease para una tecla que, sola, tiene comportamiento especial en Windows — ver docstring
+#del módulo).
 #
-# F1 NO tiene bandera de Qt.KeyboardModifier (no es una tecla modificadora):
-# a propósito no aparece en este diccionario. Para F1, GestorAtajos se apoya
-# solo en KeyPress/KeyRelease (ver _tecla_qt_configurada y eventFilter) y en
-# ApplicationDeactivate/WindowDeactivate para soltar el gesto si la ventana
-# pierde el foco con F1 todavía abajo -sin el sondeo de respaldo, que solo
-# aplica a las teclas de este diccionario-.
-_MODIFICADORES_QT = {
+#F1 NO tiene bandera de Qt.KeyboardModifier (no es una tecla modificadora):
+#a propósito no aparece en este diccionario. Para F1, GestorAtajos se apoya solo en KeyPress/KeyRelease (ver
+#_tecla_qt_configurada y eventFilter) y en ApplicationDeactivate/WindowDeactivate para soltar el gesto si la
+#ventana pierde el foco con F1 todavía abajo -sin el sondeo de respaldo, que solo aplica a las teclas de este
+#diccionario-.
+_MODIFICADORES_QT= {
     "Alt": Qt.KeyboardModifier.AltModifier,
     "Ctrl": Qt.KeyboardModifier.ControlModifier,
     "Shift": Qt.KeyboardModifier.ShiftModifier,
 }
 
-# Cuánto hay que mantener la tecla presionada antes de que aparezca la
-# ventanita (evita que un Alt rápido y suelto -que en algunos temas de
-# Windows abre el menú clásico- también dispare nuestra ventanita).
-_RETARDO_APARICION_MS = 350
+#Cuánto hay que mantener la tecla presionada antes de que aparezca la
+#ventanita (evita que un Alt rápido y suelto -que en algunos temas de
+#Windows abre el menú clásico- también dispare nuestra ventanita).
+_RETARDO_APARICION_MS= 350
 
 
 def _tecla_qt_configurada(main_window):
-    nombre = getattr(main_window, "tecla_atajos", TECLA_ATAJO_POR_DEFECTO) or TECLA_ATAJO_POR_DEFECTO
+    nombre= getattr(main_window, "tecla_atajos", TECLA_ATAJO_POR_DEFECTO) or TECLA_ATAJO_POR_DEFECTO
     return TECLAS_ATAJO_DISPONIBLES.get(nombre, TECLAS_ATAJO_DISPONIBLES[TECLA_ATAJO_POR_DEFECTO])
 
 
@@ -121,7 +115,7 @@ def _modificador_qt_configurado(main_window):
     bandera disponible, se devuelve None explícitamente y el sondeo se
     desactiva para esa tecla (ver _sondear_estado_real: F1 depende solo de
     KeyPress/KeyRelease, que si cubre su caso -ver docstring del módulo)."""
-    nombre = getattr(main_window, "tecla_atajos", TECLA_ATAJO_POR_DEFECTO) or TECLA_ATAJO_POR_DEFECTO
+    nombre= getattr(main_window, "tecla_atajos", TECLA_ATAJO_POR_DEFECTO) or TECLA_ATAJO_POR_DEFECTO
     if nombre not in _MODIFICADORES_QT:
         return None
     return _MODIFICADORES_QT[nombre]
@@ -139,15 +133,12 @@ def es_modo_docente(main_window):
         from src.nucleo.permisos import es_profesor_restringido
         return bool(es_profesor_restringido(main_window))
     except Exception:
-        # Alguien podría cargar este módulo standalone (p. ej. main.py, que
-        # no pasa por permisos.py) o en un entorno de pruebas sin bd; en
-        # ese caso, se cae al criterio simple del rol.
+        #Alguien podría cargar este módulo standalone (p. ej. main.py, que no pasa por permisos.py) o en un entorno de
+        #pruebas sin bd; en ese caso, se cae al criterio simple del rol.
         return getattr(main_window, "rol_actual", None) == "Profesor"
 
 
-# ============================================================
-# REGISTRO DE ATAJOS POR WIDGET
-# ============================================================
+#Registro de atajos por widget
 def registrar_atajo(widget, main_window, secuencia, descripcion, callback,
                      solo_no_docente=False, contexto=Qt.ShortcutContext.WidgetWithChildrenShortcut):
     """Crea un QShortcut real en `widget` que llama a `callback`, y lo deja
@@ -168,19 +159,18 @@ def registrar_atajo(widget, main_window, secuencia, descripcion, callback,
     if solo_no_docente and es_modo_docente(main_window):
         return None
 
-    atajo = QShortcut(QKeySequence(secuencia), widget)
+    atajo= QShortcut(QKeySequence(secuencia), widget)
     atajo.setContext(contexto)
     atajo.activated.connect(callback)
 
-    # Si no se pasó descripción, es un atajo "alias" (una variante de tecla
-    # física de otro atajo ya anotado, p. ej. Ctrl+= junto a Ctrl++) que a
-    # propósito no debe listarse aparte en la ventanita de ayuda -así lo
-    # documentan sus llamadas en reportes_editor.py-. El QShortcut de todos
-    # modos se crea y funciona igual; solo se omite la anotación para que
-    # atajos_de()/la ventanita no muestren una fila con la descripción vacía.
+    #Si no se pasó descripción, es un atajo "alias" (una variante de tecla
+    #física de otro atajo ya anotado, p. ej. Ctrl+= junto a Ctrl++) que a
+    #propósito no debe listarse aparte en la ventanita de ayuda -así lo documentan sus llamadas en
+    #reportes_editor.py-. El QShortcut de todos modos se crea y funciona igual; solo se omite la anotación para que
+    #atajos_de()/la ventanita no muestren una fila con la descripción vacía.
     if descripcion:
         if not hasattr(widget, "_atajos_registrados"):
-            widget._atajos_registrados = []
+            widget._atajos_registrados= []
         widget._atajos_registrados.append((secuencia, descripcion))
 
     return atajo
@@ -192,9 +182,7 @@ def atajos_de(widget):
     return list(getattr(widget, "_atajos_registrados", []))
 
 
-# ============================================================
-# VENTANITA FLOTANTE DE AYUDA (asíncrona, no intrusiva)
-# ============================================================
+#Ventanita flotante de ayuda (asíncrona, no intrusiva)
 class _VentanaAyudaAtajos(QWidget):
     """Panel flotante, sin bordes, que no roba foco y es transparente a los
     clics del mouse (no hay forma de "interactuar" con ella: solo se ve).
@@ -217,7 +205,7 @@ class _VentanaAyudaAtajos(QWidget):
         self.setStyleSheet("background: transparent;")
         self.setObjectName("VentanaAyudaAtajos")
 
-        self._contenedor = QWidget(self)
+        self._contenedor= QWidget(self)
         self._contenedor.setObjectName("PanelAyudaAtajos")
         self._contenedor.setStyleSheet("""
             #PanelAyudaAtajos {
@@ -228,71 +216,68 @@ class _VentanaAyudaAtajos(QWidget):
             QLabel { color: #F1F1F3; background: transparent; }
         """)
 
-        externo = QVBoxLayout(self)
+        externo= QVBoxLayout(self)
         externo.setContentsMargins(0, 0, 0, 0)
         externo.addWidget(self._contenedor)
 
-        self._layout = QVBoxLayout(self._contenedor)
+        self._layout= QVBoxLayout(self._contenedor)
         self._layout.setContentsMargins(16, 12, 16, 12)
         self._layout.setSpacing(6)
 
-        self._titulo = QLabel("Atajos de teclado")
-        f_titulo = QFont()
+        self._titulo= QLabel("Atajos de teclado")
+        f_titulo= QFont()
         f_titulo.setBold(True)
         f_titulo.setPointSize(f_titulo.pointSize() + 1)
         self._titulo.setFont(f_titulo)
         self._layout.addWidget(self._titulo)
 
-        self._filas_widget = QWidget(self._contenedor)
-        self._filas_layout = QVBoxLayout(self._filas_widget)
+        self._filas_widget= QWidget(self._contenedor)
+        self._filas_layout= QVBoxLayout(self._filas_widget)
         self._filas_layout.setContentsMargins(0, 4, 0, 0)
         self._filas_layout.setSpacing(3)
         self._layout.addWidget(self._filas_widget)
 
-        self._efecto = QGraphicsOpacityEffect(self)
+        self._efecto= QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self._efecto)
         self._efecto.setOpacity(0.0)
-        self._animacion = QPropertyAnimation(self._efecto, b"opacity", self)
+        self._animacion= QPropertyAnimation(self._efecto, b"opacity", self)
         self._animacion.setEasingCurve(QEasingCurve.Type.OutCubic)
-        # Conectado UNA sola vez, para siempre: nunca se hace
-        # connect()/disconnect() por cada aparición/desaparición (eso es lo
-        # que generaba el RuntimeWarning "Failed to disconnect (None) from
-        # signal finished()" -PySide avisa igual aunque esté dentro de un
-        # try/except, porque es un warning, no una excepción, así que nunca
-        # se podía silenciar de verdad-). En su lugar, el propio slot decide
-        # si le toca ocultar la ventana mirando hacia dónde iba la animación
-        # que acaba de terminar.
+        #Conectado UNA sola vez, para siempre: nunca se hace
+        #connect()/disconnect() por cada aparición/desaparición (eso es lo
+        #que generaba el RuntimeWarning "Failed to disconnect (None) from signal finished()" -PySide avisa igual aunque
+        #esté dentro de un
+        #try/except, porque es un warning, no una excepción, así que nunca
+        #se podía silenciar de verdad-). En su lugar, el propio slot decide si le toca ocultar la ventana mirando hacia
+        #dónde iba la animación que acaba de terminar.
         self._animacion.finished.connect(self._al_terminar_animacion)
 
     def _limpiar_filas(self):
-        # Cada fila de atajo se agrega con addLayout(fila) (un QHBoxLayout
-        # con 2 QLabel adentro), no con addWidget. takeAt(0) sobre un item
-        # así devuelve item.widget() == None -el layout en sí no es un
-        # widget-, así que el "if w is not None" de antes nunca entraba
-        # para esas filas: las etiquetas quedaban vivas y visibles, solo
-        # desenganchadas del layout, y la próxima vez que se llamaba a
-        # mostrar_atajos() (p. ej. al cambiar de módulo) las nuevas se
-        # pintaban ENCIMA de las viejas -de ahí el texto entrecortado/
-        # amontonado-. Ahora se recorre también el sub-layout, borrando
-        # cada widget hijo antes de descartar el layout que los contenía.
+        #Cada fila de atajo se agrega con addLayout(fila) (un QHBoxLayout con 2 QLabel adentro), no con addWidget.
+        #takeAt(0) sobre un item
+        #así devuelve item.widget() == None -el layout en sí no es un
+        #widget-, así que el "if w is not None" de antes nunca entraba para esas filas: las etiquetas quedaban vivas y
+        #visibles, solo desenganchadas del layout, y la próxima vez que se llamaba a
+        #mostrar_atajos() (p. ej. al cambiar de módulo) las nuevas se
+        #pintaban ENCIMA de las viejas -de ahí el texto entrecortado/ amontonado-. Ahora se recorre también el
+        #sub-layout, borrando cada widget hijo antes de descartar el layout que los contenía.
         while self._filas_layout.count():
-            item = self._filas_layout.takeAt(0)
-            w = item.widget()
+            item= self._filas_layout.takeAt(0)
+            w= item.widget()
             if w is not None:
                 w.deleteLater()
                 continue
-            sub = item.layout()
+            sub= item.layout()
             if sub is not None:
                 self._vaciar_layout(sub)
 
     def _vaciar_layout(self, layout):
         while layout.count():
-            item = layout.takeAt(0)
-            w = item.widget()
+            item= layout.takeAt(0)
+            w= item.widget()
             if w is not None:
                 w.deleteLater()
             else:
-                sub = item.layout()
+                sub= item.layout()
                 if sub is not None:
                     self._vaciar_layout(sub)
 
@@ -301,19 +286,19 @@ class _VentanaAyudaAtajos(QWidget):
         self._titulo.setText(f"⌨  Atajos — {titulo_modulo}" if titulo_modulo else "⌨  Atajos de teclado")
 
         if not lista_atajos:
-            lbl = QLabel("Este módulo aún no tiene atajos.")
+            lbl= QLabel("Este módulo aún no tiene atajos.")
             lbl.setStyleSheet("color: #B7B9C2;")
             self._filas_layout.addWidget(lbl)
         else:
             for secuencia, descripcion in lista_atajos:
-                fila = QHBoxLayout()
+                fila= QHBoxLayout()
                 fila.setSpacing(10)
-                lbl_tecla = QLabel(secuencia)
+                lbl_tecla= QLabel(secuencia)
                 lbl_tecla.setStyleSheet(
                     "background-color: rgba(255,255,255,25); border-radius: 5px; "
                     "padding: 1px 7px; font-family: monospace; font-weight: bold;")
                 lbl_tecla.setMinimumWidth(64)
-                lbl_desc = QLabel(descripcion)
+                lbl_desc= QLabel(descripcion)
                 fila.addWidget(lbl_tecla)
                 fila.addWidget(lbl_desc, 1)
                 self._filas_layout.addLayout(fila)
@@ -328,13 +313,13 @@ class _VentanaAyudaAtajos(QWidget):
         self._animacion.start()
 
     def _posicionar(self, punto_referencia):
-        pantalla = QApplication.primaryScreen()
-        geo = pantalla.availableGeometry() if pantalla else None
-        x = punto_referencia.x() if punto_referencia else 40
-        y = punto_referencia.y() if punto_referencia else 40
+        pantalla= QApplication.primaryScreen()
+        geo= pantalla.availableGeometry() if pantalla else None
+        x= punto_referencia.x() if punto_referencia else 40
+        y= punto_referencia.y() if punto_referencia else 40
         if geo is not None:
-            x = min(max(geo.left() + 16, x), geo.right() - self.width() - 16)
-            y = min(max(geo.top() + 16, y), geo.bottom() - self.height() - 16)
+            x= min(max(geo.left() + 16, x), geo.right() - self.width() - 16)
+            y= min(max(geo.top() + 16, y), geo.bottom() - self.height() - 16)
         self.move(QPoint(x, y))
 
     def ocultar_con_fundido(self):
@@ -345,17 +330,13 @@ class _VentanaAyudaAtajos(QWidget):
         self._animacion.start()
 
     def _al_terminar_animacion(self):
-        # Si la animación que acaba de terminar iba HACIA 0 (fundido de
-        # salida), recién ahí se oculta la ventana. Si iba hacia 1 (fundido
-        # de entrada, ver mostrar_atajos), no se hace nada: la ventana debe
-        # seguir visible.
+        #Si la animación que acaba de terminar iba HACIA 0 (fundido de salida), recién ahí se oculta la ventana. Si iba
+        #hacia 1 (fundido de entrada, ver mostrar_atajos), no se hace nada: la ventana debe seguir visible.
         if self._efecto.opacity() <= 0.0:
             self.hide()
 
 
-# ============================================================
-# GESTOR: escucha la tecla configurada en TODA la aplicación
-# ============================================================
+#GESTOR: escucha la tecla configurada en TODA la aplicación
 class GestorAtajos(QObject):
     """Se instala una sola vez, como event filter de QApplication, en
     main.py. No interrumpe el flujo normal del sistema: la única tecla que
@@ -366,59 +347,54 @@ class GestorAtajos(QObject):
 
     def __init__(self, main_window):
         super().__init__(main_window)
-        self.main_window = main_window
-        self._ventana = None
-        self._presionada = False
-        self._timer_aparicion = QTimer(self)
+        self.main_window= main_window
+        self._ventana= None
+        self._presionada= False
+        self._timer_aparicion= QTimer(self)
         self._timer_aparicion.setSingleShot(True)
         self._timer_aparicion.timeout.connect(self._mostrar_ahora)
 
-        # Sondeo de respaldo: vuelve a preguntarle al sistema operativo, cada
-        # poco, si la tecla configurada sigue realmente abajo. Es la red de
-        # seguridad para que "mantenerse mientras se mantiene presionada"
-        # sea literal incluso si, por lo que sea (la ventana perdió el foco,
-        # un diálogo modal se abrió encima, etc.), no nos llegó el
-        # KeyRelease correspondiente.
-        self._timer_sondeo = QTimer(self)
+        #Sondeo de respaldo: vuelve a preguntarle al sistema operativo, cada poco, si la tecla configurada sigue
+        #realmente abajo. Es la red de seguridad para que "mantenerse mientras se mantiene presionada" sea literal
+        #incluso si, por lo que sea (la ventana perdió el foco, un diálogo modal se abrió encima, etc.), no nos llegó
+        #el KeyRelease correspondiente.
+        self._timer_sondeo= QTimer(self)
         self._timer_sondeo.setInterval(150)
         self._timer_sondeo.timeout.connect(self._sondear_estado_real)
         self._timer_sondeo.start()
 
     def eventFilter(self, obj, event):
-        tipo = event.type()
+        tipo= event.type()
         if tipo in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
             if event.key() == _tecla_qt_configurada(self.main_window) and not event.isAutoRepeat():
-                # Consumimos SOLO la tecla pelada (sin otros modificadores
-                # combinados en el momento del evento) para apagar el efecto
-                # nativo de mnemónicos de Windows sin tocar combinaciones
-                # reales que usen esta tecla junto con otra.
+                #Consumimos SOLO la tecla pelada (sin otros modificadores combinados en el momento del evento) para apagar el
+                #efecto nativo de mnemónicos de Windows sin tocar combinaciones reales que usen esta tecla junto con otra.
                 if tipo == QEvent.Type.KeyPress:
                     if not self._presionada:
-                        self._presionada = True
+                        self._presionada= True
                         self._timer_aparicion.start(_RETARDO_APARICION_MS)
                 else:
-                    self._presionada = False
+                    self._presionada= False
                     self._timer_aparicion.stop()
                     self._ocultar_ahora()
                 return True
         elif tipo in (QEvent.Type.ApplicationDeactivate, QEvent.Type.WindowDeactivate):
-            # Si el usuario cambia de ventana con la tecla aún abajo (p.ej.
-            # Alt+Tab), soltamos el gesto para no dejar la ventanita
-            # "pegada" mientras el usuario ya está en otra aplicación.
-            self._presionada = False
+            #Si el usuario cambia de ventana con la tecla aún abajo (p.ej. Alt+Tab), soltamos el gesto para no dejar la
+            #ventanita "pegada" mientras el usuario ya está en otra aplicación.
+            self._presionada= False
             self._timer_aparicion.stop()
             self._ocultar_ahora()
-        return False  # todo lo demás sigue su curso normal, sin interrupciones
+        return False  #todo lo demás sigue su curso normal, sin interrupciones
 
     def _sondear_estado_real(self):
-        modificador = _modificador_qt_configurado(self.main_window)
-        abajo_de_verdad = bool(QApplication.keyboardModifiers() & modificador) if modificador else False
+        modificador= _modificador_qt_configurado(self.main_window)
+        abajo_de_verdad= bool(QApplication.keyboardModifiers() & modificador) if modificador else False
         if abajo_de_verdad and not self._presionada:
-            self._presionada = True
+            self._presionada= True
             if not self._timer_aparicion.isActive():
                 self._timer_aparicion.start(_RETARDO_APARICION_MS)
         elif not abajo_de_verdad and self._presionada:
-            self._presionada = False
+            self._presionada= False
             self._timer_aparicion.stop()
             self._ocultar_ahora()
 
@@ -432,89 +408,83 @@ class GestorAtajos(QObject):
         buscando el ancestro más cercano que sí tenga atajos registrados
         (registrar_atajo los deja anotados en `_atajos_registrados`); si no
         se encuentra ninguno, se cae al comportamiento de siempre."""
-        foco = QApplication.focusWidget()
-        w = foco
+        foco= QApplication.focusWidget()
+        w= foco
         while w is not None:
             if getattr(w, "_atajos_registrados", None):
                 return w
-            w = w.parentWidget()
+            w= w.parentWidget()
 
-        stack = getattr(self.main_window, "stacked_widget", None)
+        stack= getattr(self.main_window, "stacked_widget", None)
         return stack.currentWidget() if stack is not None else None
 
     def _mostrar_ahora(self):
         if not self._presionada:
             return
-        widget = self._widget_activo()
+        widget= self._widget_activo()
         if widget is None:
             return
-        lista = atajos_de(widget)
-        titulo = getattr(widget, "_titulo_modulo_atajos", None) or type(widget).__name__
+        lista= atajos_de(widget)
+        titulo= getattr(widget, "_titulo_modulo_atajos", None) or type(widget).__name__
 
         if self._ventana is None:
-            self._ventana = _VentanaAyudaAtajos()
+            self._ventana= _VentanaAyudaAtajos()
 
-        cursor_pos = self.main_window.cursor().pos() if hasattr(self.main_window, "cursor") else None
+        cursor_pos= self.main_window.cursor().pos() if hasattr(self.main_window, "cursor") else None
         self._ventana.mostrar_atajos(titulo, lista, cursor_pos)
 
     def _ocultar_ahora(self):
         if self._ventana is not None and self._ventana.isVisible():
             self._ventana.ocultar_con_fundido()
 
-# ============================================================
-# RETROALIMENTACIÓN VISUAL AL PRESIONAR UN BOTÓN — global, para TODA la app
-# ============================================================
-# IMPORTANTE: en Qt, `widget.setGraphicsEffect(nuevo)` no solo "reemplaza"
-# el efecto anterior -lo DESTRUYE de verdad (borra el objeto C++)-. Guardar
-# una referencia al efecto viejo para "restaurarlo" después NO funciona:
-# esa referencia queda apuntando a un objeto ya borrado, y usarla revienta
-# con "Internal C++ object already deleted". Esto rompía, en concreto, la
-# sombra de "BotonAnimado" (self._sombra en estudiantes.py, personal.py,
-# profesores.py, reportes.py, universidad.py), que es un QGraphicsEffect
-# propio y persistente para su animación de hover.
+#Retroalimentación visual al presionar un botón — global, para TODA la app IMPORTANTE: en Qt,
+#`widget.setGraphicsEffect(nuevo)` no solo "reemplaza" el efecto anterior -lo DESTRUYE de verdad (borra el
+#objeto C++)-. Guardar
+#una referencia al efecto viejo para "restaurarlo" después NO funciona:
+#esa referencia queda apuntando a un objeto ya borrado, y usarla revienta con "Internal C++ object already
+#deleted". Esto rompía, en concreto, la sombra de "BotonAnimado" (self._sombra en estudiantes.py, personal.py,
+#profesores.py, reportes.py, universidad.py), que es un QGraphicsEffect propio y persistente para su animación
+#de hover.
 #
-# Por eso este módulo NUNCA reemplaza un graphicsEffect ajeno:
-# - Si el botón NO tiene ningún efecto puesto, se le pone un
-#   QGraphicsOpacityEffect propio de esta función (se crea y se destruye
-#   aquí mismo, nunca choca con nada de otro módulo).
-# - Si el botón YA tiene un efecto puesto (p. ej. la sombra de
-#   BotonAnimado), no se toca ese efecto para nada: en su lugar se
-#   superpone un pequeño overlay semitransparente -un QWidget hijo, no un
-#   graphicsEffect- que aparece mientras se sostiene el clic y se quita al
-#   soltar. Cero interferencia con el efecto que ya tenía el botón.
+#Por eso este módulo NUNCA reemplaza un graphicsEffect ajeno:
+#- Si el botón NO tiene ningún efecto puesto, se le pone un
+#QGraphicsOpacityEffect propio de esta función (se crea y se destruye aquí mismo, nunca choca con nada de otro
+#módulo).
+#- Si el botón YA tiene un efecto puesto (p. ej. la sombra de
+#BotonAnimado), no se toca ese efecto para nada: en su lugar se superpone un pequeño overlay semitransparente
+#-un QWidget hijo, no un graphicsEffect- que aparece mientras se sostiene el clic y se quita al soltar. Cero
+#interferencia con el efecto que ya tenía el botón.
 def _iniciar_presion(boton):
     """Al bajar el mouse sobre el botón: se atenúa y SE QUEDA atenuado
     mientras se sostiene, como un botón físico hundido."""
     if getattr(boton, "_retroalim_presionado", False):
         return
-    boton._retroalim_presionado = True
+    boton._retroalim_presionado= True
 
     if boton.graphicsEffect() is None:
-        efecto = QGraphicsOpacityEffect(boton)
+        efecto= QGraphicsOpacityEffect(boton)
         efecto.setOpacity(1.0)
         boton.setGraphicsEffect(efecto)
-        boton._retroalim_via_opacidad = True
-        anim = QPropertyAnimation(efecto, b"opacity", boton)
+        boton._retroalim_via_opacidad= True
+        anim= QPropertyAnimation(efecto, b"opacity", boton)
         anim.setDuration(110)
         anim.setStartValue(1.0)
         anim.setEndValue(0.55)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        boton._anim_presion = anim  # evita que el recolector de basura la corte a mitad de vuelo
+        boton._anim_presion= anim  #evita que el recolector de basura la corte a mitad de vuelo
         anim.start()
     else:
-        # El botón ya tiene su propio efecto (p. ej. la sombra de
-        # BotonAnimado): no se toca. Overlay aparte, semitransparente,
-        # encima del botón -no es un graphicsEffect, así que no compite
-        # con el que ya tenía.
-        boton._retroalim_via_opacidad = False
-        overlay = QWidget(boton)
+        #El botón ya tiene su propio efecto (p. ej. la sombra de BotonAnimado): no se toca. Overlay aparte,
+        #semitransparente, encima del botón -no es un graphicsEffect, así que no compite con el que ya tenía.
+        boton._retroalim_via_opacidad= False
+        overlay= QWidget(boton)
         overlay.setObjectName("_overlayRetroalimentacionClic")
         overlay.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         overlay.setStyleSheet("background-color: rgba(0, 0, 0, 60);")
         overlay.setGeometry(boton.rect())
         overlay.show()
         overlay.raise_()
-        boton._overlay_presion = overlay
+        boton._overlay_presion= overlay
 
 
 def _terminar_presion(boton):
@@ -522,34 +492,34 @@ def _terminar_presion(boton):
     cursor fuera del botón sin soltar): vuelve a la apariencia normal."""
     if not getattr(boton, "_retroalim_presionado", False):
         return
-    boton._retroalim_presionado = False
+    boton._retroalim_presionado= False
 
     if getattr(boton, "_retroalim_via_opacidad", False):
-        efecto = boton.graphicsEffect()
+        efecto= boton.graphicsEffect()
         if isinstance(efecto, QGraphicsOpacityEffect):
-            anim_previa = getattr(boton, "_anim_presion", None)
+            anim_previa= getattr(boton, "_anim_presion", None)
             if anim_previa is not None and anim_previa.state() == QPropertyAnimation.State.Running:
                 anim_previa.stop()
-            anim = QPropertyAnimation(efecto, b"opacity", boton)
+            anim= QPropertyAnimation(efecto, b"opacity", boton)
             anim.setDuration(110)
             anim.setStartValue(efecto.opacity())
             anim.setEndValue(1.0)
             anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
             def _quitar_efecto_propio():
-                # Solo se quita si sigue siendo EL MISMO efecto que pusimos
-                # nosotros (por si, entre medio, algo más le puso otro).
+                #Solo se quita si sigue siendo EL MISMO efecto que pusimos
+                #nosotros (por si, entre medio, algo más le puso otro).
                 if boton.graphicsEffect() is efecto:
                     boton.setGraphicsEffect(None)
 
             anim.finished.connect(_quitar_efecto_propio)
-            boton._anim_presion = anim
+            boton._anim_presion= anim
             anim.start()
     else:
-        overlay = getattr(boton, "_overlay_presion", None)
+        overlay= getattr(boton, "_overlay_presion", None)
         if overlay is not None:
             overlay.deleteLater()
-        boton._overlay_presion = None
+        boton._overlay_presion= None
 
 
 class GestorRetroalimentacionClics(QObject):
@@ -564,21 +534,19 @@ class GestorRetroalimentacionClics(QObject):
 
     def eventFilter(self, obj, event):
         if isinstance(obj, QAbstractButton):
-            tipo = event.type()
+            tipo= event.type()
             if tipo == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton \
                     and obj.isEnabled() and obj.isVisible():
                 _iniciar_presion(obj)
             elif tipo == QEvent.Type.MouseButtonRelease:
                 _terminar_presion(obj)
             elif tipo == QEvent.Type.Leave:
-                # El cursor salió del botón sin soltar el clic (lo arrastró
-                # afuera): Qt cancela el clic pero no siempre llega un
-                # Release al propio botón en ese caso, así que también se
-                # restaura aquí para no dejarlo atenuado/oscurecido
-                # indefinidamente.
+                #El cursor salió del botón sin soltar el clic (lo arrastró afuera): Qt cancela el clic pero no siempre llega un
+                #Release al propio botón en ese caso, así que también se restaura aquí para no dejarlo atenuado/oscurecido
+                #indefinidamente.
                 _terminar_presion(obj)
             elif tipo == QEvent.Type.Resize and getattr(obj, "_overlay_presion", None) is not None:
-                # Poco común (redimensionar mientras se sostiene el clic),
-                # pero si pasa, el overlay debe seguir cubriendo el botón.
+                #Poco común (redimensionar mientras se sostiene el clic), pero si pasa, el overlay debe seguir cubriendo el
+                #botón.
                 obj._overlay_presion.setGeometry(obj.rect())
         return super().eventFilter(obj, event)

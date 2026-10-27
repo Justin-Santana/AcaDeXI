@@ -1,1 +1,1 @@
-# Paquete src.boletines — generacion de boletines PDF (MINERD, clasico, tecnico, etc.).
+#Paquete src.boletines — generacion de boletines PDF (MINERD, clasico, tecnico, etc.).

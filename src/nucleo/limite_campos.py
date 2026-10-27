@@ -1,110 +1,72 @@
-"""Protección compartida contra pegado de textos gigantes en los campos de
-AcaDeXI (QLineEdit / QTextEdit / QPlainTextEdit), para TODOS los módulos.
-
-Es el equivalente en PySide6/Qt de `limit_entry_length()` de Neo Calculator
-(ver Neo_Calculator.py): antes, pegar un bloque de texto enorme (por ejemplo,
-copiar sin querer un documento completo y pegarlo en el campo "Nombre") podía
-sentirse como un cuelgue de la ventana, porque Qt tenía que medir y dibujar
-ese texto gigante de una sola vez, además de guardarlo tal cual en la base de
-datos.
-
-Igual que en Neo Calculator, la idea es cortar el problema ANTES de que el
-texto entre al campo, no recortarlo después:
-
-- QLineEdit: Qt ya trae soporte nativo para esto -> basta con
-  `setMaxLength(...)`. Internamente Qt rechaza cualquier inserción (tecleada
-  o pegada) que haría que el campo superara ese límite, así que un pegado
-  gigante nunca llega a procesarse por completo.
-
-- QTextEdit / QPlainTextEdit: estos widgets NO tienen un `setMaxLength`
-  nativo (están pensados para texto largo: observaciones, descripciones,
-  notas). Para ellos se instala un filtro de eventos que intercepta
-  Ctrl+V/Shift+Insert/clic derecho > Pegar (`QKeySequence.Paste`) y recorta
-  el CONTENIDO DEL PORTAPAPELES antes de insertarlo -no el texto ya insertado
-  después-, exactamente con el mismo espíritu que el `validate="key"` de Tk
-  en Neo Calculator: se evita procesar el bloque gigante, en vez de dejarlo
-  entrar y borrarlo recién después. Como red de seguridad adicional (por si
-  el texto crece por otra vía, ej. autocompletado o código), también se
-  recorta en `textChanged` si en algún momento se pasara del límite.
-
-Uso: una sola llamada por campo, justo después de crearlo:
-
-    from limite_campos import limitar_campo_texto
-    self.in_nombre = QLineEdit()
-    limitar_campo_texto(self.in_nombre, 300)
-
-    self.in_observacion = QTextEdit()
-    limitar_campo_texto(self.in_observacion, 5000)
-"""
+#Freno para que nadie pegue un documento entero dentro de un campo de texto y la ventana se
+#quede pensando. En QLineEdit se usa el límite que ya trae Qt; en QTextEdit/QPlainTextEdit, que
+#no tienen límite propio, se recorta el portapapeles antes de insertarlo, que sale mucho más
+#barato que dejar entrar el texto gigante y borrarlo después. Se llama una sola vez por campo,
+#justo después de crearlo:
+#self.in_nombre= QLineEdit()
+#limitar_campo_texto(self.in_nombre, 300)
+#self.in_observacion= QTextEdit()
+#limitar_campo_texto(self.in_observacion, 5000)
 from PySide6.QtWidgets import QLineEdit, QTextEdit, QPlainTextEdit
-from PySide6.QtGui import QKeySequence
 
-# Límites por defecto según el tipo de campo, usados cuando no se pasa un
-# `max_length` explícito. Pensados para dejar de sobra cualquier valor real
-# (nombres, direcciones, correos, notas...) sin permitir un pegado gigante.
-LIMITE_CAMPO_CORTO = 300     # QLineEdit genérico (nombre, dirección, correo, código...)
-LIMITE_CAMPO_LARGO = 5000    # QTextEdit/QPlainTextEdit (observaciones, descripciones, notas)
+LIMITE_CAMPO_CORTO= 300    #nombre, dirección, correo, código
+LIMITE_CAMPO_LARGO= 5000   #observaciones, descripciones, notas
 
 
+#Se mete dentro del widget y recorta el texto del portapapeles antes de que Qt lo inserte.
 class _FiltroPegadoLargo:
-    """Recorta el texto del portapapeles ANTES de insertarlo en un
-    QTextEdit/QPlainTextEdit, en vez de dejar que el widget procese el
-    bloque completo y recortarlo después."""
 
-    def __init__(self, widget, max_length):
-        self.widget = widget
-        self.max_length = max_length
-        # Se guarda el método original para poder llamarlo con el texto ya
-        # recortado, sin reimplementar todo lo que hace Qt al pegar (formato,
-        # imágenes en rich text, etc. -aquí solo interesa el texto plano-).
-        self._insert_original = widget.insertFromMimeData
-        widget.insertFromMimeData = self._insertar_recortado
+    def __init__(self, widget, limite):
+        self.widget= widget
+        self.limite= limite
+        #Se guarda el método original para llamarlo con el texto ya recortado y no tener que
+        #rehacer todo lo que hace Qt al pegar.
+        self.insertar_original= widget.insertFromMimeData
+        widget.insertFromMimeData= self.insertar_recortado
 
-    def _espacio_disponible(self):
-        largo_actual = len(self.widget.toPlainText())
-        return max(0, self.max_length - largo_actual)
+    #Cuántos caracteres todavía caben en el campo.
+    def espacio_libre(self):
+        return max(0, self.limite - len(self.widget.toPlainText()))
 
-    def _insertar_recortado(self, source):
-        disponible = self._espacio_disponible()
-        if disponible <= 0:
+    def insertar_recortado(self, source):
+        libre= self.espacio_libre()
+        if libre <= 0:
             return
-        if source.hasText() and len(source.text()) > disponible:
+        if source.hasText() and len(source.text()) > libre:
             from PySide6.QtCore import QMimeData
-            recortado = QMimeData()
-            recortado.setText(source.text()[:disponible])
-            self._insert_original(recortado)
-        else:
-            self._insert_original(source)
+            recortado= QMimeData()
+            recortado.setText(source.text()[:libre])
+            self.insertar_original(recortado)
+            return
+        self.insertar_original(source)
 
 
-def _truncar_si_excede(widget, max_length):
-    """Red de seguridad: si por cualquier otra vía (autocompletado, código,
-    deshacer/rehacer) el contenido superara el límite, se recorta aquí."""
-    texto = widget.toPlainText()
-    if len(texto) > max_length:
-        cursor = widget.textCursor()
-        posicion = cursor.position()
-        widget.blockSignals(True)
-        widget.setPlainText(texto[:max_length])
-        widget.blockSignals(False)
-        cursor.setPosition(min(posicion, max_length))
-        widget.setTextCursor(cursor)
+#Red de seguridad: si el texto creció por otra vía (autocompletado, código, deshacer), se recorta
+#acá sin avisar y sin mover el cursor más de la cuenta.
+def _truncar_si_excede(widget, limite):
+    texto= widget.toPlainText()
+    if len(texto) <= limite:
+        return
+    cursor= widget.textCursor()
+    posicion= cursor.position()
+    widget.blockSignals(True)
+    widget.setPlainText(texto[:limite])
+    widget.blockSignals(False)
+    cursor.setPosition(min(posicion, limite))
+    widget.setTextCursor(cursor)
 
 
+#Aplica el límite que corresponde según el tipo de campo. Se puede llamar dos veces sobre el
+#mismo widget sin que se duplique nada.
 def limitar_campo_texto(widget, max_length=None):
-    """Aplica el límite de longitud adecuado según el tipo de widget.
-    Es seguro llamarla más de una vez sobre el mismo widget (no duplica el
-    filtro de pegado en QTextEdit/QPlainTextEdit)."""
     if isinstance(widget, QLineEdit):
         widget.setMaxLength(max_length or LIMITE_CAMPO_CORTO)
         return widget
-
     if isinstance(widget, (QTextEdit, QPlainTextEdit)):
-        limite = max_length or LIMITE_CAMPO_LARGO
+        limite= max_length or LIMITE_CAMPO_LARGO
         if getattr(widget, "_limite_pegado_aplicado", None) != limite:
             _FiltroPegadoLargo(widget, limite)
             widget.textChanged.connect(lambda w=widget, l=limite: _truncar_si_excede(w, l))
-            widget._limite_pegado_aplicado = limite
+            widget._limite_pegado_aplicado= limite
         return widget
-
     return widget

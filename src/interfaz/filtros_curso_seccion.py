@@ -33,7 +33,7 @@ REGLAS (idénticas en todos lados, en filtros y formularios de captura por igual
      como "— Ninguna —", porque "sin sección" es un valor de datos válido,
      no un atajo para saltarse el filtro por curso.
 """
-from src.nucleo.bd import get_connection
+from src.nucleo.bd import obtener_conexion
 from src.interfaz.configuracion import conectar_tooltip_seleccion
 
 
@@ -51,23 +51,23 @@ def poblar_combo_curso(combo, incluir_todos=False, seleccion_previa=None, seccio
     (por defecto, la que ya tuviera `combo` antes de llamar esta función;
     se puede forzar otra con `seleccion_previa`)."""
     if seleccion_previa is None and combo.count():
-        seleccion_previa = combo.currentData()
+        seleccion_previa= combo.currentData()
     combo.blockSignals(True)
     combo.clear()
     combo.addItem("Todos los cursos" if incluir_todos else "Selecciona un curso/grado…", None)
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("SELECT id, nombre FROM grados ORDER BY orden, nombre")
-    filas_grados = c.fetchall()
+    filas_grados= c.fetchall()
     for f in filas_grados:
         if secciones_permitidas is not None:
             c.execute("SELECT id FROM secciones WHERE grado_id=?", (f["id"],))
-            ids_seccion = {s["id"] for s in c.fetchall()}
+            ids_seccion= {s["id"] for s in c.fetchall()}
             if not (ids_seccion & secciones_permitidas):
                 continue
         combo.addItem(f["nombre"], f["id"])
     conn.close()
-    idx = combo.findData(seleccion_previa)
+    idx= combo.findData(seleccion_previa)
     combo.setCurrentIndex(idx if idx >= 0 else 0)
     combo.blockSignals(False)
     conectar_tooltip_seleccion(combo, "Curso/Grado")
@@ -91,8 +91,8 @@ def cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=False, s
     al lado) y se prefiere el texto corto ("A") incluso sin curso
     seleccionado. Con secciones homónimas entre grados, esto puede volver
     ambiguo cuál es cuál -por eso no es el comportamiento por defecto-."""
-    curso_id = combo_curso.currentData()
-    seleccion_previa = combo_seccion.currentData()
+    curso_id= combo_curso.currentData()
+    seleccion_previa= combo_seccion.currentData()
     combo_seccion.blockSignals(True)
     combo_seccion.clear()
 
@@ -104,14 +104,14 @@ def cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=False, s
         combo_seccion.addItem("Selecciona una sección…", None)
 
     if curso_id is not None or incluir_todas:
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         if curso_id is not None:
             c.execute("SELECT id, nombre FROM secciones WHERE grado_id=? ORDER BY nombre", (curso_id,))
             for f in c.fetchall():
                 if secciones_permitidas is not None and f["id"] not in secciones_permitidas:
                     continue
-                combo_seccion.addItem(f["nombre"], f["id"])  # etiqueta corta: ya sabemos el curso
+                combo_seccion.addItem(f["nombre"], f["id"])  #etiqueta corta: ya sabemos el curso
         elif etiquetas_cortas_sin_curso:
             c.execute("""SELECT secciones.id, secciones.nombre FROM secciones
                          LEFT JOIN grados ON secciones.grado_id = grados.id
@@ -132,13 +132,12 @@ def cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=False, s
         conn.close()
 
     if curso_id is None:
-        # Sin curso concreto: si el combo es un filtro, se resetea a "Todas las
-        # secciones" (índice 0) en vez de conservar una selección específica de
-        # un curso que ya no se está viendo. Si es obligatorio, no hay nada que
-        # seleccionar todavía (solo está el placeholder, índice 0).
+        #Sin curso concreto: si el combo es un filtro, se resetea a "Todas las secciones" (índice 0) en vez de
+        #conservar una selección específica de un curso que ya no se está viendo. Si es obligatorio, no hay nada que
+        #seleccionar todavía (solo está el placeholder, índice 0).
         combo_seccion.setCurrentIndex(0)
     else:
-        idx = combo_seccion.findData(seleccion_previa)
+        idx= combo_seccion.findData(seleccion_previa)
         combo_seccion.setCurrentIndex(idx if idx >= 0 else 0)
     combo_seccion.blockSignals(False)
     conectar_tooltip_seleccion(combo_seccion, "Sección")
@@ -162,21 +161,21 @@ def poblar_combo_nivel_educativo(combo, incluir_todos=True, seleccion_previa=Non
 
     Conserva la selección previa si sigue existiendo en la lista nueva,
     igual que `poblar_combo_curso`."""
-    ORDEN_NIVELES = ["Primaria", "Secundaria", "Preparatoria", "Universidad"]
+    ORDEN_NIVELES= ["Primaria", "Secundaria", "Preparatoria", "Universidad"]
     if seleccion_previa is None and combo.count():
-        seleccion_previa = combo.currentData()
+        seleccion_previa= combo.currentData()
     combo.blockSignals(True)
     combo.clear()
     combo.addItem("Todos los niveles" if incluir_todos else "Selecciona un nivel…", None)
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("SELECT DISTINCT nivel_educativo FROM grados WHERE nivel_educativo IS NOT NULL")
-    presentes = {f["nivel_educativo"] for f in c.fetchall()}
+    presentes= {f["nivel_educativo"] for f in c.fetchall()}
     conn.close()
     for nivel in ORDEN_NIVELES:
         if nivel in presentes:
             combo.addItem(nivel, nivel)
-    idx = combo.findData(seleccion_previa)
+    idx= combo.findData(seleccion_previa)
     combo.setCurrentIndex(idx if idx >= 0 else 0)
     combo.blockSignals(False)
 
@@ -193,12 +192,12 @@ def secciones_del_nivel_educativo(nivel):
     `cascada_seccion_por_curso`."""
     if nivel is None:
         return None
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("""SELECT secciones.id FROM secciones
                  JOIN grados ON secciones.grado_id = grados.id
                  WHERE grados.nivel_educativo=?""", (nivel,))
-    ids = {f["id"] for f in c.fetchall()}
+    ids= {f["id"] for f in c.fetchall()}
     conn.close()
     return ids
 
@@ -220,12 +219,12 @@ def interseccion_opcional(*sets_opcionales):
     - Si la intersección resultante es vacía, se devuelve el set vacío tal
       cual (a diferencia de None, un set vacío SÍ es una restricción real:
       significa "ninguna sección cumple las condiciones combinadas")."""
-    activos = [s for s in sets_opcionales if s is not None]
+    activos= [s for s in sets_opcionales if s is not None]
     if not activos:
         return None
-    resultado = activos[0]
+    resultado= activos[0]
     for s in activos[1:]:
-        resultado = resultado & s
+        resultado= resultado & s
     return resultado
 
 
@@ -235,45 +234,42 @@ def preseleccionar_curso_y_seccion(combo_curso, combo_seccion, seccion_id, inclu
     registro, busca su curso, lo selecciona primero en `combo_curso`, y
     luego llama a la cascada para preseleccionar `seccion_id` en
     `combo_seccion` — igual que al editar un Horario o un Estudiante."""
-    grado_id = None
+    grado_id= None
     if seccion_id:
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("SELECT grado_id FROM secciones WHERE id=?", (seccion_id,))
-        fila = c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        grado_id = fila["grado_id"] if fila else None
+        grado_id= fila["grado_id"] if fila else None
     combo_curso.blockSignals(True)
-    idx_curso = combo_curso.findData(grado_id)
+    idx_curso= combo_curso.findData(grado_id)
     combo_curso.setCurrentIndex(idx_curso if idx_curso >= 0 else 0)
     combo_curso.blockSignals(False)
     cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=incluir_todas, etiqueta_todas=etiqueta_todas,
                                etiquetas_cortas_sin_curso=etiquetas_cortas_sin_curso)
     if seccion_id is not None:
         combo_seccion.blockSignals(True)
-        idx_seccion = combo_seccion.findData(seccion_id)
+        idx_seccion= combo_seccion.findData(seccion_id)
         combo_seccion.setCurrentIndex(idx_seccion if idx_seccion >= 0 else 0)
         combo_seccion.blockSignals(False)
 
 
-# ============================================================
-# MÓDULOS TÉCNICOS / MATERIAS VINCULADAS A UN CURSO (opcional)
-# ============================================================
-# Una materia o módulo técnico puede quedar vinculado a un curso/grado
-# (materias.grado_id). Es OPCIONAL: NULL = no vinculado, y entonces aparece
-# para cualquier curso del área que lo use. Las áreas técnicas solo existen
-# en Secundaria - Segundo Ciclo (ver puede_tener_componente_tecnico), así
-# que un módulo técnico solo puede vincularse a esos cursos.
+#Módulos técnicos / materias vinculadas a un curso (opcional) Una materia o módulo técnico puede quedar
+#vinculado a un curso/grado
+#(materias.grado_id). Es OPCIONAL: NULL = no vinculado, y entonces aparece
+#para cualquier curso del área que lo use. Las áreas técnicas solo existen en Secundaria - Segundo Ciclo (ver
+#puede_tener_componente_tecnico), así que un módulo técnico solo puede vincularse a esos cursos.
 
 def curso_admite_componente_tecnico(grado_id):
     """True si el curso/grado puede tener módulos técnicos (Secundaria - Segundo Ciclo)."""
     from src.interfaz.configuracion import puede_tener_componente_tecnico
     if grado_id is None:
         return False
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("SELECT nivel_educativo, ciclo_secundaria FROM grados WHERE id=?", (grado_id,))
-    f = c.fetchone()
+    f= c.fetchone()
     conn.close()
     return bool(f) and puede_tener_componente_tecnico(f["nivel_educativo"], f["ciclo_secundaria"], None)
 
@@ -285,12 +281,12 @@ def poblar_combo_curso_opcional(combo, solo_con_componente_tecnico=False, selecc
     módulos técnicos (Secundaria - Segundo Ciclo)."""
     from src.interfaz.configuracion import puede_tener_componente_tecnico
     if seleccion_previa is None and combo.count():
-        seleccion_previa = combo.currentData()
+        seleccion_previa= combo.currentData()
     combo.blockSignals(True)
     combo.clear()
     combo.addItem("— Sin curso específico —", None)
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("SELECT id, nombre, nivel_educativo, ciclo_secundaria FROM grados ORDER BY orden, nombre")
     for f in c.fetchall():
         if solo_con_componente_tecnico and not puede_tener_componente_tecnico(
@@ -298,7 +294,7 @@ def poblar_combo_curso_opcional(combo, solo_con_componente_tecnico=False, selecc
             continue
         combo.addItem(f["nombre"], f["id"])
     conn.close()
-    idx = combo.findData(seleccion_previa)
+    idx= combo.findData(seleccion_previa)
     combo.setCurrentIndex(idx if idx >= 0 else 0)
     combo.blockSignals(False)
 
@@ -308,8 +304,8 @@ def modulos_tecnicos_por_area_y_curso(especialidad_id=None, grado_id=None):
     - especialidad_id: si se indica, solo los de esa área técnica.
     - grado_id: si se indica, solo los vinculados a ESE curso o sin curso
       específico (grado_id NULL). Sin grado_id: todos los del área."""
-    sql = ("SELECT id, nombre FROM materias WHERE modelo_evaluacion = 'Técnica (RA)'")
-    params = []
+    sql= ("SELECT id, nombre FROM materias WHERE modelo_evaluacion = 'Técnica (RA)'")
+    params= []
     if especialidad_id is not None:
         sql += " AND especialidad_id = ?"
         params.append(especialidad_id)
@@ -317,10 +313,10 @@ def modulos_tecnicos_por_area_y_curso(especialidad_id=None, grado_id=None):
         sql += " AND (grado_id = ? OR grado_id IS NULL)"
         params.append(grado_id)
     sql += " ORDER BY nombre"
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute(sql, params)
-    filas = [(f["id"], f["nombre"]) for f in c.fetchall()]
+    filas= [(f["id"], f["nombre"]) for f in c.fetchall()]
     conn.close()
     return filas
 

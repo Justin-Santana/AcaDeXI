@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineE
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QShortcut, QKeySequence
 
-from src.nucleo.bd import get_connection
+from src.nucleo.bd import obtener_conexion
 from src.nucleo.iconos import aplicar_icono_ventana, centrar_y_al_frente, ICONO_BUSQUEDA, icono_qicon_modulo
 from src.nucleo.permisos import (es_profesor_restringido, obtener_secciones_permitidas,
     obtener_materias_permitidas, modulo_visible, puede_ver_psicologia,
@@ -51,18 +51,17 @@ def _normalizar_texto(texto):
     """Normaliza texto: convierte a minúsculas y elimina acentos."""
     if not texto:
         return ""
-    texto = texto.lower()
+    texto= texto.lower()
     return ''.join(
         c for c in unicodedata.normalize('NFKD', texto)
         if not unicodedata.combining(c)
     )
 
 
-# Umbral de similitud por PALABRA (no por frase completa) para tolerar
-# errores de tipeo. Con palabras cortas (3 letras o menos) se relaja, porque
-# un solo carácter de diferencia ya representa un porcentaje alto del texto.
-_UMBRAL_PALABRA = 0.72
-_UMBRAL_PALABRA_CORTA = 0.55
+#Umbral de similitud por PALABRA (no por frase completa) para tolerar errores de tipeo. Con palabras cortas (3
+#letras o menos) se relaja, porque un solo carácter de diferencia ya representa un porcentaje alto del texto.
+_UMBRAL_PALABRA= 0.72
+_UMBRAL_PALABRA_CORTA= 0.55
 
 
 def _palabra_coincide(palabra_busqueda, texto_destino_norm, palabras_destino):
@@ -89,22 +88,19 @@ def _palabra_coincide(palabra_busqueda, texto_destino_norm, palabras_destino):
         return any(p.startswith(palabra_busqueda) for p in palabras_destino)
     if palabra_busqueda in texto_destino_norm:
         return True
-    umbral = _UMBRAL_PALABRA_CORTA if len(palabra_busqueda) <= 3 else _UMBRAL_PALABRA
+    umbral= _UMBRAL_PALABRA_CORTA if len(palabra_busqueda) <= 3 else _UMBRAL_PALABRA
     for palabra_dest in palabras_destino:
         if palabra_dest.startswith(palabra_busqueda):
             return True
-        # La tolerancia a tipeo (ratio de SequenceMatcher) exige ADEMÁS que
-        # ambas palabras empiecen con la misma letra. Sin este requisito,
-        # nombres realmente distintos pero de longitud parecida y con letras
-        # en común pueden "parecerse" lo suficiente por pura coincidencia: por
-        # ejemplo SequenceMatcher da 0.73 de similitud entre "adrian" y
-        # "maria" (ambas comparten "aria"), lo que bastaba para que buscar
-        # "maria" encontrara por error a un estudiante llamado "Adrian". Un
-        # error de tipeo real casi nunca cambia la primera letra (se escribe
-        # con cuidado el inicio de la palabra), así que exigir la misma letra
-        # inicial elimina ese tipo de falso positivo sin perder tolerancia
-        # real a errores de tipeo (ej. "gonzales" -> "gonzalez" sigue
-        # funcionando: ambas empiezan con "g").
+        #La tolerancia a tipeo (ratio de SequenceMatcher) exige ADEMÁS que ambas palabras empiecen con la misma letra.
+        #Sin este requisito, nombres realmente distintos pero de longitud parecida y con letras en común pueden
+        #"parecerse" lo suficiente por pura coincidencia: por ejemplo SequenceMatcher da 0.73 de similitud entre
+        #"adrian" y "maria" (ambas comparten "aria"), lo que bastaba para que buscar "maria" encontrara por error a un
+        #estudiante llamado "Adrian". Un error de tipeo real casi nunca cambia la primera letra (se escribe con cuidado
+        #el inicio de la palabra), así que exigir la misma letra inicial elimina ese tipo de falso positivo sin perder
+        #tolerancia
+        #real a errores de tipeo (ej. "gonzales" -> "gonzalez" sigue
+        #funcionando: ambas empiezan con "g").
         if palabra_dest[0] != palabra_busqueda[0]:
             continue
         if SequenceMatcher(None, palabra_busqueda, palabra_dest).ratio() >= umbral:
@@ -126,20 +122,20 @@ def _coincidencia_fuzzy(texto_busqueda, texto_destino):
     parezca en su totalidad."""
     if not texto_busqueda or not texto_destino:
         return False
-    busqueda_norm = _normalizar_texto(texto_busqueda)
-    destino_norm = _normalizar_texto(texto_destino)
-    palabras_busqueda = [p for p in busqueda_norm.split() if p]
+    busqueda_norm= _normalizar_texto(texto_busqueda)
+    destino_norm= _normalizar_texto(texto_destino)
+    palabras_busqueda= [p for p in busqueda_norm.split() if p]
     if not palabras_busqueda:
         return False
-    palabras_destino = [p for p in destino_norm.split() if p]
+    palabras_destino= [p for p in destino_norm.split() if p]
     return all(_palabra_coincide(p, destino_norm, palabras_destino) for p in palabras_busqueda)
 
 
 def _puntaje_relevancia(texto_busqueda, texto_destino):
     """Puntaje simple para ordenar resultados: las coincidencias más exactas
     (o que empiezan igual) se muestran primero que las aproximadas."""
-    busqueda_norm = _normalizar_texto(texto_busqueda)
-    destino_norm = _normalizar_texto(texto_destino)
+    busqueda_norm= _normalizar_texto(texto_busqueda)
+    destino_norm= _normalizar_texto(texto_destino)
     if destino_norm.startswith(busqueda_norm):
         return 3.0
     if busqueda_norm in destino_norm:
@@ -148,21 +144,20 @@ def _puntaje_relevancia(texto_busqueda, texto_destino):
 
 
 def _modulo_visible_estudiantes(rol, restringido):
-    nombre = "Mis Estudiantes" if restringido else "Estudiantes"
+    nombre= "Mis Estudiantes" if restringido else "Estudiantes"
     return modulo_visible(rol, nombre)
 
 
 def _modulo_visible_materias(rol, restringido):
-    nombre = "Mis Materias" if restringido else "Materias"
+    nombre= "Mis Materias" if restringido else "Materias"
     return modulo_visible(rol, nombre)
 
 
-# Sinónimos comunes en español/RD para cada módulo, para que escribir "notas"
-# encuentre "Calificaciones", "faltas" encuentre "Asistencia", etc., aunque el
-# texto no coincida literalmente con el nombre que aparece en el menú lateral.
-# No se muestran al usuario (la etiqueta siempre usa el nombre real del
-# módulo): solo se usan puertas adentro para ampliar qué encuentra la búsqueda.
-_ALIAS_MODULOS = {
+#Sinónimos comunes en español/RD para cada módulo, para que escribir "notas" encuentre "Calificaciones",
+#"faltas" encuentre "Asistencia", etc., aunque el texto no coincida literalmente con el nombre que aparece en
+#el menú lateral. No se muestran al usuario (la etiqueta siempre usa el nombre real del módulo): solo se usan
+#puertas adentro para ampliar qué encuentra la búsqueda.
+_ALIAS_MODULOS= {
     "Dashboard": "inicio resumen panel",
     "Calificaciones": "notas boletin boletines",
     "Calificaciones Técnicas": "notas boletin tecnicas",
@@ -200,23 +195,22 @@ def _buscar_modulos(main_window, texto):
     es lo que la sidebar termina mostrando la mayoría de las veces, según
     su propio comentario en main.py), así que un resultado de "Módulos"
     podía verse con un ícono distinto al de esa misma fila en el menú."""
-    resultados = []
-    modulos_info = getattr(main_window, "modulos_info", None) or []
-    nav_list = getattr(main_window, "nav_list", None)
-    coincidencias = []
+    resultados= []
+    modulos_info= getattr(main_window, "modulos_info", None) or []
+    nav_list= getattr(main_window, "nav_list", None)
+    coincidencias= []
     for idx, (_icono_respaldo, nombre) in enumerate(modulos_info):
         if nav_list is not None:
-            item = nav_list.item(idx)
+            item= nav_list.item(idx)
             if item is not None and item.isHidden():
                 continue
-        alias = _ALIAS_MODULOS.get(nombre, "")
-        texto_destino = f"{nombre} {alias}".strip()
+        alias= _ALIAS_MODULOS.get(nombre, "")
+        texto_destino= f"{nombre} {alias}".strip()
         if not _coincidencia_fuzzy(texto, texto_destino):
             continue
-        # El puntaje prioriza la coincidencia contra el NOMBRE real del
-        # módulo; si solo coincidió por un sinónimo, se penaliza un poco para
-        # que una coincidencia directa con el nombre siempre gane el empate.
-        puntaje = max(_puntaje_relevancia(texto, nombre),
+        #El puntaje prioriza la coincidencia contra el NOMBRE real del módulo; si solo coincidió por un sinónimo, se
+        #penaliza un poco para que una coincidencia directa con el nombre siempre gane el empate.
+        puntaje= max(_puntaje_relevancia(texto, nombre),
                       _puntaje_relevancia(texto, texto_destino) - 0.5)
         coincidencias.append((puntaje, ("Módulos", nombre, nombre, None, _icono_categoria(nombre))))
     coincidencias.sort(key=lambda par: par[0], reverse=True)
@@ -224,33 +218,28 @@ def _buscar_modulos(main_window, texto):
     return resultados
 
 
-# Tope de resultados a MOSTRAR por categoría, aplicado DESPUÉS de filtrar
-# (ya no antes, como el viejo LIMIT 25 en SQL que descartaba registros sin
-# siquiera revisarlos). Esto solo evita que la lista crezca sin límite; no
-# afecta qué tan a fondo se busca.
-MAX_RESULTADOS_POR_CATEGORIA = 30
+#Tope de resultados a MOSTRAR por categoría, aplicado DESPUÉS de filtrar (ya no antes, como el viejo LIMIT 25
+#en SQL que descartaba registros sin siquiera revisarlos). Esto solo evita que la lista crezca sin límite; no
+#afecta qué tan a fondo se busca.
+MAX_RESULTADOS_POR_CATEGORIA= 30
 
-MODULO_ROLE = Qt.ItemDataRole.UserRole
-TEXTO_BUSCAR_ROLE = Qt.ItemDataRole.UserRole + 1
+MODULO_ROLE= Qt.ItemDataRole.UserRole
+TEXTO_BUSCAR_ROLE= Qt.ItemDataRole.UserRole + 1
 
 
-# Icono por defecto para cada categoría de resultado, usado cuando el propio
-# resultado no trae uno más específico (como sí hace cada fila de "Módulos",
-# con el icono real de ESE módulo). Es el mismo QIcon "reducido a emoji" que
-# ya usa la sidebar para el módulo correspondiente a esa categoría (ver
-# icono_qicon_modulo en iconos.py): PNG propio si existe, si no el icono
-# vectorial coherente de iconos_auto.py -nunca un emoji crudo elegido a mano
-# aparte, que antes hacía que, por ejemplo, "Profesores" y "Personal" (dos
-# módulos con icono propio bien distinto en la sidebar) se vieran aquí con el
-# mismo glyph genérico de "dos personas".
+#Icono por defecto para cada categoría de resultado, usado cuando el propio resultado no trae uno más
+#específico (como sí hace cada fila de "Módulos", con el icono real de ESE módulo). Es el mismo QIcon "reducido
+#a emoji" que ya usa la sidebar para el módulo correspondiente a esa categoría (ver icono_qicon_modulo en
+#iconos.py): PNG propio si existe, si no el icono vectorial coherente de iconos_auto.py -nunca un emoji crudo
+#elegido a mano aparte, que antes hacía que, por ejemplo, "Profesores" y "Personal" (dos módulos con icono
+#propio bien distinto en la sidebar) se vieran aquí con el mismo glyph genérico de "dos personas".
 #
-# Con @lru_cache en vez de un diccionario armado de una sola vez a nivel de
-# módulo: icono_qicon_modulo() construye QPixmap/QIcon, que en Qt necesitan
-# una QApplication ya viva -y buscador_global.py se importa en main.py ANTES
-# de crear la QApplication (import de módulos arriba, QApplication() recién
-# dentro de `if __name__ == "__main__"`)-. Resolviendo perezosamente, en el
-# primer uso real (ya con la app corriendo), se evita ese problema y de paso
-# se cachea para no repetir la resolución en cada resultado de una búsqueda.
+#Con @lru_cache en vez de un diccionario armado de una sola vez a nivel de módulo: icono_qicon_modulo()
+#construye QPixmap/QIcon, que en Qt necesitan una QApplication ya viva -y buscador_global.py se importa en
+#main.py ANTES de crear la QApplication (import de módulos arriba, QApplication() recién
+#dentro de `if __name__ == "__main__"`)-. Resolviendo perezosamente, en el
+#primer uso real (ya con la app corriendo), se evita ese problema y de paso se cachea para no repetir la
+#resolución en cada resultado de una búsqueda.
 @lru_cache(maxsize=None)
 def _icono_categoria(nombre_modulo):
     return icono_qicon_modulo(nombre_modulo)
@@ -268,58 +257,51 @@ def buscar_global(main_window, texto):
     Utiliza fuzzy matching (por palabra, no por frase completa) para mayor
     flexibilidad, y revisa TODOS los registros activos de cada categoría, no
     solo los primeros de la lista, ordenando después por relevancia."""
-    texto = (texto or "").strip()
+    texto= (texto or "").strip()
     if len(texto) < 1:
         return []
-    resultados = []
-    rol = getattr(main_window, "rol_actual", None)
+    resultados= []
+    rol= getattr(main_window, "rol_actual", None)
 
-    # --- Módulos (navegación directa, sin registro asociado) ---
-    # Va primero: si alguien escribe el nombre de un módulo ("horario",
-    # "banco de tareas"...) lo más útil es verlo de inmediato arriba, sin
-    # tener que bajar entre resultados de estudiantes/profesores/etc.
+    #--- Módulos (navegación directa, sin registro asociado) --- Va primero: si alguien escribe el nombre de un
+    #módulo ("horario", "banco de tareas"...) lo más útil es verlo de inmediato arriba, sin tener que bajar entre
+    #resultados de estudiantes/profesores/etc.
     resultados.extend(_buscar_modulos(main_window, texto))
 
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
 
-    # --- Estudiantes ---
-    restringir_secciones = es_profesor_restringido(main_window)
-    # Secciones permitidas del docente, calculadas UNA sola vez: la usan la
-    # sección de Estudiantes y también las categorías nuevas (Observaciones,
-    # Psicología, Pasantías...) que filtran por la sección del estudiante.
-    secciones_permitidas_glob = (obtener_secciones_permitidas(main_window)
+    #--- Estudiantes ---
+    restringir_secciones= es_profesor_restringido(main_window)
+    #Secciones permitidas del docente, calculadas UNA sola vez: la usan la sección de Estudiantes y también las
+    #categorías nuevas (Observaciones, Psicología, Pasantías...) que filtran por la sección del estudiante.
+    secciones_permitidas_glob= (obtener_secciones_permitidas(main_window)
                                   if restringir_secciones else None)
-    destino_estudiantes = "Mis Estudiantes" if restringir_secciones else "Estudiantes"
+    destino_estudiantes= "Mis Estudiantes" if restringir_secciones else "Estudiantes"
     if _modulo_visible_estudiantes(rol, restringir_secciones):
-        secciones_permitidas = obtener_secciones_permitidas(main_window) if restringir_secciones else None
-        # MODO DOCENTE: un Profesor busca sobre "Mis Estudiantes", que muestra
-        # sus retoques LOCALES (ver datos_locales_docente.py) por encima del
-        # dato institucional — el mismo criterio que ya usa _cargar_tabla() en
-        # estudiantes.py. Si el docente corrigió localmente un nombre o una
-        # sección que Dirección aún no actualizó, el buscador debe encontrar
-        # (y mostrar) esa versión corregida, no la institucional desactualizada.
-        overrides = listar_overrides_estudiantes(main_window) if restringir_secciones else {}
-        # Si algún override cambia la sección de un estudiante, esa sección
-        # puede no ser ninguna de las "permitidas" de este docente (es solo
-        # texto local, no un cambio real de acceso) ni la que ya trae el JOIN
-        # de abajo (que se arma con la sección INSTITUCIONAL). Por eso se
-        # arma aparte un mapa completo grado+sección para poder resolverla.
-        mapa_grado_seccion = {}
+        secciones_permitidas= obtener_secciones_permitidas(main_window) if restringir_secciones else None
+        #MODO DOCENTE: un Profesor busca sobre "Mis Estudiantes", que muestra sus retoques LOCALES (ver
+        #datos_locales_docente.py) por encima del dato institucional — el mismo criterio que ya usa _cargar_tabla() en
+        #estudiantes.py. Si el docente corrigió localmente un nombre o una sección que Dirección aún no actualizó, el
+        #buscador debe encontrar (y mostrar) esa versión corregida, no la institucional desactualizada.
+        overrides= listar_overrides_estudiantes(main_window) if restringir_secciones else {}
+        #Si algún override cambia la sección de un estudiante, esa sección puede no ser ninguna de las "permitidas" de
+        #este docente (es solo texto local, no un cambio real de acceso) ni la que ya trae el JOIN de abajo (que se
+        #arma con la sección INSTITUCIONAL). Por eso se arma aparte un mapa completo grado+sección para poder
+        #resolverla.
+        mapa_grado_seccion= {}
         if restringir_secciones and overrides:
             c.execute("""SELECT s.id, s.nombre AS seccion_nombre, g.nombre AS grado_nombre
                          FROM secciones s LEFT JOIN grados g ON g.id = s.grado_id""")
-            mapa_grado_seccion = {fs["id"]: (fs["grado_nombre"] or "", fs["seccion_nombre"] or "")
+            mapa_grado_seccion= {fs["id"]: (fs["grado_nombre"] or "", fs["seccion_nombre"] or "")
                                    for fs in c.fetchall()}
-        # Sin LIMIT aquí: se revisan TODOS los estudiantes activos y se filtra
-        # en memoria. Antes se limitaba a los primeros 25 (alfabéticamente)
-        # ANTES de aplicar la búsqueda, así que con más de 25 estudiantes,
-        # cualquiera fuera de ese primer bloque alfabético era invisible para
-        # el buscador sin importar qué tan bien coincidiera.
-        # Se hace JOIN con secciones/grados/especialidades/carreras para que el
-        # estudiante también se encuentre buscando por su curso ("5to"), su
-        # sección ("C"), su área técnica o su carrera — no solo por nombre o
-        # matrícula como antes.
+        #Sin LIMIT aquí: se revisan TODOS los estudiantes activos y se filtra en memoria. Antes se limitaba a los
+        #primeros 25 (alfabéticamente) ANTES de aplicar la búsqueda, así que con más de 25 estudiantes, cualquiera
+        #fuera de ese primer bloque alfabético era invisible para el buscador sin importar qué tan bien coincidiera. Se
+        #hace JOIN con secciones/grados/especialidades/carreras para que el estudiante también se encuentre buscando
+        #por su curso ("5to"), su
+        #sección ("C"), su área técnica o su carrera — no solo por nombre o
+        #matrícula como antes.
         c.execute("""SELECT e.id, e.matricula, e.nombre, e.apellidos, e.seccion_id, e.carrera_id,
                             s.nombre AS seccion_nombre, g.nombre AS grado_nombre,
                             g.nivel_educativo AS nivel_educativo,
@@ -330,49 +312,45 @@ def buscar_global(main_window, texto):
                      LEFT JOIN especialidades esp ON esp.id = e.especialidad_id
                      LEFT JOIN carreras car ON car.id = e.carrera_id
                      WHERE e.estado='Activo'""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
-            # El RBAC por fila se decide SIEMPRE con la sección institucional
-            # real (f), nunca con la del override: un retoque local es solo
-            # una personalización de texto, no un cambio real de acceso.
+            #El RBAC por fila se decide SIEMPRE con la sección institucional
+            #real (f), nunca con la del override: un retoque local es solo
+            #una personalización de texto, no un cambio real de acceso.
             if secciones_permitidas is not None and f["seccion_id"] not in secciones_permitidas:
                 continue
-            datos = aplicar_override(f, overrides.get(f["id"])) if restringir_secciones else f
+            datos= aplicar_override(f, overrides.get(f["id"])) if restringir_secciones else f
 
-            nombre_completo = f"{datos['nombre']} {datos['apellidos'] or ''}"
-            seccion_id_efectiva = datos["seccion_id"]
+            nombre_completo= f"{datos['nombre']} {datos['apellidos'] or ''}"
+            seccion_id_efectiva= datos["seccion_id"]
             if restringir_secciones and seccion_id_efectiva != f["seccion_id"]:
-                # El docente reasignó localmente a este estudiante a otra
-                # sección: se resuelve su nombre en el mapa completo (arriba)
-                # en vez del que trae el JOIN (que sigue la sección institucional).
+                #El docente reasignó localmente a este estudiante a otra sección: se resuelve su nombre en el mapa completo
+                #(arriba) en vez del que trae el JOIN (que sigue la sección institucional).
                 grado_nombre, seccion_nombre = mapa_grado_seccion.get(
                     seccion_id_efectiva, (f["grado_nombre"] or "", f["seccion_nombre"] or ""))
             else:
-                grado_nombre = f["grado_nombre"] or ""
-                seccion_nombre = f["seccion_nombre"] or ""
-            # El área técnica y la carrera SÍ se muestran en la tabla de "Mis
-            # Estudiantes" siempre con el dato institucional (nunca el
-            # override), así que aquí se respeta el mismo criterio.
-            especialidad_nombre = f["especialidad_nombre"] or ""
-            carrera_nombre = f["carrera_nombre"] or ""
-            # Nivel educativo como criterio de búsqueda más ("Juan Pérez
-            # secundaria", "3ro C informática secundaria"): mismo dato que
-            # ya usa el filtro de Nivel Educativo en Estudiantes -
-            # Universidad se reconoce por tener Carrera (dato existente), el
-            # resto por grados.nivel_educativo (ver resolver_nivel_academico_*
-            # en bd.py, la misma fuente de verdad en todos lados).
-            nivel_nombre = "Universidad" if f["carrera_id"] is not None else (f["nivel_educativo"] or "")
+                grado_nombre= f["grado_nombre"] or ""
+                seccion_nombre= f["seccion_nombre"] or ""
+            #El área técnica y la carrera SÍ se muestran en la tabla de "Mis Estudiantes" siempre con el dato institucional
+            #(nunca el override), así que aquí se respeta el mismo criterio.
+            especialidad_nombre= f["especialidad_nombre"] or ""
+            carrera_nombre= f["carrera_nombre"] or ""
+            #Nivel educativo como criterio de búsqueda más ("Juan Pérez secundaria", "3ro C informática secundaria"): mismo
+            #dato que ya usa el filtro de Nivel Educativo en Estudiantes - Universidad se reconoce por tener Carrera (dato
+            #existente), el resto por grados.nivel_educativo (ver resolver_nivel_academico_* en bd.py, la misma fuente de
+            #verdad en todos lados).
+            nivel_nombre= "Universidad" if f["carrera_id"] is not None else (f["nivel_educativo"] or "")
 
-            partes_busqueda = [nombre_completo, f["matricula"] or "", "estudiante alumno alumna"]
+            partes_busqueda= [nombre_completo, f["matricula"] or "", "estudiante alumno alumna"]
             if grado_nombre:
                 partes_busqueda.append(grado_nombre)
             if seccion_nombre:
                 partes_busqueda.append(seccion_nombre)
             if grado_nombre and seccion_nombre:
-                # Formas abreviadas típicas de nombrar "curso + sección" de un
-                # tirón ("5c", "5-C"), además de la forma ya cubierta arriba
-                # como dos palabras sueltas ("5to" + "C", ej. "5to C").
-                numero_grado = re.match(r"\s*(\d+)", grado_nombre)
+                #Formas abreviadas típicas de nombrar "curso + sección" de un
+                #tirón ("5c", "5-C"), además de la forma ya cubierta arriba
+                #como dos palabras sueltas ("5to" + "C", ej. "5to C").
+                numero_grado= re.match(r"\s*(\d+)", grado_nombre)
                 if numero_grado:
                     partes_busqueda.append(f"{numero_grado.group(1)}{seccion_nombre}")
                     partes_busqueda.append(f"{numero_grado.group(1)}-{seccion_nombre}")
@@ -382,111 +360,104 @@ def buscar_global(main_window, texto):
                 partes_busqueda.append(carrera_nombre)
             if nivel_nombre:
                 partes_busqueda.append(nivel_nombre)
-            texto_concatenado = " ".join(p for p in partes_busqueda if p)
+            texto_concatenado= " ".join(p for p in partes_busqueda if p)
 
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                detalle = " · ".join(p for p in (
+                detalle= " · ".join(p for p in (
                     f"{grado_nombre} {seccion_nombre}".strip(),
                     especialidad_nombre, carrera_nombre) if p)
-                etiqueta = f"{nombre_completo} — Matrícula {datos['matricula'] or 's/n'}"
+                etiqueta= f"{nombre_completo} — Matrícula {datos['matricula'] or 's/n'}"
                 if detalle:
                     etiqueta += f" ({detalle})"
                 if restringir_secciones and f["id"] in overrides:
-                    # Antes esto agregaba un emoji de lapicito suelto al final
-                    # de la etiqueta; con los emojis fuera del texto, se dice
-                    # con palabras que ese dato tiene un retoque local propio
-                    # del docente que Dirección aún no actualizó en el sistema.
+                    #Antes esto agregaba un emoji de lapicito suelto al final de la etiqueta; con los emojis fuera del texto, se
+                    #dice con palabras que ese dato tiene un retoque local propio del docente que Dirección aún no actualizó en el
+                    #sistema.
                     etiqueta += " (editado localmente)"
-                # texto_filtro va con el dato INSTITUCIONAL (no el override):
-                # es lo que se escribe en el buscador rápido de "Mis
-                # Estudiantes" al llegar, y ese buscador rápido compara contra
-                # el nombre/matrícula institucional, no contra el override.
+                #texto_filtro va con el dato INSTITUCIONAL (no el override):
+                #es lo que se escribe en el buscador rápido de "Mis Estudiantes" al llegar, y ese buscador rápido compara
+                #contra el nombre/matrícula institucional, no contra el override.
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Estudiantes", etiqueta, destino_estudiantes,
                                         f["matricula"] or f["nombre"], _icono_categoria(destino_estudiantes))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Profesores ---
+    #--- Profesores ---
     if modulo_visible(rol, "Profesores"):
         c.execute("""SELECT id, nombre, apellidos, especialidad FROM profesores
                      WHERE estado='Activo'""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
-            nombre_completo = f"{f['nombre']} {f['apellidos'] or ''}"
-            # Alias "profesor/profesora/docente" para que una búsqueda tipo
-            # "profesor felix" encuentre al profesor Félix aunque la palabra
-            # "profesor" no forme parte de su nombre ni especialidad.
-            texto_concatenado = f"{nombre_completo} {f['especialidad'] or ''} profesor profesora docente"
+            nombre_completo= f"{f['nombre']} {f['apellidos'] or ''}"
+            #Alias "profesor/profesora/docente" para que una búsqueda tipo "profesor felix" encuentre al profesor Félix
+            #aunque la palabra "profesor" no forme parte de su nombre ni especialidad.
+            texto_concatenado= f"{nombre_completo} {f['especialidad'] or ''} profesor profesora docente"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta = nombre_completo + (f" — {f['especialidad']}" if f["especialidad"] else "")
+                etiqueta= nombre_completo + (f" — {f['especialidad']}" if f["especialidad"] else "")
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Profesores", etiqueta, "Profesores", f["nombre"],
                                         _icono_categoria("Profesores"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Personal Administrativo ---
+    #--- Personal Administrativo ---
     if modulo_visible(rol, "Personal"):
         c.execute("""SELECT id, nombre, apellidos, cargo FROM personal_administrativo
                      WHERE estado='Activo'""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
-            nombre_completo = f"{f['nombre']} {f['apellidos'] or ''}"
-            texto_concatenado = f"{nombre_completo} {f['cargo'] or ''} personal administrativo"
+            nombre_completo= f"{f['nombre']} {f['apellidos'] or ''}"
+            texto_concatenado= f"{nombre_completo} {f['cargo'] or ''} personal administrativo"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta = nombre_completo + (f" — {f['cargo']}" if f["cargo"] else "")
+                etiqueta= nombre_completo + (f" — {f['cargo']}" if f["cargo"] else "")
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Personal", etiqueta, "Personal", f["nombre"],
                                         _icono_categoria("Personal"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Materias ---
-    destino_materias = "Mis Materias" if restringir_secciones else "Materias"
+    #--- Materias ---
+    destino_materias= "Mis Materias" if restringir_secciones else "Materias"
     if _modulo_visible_materias(rol, restringir_secciones):
-        materias_permitidas = obtener_materias_permitidas(main_window) if restringir_secciones else None
-        # Los módulos técnicos (modelo_evaluacion='Técnica (RA)') viven en su
-        # propio módulo dentro de Politécnico, no en "Materias" -el propio
-        # listado de Materias ya los excluye (ver materias.py), así que el
-        # buscador global debe hacer lo mismo para no ofrecer un resultado
-        # que en realidad no está ahí.
+        materias_permitidas= obtener_materias_permitidas(main_window) if restringir_secciones else None
+        #Los módulos técnicos (modelo_evaluacion='Técnica (RA)') viven en su
+        #propio módulo dentro de Politécnico, no en "Materias" -el propio listado de Materias ya los excluye (ver
+        #materias.py), así que el buscador global debe hacer lo mismo para no ofrecer un resultado que en realidad no
+        #está ahí.
         c.execute("""SELECT id, codigo, nombre FROM materias
                      WHERE estado='Activa'
                      AND (modelo_evaluacion IS NULL OR modelo_evaluacion != 'Técnica (RA)')""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
             if materias_permitidas is not None and f["id"] not in materias_permitidas:
                 continue
-            texto_concatenado = f"{f['nombre']} {f['codigo'] or ''} materia asignatura"
+            texto_concatenado= f"{f['nombre']} {f['codigo'] or ''} materia asignatura"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta = f"{f['nombre']}" + (f" ({f['codigo']})" if f["codigo"] else "")
+                etiqueta= f"{f['nombre']}" + (f" ({f['codigo']})" if f["codigo"] else "")
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Materias", etiqueta, destino_materias, f["nombre"],
                                         _icono_categoria(destino_materias))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Eventos del Calendario ---
-    # Antes el buscador global ignoraba por completo esta tabla: escribir el
-    # título de un evento (p. ej. "reunión") no encontraba nada, aunque el
-    # evento sí existiera y se viera perfectamente en el propio módulo
-    # Calendario. Mismo criterio de visibilidad que usa ModuloCalendario._
-    # cargar_datos(): un evento "Personal" solo lo ve quien lo creó; el resto
-    # (Institucional, Examen, Entrega, Reunión) lo ve cualquier usuario que
-    # tenga acceso al módulo Calendario.
+    #--- Eventos del Calendario --- Antes el buscador global ignoraba por completo esta tabla: escribir el título
+    #de un evento (p. ej. "reunión") no encontraba nada, aunque el evento sí existiera y se viera perfectamente en
+    #el propio módulo Calendario. Mismo criterio de visibilidad que usa ModuloCalendario._
+    #cargar_datos(): un evento "Personal" solo lo ve quien lo creó; el resto
+    #(Institucional, Examen, Entrega, Reunión) lo ve cualquier usuario que tenga acceso al módulo Calendario.
     if modulo_visible(rol, "Calendario"):
-        usuario_id = getattr(main_window, "id_usuario_actual", None)
+        usuario_id= getattr(main_window, "id_usuario_actual", None)
         c.execute("SELECT id, titulo, descripcion, tipo, fecha, visibilidad, usuario_id FROM eventos")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
             if f["visibilidad"] == "Personal" and f["usuario_id"] != usuario_id:
                 continue
-            texto_concatenado = (f"{f['titulo']} {f['descripcion'] or ''} {f['tipo'] or ''} "
+            texto_concatenado= (f"{f['titulo']} {f['descripcion'] or ''} {f['tipo'] or ''} "
                                   f"evento cita calendario")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt = formatear_fecha(f["fecha"], main_window)
-                etiqueta = f["titulo"] + (f" — {fecha_fmt}" if fecha_fmt else "")
+                fecha_fmt= formatear_fecha(f["fecha"], main_window)
+                etiqueta= f["titulo"] + (f" — {fecha_fmt}" if fecha_fmt else "")
                 if f["tipo"]:
                     etiqueta += f" ({f['tipo']})"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
@@ -495,26 +466,25 @@ def buscar_global(main_window, texto):
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Tareas (Banco de Tareas) ---
-    # Igual que Calendario: el buscador global tampoco tocaba esta tabla.
-    # Un Profesor restringido solo encuentra tareas de sus propias materias
-    # (mismo criterio que usa el propio módulo, ver obtener_materias_permitidas).
+    #--- Tareas (Banco de Tareas) --- Igual que Calendario: el buscador global tampoco tocaba esta tabla. Un
+    #Profesor restringido solo encuentra tareas de sus propias materias (mismo criterio que usa el propio módulo,
+    #ver obtener_materias_permitidas).
     if modulo_visible(rol, "Banco de Tareas"):
-        materias_permitidas = obtener_materias_permitidas(main_window) if restringir_secciones else None
+        materias_permitidas= obtener_materias_permitidas(main_window) if restringir_secciones else None
         c.execute("""SELECT t.id, t.titulo, t.categoria, t.materia_id, t.estado, t.fecha_entrega,
                             m.nombre AS materia_nombre
                      FROM tareas t LEFT JOIN materias m ON m.id = t.materia_id
                      WHERE t.estado='Activa'""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
             if materias_permitidas is not None and f["materia_id"] not in materias_permitidas:
                 continue
-            texto_concatenado = (f"{f['titulo']} {f['categoria'] or ''} {f['materia_nombre'] or ''} "
+            texto_concatenado= (f"{f['titulo']} {f['categoria'] or ''} {f['materia_nombre'] or ''} "
                                   f"tarea actividad")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt = formatear_fecha(f["fecha_entrega"], main_window)
-                etiqueta = f["titulo"]
-                detalle = " · ".join(p for p in (f["materia_nombre"], f["categoria"]) if p)
+                fecha_fmt= formatear_fecha(f["fecha_entrega"], main_window)
+                etiqueta= f["titulo"]
+                detalle= " · ".join(p for p in (f["materia_nombre"], f["categoria"]) if p)
                 if detalle:
                     etiqueta += f" — {detalle}"
                 if fecha_fmt:
@@ -525,29 +495,28 @@ def buscar_global(main_window, texto):
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Observaciones ---
-    # El buscador global ignoraba por completo esta tabla. RBAC por fila:
-    # un Profesor restringido solo encuentra observaciones de estudiantes de
-    # sus propias secciones (mismo criterio que el módulo). El texto que se
-    # pre-carga al llegar al módulo es el nombre del estudiante, que es como
-    # el buscador del módulo acota mejor sus registros.
+    #--- Observaciones ---
+    #El buscador global ignoraba por completo esta tabla. RBAC por fila:
+    #un Profesor restringido solo encuentra observaciones de estudiantes de sus propias secciones (mismo criterio
+    #que el módulo). El texto que se pre-carga al llegar al módulo es el nombre del estudiante, que es como el
+    #buscador del módulo acota mejor sus registros.
     if modulo_visible(rol, "Observaciones"):
         c.execute("""SELECT o.texto, o.naturaleza, o.categorias, o.destacada, o.fecha,
                             e.nombre AS est_nombre, e.apellidos AS est_apellidos,
                             e.seccion_id AS seccion_id
                      FROM observaciones o
                      LEFT JOIN estudiantes e ON e.id = o.estudiante_id""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
             if restringir_secciones and (secciones_permitidas_glob is None
                                           or f["seccion_id"] not in secciones_permitidas_glob):
                 continue
-            nombre_est = f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
-            texto_concatenado = (f"{nombre_est} {f['texto'] or ''} {f['naturaleza'] or ''} "
+            nombre_est= f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
+            texto_concatenado= (f"{nombre_est} {f['texto'] or ''} {f['naturaleza'] or ''} "
                                   f"{f['categorias'] or ''} observación anotación")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt = formatear_fecha(f["fecha"][:10], main_window) if f["fecha"] else None
-                etiqueta = f"{f['naturaleza'] or 'Informativa'} — {nombre_est or 'Sin estudiante'}"
+                fecha_fmt= formatear_fecha(f["fecha"][:10], main_window) if f["fecha"] else None
+                etiqueta= f"{f['naturaleza'] or 'Informativa'} — {nombre_est or 'Sin estudiante'}"
                 if f["destacada"]:
                     etiqueta += " (destacada)"
                 if fecha_fmt:
@@ -558,24 +527,22 @@ def buscar_global(main_window, texto):
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Psicología (casos) ---
-    # Visibilidad especial: solo el/la psicólogo/a con el módulo otorgado (o el
-    # Administrador con la función habilitada) ve estos registros — ver
-    # puede_ver_psicologia en permisos.py. Son registros sensibles: si el
-    # usuario no tiene acceso al módulo, ni siquiera aparecen en resultados.
+    #--- Psicología (casos) --- Visibilidad especial: solo el/la psicólogo/a con el módulo otorgado (o el
+    #Administrador con la función habilitada) ve estos registros — ver puede_ver_psicologia en permisos.py. Son
+    #registros sensibles: si el usuario no tiene acceso al módulo, ni siquiera aparecen en resultados.
     if puede_ver_psicologia(main_window):
         c.execute("""SELECT p.texto, p.naturaleza, p.estado_caso, p.fecha,
                             e.nombre AS est_nombre, e.apellidos AS est_apellidos
                      FROM psicologia p
                      LEFT JOIN estudiantes e ON e.id = p.estudiante_id""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
-            nombre_est = f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
-            texto_concatenado = (f"{nombre_est} {f['texto'] or ''} {f['naturaleza'] or ''} "
+            nombre_est= f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
+            texto_concatenado= (f"{nombre_est} {f['texto'] or ''} {f['naturaleza'] or ''} "
                                   f"{f['estado_caso'] or ''} caso psicología psicológico")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt = formatear_fecha(f["fecha"][:10], main_window) if f["fecha"] else None
-                etiqueta = f"{f['estado_caso'] or 'Caso'} — {nombre_est or 'Sin estudiante'}"
+                fecha_fmt= formatear_fecha(f["fecha"][:10], main_window) if f["fecha"] else None
+                etiqueta= f"{f['estado_caso'] or 'Caso'} — {nombre_est or 'Sin estudiante'}"
                 if fecha_fmt:
                     etiqueta += f" — {fecha_fmt}"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
@@ -584,29 +551,28 @@ def buscar_global(main_window, texto):
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Materiales (inventario) ---
-    # RBAC granular por CATEGORÍA de material (ver permisos.py): quien tiene
-    # acceso total ve todo el inventario; quien tiene permisos por usuario solo
-    # encuentra materiales de sus categorías asignadas.
+    #--- Materiales (inventario) --- RBAC granular por CATEGORÍA de material (ver permisos.py): quien tiene acceso
+    #total ve todo el inventario; quien tiene permisos por usuario solo encuentra materiales de sus categorías
+    #asignadas.
     if modulo_visible(rol, "Materiales"):
-        categorias_permitidas = None
+        categorias_permitidas= None
         if not tiene_acceso_total_materiales(main_window):
-            id_usuario = getattr(main_window, "id_usuario_actual", None)
-            categorias_permitidas = {cid for cid, _p in obtener_permisos_materiales_usuario(id_usuario)}
+            id_usuario= getattr(main_window, "id_usuario_actual", None)
+            categorias_permitidas= {cid for cid, _p in obtener_permisos_materiales_usuario(id_usuario)}
         c.execute("""SELECT m.nombre, m.codigo, m.descripcion, m.ubicacion, m.estado,
                             m.categoria_id, cm.nombre AS categoria_nombre
                      FROM materiales m
                      LEFT JOIN categorias_material cm ON cm.id = m.categoria_id""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
             if categorias_permitidas is not None and f["categoria_id"] not in categorias_permitidas:
                 continue
-            texto_concatenado = (f"{f['nombre']} {f['codigo'] or ''} {f['descripcion'] or ''} "
+            texto_concatenado= (f"{f['nombre']} {f['codigo'] or ''} {f['descripcion'] or ''} "
                                   f"{f['ubicacion'] or ''} {f['categoria_nombre'] or ''} "
                                   f"{f['estado'] or ''} material inventario equipo")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                detalle = " · ".join(p for p in (f["categoria_nombre"], f["ubicacion"]) if p)
-                etiqueta = f["nombre"] + (f" ({f['codigo']})" if f["codigo"] else "")
+                detalle= " · ".join(p for p in (f["categoria_nombre"], f["ubicacion"]) if p)
+                etiqueta= f["nombre"] + (f" ({f['codigo']})" if f["codigo"] else "")
                 if detalle:
                     etiqueta += f" — {detalle}"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
@@ -615,11 +581,10 @@ def buscar_global(main_window, texto):
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Horario (clases) ---
-    # RBAC: un Profesor restringido solo encuentra clases de sus materias y
-    # secciones (mismos criterios de obtener_materias/secciones_permitidas).
+    #--- Horario (clases) --- RBAC: un Profesor restringido solo encuentra clases de sus materias y
+    #secciones (mismos criterios de obtener_materias/secciones_permitidas).
     if modulo_visible(rol, "Horario"):
-        materias_permitidas = obtener_materias_permitidas(main_window) if restringir_secciones else None
+        materias_permitidas= obtener_materias_permitidas(main_window) if restringir_secciones else None
         c.execute("""SELECT h.dia, h.hora_inicio, h.hora_fin,
                             m.nombre AS materia_nombre, m.id AS materia_id,
                             s.nombre AS seccion_nombre, s.id AS seccion_id,
@@ -629,19 +594,19 @@ def buscar_global(main_window, texto):
                      LEFT JOIN secciones s ON s.id = h.seccion_id
                      LEFT JOIN grados g ON g.id = s.grado_id
                      LEFT JOIN aulas a ON a.id = h.aula_id""")
-        coincidencias = []
+        coincidencias= []
         for f in c.fetchall():
             if materias_permitidas is not None and f["materia_id"] not in materias_permitidas:
                 continue
             if restringir_secciones and secciones_permitidas_glob is not None \
                     and f["seccion_id"] not in secciones_permitidas_glob:
                 continue
-            grupo = f"{f['grado_nombre'] or ''} {f['seccion_nombre'] or ''}".strip()
-            texto_concatenado = (f"{f['materia_nombre'] or ''} {grupo} {f['dia'] or ''} "
+            grupo= f"{f['grado_nombre'] or ''} {f['seccion_nombre'] or ''}".strip()
+            texto_concatenado= (f"{f['materia_nombre'] or ''} {grupo} {f['dia'] or ''} "
                                   f"{f['aula_nombre'] or ''} clase horario")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                franja = " · ".join(p for p in (f["dia"], f["hora_inicio"], f["hora_fin"]) if p)
-                etiqueta = f"{f['materia_nombre'] or 'Sin materia'}"
+                franja= " · ".join(p for p in (f["dia"], f["hora_inicio"], f["hora_fin"]) if p)
+                etiqueta= f"{f['materia_nombre'] or 'Sin materia'}"
                 if grupo:
                     etiqueta += f" — {grupo}"
                 if franja:
@@ -654,50 +619,49 @@ def buscar_global(main_window, texto):
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
-    # --- Universidad: facultades y carreras ---
-    # Entidades sin buscador propio que precargue texto (la pestaña no se
-    # puede preseleccionar desde el resultado), así que texto_filtro va None:
-    # el clic navega al módulo y ya.
+    #--- Universidad: facultades y carreras --- Entidades sin buscador propio que precargue texto (la pestaña no se
+    #puede preseleccionar desde el resultado), así que texto_filtro va None:
+    #el clic navega al módulo y ya.
     if modulo_visible(rol, "Universidad"):
         c.execute("""SELECT f.nombre AS facultad_nombre,
                             (SELECT GROUP_CONCAT(cr.nombre, ', ') FROM carreras cr
                               WHERE cr.facultad_id = f.id) AS carreras_txt
                      FROM facultades f""")
         for f in c.fetchall():
-            texto_concatenado = f"{f['facultad_nombre']} {f['carreras_txt'] or ''} facultad universidad"
+            texto_concatenado= f"{f['facultad_nombre']} {f['carreras_txt'] or ''} facultad universidad"
             if _coincidencia_fuzzy(texto, texto_concatenado):
                 resultados.append(("Universidad", f"Facultad: {f['facultad_nombre']}", "Universidad",
                                     None, _icono_categoria("Universidad")))
         c.execute("""SELECT cr.nombre AS carrera_nombre, fa.nombre AS facultad_nombre
                      FROM carreras cr LEFT JOIN facultades fa ON fa.id = cr.facultad_id""")
         for f in c.fetchall():
-            texto_concatenado = f"{f['carrera_nombre']} {f['facultad_nombre'] or ''} carrera universidad"
+            texto_concatenado= f"{f['carrera_nombre']} {f['facultad_nombre'] or ''} carrera universidad"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta = f"Carrera: {f['carrera_nombre']}"
+                etiqueta= f"Carrera: {f['carrera_nombre']}"
                 if f["facultad_nombre"]:
                     etiqueta += f" — {f['facultad_nombre']}"
                 resultados.append(("Universidad", etiqueta, "Universidad", None,
                                     _icono_categoria("Universidad")))
 
-    # --- Politécnico: especialidades, empresas y pasantías ---
+    #--- Politécnico: especialidades, empresas y pasantías ---
     if modulo_visible(rol, "Politécnico"):
         c.execute("SELECT nombre, codigo FROM especialidades")
         for f in c.fetchall():
-            texto_concatenado = f"{f['nombre']} {f['codigo'] or ''} especialidad área técnica politécnico"
+            texto_concatenado= f"{f['nombre']} {f['codigo'] or ''} especialidad área técnica politécnico"
             if _coincidencia_fuzzy(texto, texto_concatenado):
                 resultados.append(("Politécnico", f"Especialidad: {f['nombre']}", "Politécnico",
                                     None, _icono_categoria("Politécnico")))
         c.execute("SELECT nombre, rubro, ubicacion FROM empresas_pasantia")
         for f in c.fetchall():
-            texto_concatenado = f"{f['nombre']} {f['rubro'] or ''} {f['ubicacion'] or ''} empresa pasantía"
+            texto_concatenado= f"{f['nombre']} {f['rubro'] or ''} {f['ubicacion'] or ''} empresa pasantía"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta = f"Empresa: {f['nombre']}"
+                etiqueta= f"Empresa: {f['nombre']}"
                 if f["rubro"]:
                     etiqueta += f" ({f['rubro']})"
                 resultados.append(("Politécnico", etiqueta, "Politécnico",
                                     None, _icono_categoria("Politécnico")))
-        # Pasantías: el resultado es el ESTUDIANTE en pasantía; un Profesor
-        # restringido solo ve las de sus secciones (mismo RBAC del módulo).
+        #Pasantías: el resultado es el ESTUDIANTE en pasantía; un Profesor restringido solo ve las de sus secciones
+        #(mismo RBAC del módulo).
         c.execute("""SELECT p.estado,
                             e.nombre AS est_nombre, e.apellidos AS est_apellidos,
                             e.seccion_id AS seccion_id, ep.nombre AS empresa_nombre
@@ -708,10 +672,10 @@ def buscar_global(main_window, texto):
             if restringir_secciones and (secciones_permitidas_glob is None
                                           or f["seccion_id"] not in secciones_permitidas_glob):
                 continue
-            nombre_est = f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
-            texto_concatenado = f"{nombre_est} {f['empresa_nombre'] or ''} {f['estado'] or ''} pasantía"
+            nombre_est= f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
+            texto_concatenado= f"{nombre_est} {f['empresa_nombre'] or ''} {f['estado'] or ''} pasantía"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta = f"Pasantía: {nombre_est or '—'}"
+                etiqueta= f"Pasantía: {nombre_est or '—'}"
                 if f["empresa_nombre"]:
                     etiqueta += f" — {f['empresa_nombre']}"
                 if f["estado"]:
@@ -729,97 +693,88 @@ class DialogoBusquedaGlobal(QDialog):
 
     def __init__(self, main_window, texto_inicial=""):
         super().__init__(main_window)
-        self.main_window = main_window
+        self.main_window= main_window
         self.setWindowTitle("Buscador Global")
         aplicar_icono_ventana(self, ICONO_BUSQUEDA)
-        # Ancho por defecto más generoso que el mínimo: con 480px de ancho
-        # (el viejo tamaño por defecto) las etiquetas largas de resultado
-        # (nombre + matrícula + grado/sección + área técnica/carrera, o un
-        # "profesor — especialidad" largo) quedaban cortadas o cubrían todo
-        # el ancho aunque hubiera espacio de sobra en pantalla. El mínimo se
-        # deja más bajo por si la ventana se redimensiona, pero el tamaño con
-        # el que ABRE es más ancho.
+        #Ancho por defecto más generoso que el mínimo: con 480px de ancho (el viejo tamaño por defecto) las etiquetas
+        #largas de resultado (nombre + matrícula + grado/sección + área técnica/carrera, o un "profesor — especialidad"
+        #largo) quedaban cortadas o cubrían todo el ancho aunque hubiera espacio de sobra en pantalla. El mínimo se
+        #deja más bajo por si la ventana se redimensiona, pero el tamaño con el que ABRE es más ancho.
         self.setMinimumSize(480, 420)
         self.resize(760, 560)
 
-        layout = QVBoxLayout(self)
+        layout= QVBoxLayout(self)
         layout.setContentsMargins(18, 18, 18, 18)
         layout.setSpacing(10)
 
-        fila = QHBoxLayout()
-        self.in_texto = QLineEdit()
+        fila= QHBoxLayout()
+        self.in_texto= QLineEdit()
         limitar_campo_texto(self.in_texto, 300)
         self.in_texto.setPlaceholderText(
             "Buscar estudiante, profesor, personal, materia o un módulo (ej. \"5to C\", \"horario\")...")
         self.in_texto.setText(texto_inicial)
         self.in_texto.returnPressed.connect(self._buscar)
         fila.addWidget(self.in_texto)
-        btn_buscar = QPushButton("Buscar")
+        btn_buscar= QPushButton("Buscar")
         btn_buscar.setObjectName("BtnAccionAgregar")
         btn_buscar.clicked.connect(self._buscar)
         fila.addWidget(btn_buscar)
         layout.addLayout(fila)
 
-        self.lbl_info = QLabel("Escribe al menos 1 carácter y presiona Enter.")
+        self.lbl_info= QLabel("Escribe al menos 1 carácter y presiona Enter.")
         self.lbl_info.setObjectName("DescModulo")
         layout.addWidget(self.lbl_info)
 
-        self.lista = QListWidget()
+        self.lista= QListWidget()
         self.lista.itemDoubleClicked.connect(self._ir_a_resultado)
         layout.addWidget(self.lista, 1)
 
-        ayuda = QLabel("Doble clic sobre un resultado para ir directamente a ese módulo.")
+        ayuda= QLabel("Doble clic sobre un resultado para ir directamente a ese módulo.")
         ayuda.setObjectName("DescModulo")
         layout.addWidget(ayuda)
 
         if texto_inicial:
             self._buscar()
 
-        # Ctrl+F como interruptor "cerrar": el atajo global de main.py
-        # (registrado en la ventana principal con ApplicationShortcut) en la
-        # práctica NO llega hasta acá — mientras este diálogo está con
-        # exec() corriendo, es SU propio QLineEdit el que tiene el foco, y
-        # es a él a quien Qt le entrega primero el evento de teclado; el
-        # atajo de la ventana principal, de fondo y bloqueada por la
-        # modalidad, se queda sin recibir el segundo Ctrl+F. Por eso el
-        # atajo para cerrar se registra ACÁ, directamente sobre el propio
-        # diálogo (WidgetWithChildrenShortcut, el valor por defecto de
-        # QShortcut): así no depende de que el evento viaje hacia afuera,
-        # sino que se resuelve con el diálogo mismo, que es quien realmente
-        # tiene el foco en ese momento.
+        #Ctrl+F como interruptor "cerrar": el atajo global de main.py (registrado en la ventana principal con
+        #ApplicationShortcut) en la práctica NO llega hasta acá — mientras este diálogo está con
+        #exec() corriendo, es SU propio QLineEdit el que tiene el foco, y
+        #es a él a quien Qt le entrega primero el evento de teclado; el atajo de la ventana principal, de fondo y
+        #bloqueada por la modalidad, se queda sin recibir el segundo Ctrl+F. Por eso el atajo para cerrar se registra
+        #ACÁ, directamente sobre el propio
+        #diálogo (WidgetWithChildrenShortcut, el valor por defecto de
+        #QShortcut): así no depende de que el evento viaje hacia afuera, sino que se resuelve con el diálogo mismo, que
+        #es quien realmente tiene el foco en ese momento.
         QShortcut(QKeySequence("Ctrl+F"), self, activated=self.close)
 
         centrar_y_al_frente(self, main_window)
 
     def _buscar(self):
-        texto = self.in_texto.text().strip()
+        texto= self.in_texto.text().strip()
         self.lista.clear()
         if len(texto) < 1:
             self.lbl_info.setText("Escribe al menos 1 carácter y presiona Enter.")
             return
-        resultados = buscar_global(self.main_window, texto)
+        resultados= buscar_global(self.main_window, texto)
         if not resultados:
             self.lbl_info.setText(f"Sin resultados para '{texto}'.")
             return
         self.lbl_info.setText(f"{len(resultados)} resultado(s) para '{texto}':")
-        categoria_actual = None
+        categoria_actual= None
         for categoria, etiqueta, modulo, texto_filtro, icono in resultados:
             if categoria != categoria_actual:
-                encabezado = QListWidgetItem(categoria)
+                encabezado= QListWidgetItem(categoria)
                 encabezado.setFlags(Qt.ItemFlag.NoItemFlags)
-                font = encabezado.font()
+                font= encabezado.font()
                 font.setBold(True)
                 encabezado.setFont(font)
                 self.lista.addItem(encabezado)
-                categoria_actual = categoria
-            # El ícono ya llega como QIcon real -el mismo que usa la fila
-            # de ese módulo en la sidebar (PNG propio o, si no tiene, el
-            # vectorial coherente de iconos_auto.py), solo que reducido a
-            # tamaño de emoji, ver icono_qicon_modulo en iconos.py- nunca
-            # un emoji crudo metido dentro del texto ni un dibujo QPainter
-            # aparte que pudiera no coincidir con lo que ya se ve en el
-            # menú lateral para ese mismo módulo.
-            item = QListWidgetItem(etiqueta)
+                categoria_actual= categoria
+            #El ícono ya llega como QIcon real -el mismo que usa la fila de ese módulo en la sidebar (PNG propio o, si no
+            #tiene, el vectorial coherente de iconos_auto.py), solo que reducido a tamaño de emoji, ver icono_qicon_modulo
+            #en iconos.py- nunca un emoji crudo metido dentro del texto ni un dibujo QPainter aparte que pudiera no
+            #coincidir con lo que ya se ve en el menú lateral para ese mismo módulo.
+            item= QListWidgetItem(etiqueta)
             if icono is not None and not icono.isNull():
                 item.setIcon(icono)
             self.lista.setIconSize(QSize(18, 18))
@@ -828,31 +783,28 @@ class DialogoBusquedaGlobal(QDialog):
             self.lista.addItem(item)
 
     def _ir_a_resultado(self, item):
-        modulo = item.data(MODULO_ROLE)
-        texto_filtro = item.data(TEXTO_BUSCAR_ROLE)
+        modulo= item.data(MODULO_ROLE)
+        texto_filtro= item.data(TEXTO_BUSCAR_ROLE)
         if not modulo:
             return
         if modulo not in self.main_window.modulos:
             return
-        indice = self.main_window.modulos.index(modulo)
+        indice= self.main_window.modulos.index(modulo)
         self.main_window.nav_list.setCurrentRow(indice)
-        pagina = self.main_window.stacked_widget.widget(indice)
+        pagina= self.main_window.stacked_widget.widget(indice)
         if pagina is not None and texto_filtro:
-            # Cada módulo nombra su propia caja de búsqueda distinto
-            # (in_buscar en Estudiantes/Profesores/Personal, in_busqueda en
-            # Calendario, in_buscar_tareas en el Catálogo de Banco de
-            # Tareas): se prueban los nombres conocidos en vez de asumir uno
-            # solo, para que el resultado quede realmente filtrado al llegar,
-            # no solo navegado al módulo correcto.
+            #Cada módulo nombra su propia caja de búsqueda distinto (in_buscar en Estudiantes/Profesores/Personal,
+            #in_busqueda en Calendario, in_buscar_tareas en el Catálogo de Banco de Tareas): se prueban los nombres
+            #conocidos en vez de asumir uno solo, para que el resultado quede realmente filtrado al llegar, no solo
+            #navegado al módulo correcto.
             for nombre_campo in ("in_buscar", "in_busqueda", "in_buscar_tareas", "buscador"):
-                campo = getattr(pagina, nombre_campo, None)
+                campo= getattr(pagina, nombre_campo, None)
                 if campo is not None:
                     campo.setText(texto_filtro)
                     break
-            # Banco de Tareas tiene dos pestañas (Catálogo/Entregas); la
-            # búsqueda global solo indexa el Catálogo, así que hay que
-            # asegurarse de aterrizar ahí y no dejar al usuario viendo
-            # Entregas con el filtro aplicado en una pestaña que no ve.
+            #Banco de Tareas tiene dos pestañas (Catálogo/Entregas); la búsqueda global solo indexa el Catálogo, así que
+            #hay que asegurarse de aterrizar ahí y no dejar al usuario viendo Entregas con el filtro aplicado en una
+            #pestaña que no ve.
             if modulo == "Banco de Tareas" and hasattr(pagina, "tabs"):
                 pagina.tabs.setCurrentIndex(0)
         self.accept()

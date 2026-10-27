@@ -51,18 +51,14 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_te
                            EMOJI_SYNC_SUBIR_DIRECTO, EMOJI_SYNC_DESCARGAR_DIRECTO)
 from src.nucleo.rutas import buscar_dato
 
-NOMBRE_ARCHIVO_SYNC = "acadexi_sync.db"
+NOMBRE_ARCHIVO_SYNC= "acadexi_sync.db"
 
-# ============================================================
-# PAQUETE EXPORTABLE DEL SERVIDOR INSTITUCIONAL
-# ============================================================
-# Contenido generado al vuelo (no depende de archivos externos que
-# pudieran faltar) para el botón "📦 Exportar Servidor Institucional":
-# scripts de arranque con un doble clic y una guía en español con 3
-# formas realistas de tener el servidor accesible, pensadas para
-# instituciones con presupuestos muy distintos — desde un colegio sin
-# nada de presupuesto para hosting, hasta uno que sí puede pagar un VPS.
-_SCRIPT_INICIO_SH = """#!/bin/bash
+#Paquete exportable del servidor institucional Contenido generado al vuelo (no depende de archivos externos que
+#pudieran faltar) para el botón "📦 Exportar Servidor Institucional":
+#scripts de arranque con un doble clic y una guía en español con 3 formas realistas de tener el servidor
+#accesible, pensadas para instituciones con presupuestos muy distintos — desde un colegio sin nada de
+#presupuesto para hosting, hasta uno que sí puede pagar un VPS.
+_SCRIPT_INICIO_SH= """#!/bin/bash
 # Inicia el Servidor Institucional de AcaDeXI.
 # En Linux/Mac: clic derecho > Propiedades > marcar "Permitir ejecutar
 # como programa" (o una vez: chmod +x iniciar_servidor.sh), y luego
@@ -74,7 +70,7 @@ echo "(deja esta ventana abierta mientras quieras que siga funcionando)"
 python3 servidor_institucional.py
 """
 
-_SCRIPT_INICIO_BAT = """@echo off
+_SCRIPT_INICIO_BAT= """@echo off
 REM Inicia el Servidor Institucional de AcaDeXI.
 REM Windows: solo haz doble clic en este archivo.
 cd /d "%~dp0"
@@ -84,7 +80,7 @@ python servidor_institucional.py
 pause
 """
 
-_GUIA_SERVIDOR_TXT = """====================================================================
+_GUIA_SERVIDOR_TXT= """====================================================================
  SERVIDOR INSTITUCIONAL DE ACADEXI - GUIA RAPIDA
 ====================================================================
 
@@ -202,11 +198,11 @@ Seguridad
   la opcion C, activalo con Caddy o Nginx.
 ====================================================================
 """
-MODOS_TRABAJO = ["Local", "Nube sincronizada", "Servidor institucional", "Sin conexión (offline)"]
+MODOS_TRABAJO= ["Local", "Nube sincronizada", "Servidor institucional", "Sin conexión (offline)"]
 
-# Explicación de cada modo, mostrada como tooltip tanto en el combo cerrado
-# como en cada opción de la lista desplegable.
-TOOLTIPS_MODOS_TRABAJO = {
+#Explicación de cada modo, mostrada como tooltip tanto en el combo cerrado como en cada opción de la lista
+#desplegable.
+TOOLTIPS_MODOS_TRABAJO= {
     "Local": "Este equipo trabaja con su propia base de datos, sin depender de "
              "ninguna carpeta compartida ni servidor. Usa \u201cSubir Cambios\u201d / "
              "\u201cDescargar Novedades\u201d cuando quieras intercambiar datos con otros equipos.",
@@ -223,29 +219,29 @@ TOOLTIPS_MODOS_TRABAJO = {
 }
 
 
-_CACHE_HASHES = {}  # ruta -> ((mtime_ns, tamaño), hash) — evita rehashear archivos sin cambios
+_CACHE_HASHES= {}  #ruta -> ((mtime_ns, tamaño), hash) — evita rehashear archivos sin cambios
 
 
 def _hash_archivo(ruta):
     if not ruta or not os.path.exists(ruta):
         return None
-    firma = None
+    firma= None
     try:
-        est = os.stat(ruta)
-        firma = (est.st_mtime_ns, est.st_size)
+        est= os.stat(ruta)
+        firma= (est.st_mtime_ns, est.st_size)
     except OSError:
         pass
     if firma is not None:
-        cacheado = _CACHE_HASHES.get(ruta)
+        cacheado= _CACHE_HASHES.get(ruta)
         if cacheado is not None and cacheado[0] == firma:
             return cacheado[1]
-    h = hashlib.sha256()
+    h= hashlib.sha256()
     with open(ruta, "rb") as f:
         for bloque in iter(lambda: f.read(65536), b""):
             h.update(bloque)
-    digest = h.hexdigest()
+    digest= h.hexdigest()
     if firma is not None:
-        _CACHE_HASHES[ruta] = (firma, digest)
+        _CACHE_HASHES[ruta]= (firma, digest)
     return digest
 
 
@@ -256,29 +252,29 @@ def _ruta_remota(carpeta):
 def obtener_estado(main_window):
     """Devuelve el estado de sincronización de este equipo frente a la
     carpeta compartida configurada localmente (main_window.carpeta_sincronizacion)."""
-    carpeta = getattr(main_window, "carpeta_sincronizacion", "") or ""
+    carpeta= getattr(main_window, "carpeta_sincronizacion", "") or ""
     if not carpeta or not os.path.isdir(carpeta):
         return {"estado": "sin_carpeta", "carpeta": carpeta}
 
-    ruta_remota = _ruta_remota(carpeta)
-    hash_remoto = _hash_archivo(ruta_remota)
+    ruta_remota= _ruta_remota(carpeta)
+    hash_remoto= _hash_archivo(ruta_remota)
     if hash_remoto is None:
         return {"estado": "sin_copia_remota", "carpeta": carpeta, "ruta_remota": ruta_remota}
 
-    hash_local = _hash_archivo(DB_PATH)
-    hash_ultima_sync = getattr(main_window, "sync_ultimo_hash", "") or None
+    hash_local= _hash_archivo(DB_PATH)
+    hash_ultima_sync= getattr(main_window, "sync_ultimo_hash", "") or None
 
     if hash_local == hash_remoto:
-        estado = "sincronizado"
+        estado= "sincronizado"
     else:
-        local_cambio = hash_local != hash_ultima_sync
-        remoto_cambio = hash_remoto != hash_ultima_sync
+        local_cambio= hash_local != hash_ultima_sync
+        remoto_cambio= hash_remoto != hash_ultima_sync
         if local_cambio and remoto_cambio:
-            estado = "conflicto"
+            estado= "conflicto"
         elif remoto_cambio:
-            estado = "hay_novedades"
+            estado= "hay_novedades"
         else:
-            estado = "cambios_locales"
+            estado= "cambios_locales"
 
     return {"estado": estado, "carpeta": carpeta, "ruta_remota": ruta_remota,
             "hash_local": hash_local, "hash_remoto": hash_remoto}
@@ -287,38 +283,36 @@ def obtener_estado(main_window):
 def subir_cambios(main_window):
     """Copia la BD local a la carpeta compartida; el cliente de nube ya
     instalado se encarga de subirla a sus servidores."""
-    carpeta = getattr(main_window, "carpeta_sincronizacion", "") or ""
+    carpeta= getattr(main_window, "carpeta_sincronizacion", "") or ""
     if not carpeta or not os.path.isdir(carpeta):
         raise RuntimeError("No hay una carpeta de sincronización configurada o la ruta ya no existe.")
-    destino = _ruta_remota(carpeta)
+    destino= _ruta_remota(carpeta)
     shutil.copy2(DB_PATH, destino)
-    main_window.sync_ultimo_hash = _hash_archivo(DB_PATH)
-    main_window.sync_ultima_fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    main_window.save_config()
+    main_window.sync_ultimo_hash= _hash_archivo(DB_PATH)
+    main_window.sync_ultima_fecha= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    main_window.guardar_configuracion()
     return destino
 
 
 def descargar_novedades(main_window):
     """Trae la copia de la carpeta compartida a este equipo. Antes crea un
     backup de seguridad local por si hay que revertir."""
-    carpeta = getattr(main_window, "carpeta_sincronizacion", "") or ""
+    carpeta= getattr(main_window, "carpeta_sincronizacion", "") or ""
     if not carpeta or not os.path.isdir(carpeta):
         raise RuntimeError("No hay una carpeta de sincronización configurada o la ruta ya no existe.")
-    origen = _ruta_remota(carpeta)
+    origen= _ruta_remota(carpeta)
     if not os.path.exists(origen):
         raise RuntimeError("Todavía no hay una copia en la carpeta compartida.")
-    ruta_respaldo = crear_backup(tipo="Pre-sincronización", usuario=getattr(main_window, "usuario_actual", None))
+    ruta_respaldo= crear_backup(tipo="Pre-sincronización", usuario=getattr(main_window, "usuario_actual", None))
     shutil.copy2(origen, DB_PATH)
-    main_window.sync_ultimo_hash = _hash_archivo(DB_PATH)
-    main_window.sync_ultima_fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    main_window.save_config()
+    main_window.sync_ultimo_hash= _hash_archivo(DB_PATH)
+    main_window.sync_ultima_fecha= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    main_window.guardar_configuracion()
     return ruta_respaldo
 
 
-# ============================================================
-# CAPA VISUAL — componentes reutilizables (tarjetas, spinner, animaciones)
-# ============================================================
-ESTADOS_VISUAL = {
+#Capa visual — componentes reutilizables (tarjetas, spinner, animaciones)
+ESTADOS_VISUAL= {
     "sin_carpeta":      {"color": "#94A3B8", "icono": "📁", "pulso": False,
                           "titulo": "Sin configurar",
                           "detalle": "No hay carpeta de sincronización configurada."},
@@ -341,32 +335,32 @@ ESTADOS_VISUAL = {
 
 
 def _hex_a_rgba(color_hex, alpha):
-    color_hex = color_hex.lstrip("#")
+    color_hex= color_hex.lstrip("#")
     r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
 def _animar_click(boton):
     """Pequeño 'rebote' visual al presionar un botón."""
-    geo = boton.geometry()
+    geo= boton.geometry()
     if geo.width() <= 0 or geo.height() <= 0:
         return
-    centro = geo.center()
-    reducido = QRect(0, 0, max(1, int(geo.width() * 0.95)), max(1, int(geo.height() * 0.88)))
+    centro= geo.center()
+    reducido= QRect(0, 0, max(1, int(geo.width() * 0.95)), max(1, int(geo.height() * 0.88)))
     reducido.moveCenter(centro)
-    anim = QPropertyAnimation(boton, b"geometry")
+    anim= QPropertyAnimation(boton, b"geometry")
     anim.setDuration(150)
     anim.setStartValue(geo)
     anim.setKeyValueAt(0.5, reducido)
     anim.setEndValue(geo)
     anim.setEasingCurve(QEasingCurve.Type.OutQuad)
-    boton._anim_rebote = anim  # evita que el recolector de basura la corte a mitad de vuelo
+    boton._anim_rebote= anim  #evita que el recolector de basura la corte a mitad de vuelo
     anim.start()
 
 
 def _crear_sombra(color="#000000", blur=20, y=5, alpha=110):
-    efecto = QGraphicsDropShadowEffect()
-    c = QColor(color)
+    efecto= QGraphicsDropShadowEffect()
+    c= QColor(color)
     c.setAlpha(alpha)
     efecto.setColor(c)
     efecto.setBlurRadius(blur)
@@ -377,13 +371,13 @@ def _crear_sombra(color="#000000", blur=20, y=5, alpha=110):
 def _crear_pulso(objetivo, propiedad, minimo, maximo, duracion=950):
     """Animación de 'respiración' (sube y baja en bucle) sobre una propiedad Qt.
     Se usa para dar un latido sutil a las tarjetas que requieren atención."""
-    grupo = QSequentialAnimationGroup(objetivo)
-    subir = QPropertyAnimation(objetivo, propiedad)
+    grupo= QSequentialAnimationGroup(objetivo)
+    subir= QPropertyAnimation(objetivo, propiedad)
     subir.setStartValue(minimo)
     subir.setEndValue(maximo)
     subir.setDuration(duracion)
     subir.setEasingCurve(QEasingCurve.Type.InOutSine)
-    bajar = QPropertyAnimation(objetivo, propiedad)
+    bajar= QPropertyAnimation(objetivo, propiedad)
     bajar.setStartValue(maximo)
     bajar.setEndValue(minimo)
     bajar.setDuration(duracion)
@@ -403,15 +397,15 @@ def _fundido_entrada(widget, duracion=260):
     widget queda invisible hasta la próxima interacción manual del usuario
     (mover el mouse encima, hacer click, etc.). Se usa cada vez que un panel
     o tarjeta aparece o cambia de contenido."""
-    efecto = QGraphicsOpacityEffect(widget)
+    efecto= QGraphicsOpacityEffect(widget)
     widget.setGraphicsEffect(efecto)
-    anim = QPropertyAnimation(efecto, b"opacity", widget)
+    anim= QPropertyAnimation(efecto, b"opacity", widget)
     anim.setDuration(duracion)
     anim.setStartValue(0.0)
     anim.setEndValue(1.0)
     anim.setEasingCurve(QEasingCurve.Type.OutCubic)
     anim.valueChanged.connect(lambda _v, w=widget: w.update())
-    widget._anim_fundido = anim  # evita que el recolector de basura la corte a mitad de vuelo
+    widget._anim_fundido= anim  #evita que el recolector de basura la corte a mitad de vuelo
 
     def _limpiar(w=widget):
         w.setGraphicsEffect(None)
@@ -427,28 +421,28 @@ class SpinnerCircular(QWidget):
 
     def __init__(self, parent=None, diametro=20, color="#6366F1", grosor=3):
         super().__init__(parent)
-        self._angulo = 0.0
-        self._color = QColor(color)
-        self._grosor = grosor
+        self._angulo= 0.0
+        self._color= QColor(color)
+        self._grosor= grosor
         self.setFixedSize(diametro, diametro)
-        self._anim = QPropertyAnimation(self, b"angulo", self)
+        self._anim= QPropertyAnimation(self, b"angulo", self)
         self._anim.setStartValue(0.0)
         self._anim.setEndValue(360.0)
         self._anim.setDuration(850)
         self._anim.setLoopCount(-1)
         self.hide()
 
-    def _get_angulo(self):
+    def _leer_angulo(self):
         return self._angulo
 
-    def _set_angulo(self, valor):
-        self._angulo = valor
+    def _poner_angulo(self, valor):
+        self._angulo= valor
         self.update()
 
-    angulo = Property(float, _get_angulo, _set_angulo)
+    angulo= Property(float, _leer_angulo, _poner_angulo)
 
-    def set_color(self, color):
-        self._color = QColor(color)
+    def poner_color(self, color):
+        self._color= QColor(color)
         self.update()
 
     def iniciar(self):
@@ -460,11 +454,11 @@ class SpinnerCircular(QWidget):
         self.hide()
 
     def paintEvent(self, event):
-        painter = QPainter(self)
+        painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        margen = self._grosor
-        rect = QRectF(margen, margen, self.width() - 2 * margen, self.height() - 2 * margen)
-        pluma = QPen(self._color)
+        margen= self._grosor
+        rect= QRectF(margen, margen, self.width() - 2 * margen, self.height() - 2 * margen)
+        pluma= QPen(self._color)
         pluma.setWidth(self._grosor)
         pluma.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pluma)
@@ -475,17 +469,17 @@ class _HiloOperacionSync(QThread):
     """Ejecuta una operación de sincronización (copiar/subir/descargar) en
     segundo plano para que la interfaz no se congele y el spinner se anime
     con fluidez mientras dura la operación."""
-    terminado = Signal(object, object)  # (resultado, excepción o None)
+    terminado= Signal(object, object)  #(resultado, excepción o None)
 
     def __init__(self, funcion, parent=None):
         super().__init__(parent)
-        self._funcion = funcion
+        self._funcion= funcion
 
     def run(self):
         try:
-            resultado = self._funcion()
+            resultado= self._funcion()
             self.terminado.emit(resultado, None)
-        except Exception as e:  # se reporta al usuario en el hilo principal, no se silencia
+        except Exception as e:  #se reporta al usuario en el hilo principal, no se silencia
             self.terminado.emit(None, e)
 
 
@@ -496,44 +490,44 @@ class TarjetaEstado(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("TarjetaEstadoSync")
-        self._pulso = None
-        self._sombra = _crear_sombra(blur=22, y=6, alpha=90)
+        self._pulso= None
+        self._sombra= _crear_sombra(blur=22, y=6, alpha=90)
         self.setGraphicsEffect(self._sombra)
 
-        layout = QHBoxLayout(self)
+        layout= QHBoxLayout(self)
         layout.setContentsMargins(20, 18, 20, 18)
         layout.setSpacing(16)
 
-        self.lbl_icono = QLabel()
+        self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji("➕", 20))
         self.lbl_icono.setFixedSize(46, 46)
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_icono.setObjectName("IconoEstadoSync")
         layout.addWidget(self.lbl_icono)
 
-        columna = QVBoxLayout()
+        columna= QVBoxLayout()
         columna.setSpacing(2)
-        self.lbl_titulo = QLabel("Verificando…")
+        self.lbl_titulo= QLabel("Verificando…")
         self.lbl_titulo.setObjectName("TituloEstadoSync")
         columna.addWidget(self.lbl_titulo)
-        self.lbl_detalle = QLabel("")
+        self.lbl_detalle= QLabel("")
         self.lbl_detalle.setObjectName("DetalleEstadoSync")
         self.lbl_detalle.setWordWrap(True)
         columna.addWidget(self.lbl_detalle)
         layout.addLayout(columna, 1)
 
-        self.spinner = SpinnerCircular(self, diametro=22, color="#6366F1")
+        self.spinner= SpinnerCircular(self, diametro=22, color="#6366F1")
         layout.addWidget(self.spinner, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self._color_actual = "#94A3B8"
+        self._color_actual= "#94A3B8"
 
     def actualizar(self, clave_estado):
-        info = ESTADOS_VISUAL.get(clave_estado, ESTADOS_VISUAL["sin_carpeta"])
-        color = info["color"]
-        self._color_actual = color
-        # setPixmap (no setText): lbl_icono se construyó con un pixmap
-        # vectorial (ver __init__); usar setText aquí lo cambiaría a modo
-        # texto y perdería la coherencia con el resto de los íconos de la app.
+        info= ESTADOS_VISUAL.get(clave_estado, ESTADOS_VISUAL["sin_carpeta"])
+        color= info["color"]
+        self._color_actual= color
+        #setPixmap (no setText): lbl_icono se construyó con un pixmap
+        #vectorial (ver __init__); usar setText aquí lo cambiaría a modo
+        #texto y perdería la coherencia con el resto de los íconos de la app.
         self.lbl_icono.setPixmap(pixmap_emoji(info["icono"], 20))
         self.lbl_titulo.setText(info["titulo"])
         self.lbl_detalle.setText(info["detalle"])
@@ -562,15 +556,15 @@ class TarjetaEstado(QFrame):
         self._sombra.setColor(QColor(color))
         if self._pulso:
             self._pulso.stop()
-            self._pulso = None
+            self._pulso= None
         self._sombra.setBlurRadius(22)
         if info["pulso"]:
-            self._pulso = _crear_pulso(self._sombra, b"blurRadius", 16, 34, duracion=1000)
+            self._pulso= _crear_pulso(self._sombra, b"blurRadius", 16, 34, duracion=1000)
             self._pulso.start()
 
     def mostrar_ocupado(self, texto="Sincronizando…"):
         self.lbl_titulo.setText(texto)
-        self.spinner.set_color(self._color_actual)
+        self.spinner.poner_color(self._color_actual)
         self.spinner.iniciar()
 
     def ocultar_ocupado(self):
@@ -590,8 +584,8 @@ def exportar_paquete_servidor(main_window, padre):
 
     `padre` es el widget que sirve de contexto para los diálogos (el
     propio panel o la página del asistente que llama a esta función)."""
-    ruta_servidor = buscar_dato("servidor_institucional.py")
-    ruta_requisitos = buscar_dato("requirements_servidor.txt")
+    ruta_servidor= buscar_dato("servidor_institucional.py")
+    ruta_requisitos= buscar_dato("requirements_servidor.txt")
     if not os.path.exists(ruta_servidor) or not os.path.exists(ruta_requisitos):
         mostrar_mensaje("advertencia", "Archivos no encontrados",
                         "No se encontraron servidor_institucional.py y/o "
@@ -628,30 +622,26 @@ def exportar_paquete_servidor(main_window, padre):
                     "con quien vaya a ponerlo en marcha (por ejemplo, por correo o USB).", padre)
 
 
-# ============================================================
-# MÓDULO PRINCIPAL
-# ============================================================
+#Módulo principal
 class ModuloSincronizacion(QWidget):
     """Vista de 'este equipo': modo de trabajo, carpeta compartida y las
     acciones reales de sincronización (Fase A, sin OAuth)."""
 
     def __init__(self, main_window):
         super().__init__(main_window)
-        self.main_window = main_window
-        self._hilo = None
-        self._hilo_avanzado = None
-        self._hilo_estado = None
-        self._avanzado_abierto = False
-        self._metodo_avanzado_actual_clave = None
-        self._titulo_modulo_atajos = "Sincronización"
+        self.main_window= main_window
+        self._hilo= None
+        self._hilo_avanzado= None
+        self._hilo_estado= None
+        self._avanzado_abierto= False
+        self._metodo_avanzado_actual_clave= None
+        self._titulo_modulo_atajos= "Sincronización"
         self._build_ui()
         self._configurar_atajos()
         self.actualizar_tema()
         self.refrescar()
 
-    # ------------------------------------------------------------
-    # Atajos de teclado (ver atajos.py)
-    # ------------------------------------------------------------
+    #Atajos de teclado (ver atajos.py)
     def _configurar_atajos(self):
         registrar_atajo(self, self.main_window, "Ctrl+Up", "Subir cambios", self._subir)
         registrar_atajo(self, self.main_window, "Ctrl+Down", "Descargar novedades", self._descargar)
@@ -659,27 +649,25 @@ class ModuloSincronizacion(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+G", "Guardar preferencia de este equipo", self._guardar)
         registrar_atajo(self, self.main_window, "Ctrl+E", "Elegir carpeta de sincronización", self._elegir_carpeta)
 
-    # ------------------------------------------------------------
-    # Construcción de la interfaz
-    # ------------------------------------------------------------
+    #Construcción de la interfaz
     def _build_ui(self):
-        layout_externo = QVBoxLayout(self)
+        layout_externo= QVBoxLayout(self)
         layout_externo.setContentsMargins(0, 0, 0, 0)
 
-        contenido = QWidget()
-        self._contenido = contenido
-        layout = QVBoxLayout(contenido)
+        contenido= QWidget()
+        self._contenido= contenido
+        layout= QVBoxLayout(contenido)
         layout.setContentsMargins(30, 25, 30, 25)
         layout.setSpacing(16)
 
-        # --- Cabecera tipo "hero": icono + título + descripción ---
-        self.frame_cabecera = QFrame()
+        #--- Cabecera tipo "hero": icono + título + descripción ---
+        self.frame_cabecera= QFrame()
         self.frame_cabecera.setObjectName("TarjetaCabecera")
-        cabecera_layout = QHBoxLayout(self.frame_cabecera)
+        cabecera_layout= QHBoxLayout(self.frame_cabecera)
         cabecera_layout.setContentsMargins(22, 18, 22, 18)
         cabecera_layout.setSpacing(14)
 
-        self.lbl_icono_modulo = QLabel()
+        self.lbl_icono_modulo= QLabel()
         self.lbl_icono_modulo.setPixmap(pixmap_emoji("💡", 20))
         self.lbl_icono_modulo.setObjectName("IconoCabeceraModulo")
         self.lbl_icono_modulo.setFixedSize(46, 46)
@@ -687,11 +675,11 @@ class ModuloSincronizacion(QWidget):
         aplicar_icono_cabecera(self.lbl_icono_modulo, "Sincronización")
         cabecera_layout.addWidget(self.lbl_icono_modulo)
 
-        bloque_titulo_cabecera = QVBoxLayout()
+        bloque_titulo_cabecera= QVBoxLayout()
         bloque_titulo_cabecera.setSpacing(2)
-        self.lbl_titulo_cabecera = QLabel("Sincronización")
+        self.lbl_titulo_cabecera= QLabel("Sincronización")
         self.lbl_titulo_cabecera.setObjectName("TituloCabeceraModulo")
-        self.lbl_subtitulo_cabecera = QLabel(
+        self.lbl_subtitulo_cabecera= QLabel(
             "Configura cómo trabaja ESTE equipo. Si usas una carpeta sincronizada por un "
             "cliente de nube ya instalado (Google Drive, OneDrive, Dropbox, Nextcloud, etc.), "
             "indica aquí su ruta local; AcaDeXI no se conecta directamente a esos servicios, "
@@ -704,50 +692,50 @@ class ModuloSincronizacion(QWidget):
 
         layout.addWidget(self.frame_cabecera)
 
-        # --- Estado de sincronización ---
-        self.tarjeta_estado = TarjetaEstado()
+        #--- Estado de sincronización ---
+        self.tarjeta_estado= TarjetaEstado()
         layout.addWidget(self.tarjeta_estado)
 
-        fila_acciones = QHBoxLayout()
+        fila_acciones= QHBoxLayout()
         fila_acciones.setSpacing(10)
-        self.btn_subir = self._boton_accion("Subir Cambios", "BtnAccionAgregar", self._subir)
-        # Iconos únicos por botón (EMOJI_SYNC_*): el iconizador automático
-        # les pondría la MISMA bandeja de importar/exportar a los cuatro.
+        self.btn_subir= self._boton_accion("Subir Cambios", "BtnAccionAgregar", self._subir)
+        #Iconos únicos por botón (EMOJI_SYNC_*): el iconizador automático les pondría la MISMA bandeja de
+        #importar/exportar a los cuatro.
         self.btn_subir.setIcon(icono_emoji(EMOJI_SYNC_SUBIR))
         self.btn_subir.setIconSize(_QSize_emoji(18, 18))
         fila_acciones.addWidget(self.btn_subir)
-        self.btn_descargar = self._boton_accion("Descargar Novedades", "BtnAccionAjustar", self._descargar)
+        self.btn_descargar= self._boton_accion("Descargar Novedades", "BtnAccionAjustar", self._descargar)
         self.btn_descargar.setIcon(icono_emoji(EMOJI_SYNC_DESCARGAR))
         self.btn_descargar.setIconSize(_QSize_emoji(18, 18))
         fila_acciones.addWidget(self.btn_descargar)
-        btn_refrescar = self._boton_accion("Verificar Ahora", "BtnAccionNeutro", self._refrescar_estado)
+        btn_refrescar= self._boton_accion("Verificar Ahora", "BtnAccionNeutro", self._refrescar_estado)
         fila_acciones.addWidget(btn_refrescar)
         fila_acciones.addStretch()
         layout.addLayout(fila_acciones)
 
-        # --- Este equipo ---
+        #--- Este equipo ---
         layout.addWidget(self._tarjeta_este_equipo())
 
-        # --- Sincronización directa (avanzada, colapsable) ---
+        #--- Sincronización directa (avanzada, colapsable) ---
         layout.addWidget(self._tarjeta_avanzada())
 
         layout.addStretch()
 
-        scroll = QScrollArea()
+        scroll= QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setWidget(contenido)
         layout_externo.addWidget(scroll)
 
     def _boton_accion(self, texto, object_name, callback):
-        boton = QPushButton(texto)
+        boton= QPushButton(texto)
         boton.setObjectName(object_name)
         boton.setCursor(Qt.CursorShape.PointingHandCursor)
         boton.clicked.connect(callback)
-        # El estilo global vuelve el texto casi ilegible cuando el botón está
-        # deshabilitado (fondo y letra quedan casi del mismo tono). Se busca
-        # que se note que "no se puede pulsar ahora mismo" sin sacrificar la
-        # lectura: fondo apagado con buen contraste, sin importar el tema.
+        #El estilo global vuelve el texto casi ilegible cuando el botón está
+        #deshabilitado (fondo y letra quedan casi del mismo tono). Se busca
+        #que se note que "no se puede pulsar ahora mismo" sin sacrificar la lectura: fondo apagado con buen contraste,
+        #sin importar el tema.
         boton.setStyleSheet("""
             QPushButton:disabled {
                 color: rgba(148, 163, 184, 0.95);
@@ -758,26 +746,26 @@ class ModuloSincronizacion(QWidget):
         return boton
 
     def _tarjeta_este_equipo(self):
-        tarjeta = QFrame()
+        tarjeta= QFrame()
         tarjeta.setObjectName("TarjetaSeccionSync")
         tarjeta.setGraphicsEffect(_crear_sombra(blur=16, y=3, alpha=55))
-        l = QVBoxLayout(tarjeta)
+        l= QVBoxLayout(tarjeta)
         l.setContentsMargins(20, 16, 20, 18)
         l.setSpacing(8)
 
-        cab = QHBoxLayout()
-        icono = QLabel()
+        cab= QHBoxLayout()
+        icono= QLabel()
         icono.setPixmap(pixmap_emoji("➕", 20))
         icono.setObjectName("IconoSeccionSync")
         cab.addWidget(icono)
-        titulo_seccion = QLabel("Este equipo")
+        titulo_seccion= QLabel("Este equipo")
         titulo_seccion.setObjectName("TituloSeccionSync")
         cab.addWidget(titulo_seccion)
         cab.addStretch()
         l.addLayout(cab)
 
         l.addWidget(QLabel("Modo de trabajo de este equipo:"))
-        self.combo_modo = QComboBox()
+        self.combo_modo= QComboBox()
         self.combo_modo.addItems(MODOS_TRABAJO)
         for i, modo in enumerate(MODOS_TRABAJO):
             self.combo_modo.setItemData(i, TOOLTIPS_MODOS_TRABAJO.get(modo, ""), Qt.ItemDataRole.ToolTipRole)
@@ -787,12 +775,12 @@ class ModuloSincronizacion(QWidget):
         l.addWidget(self.combo_modo)
 
         l.addWidget(QLabel("Carpeta de sincronización (opcional):"))
-        fila = QHBoxLayout()
-        self.in_carpeta = QLineEdit()
+        fila= QHBoxLayout()
+        self.in_carpeta= QLineEdit()
         limitar_campo_texto(self.in_carpeta, 300)
         self.in_carpeta.setPlaceholderText("Sin carpeta de sincronización")
         fila.addWidget(self.in_carpeta)
-        btn_examinar = QPushButton("")
+        btn_examinar= QPushButton("")
         btn_examinar.setIcon(icono_emoji("📁"))
         btn_examinar.setIconSize(_QSize_emoji(16, 16))
         btn_examinar.setObjectName("BtnAccionNeutro")
@@ -803,36 +791,35 @@ class ModuloSincronizacion(QWidget):
         fila.addWidget(btn_examinar)
         l.addLayout(fila)
 
-        btn_guardar = self._boton_accion("Guardar Preferencia de este Equipo", "BtnAccionEditar", self._guardar)
+        btn_guardar= self._boton_accion("Guardar Preferencia de este Equipo", "BtnAccionEditar", self._guardar)
         l.addWidget(btn_guardar)
 
         return tarjeta
 
     def _tarjeta_avanzada(self):
-        tarjeta = QFrame()
+        tarjeta= QFrame()
         tarjeta.setObjectName("TarjetaSeccionSync")
         tarjeta.setGraphicsEffect(_crear_sombra(blur=16, y=3, alpha=55))
-        l = QVBoxLayout(tarjeta)
+        l= QVBoxLayout(tarjeta)
         l.setContentsMargins(20, 16, 20, 12)
         l.setSpacing(6)
 
-        self.btn_toggle_avanzado = QPushButton("▸  Sincronización Directa (avanzada, opcional)")
+        self.btn_toggle_avanzado= QPushButton("▸  Sincronización Directa (avanzada, opcional)")
         self.btn_toggle_avanzado.setObjectName("BtnToggleAvanzadoSync")
         self.btn_toggle_avanzado.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_toggle_avanzado.clicked.connect(self._alternar_avanzado)
         l.addWidget(self.btn_toggle_avanzado)
 
-        # El contenido (formularios de Google/Dropbox/OneDrive/Servidor) es
-        # relativamente costoso de construir y casi nunca se usa de entrada,
-        # así que el panel arranca vacío: se rellena recién la primera vez
-        # que el usuario lo despliega (ver _construir_contenido_avanzado).
-        self.panel_avanzado = QWidget()
+        #El contenido (formularios de Google/Dropbox/OneDrive/Servidor) es relativamente costoso de construir y casi
+        #nunca se usa de entrada, así que el panel arranca vacío: se rellena recién la primera vez que el usuario lo
+        #despliega (ver _construir_contenido_avanzado).
+        self.panel_avanzado= QWidget()
         self.panel_avanzado.setMaximumHeight(0)
         self.panel_avanzado.setMinimumHeight(0)
         l.addWidget(self.panel_avanzado)
-        self._contenido_avanzado_listo = False
+        self._contenido_avanzado_listo= False
 
-        self._anim_avanzado = QPropertyAnimation(self.panel_avanzado, b"maximumHeight", self)
+        self._anim_avanzado= QPropertyAnimation(self.panel_avanzado, b"maximumHeight", self)
         self._anim_avanzado.setDuration(260)
         self._anim_avanzado.setEasingCurve(QEasingCurve.Type.InOutCubic)
 
@@ -843,13 +830,13 @@ class ModuloSincronizacion(QWidget):
         sola vez, la primera vez que el usuario despliega esta sección."""
         if self._contenido_avanzado_listo:
             return
-        self._contenido_avanzado_listo = True
+        self._contenido_avanzado_listo= True
 
-        contenido_av = QVBoxLayout(self.panel_avanzado)
+        contenido_av= QVBoxLayout(self.panel_avanzado)
         contenido_av.setContentsMargins(2, 8, 2, 2)
         contenido_av.setSpacing(12)
 
-        desc_avanzada = QLabel("Alternativa a la carpeta compartida: conecta directamente una cuenta "
+        desc_avanzada= QLabel("Alternativa a la carpeta compartida: conecta directamente una cuenta "
                                "de nube o tu propio servidor institucional, sin depender de un cliente "
                                "de escritorio ya instalado. Requiere credenciales propias de tu "
                                "institución (ver detalles en cada panel).")
@@ -857,55 +844,51 @@ class ModuloSincronizacion(QWidget):
         desc_avanzada.setWordWrap(True)
         contenido_av.addWidget(desc_avanzada)
 
-        fila_asistente = QHBoxLayout()
+        fila_asistente= QHBoxLayout()
         fila_asistente.setSpacing(10)
-        btn_asistente = self._boton_accion("Asistente de Configuración", "BtnAccionAjustar", self._abrir_asistente)
+        btn_asistente= self._boton_accion("Asistente de Configuración", "BtnAccionAjustar", self._abrir_asistente)
         fila_asistente.addWidget(btn_asistente)
-        btn_guia_pdf = self._boton_accion("Descargar Guía (PDF)", "BtnAccionNeutro", self._descargar_guia_pdf)
+        btn_guia_pdf= self._boton_accion("Descargar Guía (PDF)", "BtnAccionNeutro", self._descargar_guia_pdf)
         fila_asistente.addWidget(btn_guia_pdf)
         fila_asistente.addStretch()
         contenido_av.addLayout(fila_asistente)
 
-        # Fila aparte para "Exportar Servidor Institucional": su etiqueta es
-        # larga y, junto a los otros dos botones en una sola fila, el ancho
-        # total podía superar el ancho visible del panel (dentro del scroll
-        # area) sin que hubiera una barra de scroll horizontal obvia — el
-        # botón quedaba técnicamente presente pero fuera de vista. Separarlo
-        # en su propia fila garantiza que los tres se vean siempre.
-        fila_exportar = QHBoxLayout()
+        #Fila aparte para "Exportar Servidor Institucional": su etiqueta es larga y, junto a los otros dos botones en
+        #una sola fila, el ancho total podía superar el ancho visible del panel (dentro del scroll area) sin que
+        #hubiera una barra de scroll horizontal obvia — el botón quedaba técnicamente presente pero fuera de vista.
+        #Separarlo en su propia fila garantiza que los tres se vean siempre.
+        fila_exportar= QHBoxLayout()
         fila_exportar.setSpacing(10)
-        btn_exportar_servidor = self._boton_accion(
+        btn_exportar_servidor= self._boton_accion(
             "Exportar Servidor Institucional", "BtnAccionNeutro", self._exportar_paquete_servidor)
         fila_exportar.addWidget(btn_exportar_servidor)
         fila_exportar.addStretch()
         contenido_av.addLayout(fila_exportar)
 
         contenido_av.addWidget(QLabel("Método:"))
-        fila_chips = QHBoxLayout()
+        fila_chips= QHBoxLayout()
         fila_chips.setSpacing(8)
-        self.grupo_backends = QButtonGroup(self)
+        self.grupo_backends= QButtonGroup(self)
         self.grupo_backends.setExclusive(True)
-        self._chips_backend = {}
-        # Los íconos de cada backend (nube para Drive/Dropbox/OneDrive, equipo
-        # para el servidor propio) los agrega automáticamente iconos_auto.py
-        # a partir del propio texto del botón -no hace falta anteponer un
-        # emoji a mano aquí, y así se ve igual de coherente que cualquier
-        # otro botón de la app.
-        claves = [c for c in avanzado.METODOS if c != "carpeta"]
+        self._chips_backend= {}
+        #Los íconos de cada backend (nube para Drive/Dropbox/OneDrive, equipo para el servidor propio) los agrega
+        #automáticamente iconos_auto.py a partir del propio texto del botón -no hace falta anteponer un emoji a mano
+        #aquí, y así se ve igual de coherente que cualquier otro botón de la app.
+        claves= [c for c in avanzado.METODOS if c != "carpeta"]
         for i, clave in enumerate(claves):
-            chip = QPushButton(avanzado.METODOS[clave])
+            chip= QPushButton(avanzado.METODOS[clave])
             chip.setObjectName("ChipBackendSync")
             chip.setCheckable(True)
             chip.setCursor(Qt.CursorShape.PointingHandCursor)
             chip.clicked.connect(lambda checked, idx=i, cl=clave: self._cambiar_metodo_avanzado(idx, cl))
             self.grupo_backends.addButton(chip, i)
-            self._chips_backend[clave] = chip
+            self._chips_backend[clave]= chip
             fila_chips.addWidget(chip)
         fila_chips.addStretch()
         contenido_av.addLayout(fila_chips)
 
-        self.stack_config_avanzada = QStackedWidget()
-        creadores = {
+        self.stack_config_avanzada= QStackedWidget()
+        creadores= {
             "google_drive": self._crear_panel_google,
             "dropbox": self._crear_panel_dropbox,
             "onedrive": self._crear_panel_onedrive,
@@ -917,132 +900,122 @@ class ModuloSincronizacion(QWidget):
 
         if claves:
             self._chips_backend[claves[0]].setChecked(True)
-            self._metodo_avanzado_actual_clave = claves[0]
+            self._metodo_avanzado_actual_clave= claves[0]
 
-        self.lbl_estado_avanzado = QLabel("")
+        self.lbl_estado_avanzado= QLabel("")
         self.lbl_estado_avanzado.setObjectName("DescModulo")
         self.lbl_estado_avanzado.setWordWrap(True)
         contenido_av.addWidget(self.lbl_estado_avanzado)
 
-        fila_avanzada = QHBoxLayout()
+        fila_avanzada= QHBoxLayout()
         fila_avanzada.setSpacing(10)
-        self.btn_subir_avanzado = self._boton_accion("Subir (directo)", "BtnAccionAgregar", self._subir_avanzado)
+        self.btn_subir_avanzado= self._boton_accion("Subir (directo)", "BtnAccionAgregar", self._subir_avanzado)
         self.btn_subir_avanzado.setIcon(icono_emoji(EMOJI_SYNC_SUBIR_DIRECTO))
         self.btn_subir_avanzado.setIconSize(_QSize_emoji(18, 18))
         fila_avanzada.addWidget(self.btn_subir_avanzado)
-        self.btn_descargar_avanzado = self._boton_accion("Descargar (directo)", "BtnAccionAjustar", self._descargar_avanzado)
+        self.btn_descargar_avanzado= self._boton_accion("Descargar (directo)", "BtnAccionAjustar", self._descargar_avanzado)
         self.btn_descargar_avanzado.setIcon(icono_emoji(EMOJI_SYNC_DESCARGAR_DIRECTO))
         self.btn_descargar_avanzado.setIconSize(_QSize_emoji(18, 18))
         fila_avanzada.addWidget(self.btn_descargar_avanzado)
-        # "Romper" la conexión con el backend seleccionado, por si quedó en
-        # mal estado (token vencido/corrupto, credenciales equivocadas,
-        # cuenta que ya no corresponde) y hay que volver a conectarlo desde
-        # cero. Reutiliza el mismo estilo "eliminar" (rojo) que ya usa el
-        # resto de la app para acciones destructivas, así que no introduce
-        # un lenguaje visual nuevo.
-        self.btn_desvincular_avanzado = self._boton_accion("Desvincular", "BtnAccionEliminar", self._desvincular_avanzado)
+        #"Romper" la conexión con el backend seleccionado, por si quedó en mal estado (token vencido/corrupto,
+        #credenciales equivocadas, cuenta que ya no corresponde) y hay que volver a conectarlo desde cero. Reutiliza el
+        #mismo estilo "eliminar" (rojo) que ya usa el resto de la app para acciones destructivas, así que no introduce
+        #un lenguaje visual nuevo.
+        self.btn_desvincular_avanzado= self._boton_accion("Desvincular", "BtnAccionEliminar", self._desvincular_avanzado)
         fila_avanzada.addWidget(self.btn_desvincular_avanzado)
-        self.spinner_avanzado = SpinnerCircular(diametro=18, color=self._paleta()["accent"])
+        self.spinner_avanzado= SpinnerCircular(diametro=18, color=self._paleta()["accent"])
         fila_avanzada.addWidget(self.spinner_avanzado)
         fila_avanzada.addStretch()
         contenido_av.addLayout(fila_avanzada)
 
         self._refrescar_estado_avanzado()
 
-    # ------------------------------------------------------------
-    # Paneles de configuración por backend avanzado
-    # ------------------------------------------------------------
+    #Paneles de configuración por backend avanzado
     def _crear_panel_google(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
         l.setSpacing(6)
         l.addWidget(QLabel("Client ID (app OAuth tipo 'Desktop' en Google Cloud Console):"))
-        self.in_google_client_id = QLineEdit()
+        self.in_google_client_id= QLineEdit()
         limitar_campo_texto(self.in_google_client_id, 300)
         l.addWidget(self.in_google_client_id)
         l.addWidget(QLabel("Client Secret:"))
-        self.in_google_client_secret = QLineEdit()
+        self.in_google_client_secret= QLineEdit()
         limitar_campo_texto(self.in_google_client_secret, 128)
         self.in_google_client_secret.setEchoMode(QLineEdit.EchoMode.Password)
         l.addWidget(self.in_google_client_secret)
-        btn = self._boton_accion("Conectar con Google Drive", "BtnAccionEditar", self._conectar_google)
+        btn= self._boton_accion("Conectar con Google Drive", "BtnAccionEditar", self._conectar_google)
         l.addWidget(btn)
         return w
 
     def _crear_panel_dropbox(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
         l.setSpacing(6)
         l.addWidget(QLabel("App Key (app registrada en Dropbox App Console):"))
-        self.in_dropbox_key = QLineEdit()
+        self.in_dropbox_key= QLineEdit()
         limitar_campo_texto(self.in_dropbox_key, 128)
         l.addWidget(self.in_dropbox_key)
         l.addWidget(QLabel("App Secret:"))
-        self.in_dropbox_secret = QLineEdit()
+        self.in_dropbox_secret= QLineEdit()
         limitar_campo_texto(self.in_dropbox_secret, 128)
         self.in_dropbox_secret.setEchoMode(QLineEdit.EchoMode.Password)
         l.addWidget(self.in_dropbox_secret)
-        btn = self._boton_accion("Conectar con Dropbox", "BtnAccionEditar", self._conectar_dropbox)
+        btn= self._boton_accion("Conectar con Dropbox", "BtnAccionEditar", self._conectar_dropbox)
         l.addWidget(btn)
         return w
 
     def _crear_panel_onedrive(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
         l.setSpacing(6)
         l.addWidget(QLabel("Client ID (app registrada en Microsoft Entra ID / Azure AD):"))
-        self.in_onedrive_client_id = QLineEdit()
+        self.in_onedrive_client_id= QLineEdit()
         limitar_campo_texto(self.in_onedrive_client_id, 300)
         l.addWidget(self.in_onedrive_client_id)
-        btn = self._boton_accion("Conectar con OneDrive", "BtnAccionEditar", self._conectar_onedrive)
+        btn= self._boton_accion("Conectar con OneDrive", "BtnAccionEditar", self._conectar_onedrive)
         l.addWidget(btn)
         return w
 
     def _crear_panel_servidor(self):
-        w = QWidget()
-        l = QVBoxLayout(w)
+        w= QWidget()
+        l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
         l.setSpacing(6)
         l.addWidget(QLabel("URL del servidor institucional (ej. https://sync.miescuela.edu):"))
-        self.in_servidor_url = QLineEdit()
+        self.in_servidor_url= QLineEdit()
         limitar_campo_texto(self.in_servidor_url, 200)
         l.addWidget(self.in_servidor_url)
         l.addWidget(QLabel("Token de acceso (definido en el servidor):"))
-        self.in_servidor_token = QLineEdit()
+        self.in_servidor_token= QLineEdit()
         limitar_campo_texto(self.in_servidor_token, 128)
         self.in_servidor_token.setEchoMode(QLineEdit.EchoMode.Password)
         l.addWidget(self.in_servidor_token)
-        btn = self._boton_accion("Conectar con Servidor", "BtnAccionEditar", self._conectar_servidor)
+        btn= self._boton_accion("Conectar con Servidor", "BtnAccionEditar", self._conectar_servidor)
         l.addWidget(btn)
         return w
 
-    # ------------------------------------------------------------
-    # Acordeón / selector de backend (animaciones de interfaz)
-    # ------------------------------------------------------------
+    #Acordeón / selector de backend (animaciones de interfaz)
     def _alternar_avanzado(self):
         if not self._contenido_avanzado_listo:
             self._construir_contenido_avanzado()
-            # Qt encola (no ejecuta al instante) las peticiones de recálculo
-            # de geometría de los widgets recién creados — y aquí hay varias
-            # anidadas: el panel en sí, y dentro el QStackedWidget con los 4
-            # formularios de backends. activate() por sí solo sólo resuelve
-            # el layout de más afuera; las peticiones internas seguían
-            # pendientes, por eso la primera apertura salía "cortada" y
-            # había que cerrar y volver a abrir para que ya estuvieran
-            # resueltas. processEvents() las fuerza a resolverse todas de
-            # una vez, antes de leer sizeHint().
+            #Qt encola (no ejecuta al instante) las peticiones de recálculo de geometría de los widgets recién creados — y
+            #aquí hay varias anidadas: el panel en sí, y dentro el QStackedWidget con los 4 formularios de backends.
+            #activate() por sí solo sólo resuelve el layout de más afuera; las peticiones internas seguían pendientes, por
+            #eso la primera apertura salía "cortada" y había que cerrar y volver a abrir para que ya estuvieran resueltas.
+            #processEvents() las fuerza a resolverse todas de una vez, antes de leer sizeHint().
             QApplication.processEvents()
             self.panel_avanzado.layout().activate()
             self.panel_avanzado.adjustSize()
-        objetivo_abierto = not self._avanzado_abierto
-        self._avanzado_abierto = objetivo_abierto
+        objetivo_abierto= not self._avanzado_abierto
+        self._avanzado_abierto= objetivo_abierto
         self._anim_avanzado.stop()
         if objetivo_abierto:
             self.panel_avanzado.setMaximumHeight(16777215)
-            alto_objetivo = self.panel_avanzado.sizeHint().height()
+            alto_objetivo= self.panel_avanzado.sizeHint().height()
             self.panel_avanzado.setMaximumHeight(0)
             self._anim_avanzado.setStartValue(0)
             self._anim_avanzado.setEndValue(alto_objetivo)
@@ -1054,13 +1027,13 @@ class ModuloSincronizacion(QWidget):
         self._anim_avanzado.start()
 
     def _cambiar_metodo_avanzado(self, indice, clave):
-        self._metodo_avanzado_actual_clave = clave
+        self._metodo_avanzado_actual_clave= clave
         self.stack_config_avanzada.setCurrentIndex(indice)
         self._efecto_transicion_panel()
         self._refrescar_estado_avanzado()
 
     def _efecto_transicion_panel(self):
-        widget = self.stack_config_avanzada.currentWidget()
+        widget= self.stack_config_avanzada.currentWidget()
         if widget is None:
             return
         widget.show()
@@ -1070,12 +1043,12 @@ class ModuloSincronizacion(QWidget):
 
     def _abrir_asistente(self):
         from src.sincronizacion.asistente_sincronizacion import AsistenteSincronizacion
-        asistente = AsistenteSincronizacion(self.main_window)
+        asistente= AsistenteSincronizacion(self.main_window)
         asistente.exec()
         self._refrescar_estado_avanzado()
 
     def _descargar_guia_pdf(self):
-        ruta_guia = buscar_dato("guia_sincronizacion_directa.pdf")
+        ruta_guia= buscar_dato("guia_sincronizacion_directa.pdf")
         if not os.path.exists(ruta_guia):
             mostrar_mensaje("advertencia", "Guía no encontrada",
                             "No se encontró guia_sincronizacion_directa.pdf junto a la aplicación.", self)
@@ -1102,11 +1075,11 @@ class ModuloSincronizacion(QWidget):
 
     def _refrescar_estado_avanzado(self):
         if not self._contenido_avanzado_listo:
-            return  # el panel avanzado aún no se ha construido (carga perezosa)
-        metodo = self._metodo_avanzado_actual()
+            return  #el panel avanzado aún no se ha construido (carga perezosa)
+        metodo= self._metodo_avanzado_actual()
         if metodo is None:
             return
-        conectado = avanzado.conectado(metodo)
+        conectado= avanzado.conectado(metodo)
         if conectado:
             self.lbl_estado_avanzado.setText(f"✅ {avanzado.METODOS[metodo]}: conectado.")
         else:
@@ -1114,12 +1087,10 @@ class ModuloSincronizacion(QWidget):
         if hasattr(self, "btn_desvincular_avanzado"):
             self.btn_desvincular_avanzado.setEnabled(conectado)
 
-    # ------------------------------------------------------------
-    # Conexión OAuth / servidor por backend (sin cambios de lógica)
-    # ------------------------------------------------------------
+    #Conexión OAuth / servidor por backend (sin cambios de lógica)
     def _conectar_google(self):
-        client_id = self.in_google_client_id.text().strip()
-        client_secret = self.in_google_client_secret.text().strip()
+        client_id= self.in_google_client_id.text().strip()
+        client_secret= self.in_google_client_secret.text().strip()
         if not client_id or not client_secret:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa el Client ID y Client Secret.", self)
             return
@@ -1135,8 +1106,8 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado_avanzado()
 
     def _conectar_dropbox(self):
-        app_key = self.in_dropbox_key.text().strip()
-        app_secret = self.in_dropbox_secret.text().strip()
+        app_key= self.in_dropbox_key.text().strip()
+        app_secret= self.in_dropbox_secret.text().strip()
         if not app_key or not app_secret:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa el App Key y App Secret.", self)
             return
@@ -1161,7 +1132,7 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado_avanzado()
 
     def _conectar_onedrive(self):
-        client_id = self.in_onedrive_client_id.text().strip()
+        client_id= self.in_onedrive_client_id.text().strip()
         if not client_id:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa el Client ID.", self)
             return
@@ -1183,8 +1154,8 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado_avanzado()
 
     def _conectar_servidor(self):
-        url = self.in_servidor_url.text().strip()
-        token = self.in_servidor_token.text().strip()
+        url= self.in_servidor_url.text().strip()
+        token= self.in_servidor_token.text().strip()
         if not url or not token:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa la URL y el token.", self)
             return
@@ -1202,10 +1173,10 @@ class ModuloSincronizacion(QWidget):
         vía de recuperación: si algo falló (token vencido, credenciales
         equivocadas, etc.), esto borra la conexión guardada en este equipo
         para poder volver a conectarla desde cero, sin tocar nada remoto."""
-        metodo = self._metodo_avanzado_actual()
+        metodo= self._metodo_avanzado_actual()
         if metodo is None or not avanzado.conectado(metodo):
             return
-        nombre = avanzado.METODOS[metodo]
+        nombre= avanzado.METODOS[metodo]
         if mostrar_mensaje("pregunta", "Desvincular",
                 f"¿Desvincular {nombre} de este equipo?\n\n"
                 "Se borrarán las credenciales/tokens guardados localmente. Esto NO borra "
@@ -1223,7 +1194,7 @@ class ModuloSincronizacion(QWidget):
         """Vacía los campos de credenciales del formulario del backend
         recién desvinculado, para que no queden datos viejos a la vista si
         el usuario decide volver a conectarlo."""
-        campos = {
+        campos= {
             "google_drive": [self.in_google_client_id, self.in_google_client_secret],
             "dropbox": [self.in_dropbox_key, self.in_dropbox_secret],
             "onedrive": [self.in_onedrive_client_id],
@@ -1232,15 +1203,13 @@ class ModuloSincronizacion(QWidget):
         for campo in campos.get(metodo, []):
             campo.clear()
 
-    # ------------------------------------------------------------
-    # Subir / Descargar (carpeta compartida) — corren en segundo plano
-    # ------------------------------------------------------------
+    #Subir / Descargar (carpeta compartida) — corren en segundo plano
     def _ejecutar_en_hilo(self, funcion, texto_ocupado, al_terminar):
         if self._hilo is not None and self._hilo.isRunning():
             return
         self._alternar_botones_ocupado(True)
         self.tarjeta_estado.mostrar_ocupado(texto_ocupado)
-        self._hilo = _HiloOperacionSync(funcion, self)
+        self._hilo= _HiloOperacionSync(funcion, self)
 
         def _al_finalizar(resultado, error):
             self.tarjeta_estado.ocultar_ocupado()
@@ -1255,7 +1224,7 @@ class ModuloSincronizacion(QWidget):
         self.btn_descargar.setEnabled(not ocupado)
 
     def _subir(self):
-        estado = obtener_estado(self.main_window)
+        estado= obtener_estado(self.main_window)
         if estado["estado"] == "conflicto":
             if mostrar_mensaje("pregunta", "Conflicto de sincronización",
                     "Este equipo Y la carpeta compartida tienen cambios distintos desde la "
@@ -1277,7 +1246,7 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado()
 
     def _descargar(self):
-        estado = obtener_estado(self.main_window)
+        estado= obtener_estado(self.main_window)
         if estado["estado"] == "conflicto":
             if mostrar_mensaje("pregunta", "Conflicto de sincronización",
                     "Este equipo Y la carpeta compartida tienen cambios distintos desde la "
@@ -1298,16 +1267,14 @@ class ModuloSincronizacion(QWidget):
                            f"respaldo de seguridad previo en:\n{respaldo}\n\nReinicia la aplicación.", self)
         self._refrescar_estado()
 
-    # ------------------------------------------------------------
-    # Subir / Descargar con el backend avanzado seleccionado
-    # ------------------------------------------------------------
+    #Subir / Descargar con el backend avanzado seleccionado
     def _subir_avanzado(self):
-        metodo = self._metodo_avanzado_actual()
+        metodo= self._metodo_avanzado_actual()
         if not avanzado.conectado(metodo):
             mostrar_mensaje("advertencia", "No conectado", f"Primero conecta {avanzado.METODOS[metodo]}.", self)
             return
         self._alternar_botones_avanzado_ocupado(True)
-        self._hilo_avanzado = _HiloOperacionSync(lambda: avanzado.subir(metodo), self)
+        self._hilo_avanzado= _HiloOperacionSync(lambda: avanzado.subir(metodo), self)
 
         def _terminado(destino, error):
             self._alternar_botones_avanzado_ocupado(False)
@@ -1322,12 +1289,12 @@ class ModuloSincronizacion(QWidget):
         self._hilo_avanzado.start()
 
     def _descargar_avanzado(self):
-        metodo = self._metodo_avanzado_actual()
+        metodo= self._metodo_avanzado_actual()
         if not avanzado.conectado(metodo):
             mostrar_mensaje("advertencia", "No conectado", f"Primero conecta {avanzado.METODOS[metodo]}.", self)
             return
         self._alternar_botones_avanzado_ocupado(True)
-        self._hilo_avanzado = _HiloOperacionSync(lambda: avanzado.descargar(metodo), self)
+        self._hilo_avanzado= _HiloOperacionSync(lambda: avanzado.descargar(metodo), self)
 
         def _terminado(respaldo, error):
             self._alternar_botones_avanzado_ocupado(False)
@@ -1351,18 +1318,16 @@ class ModuloSincronizacion(QWidget):
         else:
             self.spinner_avanzado.detener()
 
-    # ------------------------------------------------------------
-    # Carpeta / preferencias de este equipo
-    # ------------------------------------------------------------
+    #Carpeta / preferencias de este equipo
     def _elegir_carpeta(self):
-        carpeta = QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
+        carpeta= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
         if carpeta:
             self.in_carpeta.setText(carpeta)
 
     def _guardar(self):
-        self.main_window.modo_trabajo = self.combo_modo.currentText()
-        self.main_window.carpeta_sincronizacion = self.in_carpeta.text().strip()
-        self.main_window.save_config()
+        self.main_window.modo_trabajo= self.combo_modo.currentText()
+        self.main_window.carpeta_sincronizacion= self.in_carpeta.text().strip()
+        self.main_window.guardar_configuracion()
         registrar_auditoria("Sistema", "Actualizó preferencia de sincronización local",
                             self.main_window.usuario_actual, self.main_window.modo_trabajo)
         mostrar_mensaje("exito", "Guardado", "Preferencia de este equipo actualizada.", self)
@@ -1374,7 +1339,7 @@ class ModuloSincronizacion(QWidget):
         if self._hilo_estado is not None and self._hilo_estado.isRunning():
             return
         self.tarjeta_estado.mostrar_ocupado("Verificando…")
-        self._hilo_estado = _HiloOperacionSync(lambda: obtener_estado(self.main_window), self)
+        self._hilo_estado= _HiloOperacionSync(lambda: obtener_estado(self.main_window), self)
 
         def _listo(estado, error):
             self.tarjeta_estado.ocultar_ocupado()
@@ -1382,16 +1347,14 @@ class ModuloSincronizacion(QWidget):
                 self.tarjeta_estado.actualizar("sin_carpeta")
                 return
             self.tarjeta_estado.actualizar(estado["estado"])
-            habilitar = estado["estado"] != "sin_carpeta"
+            habilitar= estado["estado"] != "sin_carpeta"
             self.btn_subir.setEnabled(habilitar)
             self.btn_descargar.setEnabled(habilitar and estado["estado"] != "sin_copia_remota")
 
         self._hilo_estado.terminado.connect(_listo)
         self._hilo_estado.start()
 
-    # ------------------------------------------------------------
-    # Ciclo de vida del módulo
-    # ------------------------------------------------------------
+    #Ciclo de vida del módulo
     def refrescar(self):
         self.combo_modo.setCurrentText(getattr(self.main_window, "modo_trabajo", "Local"))
         self.in_carpeta.setText(getattr(self.main_window, "carpeta_sincronizacion", "") or "")
@@ -1402,35 +1365,30 @@ class ModuloSincronizacion(QWidget):
         super().showEvent(event)
         if self.tarjeta_estado._pulso is not None:
             self.tarjeta_estado._pulso.resume()
-        # Antes se reutilizaba un único QGraphicsOpacityEffect que se dejaba
-        # pegado a `contenido` para siempre. Un efecto que nunca se
-        # desprende hace que Qt, en ciertos casos, no repinte correctamente
-        # actualizaciones que llegan después de que la animación terminó —
-        # por ejemplo la tarjeta de estado pasando de "Verificando…" a su
-        # resultado real tras pulsar "Verificar Ahora", o al volver a esta
-        # pestaña. Resultado: la tarjeta "Sin configurar" (o cualquier otro
-        # estado) se quedaba invisible hasta la próxima interacción manual.
-        # Usamos el mismo patrón ya usado en _efecto_transicion_panel: un
-        # efecto nuevo cada vez que se desprende solo al terminar.
+        #Antes se reutilizaba un único QGraphicsOpacityEffect que se dejaba pegado a `contenido` para siempre. Un
+        #efecto que nunca se desprende hace que Qt, en ciertos casos, no repinte correctamente actualizaciones que
+        #llegan después de que la animación terminó — por ejemplo la tarjeta de estado pasando de "Verificando…" a su
+        #resultado real tras pulsar "Verificar Ahora", o al volver a esta pestaña. Resultado: la tarjeta "Sin
+        #configurar" (o cualquier otro estado) se quedaba invisible hasta la próxima interacción manual. Usamos el
+        #mismo patrón ya usado en _efecto_transicion_panel: un efecto nuevo cada vez que se desprende solo al terminar.
         _fundido_entrada(self._contenido, duracion=380)
 
     def hideEvent(self, event):
         super().hideEvent(event)
-        # El módulo pasa a segundo plano (otra pestaña de la sidebar está
-        # activa): pausamos el 'latido' de la tarjeta de estado para no
-        # gastar ciclos de CPU en una animación que nadie está viendo.
+        #El módulo pasa a segundo plano (otra pestaña de la sidebar está activa): pausamos el 'latido' de la tarjeta de
+        #estado para no gastar ciclos de CPU en una animación que nadie está viendo.
         if self.tarjeta_estado._pulso is not None:
             self.tarjeta_estado._pulso.pause()
 
     def _paleta(self):
-        mw = self.main_window
-        paletas = getattr(mw, "theme_palettes", None)
-        tema = getattr(mw, "tema_actual", None)
+        mw= self.main_window
+        paletas= getattr(mw, "theme_palettes", None)
+        tema= getattr(mw, "tema_actual", None)
         if not paletas or tema not in paletas:
             return {"accent": "#6366F1", "accent_hv": "#4F46E5", "bg_panel": "#FFFFFF", "bg_btn": "#E2E8F0",
                     "txt_prim": "#0F172A", "txt_sec": "#64748B"}
-        p = paletas[tema]
-        idx = 1 if getattr(mw, "modo_oscuro", False) else 0
+        p= paletas[tema]
+        idx= 1 if getattr(mw, "modo_oscuro", False) else 0
         return {"accent": p["btn_op_bg"][idx],
                 "accent_hv": p["btn_op_hover"][idx] if "btn_op_hover" in p else p["btn_op_bg"][idx],
                 "bg_panel": p["display_bg"][idx],
@@ -1438,9 +1396,9 @@ class ModuloSincronizacion(QWidget):
                 "txt_sec": p["text_secondary"][idx]}
 
     def actualizar_tema(self):
-        c = self._paleta()
-        accent_suave = _hex_a_rgba(c["accent"], 0.14)
-        accent_borde = _hex_a_rgba(c["accent"], 0.45)
+        c= self._paleta()
+        accent_suave= _hex_a_rgba(c["accent"], 0.14)
+        accent_borde= _hex_a_rgba(c["accent"], 0.45)
         self.setStyleSheet(f"""
             QFrame#TarjetaSeccionSync {{
                 background-color: {c['bg_panel']};
@@ -1502,6 +1460,6 @@ class ModuloSincronizacion(QWidget):
                 }}
             """)
         if hasattr(self, "tarjeta_estado"):
-            self.tarjeta_estado.spinner.set_color(c["accent"])
+            self.tarjeta_estado.spinner.poner_color(c["accent"])
         if hasattr(self, "spinner_avanzado"):
-            self.spinner_avanzado.set_color(c["accent"])
+            self.spinner_avanzado.poner_color(c["accent"])

@@ -1,63 +1,36 @@
-"""
-hilo_trabajo.py — Worker genérico QThread para AcaDeXI.
-
-Mueve cualquier tarea pesada (I/O, cómputo) fuera del hilo principal de Qt
-para que la UI nunca se congele. Uso:
-
-    worker = WorkerHilo(mi_funcion, arg1, kwarg=valor)
-    worker.terminado.connect(slot_que_recibe_resultado)
-    worker.error.connect(slot_que_muestra_error)
-    worker.progreso.connect(slot_progreso)   # opcional
-    worker.finished.connect(worker.deleteLater)
-    worker.start()
-
-NUNCA manipules widgets Qt desde dentro de la función `tarea` — solo
-devuelve datos simples (str, dict, list, etc.) via la señal `terminado`.
-"""
-
+#WorkerHilo, corre una tarea pesada en un hilo aparte para que la ventana no se congele mientras
+#trabaja. La tarea devuelve datos simples (str, dict, list) y el resultado llega por la señal
+#terminado; si falla, el mensaje llega por error. Se usa así:
+#worker= WorkerHilo(mi_funcion, dato1, opcion=True)
+#worker.terminado.connect(self.mostrar_resultado)
+#worker.error.connect(self.mostrar_error)
+#worker.start()
+#Desde dentro de la tarea nunca se tocan widgets de Qt: eso se hace en el slot que recibe la señal.
 from PySide6.QtCore import QThread, Signal
 
 
 class WorkerHilo(QThread):
-    """Worker genérico y reutilizable. Ejecuta `tarea(*args, **kwargs)`
-    en un hilo secundario y comunica el resultado al hilo principal
-    mediante señales Qt (thread-safe por diseño del mecanismo de señales).
-
-    Señales:
-        terminado(object): emitida con el valor de retorno de `tarea` cuando
-            ésta finaliza sin excepción.
-        error(str): emitida con el mensaje de la excepción si `tarea` lanza
-            alguna, en vez de terminado.
-        progreso(int, int): opcional — la propia `tarea` puede llamar a
-            `self._emitir_progreso(actual, total)` si recibe el worker como
-            primer argumento (ver WorkerHiloConProgreso).
-    """
-
-    terminado = Signal(object)
-    error = Signal(str)
-    progreso = Signal(int, int)   # actual, total
+    terminado= Signal(object)   #trae lo que devolvió la tarea
+    error= Signal(str)          #trae el mensaje de la excepción si la tarea falló
+    progreso= Signal(int, int)  #avance opcional: actual, total
 
     def __init__(self, tarea, *args, **kwargs):
         super().__init__()
-        self._tarea = tarea
-        self._args = args
-        self._kwargs = kwargs
-        # Autodestroy: cuando el hilo termina su run(), se libera la memoria
-        # automáticamente en vez de quedar como un objeto huérfano. Hay que
-        # conectar ANTES de start() para no perder la señal finished.
+        self.tarea= tarea
+        self.args= args
+        self.kwargs= kwargs
+        #Se borra sola cuando el hilo termina. Tiene que quedar conectado antes de start() o la
+        #señal finished se pierde y el objeto queda colgado en memoria.
         self.finished.connect(self.deleteLater)
 
+    #Corre la tarea en el hilo secundario. No se llama a mano: se usa start().
     def run(self):
-        """Ejecuta la tarea en el hilo secundario. No llamar directamente —
-        usar .start() para que Qt lo lance en el hilo correcto."""
         try:
-            resultado = self._tarea(*self._args, **self._kwargs)
-            self.terminado.emit(resultado)
-        except Exception as exc:
+            self.terminado.emit(self.tarea(*self.args, **self.kwargs))
+        except Exception as error:
             import traceback
-            self.error.emit(f"{exc}\n\n{traceback.format_exc()}")
+            self.error.emit(f"{error}\n\n{traceback.format_exc()}")
 
+    #Para que la tarea pueda avisar el avance sin tener que conocer el worker entero.
     def emitir_progreso(self, actual, total):
-        """Atajo para que la tarea pueda reportar avance sin acceder a `self`
-        directamente. Seguro llamarlo desde el hilo secundario."""
         self.progreso.emit(actual, total)

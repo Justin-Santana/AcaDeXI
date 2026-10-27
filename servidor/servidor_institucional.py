@@ -42,10 +42,10 @@ from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Header, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
-CARPETA = os.path.dirname(os.path.abspath(__file__))
-ARCHIVO_TOKEN = os.path.join(CARPETA, "token_acadexi.txt")
-ARCHIVO = os.environ.get("ACADEXI_ARCHIVO", os.path.join(CARPETA, "acadexi_sync.db"))
-PUERTO = int(os.environ.get("ACADEXI_PUERTO", os.environ.get("PORT", "8420")))
+CARPETA= os.path.dirname(os.path.abspath(__file__))
+ARCHIVO_TOKEN= os.path.join(CARPETA, "token_acadexi.txt")
+ARCHIVO= os.environ.get("ACADEXI_ARCHIVO", os.path.join(CARPETA, "acadexi_sync.db"))
+PUERTO= int(os.environ.get("ACADEXI_PUERTO", os.environ.get("PORT", "8420")))
 
 
 def _obtener_o_crear_token():
@@ -55,15 +55,15 @@ def _obtener_o_crear_token():
     seguro y aleatorio, y lo guarda para la próxima vez. Así nadie tiene
     que inventar ni escribir una "clave secreta" — es la simplificación
     más importante frente a la versión anterior de este servidor."""
-    token_env = os.environ.get("ACADEXI_TOKEN")
+    token_env= os.environ.get("ACADEXI_TOKEN")
     if token_env:
         return token_env, "variable de entorno ACADEXI_TOKEN"
     if os.path.exists(ARCHIVO_TOKEN):
         with open(ARCHIVO_TOKEN, "r", encoding="utf-8") as f:
-            guardado = f.read().strip()
+            guardado= f.read().strip()
         if guardado:
             return guardado, f"guardado en {os.path.basename(ARCHIVO_TOKEN)}"
-    nuevo = secrets.token_urlsafe(24)
+    nuevo= secrets.token_urlsafe(24)
     with open(ARCHIVO_TOKEN, "w", encoding="utf-8") as f:
         f.write(nuevo)
     return nuevo, "generado automáticamente ahora"
@@ -71,7 +71,7 @@ def _obtener_o_crear_token():
 
 TOKEN, _ORIGEN_TOKEN = _obtener_o_crear_token()
 
-app = FastAPI(title="Servidor Institucional AcaDeXI", version="1.1")
+app= FastAPI(title="Servidor Institucional AcaDeXI", version="1.1")
 
 
 def _verificar_token(authorization: Optional[str]):
@@ -84,7 +84,7 @@ def _verificar_token(authorization: Optional[str]):
 def _hash_archivo(ruta):
     if not os.path.exists(ruta):
         return None
-    h = hashlib.sha256()
+    h= hashlib.sha256()
     with open(ruta, "rb") as f:
         for bloque in iter(lambda: f.read(65536), b""):
             h.update(bloque)
@@ -108,7 +108,7 @@ def raiz():
 @app.get("/estado")
 def estado(authorization: Optional[str] = Header(None)):
     _verificar_token(authorization)
-    existe = os.path.exists(ARCHIVO)
+    existe= os.path.exists(ARCHIVO)
     return {
         "existe": existe,
         "hash": _hash_archivo(ARCHIVO) if existe else None,
@@ -131,8 +131,8 @@ def descargar(authorization: Optional[str] = Header(None)):
 @app.post("/subir")
 async def subir(authorization: Optional[str] = Header(None), archivo: UploadFile = File(...)):
     _verificar_token(authorization)
-    contenido = await archivo.read()
-    carpeta = os.path.dirname(ARCHIVO)
+    contenido= await archivo.read()
+    carpeta= os.path.dirname(ARCHIVO)
     if carpeta:
         os.makedirs(carpeta, exist_ok=True)
     with open(ARCHIVO, "wb") as f:
@@ -146,9 +146,9 @@ def _ip_local():
     operativo revele por cuál interfaz saldría). Le ahorra a alguien sin
     conocimientos de redes tener que buscar su propia IP a mano."""
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s= socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
+        ip= s.getsockname()[0]
         s.close()
         return ip
     except OSError:
@@ -158,7 +158,7 @@ def _ip_local():
 if __name__ == "__main__":
     import uvicorn
 
-    ip = _ip_local()
+    ip= _ip_local()
     print("=" * 66)
     print(" Servidor Institucional AcaDeXI")
     print("=" * 66)

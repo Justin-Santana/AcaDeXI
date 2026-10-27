@@ -29,7 +29,7 @@ import zipfile
 import tempfile
 from datetime import datetime
 
-from src.nucleo.bd import get_app_data_dir, get_app_root_dir, DB_PATH, get_connection, existe_bd_base, RUTA_BD_BASE
+from src.nucleo.bd import get_app_data_dir, obtener_carpeta_raiz, DB_PATH, obtener_conexion, existe_bd_base, RUTA_BD_BASE
 from src.interfaz.ventana_principal import CONFIG_PATH
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
@@ -69,26 +69,26 @@ def exportar_paquete(ruta_destino, main_window=None, forzar_bd_actual=False):
     Returns:
         str: Ruta completa del archivo ZIP generado
     """
-    ruta_bd = _ruta_bd_para_paquete(forzar_bd_actual)
+    ruta_bd= _ruta_bd_para_paquete(forzar_bd_actual)
 
-    fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
-    nombre_zip = f"AcaDeXI-Instalador-{fecha}.zip"
-    ruta_zip = os.path.join(ruta_destino, nombre_zip)
+    fecha= datetime.now().strftime("%Y%m%d_%H%M%S")
+    nombre_zip= f"AcaDeXI-Instalador-{fecha}.zip"
+    ruta_zip= os.path.join(ruta_destino, nombre_zip)
     
-    # Obtener versión
-    version = getattr(main_window, "VERSION", "1.0") if main_window else "1.0"
+    #Obtener versión
+    version= getattr(main_window, "VERSION", "1.0") if main_window else "1.0"
     
     with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as z:
-        # 1. Base de datos (BD Base si existe; si no, la actual)
+        #1. Base de datos (BD Base si existe; si no, la actual)
         if os.path.exists(ruta_bd):
             z.write(ruta_bd, "acadexi.db")
         
-        # 2. Configuración (config.json)
+        #2. Configuración (config.json)
         if os.path.exists(CONFIG_PATH):
             z.write(CONFIG_PATH, "config.json")
         
-        # 3. README con instrucciones
-        readme_txt = f"""
+        #3. README con instrucciones
+        readme_txt= f"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ACADEXI - PAQUETE DE INSTALACIÓN ║
 ║ Versión {version} ║
@@ -140,8 +140,8 @@ Si tiene problemas, contacte al Administrador de su institución.
 """
         z.writestr("README.txt", readme_txt)
         
-        # 4. Archivo de instalación rápida
-        quick_install_txt = """
+        #4. Archivo de instalación rápida
+        quick_install_txt= """
 ═══════════════════════════════════════════════════════════════════════
 ACADEXI - INSTALACIÓN RÁPIDA
 ═══════════════════════════════════════════════════════════════════════
@@ -174,52 +174,52 @@ def exportar_paquete_con_credenciales(ruta_destino, main_window=None, usuario_id
     Returns:
         str: Ruta completa del archivo ZIP generado
     """
-    ruta_bd = _ruta_bd_para_paquete(forzar_bd_actual)
+    ruta_bd= _ruta_bd_para_paquete(forzar_bd_actual)
 
-    fecha = datetime.now().strftime("%Y%m%d_%H%M%S")
-    nombre_zip = f"AcaDeXI-Instalador-ConPerfil-{fecha}.zip"
-    ruta_zip = os.path.join(ruta_destino, nombre_zip)
+    fecha= datetime.now().strftime("%Y%m%d_%H%M%S")
+    nombre_zip= f"AcaDeXI-Instalador-ConPerfil-{fecha}.zip"
+    ruta_zip= os.path.join(ruta_destino, nombre_zip)
     
-    version = getattr(main_window, "VERSION", "1.0") if main_window else "1.0"
+    version= getattr(main_window, "VERSION", "1.0") if main_window else "1.0"
     
     with zipfile.ZipFile(ruta_zip, 'w', zipfile.ZIP_DEFLATED) as z:
-        # 1. Base de datos (BD Base si existe; si no, la actual)
+        #1. Base de datos (BD Base si existe; si no, la actual)
         if os.path.exists(ruta_bd):
             z.write(ruta_bd, "acadexi.db")
         
-        # 2. Configuración
+        #2. Configuración
         if os.path.exists(CONFIG_PATH):
             z.write(CONFIG_PATH, "config.json")
         
-        # 3. Generar perfil .acdx para el usuario
+        #3. Generar perfil .acdx para el usuario
         if usuario_id and main_window:
             from src.interfaz.perfil import guardar_perfil_archivo
             
-            # Obtener modo de trabajo y carpeta de sincronización
-            modo = getattr(main_window, "modo_trabajo", "Local")
-            carpeta = getattr(main_window, "carpeta_sincronizacion", "")
+            #Obtener modo de trabajo y carpeta de sincronización
+            modo= getattr(main_window, "modo_trabajo", "Local")
+            carpeta= getattr(main_window, "carpeta_sincronizacion", "")
             
             with tempfile.NamedTemporaryFile(suffix=".acdx", delete=False) as tmp:
-                tmp_path = tmp.name
+                tmp_path= tmp.name
             
             try:
                 guardar_perfil_archivo(tmp_path, usuario_id, modo, carpeta, password_plana=password_plana)
                 
-                # Obtener nombre de usuario para nombrar el archivo
-                conn = get_connection()
-                c = conn.cursor()
+                #Obtener nombre de usuario para nombrar el archivo
+                conn= obtener_conexion()
+                c= conn.cursor()
                 c.execute("SELECT username FROM usuarios WHERE id=?", (usuario_id,))
-                user = c.fetchone()
+                user= c.fetchone()
                 conn.close()
                 
-                nombre_perfil = f"perfil_{user['username'] if user else 'usuario'}.acdx" if user else "perfil.acdx"
+                nombre_perfil= f"perfil_{user['username'] if user else 'usuario'}.acdx" if user else "perfil.acdx"
                 z.write(tmp_path, nombre_perfil)
             finally:
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
         
-        # 4. README
-        readme_txt = f"""
+        #4. README
+        readme_txt= f"""
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║ ACADEXI - PAQUETE DE INSTALACIÓN ║
 ║ Con Perfil Institucional Incluido ║
@@ -267,7 +267,7 @@ def exportar_paquete_con_credenciales(ruta_destino, main_window=None, usuario_id
 """
         z.writestr("README.txt", readme_txt)
         
-        quick_install_txt = """
+        quick_install_txt= """
 ═══════════════════════════════════════════════════════════════════════
 ACADEXI - INSTALACIÓN RÁPIDA (con perfil incluido)
 ═══════════════════════════════════════════════════════════════════════
@@ -286,21 +286,18 @@ Listo. No verás el asistente de configuración.
     return ruta_zip
 
 
-# ============================================================
-# INSTALADOR PARA DOCENTES/PERSONAL (AcaDeXI_Docentes_Setup.exe)
-# ============================================================
-# Este .exe se compila UNA SOLA VEZ con Inno Setup a partir del script
-# AcaDeXI_Docentes.iss (incluido junto al código fuente) y se coloca junto
-# al ejecutable de la app (get_app_root_dir()). AcaDeXI no lo compila en
-# tiempo de ejecución: la app solo lo LOCALIZA y lo COPIA a la carpeta que
-# el Administrador elija, listo para distribuir junto con los .acdx.
-NOMBRE_SETUP_DOCENTES = "AcaDeXI_Docentes_Setup.exe"
+#Instalador para docentes/personal (AcaDeXI_Docentes_Setup.exe) Este .exe se compila UNA SOLA VEZ con Inno
+#Setup a partir del script
+#AcaDeXI_Docentes.iss (incluido junto al código fuente) y se coloca junto
+#al ejecutable de la app (obtener_carpeta_raiz()). AcaDeXI no lo compila en tiempo de ejecución: la app solo lo
+#LOCALIZA y lo COPIA a la carpeta que el Administrador elija, listo para distribuir junto con los .acdx.
+NOMBRE_SETUP_DOCENTES= "AcaDeXI_Docentes_Setup.exe"
 
 
 def ruta_instalador_docentes():
     """Ruta esperada del instalador para Docentes/Personal ya compilado,
     junto al ejecutable/código de la aplicación."""
-    return os.path.join(get_app_root_dir(), NOMBRE_SETUP_DOCENTES)
+    return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_DOCENTES)
 
 
 def existe_instalador_docentes():
@@ -313,7 +310,7 @@ def exportar_instalador_docentes(ruta_destino):
     lo que cambia por persona es únicamente su archivo .acdx (ver
     perfil.DialogoGenerarPerfil). Devuelve la ruta final del archivo copiado.
     """
-    origen = ruta_instalador_docentes()
+    origen= ruta_instalador_docentes()
     if not os.path.exists(origen):
         raise FileNotFoundError(
             f"No se encontró '{NOMBRE_SETUP_DOCENTES}' junto a la aplicación:\n"
@@ -322,24 +319,22 @@ def exportar_instalador_docentes(ruta_destino):
             "AcaDeXI_Docentes.iss y colocar el .exe resultante en esa carpeta "
             f"con el nombre '{NOMBRE_SETUP_DOCENTES}'.")
     os.makedirs(ruta_destino, exist_ok=True)
-    destino = os.path.join(ruta_destino, NOMBRE_SETUP_DOCENTES)
+    destino= os.path.join(ruta_destino, NOMBRE_SETUP_DOCENTES)
 
-    # Si el Administrador eligió la MISMA carpeta donde ya vive el instalador
-    # (ej. la carpeta del programa), origen y destino son el mismo archivo.
-    # En Windows, comparar solo por ruta absoluta normalizada es más fiable
-    # que shutil.SameFileError (que a veces no detecta el caso y termina
-    # intentando reabrir el propio archivo para escritura -> WinError 32
-    # "el proceso no tiene acceso al archivo porque está siendo utilizado
-    # por otro proceso"). Si ya es el mismo archivo, no hay nada que copiar.
-    origen_norm = os.path.normcase(os.path.normpath(os.path.abspath(origen)))
-    destino_norm = os.path.normcase(os.path.normpath(os.path.abspath(destino)))
+    #Si el Administrador eligió la MISMA carpeta donde ya vive el instalador (ej. la carpeta del programa), origen
+    #y destino son el mismo archivo. En Windows, comparar solo por ruta absoluta normalizada es más fiable que
+    #shutil.SameFileError (que a veces no detecta el caso y termina
+    #intentando reabrir el propio archivo para escritura -> WinError 32
+    #"el proceso no tiene acceso al archivo porque está siendo utilizado por otro proceso"). Si ya es el mismo
+    #archivo, no hay nada que copiar.
+    origen_norm= os.path.normcase(os.path.normpath(os.path.abspath(origen)))
+    destino_norm= os.path.normcase(os.path.normpath(os.path.abspath(destino)))
     if origen_norm == destino_norm:
         return destino
 
-    # Reintenta un par de veces: si el .exe acaba de tocarse (p.ej. recién
-    # compilado o copiado), es común que el antivirus lo tenga bloqueado en
-    # análisis por una fracción de segundo.
-    ultimo_error = None
+    #Reintenta un par de veces: si el .exe acaba de tocarse (p.ej. recién compilado o copiado), es común que el
+    #antivirus lo tenga bloqueado en análisis por una fracción de segundo.
+    ultimo_error= None
     for intento in range(3):
         try:
             shutil.copy2(origen, destino)
@@ -347,14 +342,13 @@ def exportar_instalador_docentes(ruta_destino):
         except shutil.SameFileError:
             return destino
         except PermissionError as e:
-            ultimo_error = e
+            ultimo_error= e
             time.sleep(0.4)
         except OSError as e:
-            # WinError 32 llega como PermissionError en la mayoría de casos,
-            # pero por si acaso se cuela como OSError genérico también se
-            # reintenta antes de rendirse.
+            #WinError 32 llega como PermissionError en la mayoría de casos, pero por si acaso se cuela como OSError
+            #genérico también se reintenta antes de rendirse.
             if getattr(e, "winerror", None) == 32:
-                ultimo_error = e
+                ultimo_error= e
                 time.sleep(0.4)
                 continue
             raise
@@ -380,14 +374,14 @@ def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
             f"Debes compilarlo una sola vez con Inno Setup a partir del .iss correspondiente "
             f"y colocar el .exe resultante en esa carpeta con el nombre '{nombre_archivo}'.")
     os.makedirs(ruta_destino, exist_ok=True)
-    destino = os.path.join(ruta_destino, nombre_archivo)
+    destino= os.path.join(ruta_destino, nombre_archivo)
 
-    origen_norm = os.path.normcase(os.path.normpath(os.path.abspath(origen)))
-    destino_norm = os.path.normcase(os.path.normpath(os.path.abspath(destino)))
+    origen_norm= os.path.normcase(os.path.normpath(os.path.abspath(origen)))
+    destino_norm= os.path.normcase(os.path.normpath(os.path.abspath(destino)))
     if origen_norm == destino_norm:
         return destino
 
-    ultimo_error = None
+    ultimo_error= None
     for intento in range(3):
         try:
             shutil.copy2(origen, destino)
@@ -395,11 +389,11 @@ def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
         except shutil.SameFileError:
             return destino
         except PermissionError as e:
-            ultimo_error = e
+            ultimo_error= e
             time.sleep(0.4)
         except OSError as e:
             if getattr(e, "winerror", None) == 32:
-                ultimo_error = e
+                ultimo_error= e
                 time.sleep(0.4)
                 continue
             raise
@@ -413,14 +407,12 @@ def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
     ) from ultimo_error
 
 
-# ============================================================
-# INSTALADOR PARA SINGLE TEACHER (AcaDeXI_SingleTeacher_Setup.exe)
-# ============================================================
-NOMBRE_SETUP_SINGLE_TEACHER = "AcaDeXI_SingleTeacher_Setup.exe"
+#Instalador para Single Teacher (AcaDeXI_SingleTeacher_Setup.exe)
+NOMBRE_SETUP_SINGLE_TEACHER= "AcaDeXI_SingleTeacher_Setup.exe"
 
 
 def ruta_instalador_single_teacher():
-    return os.path.join(get_app_root_dir(), NOMBRE_SETUP_SINGLE_TEACHER)
+    return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_SINGLE_TEACHER)
 
 
 def existe_instalador_single_teacher():
@@ -434,15 +426,13 @@ def exportar_instalador_single_teacher(ruta_destino):
     return _copiar_instalador_generico(ruta_instalador_single_teacher(), NOMBRE_SETUP_SINGLE_TEACHER, ruta_destino)
 
 
-# ============================================================
-# INSTALADOR PARA SIDE STEPPER (AcaDeXI_SideStepper_Setup.exe)
-# ============================================================
-NOMBRE_SETUP_SIDE_STEPPER = "AcaDeXI_SideStepper_Setup.exe"
-NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER = "permisos_side_stepper.json"
+#Instalador para Side Stepper (AcaDeXI_SideStepper_Setup.exe)
+NOMBRE_SETUP_SIDE_STEPPER= "AcaDeXI_SideStepper_Setup.exe"
+NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER= "permisos_side_stepper.json"
 
 
 def ruta_instalador_side_stepper():
-    return os.path.join(get_app_root_dir(), NOMBRE_SETUP_SIDE_STEPPER)
+    return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_SIDE_STEPPER)
 
 
 def existe_instalador_side_stepper():
@@ -466,8 +456,8 @@ def exportar_paquete_permisos_side_stepper(ruta_destino):
     import json
     from src.nucleo import permisos
     os.makedirs(ruta_destino, exist_ok=True)
-    destino = os.path.join(ruta_destino, NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER)
-    roles_configurados = permisos.listar_roles_side_stepper_configurados()
+    destino= os.path.join(ruta_destino, NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER)
+    roles_configurados= permisos.listar_roles_side_stepper_configurados()
     if not roles_configurados:
         raise ValueError(
             "Todavía no configuraste ningún rol para esta copia de Side Stepper. "

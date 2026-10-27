@@ -28,24 +28,24 @@ def _listar_secciones_destino(main_window):
     [(id, etiqueta), ...]. side_stepper reutiliza el esquema de bd.py."""
     try:
         from src.nucleo.edicion import edicion_actual
-        edicion = edicion_actual()
+        edicion= edicion_actual()
     except Exception:
-        edicion = "full"
+        edicion= "full"
     if edicion == "single_teacher":
         from src.nucleo import bd_single_teacher
-        conn = bd_single_teacher.get_connection(main_window)
-        c = conn.cursor()
+        conn= bd_single_teacher.obtener_conexion(main_window)
+        c= conn.cursor()
         c.execute("SELECT id, nombre FROM secciones ORDER BY nombre")
-        filas = [(f["id"], f["nombre"]) for f in c.fetchall()]
+        filas= [(f["id"], f["nombre"]) for f in c.fetchall()]
         conn.close()
         return filas
-    from src.nucleo.bd import get_connection
-    conn = get_connection()
-    c = conn.cursor()
+    from src.nucleo.bd import obtener_conexion
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("""SELECT secciones.id, (grados.nombre || ' - ' || secciones.nombre) as etiqueta
                  FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id
                  ORDER BY grados.orden, secciones.nombre""")
-    filas = [(f["id"], f["etiqueta"]) for f in c.fetchall()]
+    filas= [(f["id"], f["etiqueta"]) for f in c.fetchall()]
     conn.close()
     return filas
 
@@ -56,38 +56,36 @@ class _DialogoBase(QDialog):
         self.setWindowTitle(titulo)
         aplicar_icono_ventana(self)
         self.setMinimumWidth(420)
-        self.layout_principal = QVBoxLayout(self)
+        self.layout_principal= QVBoxLayout(self)
         self.layout_principal.setContentsMargins(18, 18, 18, 18)
         self.layout_principal.setSpacing(12)
 
 
-# ============================================================
-# ESTUDIANTES
-# ============================================================
+#ESTUDIANTES
 class DialogoExportarEstudiantes(_DialogoBase):
     def __init__(self, main_window, seccion_id_actual=None, parent=None):
         super().__init__("Exportar estudiantes a otra edición de AcaDeXI", parent)
-        self.main_window = main_window
-        self.seccion_id_actual = seccion_id_actual
+        self.main_window= main_window
+        self.seccion_id_actual= seccion_id_actual
 
-        info = QLabel(
+        info= QLabel(
             "Genera un archivo .acdxpkg con los estudiantes que puedes importar "
             "después en cualquier otra instalación de AcaDeXI (misma edición u otra: "
             "Full Institutional, Docentes, Single Teacher o Side Stepper).")
         info.setWordWrap(True)
         self.layout_principal.addWidget(info)
 
-        self.lbl_alcance = QLabel(
+        self.lbl_alcance= QLabel(
             "Se exportará la sección actualmente filtrada." if seccion_id_actual is not None
             else "Se exportarán TODOS los estudiantes visibles para ti.")
         self.lbl_alcance.setWordWrap(True)
         self.layout_principal.addWidget(self.lbl_alcance)
 
-        fila_botones = QHBoxLayout()
-        btn_cancelar = QPushButton("Cancelar")
+        fila_botones= QHBoxLayout()
+        btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.clicked.connect(self.reject)
         fila_botones.addWidget(btn_cancelar)
-        btn_exportar = QPushButton("Exportar…")
+        btn_exportar= QPushButton("Exportar…")
         btn_exportar.setIcon(icono_emoji("📤"))
         btn_exportar.setIconSize(QSize(16, 16))
         btn_exportar.clicked.connect(self._exportar)
@@ -105,7 +103,7 @@ class DialogoExportarEstudiantes(_DialogoBase):
         if not ruta.endswith(intercambio.EXTENSION):
             ruta += intercambio.EXTENSION
         try:
-            n = intercambio.exportar_estudiantes(self.main_window, ruta, seccion_id=self.seccion_id_actual)
+            n= intercambio.exportar_estudiantes(self.main_window, ruta, seccion_id=self.seccion_id_actual)
             mostrar_mensaje("exito", "Exportado",
                              f"Se exportaron {n} estudiante(s) a:\n{ruta}", self)
             self.accept()
@@ -116,39 +114,39 @@ class DialogoExportarEstudiantes(_DialogoBase):
 class DialogoImportarEstudiantes(_DialogoBase):
     def __init__(self, main_window, parent=None):
         super().__init__("Importar estudiantes desde otra edición de AcaDeXI", parent)
-        self.main_window = main_window
-        self.ruta_seleccionada = None
+        self.main_window= main_window
+        self.ruta_seleccionada= None
 
-        info = QLabel(
+        info= QLabel(
             "Importa un archivo .acdxpkg de estudiantes generado por cualquier edición de "
             "AcaDeXI. Un estudiante que ya exista aquí (mismo nombre, apellidos y fecha de "
             "nacimiento) se ACTUALIZA; si no existe, se crea nuevo en la sección que elijas abajo.")
         info.setWordWrap(True)
         self.layout_principal.addWidget(info)
 
-        btn_elegir = QPushButton("Elegir archivo .acdxpkg…")
+        btn_elegir= QPushButton("Elegir archivo .acdxpkg…")
 
         btn_elegir.setIcon(icono_emoji("📂"))
 
         btn_elegir.setIconSize(QSize(16, 16))
         btn_elegir.clicked.connect(self._elegir_archivo)
         self.layout_principal.addWidget(btn_elegir)
-        self.lbl_archivo = QLabel("Ningún archivo seleccionado todavía.")
+        self.lbl_archivo= QLabel("Ningún archivo seleccionado todavía.")
         self.lbl_archivo.setWordWrap(True)
         self.layout_principal.addWidget(self.lbl_archivo)
 
         self.layout_principal.addWidget(QLabel("Sección/curso destino para estudiantes NUEVOS:"))
-        self.combo_seccion_destino = QComboBox()
+        self.combo_seccion_destino= QComboBox()
         self.combo_seccion_destino.addItem("— Ninguna (dejar sin sección) —", None)
         for id_seccion, etiqueta in _listar_secciones_destino(main_window):
             self.combo_seccion_destino.addItem(etiqueta, id_seccion)
         self.layout_principal.addWidget(self.combo_seccion_destino)
 
-        fila_botones = QHBoxLayout()
-        btn_cancelar = QPushButton("Cancelar")
+        fila_botones= QHBoxLayout()
+        btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.clicked.connect(self.reject)
         fila_botones.addWidget(btn_cancelar)
-        self.btn_importar = QPushButton("Importar")
+        self.btn_importar= QPushButton("Importar")
         self.btn_importar.setIcon(icono_emoji("📥"))
         self.btn_importar.setIconSize(QSize(16, 16))
         self.btn_importar.clicked.connect(self._importar)
@@ -161,7 +159,7 @@ class DialogoImportarEstudiantes(_DialogoBase):
         ruta, _ = QFileDialog.getOpenFileName(
             self, "Elegir paquete de estudiantes", "", f"Paquete AcaDeXI (*{intercambio.EXTENSION})")
         if ruta:
-            self.ruta_seleccionada = ruta
+            self.ruta_seleccionada= ruta
             self.lbl_archivo.setText(f"Archivo: {ruta}")
 
     def _importar(self):
@@ -169,7 +167,7 @@ class DialogoImportarEstudiantes(_DialogoBase):
             mostrar_mensaje("advertencia", "Falta el archivo", "Elige primero un archivo .acdxpkg.", self)
             return
         try:
-            resultado = intercambio.importar_estudiantes(
+            resultado= intercambio.importar_estudiantes(
                 self.main_window, self.ruta_seleccionada,
                 seccion_id_destino=self.combo_seccion_destino.currentData())
             mostrar_mensaje("exito", "Importado",
@@ -179,34 +177,32 @@ class DialogoImportarEstudiantes(_DialogoBase):
             mostrar_mensaje("error", "No se pudo importar", str(e), self)
 
 
-# ============================================================
-# CALIFICACIONES
-# ============================================================
+#CALIFICACIONES
 class DialogoExportarCalificaciones(_DialogoBase):
     def __init__(self, main_window, materia_id, materia_nombre, periodo_id=None, periodo_nombre="", parent=None):
         super().__init__("Exportar calificaciones a otra edición de AcaDeXI", parent)
-        self.main_window = main_window
-        self.materia_id = materia_id
-        self.periodo_id = periodo_id
+        self.main_window= main_window
+        self.materia_id= materia_id
+        self.periodo_id= periodo_id
 
         if materia_id is None:
-            info = QLabel("Elige primero una Materia (y opcionalmente un Periodo) arriba antes de exportar.")
+            info= QLabel("Elige primero una Materia (y opcionalmente un Periodo) arriba antes de exportar.")
             info.setWordWrap(True)
             self.layout_principal.addWidget(info)
-            self._exportable = False
+            self._exportable= False
         else:
-            texto = f"Se exportarán las calificaciones de «{materia_nombre}»"
+            texto= f"Se exportarán las calificaciones de «{materia_nombre}»"
             texto += f", periodo «{periodo_nombre}»." if periodo_id else " (todos los periodos)."
-            info = QLabel(texto)
+            info= QLabel(texto)
             info.setWordWrap(True)
             self.layout_principal.addWidget(info)
-            self._exportable = True
+            self._exportable= True
 
-        fila_botones = QHBoxLayout()
-        btn_cancelar = QPushButton("Cancelar")
+        fila_botones= QHBoxLayout()
+        btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.clicked.connect(self.reject)
         fila_botones.addWidget(btn_cancelar)
-        btn_exportar = QPushButton("Exportar…")
+        btn_exportar= QPushButton("Exportar…")
         btn_exportar.setIcon(icono_emoji("📤"))
         btn_exportar.setIconSize(QSize(16, 16))
         btn_exportar.setEnabled(self._exportable)
@@ -225,7 +221,7 @@ class DialogoExportarCalificaciones(_DialogoBase):
         if not ruta.endswith(intercambio.EXTENSION):
             ruta += intercambio.EXTENSION
         try:
-            n = intercambio.exportar_calificaciones(self.main_window, ruta, self.materia_id, self.periodo_id)
+            n= intercambio.exportar_calificaciones(self.main_window, ruta, self.materia_id, self.periodo_id)
             mostrar_mensaje("exito", "Exportado",
                              f"Se exportaron {n} calificación(es) a:\n{ruta}", self)
             self.accept()
@@ -241,38 +237,38 @@ class DialogoImportarCalificaciones(_DialogoBase):
     texto accidental."""
     def __init__(self, main_window, combo_materia_origen, combo_periodo_origen, parent=None):
         super().__init__("Importar calificaciones desde otra edición de AcaDeXI", parent)
-        self.main_window = main_window
-        self.ruta_seleccionada = None
+        self.main_window= main_window
+        self.ruta_seleccionada= None
 
-        info = QLabel(
+        info= QLabel(
             "Importa un archivo .acdxpkg de calificaciones. Solo se importa la nota de un "
             "estudiante si YA EXISTE aquí (mismo nombre, apellidos y fecha de nacimiento); "
             "importa primero sus estudiantes si hace falta.")
         info.setWordWrap(True)
         self.layout_principal.addWidget(info)
 
-        btn_elegir = QPushButton("Elegir archivo .acdxpkg…")
+        btn_elegir= QPushButton("Elegir archivo .acdxpkg…")
 
         btn_elegir.setIcon(icono_emoji("📂"))
 
         btn_elegir.setIconSize(QSize(16, 16))
         btn_elegir.clicked.connect(self._elegir_archivo)
         self.layout_principal.addWidget(btn_elegir)
-        self.lbl_archivo = QLabel("Ningún archivo seleccionado todavía.")
+        self.lbl_archivo= QLabel("Ningún archivo seleccionado todavía.")
         self.lbl_archivo.setWordWrap(True)
         self.layout_principal.addWidget(self.lbl_archivo)
 
         self.layout_principal.addWidget(QLabel(
             "Las calificaciones se importarán a la Materia y Periodo ya elegidos "
             "arriba en esta pantalla."))
-        self._combo_materia_origen = combo_materia_origen
-        self._combo_periodo_origen = combo_periodo_origen
+        self._combo_materia_origen= combo_materia_origen
+        self._combo_periodo_origen= combo_periodo_origen
 
-        fila_botones = QHBoxLayout()
-        btn_cancelar = QPushButton("Cancelar")
+        fila_botones= QHBoxLayout()
+        btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.clicked.connect(self.reject)
         fila_botones.addWidget(btn_cancelar)
-        self.btn_importar = QPushButton("Importar")
+        self.btn_importar= QPushButton("Importar")
         self.btn_importar.setIcon(icono_emoji("📥"))
         self.btn_importar.setIconSize(QSize(16, 16))
         self.btn_importar.clicked.connect(self._importar)
@@ -285,12 +281,12 @@ class DialogoImportarCalificaciones(_DialogoBase):
         ruta, _ = QFileDialog.getOpenFileName(
             self, "Elegir paquete de calificaciones", "", f"Paquete AcaDeXI (*{intercambio.EXTENSION})")
         if ruta:
-            self.ruta_seleccionada = ruta
+            self.ruta_seleccionada= ruta
             self.lbl_archivo.setText(f"Archivo: {ruta}")
 
     def _importar(self):
-        materia_id = self._combo_materia_origen.currentData()
-        periodo_id = self._combo_periodo_origen.currentData()
+        materia_id= self._combo_materia_origen.currentData()
+        periodo_id= self._combo_periodo_origen.currentData()
         if not self.ruta_seleccionada:
             mostrar_mensaje("advertencia", "Falta el archivo", "Elige primero un archivo .acdxpkg.", self)
             return
@@ -299,9 +295,9 @@ class DialogoImportarCalificaciones(_DialogoBase):
                              "Elige una Materia y un Periodo destino arriba antes de importar.", self)
             return
         try:
-            resultado = intercambio.importar_calificaciones(
+            resultado= intercambio.importar_calificaciones(
                 self.main_window, self.ruta_seleccionada, materia_id, periodo_id)
-            texto = f"Importadas: {resultado['importadas']}"
+            texto= f"Importadas: {resultado['importadas']}"
             if resultado["estudiantes_faltantes"]:
                 texto += ("\n\nNo se pudieron importar las notas de estos estudiantes porque no "
                           "existen aquí todavía:\n- " + "\n- ".join(resultado["estudiantes_faltantes"]))

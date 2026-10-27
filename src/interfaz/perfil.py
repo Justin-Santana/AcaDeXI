@@ -34,16 +34,16 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from src.nucleo.bd import get_connection, DB_PATH
+from src.nucleo.bd import obtener_conexion, DB_PATH
 from src.interfaz.configuracion import conectar_tooltip_seleccion
 from src.nucleo.iconos import aplicar_icono_ventana, ICONO_DOCUMENTO
 
-EXTENSION = ".acdx"
+EXTENSION= ".acdx"
 
-_CLAVE_APP = b"AcaDeXI-perfil-institucional-clave-embebida-2026"
-_fernet = Fernet(base64.urlsafe_b64encode(_CLAVE_APP.ljust(32, b"0")[:32]))
+_CLAVE_APP= b"AcaDeXI-perfil-institucional-clave-embebida-2026"
+_fernet= Fernet(base64.urlsafe_b64encode(_CLAVE_APP.ljust(32, b"0")[:32]))
 
-PIN_MINIMO = 4
+PIN_MINIMO= 4
 
 
 def _derivar_clave_pin(pin, salt):
@@ -52,14 +52,14 @@ def _derivar_clave_pin(pin, salt):
     fuerza bruta sea costoso incluso si alguien tiene el .acdx y sabe cómo
     está construido — a diferencia de la clave fija _CLAVE_APP, que es la
     misma para cualquier instalación de AcaDeXI."""
-    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=390000)
+    kdf= PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=390000)
     return base64.urlsafe_b64encode(kdf.derive(pin.encode("utf-8")))
 
 
 def _cifrar_password_con_pin(password_plana, pin):
-    salt = os.urandom(16)
-    clave = _derivar_clave_pin(pin, salt)
-    token = Fernet(clave).encrypt(password_plana.encode("utf-8"))
+    salt= os.urandom(16)
+    clave= _derivar_clave_pin(pin, salt)
+    token= Fernet(clave).encrypt(password_plana.encode("utf-8"))
     return base64.b64encode(salt).decode("ascii"), token.decode("ascii")
 
 
@@ -69,23 +69,23 @@ def descifrar_password_perfil(datos, pin):
     proveyó PIN, o si el PIN es incorrecto (no se puede distinguir cuál de
     estas dos últimas causas fue, a propósito: no le decimos a quien
     adivina que "casi" acierta)."""
-    salt_b64 = datos.get("password_salt")
-    token = datos.get("password_cifrada")
+    salt_b64= datos.get("password_salt")
+    token= datos.get("password_cifrada")
     if not salt_b64 or not token:
         raise ValueError("Este perfil no incluye una contraseña protegida por PIN.")
     if not pin:
         raise ValueError("Debes ingresar el PIN para descifrar la contraseña de este perfil.")
     try:
-        salt = base64.b64decode(salt_b64)
-        clave = _derivar_clave_pin(pin, salt)
+        salt= base64.b64decode(salt_b64)
+        clave= _derivar_clave_pin(pin, salt)
         return Fernet(clave).decrypt(token.encode("ascii")).decode("utf-8")
     except Exception:
         raise ValueError("PIN incorrecto: no se pudo descifrar la contraseña de este perfil.")
 
 
-MODOS_TRABAJO = ["Local", "Nube sincronizada", "Servidor institucional", "Sin conexión (offline)"]
+MODOS_TRABAJO= ["Local", "Nube sincronizada", "Servidor institucional", "Sin conexión (offline)"]
 
-TOOLTIPS_MODOS_TRABAJO = {
+TOOLTIPS_MODOS_TRABAJO= {
     "Local": "La base de datos vive solo en este equipo. No se sincroniza con nadie más; "
              "ideal para un único usuario o equipo que no comparte datos en tiempo real.",
     "Nube sincronizada": "La base de datos se guarda en una carpeta local que a su vez sincroniza "
@@ -102,23 +102,23 @@ TOOLTIPS_MODOS_TRABAJO = {
 def _aplicar_tooltips_modos(combo):
     """Asigna a cada ítem del combo un tooltip que explica qué implica ese modo de trabajo."""
     for i in range(combo.count()):
-        texto = combo.itemText(i)
-        tip = TOOLTIPS_MODOS_TRABAJO.get(texto)
+        texto= combo.itemText(i)
+        tip= TOOLTIPS_MODOS_TRABAJO.get(texto)
         if tip:
             combo.setItemData(i, tip, Qt.ItemDataRole.ToolTipRole)
 
 
 def _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_plana=None, pin=None):
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("SELECT username, nombre_completo, rol FROM usuarios WHERE id=?", (usuario_id,))
-    u = c.fetchone()
+    u= c.fetchone()
     c.execute("SELECT nombre_institucion, tipo_institucion FROM configuracion WHERE id=1")
-    cfg = c.fetchone()
+    cfg= c.fetchone()
     conn.close()
     if not u:
         raise ValueError("Usuario no encontrado.")
-    datos = {
+    datos= {
         "version": 3,
         "institucion": (cfg["nombre_institucion"] if cfg else "") or "",
         "tipo_institucion": (cfg["tipo_institucion"] if cfg else "") or "",
@@ -129,18 +129,17 @@ def _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_pla
         "sincronizacion": carpeta_sincronizacion or "",
         "generado": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
-    # NOTA DE SEGURIDAD: si se provee, la contraseña se cifra con una clave
-    # derivada del PIN (ver _derivar_clave_pin), NO con la clave fija de la
-    # app. Quien reciba el .acdx necesita también el PIN (comunicado por
-    # separado) para recuperar la contraseña — solo tener el archivo no
-    # alcanza, a diferencia del esquema anterior.
+    #NOTA DE SEGURIDAD: si se provee, la contraseña se cifra con una clave derivada del PIN (ver
+    #_derivar_clave_pin), NO con la clave fija de la app. Quien reciba el .acdx necesita también el PIN (comunicado
+    #por separado) para recuperar la contraseña — solo tener el archivo no alcanza, a diferencia del esquema
+    #anterior.
     if password_plana:
         if not pin or len(pin) < PIN_MINIMO:
             raise ValueError(f"Para incluir la contraseña en el perfil, define un PIN de al menos "
                               f"{PIN_MINIMO} caracteres.")
         salt_b64, token_b64 = _cifrar_password_con_pin(password_plana, pin)
-        datos["password_salt"] = salt_b64
-        datos["password_cifrada"] = token_b64
+        datos["password_salt"]= salt_b64
+        datos["password_cifrada"]= token_b64
     return datos
 
 
@@ -165,14 +164,14 @@ def guardar_perfil_archivo(ruta, usuario_id, modo_trabajo="Local", carpeta_sincr
     de quien importe el perfil pueda mostrarlo igual: el `logo_path` guardado
     en la BD es una ruta absoluta del equipo del Director, que no existe tal
     cual en el equipo del Docente/Personal."""
-    datos = _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_plana, pin)
+    datos= _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_plana, pin)
     if ruta_bd_base:
         if not os.path.exists(ruta_bd_base):
             raise ValueError(f"No se encontró la Base de Datos Base en:\n{ruta_bd_base}")
         with open(ruta_bd_base, "rb") as f_bd:
-            datos["bd_base"] = base64.b64encode(f_bd.read()).decode("ascii")
+            datos["bd_base"]= base64.b64encode(f_bd.read()).decode("ascii")
         _incrustar_logo_de_bd_base(ruta_bd_base, datos)
-    token = _fernet.encrypt(json.dumps(datos, ensure_ascii=False).encode("utf-8"))
+    token= _fernet.encrypt(json.dumps(datos, ensure_ascii=False).encode("utf-8"))
     with open(ruta, "wb") as f:
         f.write(token)
     return datos
@@ -185,15 +184,15 @@ def _incrustar_logo_de_bd_base(ruta_bd_base, datos):
     logo es un extra deseable, nunca debe impedir generar el perfil."""
     import sqlite3
     try:
-        conn_base = sqlite3.connect(ruta_bd_base)
-        conn_base.row_factory = sqlite3.Row
-        fila = conn_base.execute("SELECT logo_path FROM configuracion WHERE id=1").fetchone()
+        conn_base= sqlite3.connect(ruta_bd_base)
+        conn_base.row_factory= sqlite3.Row
+        fila= conn_base.execute("SELECT logo_path FROM configuracion WHERE id=1").fetchone()
         conn_base.close()
-        logo_path = fila["logo_path"] if fila else None
+        logo_path= fila["logo_path"] if fila else None
         if logo_path and os.path.isfile(logo_path):
             with open(logo_path, "rb") as f_logo:
-                datos["logo_base64"] = base64.b64encode(f_logo.read()).decode("ascii")
-            datos["logo_nombre_archivo"] = os.path.basename(logo_path)
+                datos["logo_base64"]= base64.b64encode(f_logo.read()).decode("ascii")
+            datos["logo_nombre_archivo"]= os.path.basename(logo_path)
     except Exception:
         pass
 
@@ -201,7 +200,7 @@ def _incrustar_logo_de_bd_base(ruta_bd_base, datos):
 def leer_perfil_archivo(ruta):
     """Lee y descifra un archivo .acdx. Lanza ValueError si es inválido."""
     with open(ruta, "rb") as f:
-        token = f.read()
+        token= f.read()
     try:
         return json.loads(_fernet.decrypt(token).decode("utf-8"))
     except (InvalidToken, ValueError, UnicodeDecodeError):
@@ -217,17 +216,17 @@ def aplicar_perfil(main_window, datos):
     aplica aquí — debe resolverse antes con perfil_incluye_bd_base()/
     aplicar_bd_base(), ya que requiere confirmación del usuario (reemplaza la
     BD local). Ver login.py -> _importar_perfil()."""
-    conn = get_connection()
-    c = conn.cursor()
+    conn= obtener_conexion()
+    c= conn.cursor()
     c.execute("SELECT id FROM usuarios WHERE username=?", (datos.get("usuario", ""),))
-    existe = c.fetchone() is not None
+    existe= c.fetchone() is not None
     conn.close()
 
-    main_window.recordar_usuario = True
-    main_window.ultimo_usuario = datos.get("usuario", "")
-    main_window.modo_trabajo = datos.get("modo", "Local")
-    main_window.carpeta_sincronizacion = datos.get("sincronizacion", "")
-    main_window.save_config()
+    main_window.recordar_usuario= True
+    main_window.ultimo_usuario= datos.get("usuario", "")
+    main_window.modo_trabajo= datos.get("modo", "Local")
+    main_window.carpeta_sincronizacion= datos.get("sincronizacion", "")
+    main_window.guardar_configuracion()
     return existe
 
 
@@ -241,10 +240,10 @@ def local_ya_tiene_usuarios():
     cuyo caso reemplazarla por la BD Base del perfil es una operación destructiva
     que debe confirmarse explícitamente antes de aplicarla."""
     try:
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("SELECT COUNT(*) n FROM usuarios")
-        n = c.fetchone()["n"]
+        n= c.fetchone()["n"]
         conn.close()
         return n > 0
     except Exception:
@@ -265,40 +264,38 @@ def aplicar_bd_base(datos):
     perfil vía .acdx también ve el logotipo institucional."""
     from src.nucleo.bd import crear_backup, get_app_data_dir
 
-    ruta_backup = None
+    ruta_backup= None
     if os.path.exists(DB_PATH) and os.path.getsize(DB_PATH) > 0:
         try:
-            ruta_backup = crear_backup(tipo="Pre-importación de Perfil Institucional (.acdx)")
+            ruta_backup= crear_backup(tipo="Pre-importación de Perfil Institucional (.acdx)")
         except Exception:
-            ruta_backup = None
+            ruta_backup= None
 
-    contenido = base64.b64decode(datos["bd_base"])
+    contenido= base64.b64decode(datos["bd_base"])
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     with open(DB_PATH, "wb") as f:
         f.write(contenido)
 
-    logo_base64 = datos.get("logo_base64")
-    nombre_logo = datos.get("logo_nombre_archivo")
+    logo_base64= datos.get("logo_base64")
+    nombre_logo= datos.get("logo_nombre_archivo")
     if logo_base64 and nombre_logo:
         try:
-            carpeta_logos = os.path.join(get_app_data_dir(), "logos")
+            carpeta_logos= os.path.join(get_app_data_dir(), "logos")
             os.makedirs(carpeta_logos, exist_ok=True)
-            ruta_logo_local = os.path.join(carpeta_logos, nombre_logo)
+            ruta_logo_local= os.path.join(carpeta_logos, nombre_logo)
             with open(ruta_logo_local, "wb") as f_logo:
                 f_logo.write(base64.b64decode(logo_base64))
-            conn = get_connection()
+            conn= obtener_conexion()
             conn.execute("UPDATE configuracion SET logo_path=? WHERE id=1", (ruta_logo_local,))
             conn.commit()
             conn.close()
         except Exception:
-            pass  # El logotipo es un extra: si falla, la BD Base ya quedó aplicada igual.
+            pass  #El logotipo es un extra: si falla, la BD Base ya quedó aplicada igual.
 
     return ruta_backup
 
 
-# ============================================================
-# DIÁLOGO: GENERAR PERFIL (.acdx) — usado desde Configuración → Usuarios
-# ============================================================
+#Diálogo: generar perfil (.acdx) — usado desde Configuración → Usuarios
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QComboBox, QFileDialog, QCheckBox)
 from PySide6.QtCore import Qt
@@ -316,69 +313,69 @@ class DialogoGenerarPerfil(QDialog):
         primero un combo para elegir el usuario, sin depender de que haya
         algo seleccionado en ninguna tabla."""
         super().__init__(main_window)
-        self.main_window = main_window
-        self.usuario_id = usuario_id
-        self.username = username
-        self._seleccion_libre = usuario_id is None
+        self.main_window= main_window
+        self.usuario_id= usuario_id
+        self.username= username
+        self._seleccion_libre= usuario_id is None
         self.setWindowTitle(f"Generar Perfil Institucional — {username}" if username
                             else "Generar Perfil Institucional")
         aplicar_icono_ventana(self, ICONO_DOCUMENTO)
         self.setMinimumWidth(420)
 
-        l = QVBoxLayout(self)
+        l= QVBoxLayout(self)
 
         if self._seleccion_libre:
             l.addWidget(QLabel("Elige el usuario para el que quieres generar el archivo .acdx:"))
-            self.combo_usuario = QComboBox()
+            self.combo_usuario= QComboBox()
             self._cargar_usuarios_combo()
             self.combo_usuario.currentIndexChanged.connect(self._usuario_combo_cambio)
             l.addWidget(self.combo_usuario)
 
-        self.lbl_intro = QLabel()
+        self.lbl_intro= QLabel()
         self.lbl_intro.setWordWrap(True)
         l.addWidget(self.lbl_intro)
         self._actualizar_intro()
 
         l.addWidget(QLabel("Modo de trabajo:"))
-        self.combo_modo = QComboBox()
+        self.combo_modo= QComboBox()
         self.combo_modo.addItems(MODOS_TRABAJO)
         conectar_tooltip_seleccion(self.combo_modo, "Modo de trabajo de este equipo")
         _aplicar_tooltips_modos(self.combo_modo)
         l.addWidget(self.combo_modo)
 
         l.addWidget(QLabel("Carpeta de sincronización (opcional, ej. carpeta local de Drive/OneDrive/Dropbox):"))
-        fila = QHBoxLayout()
-        self.in_carpeta = QLineEdit()
+        fila= QHBoxLayout()
+        self.in_carpeta= QLineEdit()
         limitar_campo_texto(self.in_carpeta, 300)
         self.in_carpeta.setPlaceholderText("Sin carpeta de sincronización")
         fila.addWidget(self.in_carpeta)
-        btn_examinar = QPushButton("")
+        btn_examinar= QPushButton("")
         btn_examinar.setIcon(icono_emoji("📁"))
         btn_examinar.setIconSize(_QSize_emoji(16, 16))
         btn_examinar.clicked.connect(self._elegir_carpeta)
         fila.addWidget(btn_examinar)
         l.addLayout(fila)
 
-        lbl_password = QLabel("Contraseña actual del usuario (opcional):")
+        lbl_password= QLabel("Contraseña actual del usuario (opcional):")
         lbl_password.setToolTip(
             "Si la ingresas, se incluirá cifrada con el PIN de abajo dentro del archivo. El usuario "
             "NO tendrá que escribirla al importar el perfil, siempre que también reciba el PIN. Debe "
             "coincidir con la contraseña real de la cuenta, o el perfil no se generará.")
         l.addWidget(lbl_password)
-        self.in_password = QLineEdit()
+        self.in_password= QLineEdit()
         limitar_campo_texto(self.in_password, 128)
         self.in_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.in_password.setPlaceholderText("Dejar vacío para no incluir la contraseña")
         self.in_password.setToolTip(lbl_password.toolTip())
         l.addWidget(self.in_password)
 
-        lbl_pin = QLabel(f"PIN para proteger la contraseña (mín. {PIN_MINIMO} caracteres):")
+        lbl_pin= QLabel(f"PIN para proteger la contraseña (mín. {PIN_MINIMO} caracteres):")
         lbl_pin.setToolTip(
             "Este PIN se usa para cifrar la contraseña dentro del archivo — NO viaja en el .acdx. "
             "Comunícaselo al usuario por un canal distinto (verbalmente, por teléfono, etc.), nunca "
             "junto con el archivo. Solo hace falta si arriba incluiste una contraseña.")
         l.addWidget(lbl_pin)
-        self.in_pin = QLineEdit()
+        self.in_pin= QLineEdit()
         limitar_campo_texto(self.in_pin, 300)
         self.in_pin.setEchoMode(QLineEdit.EchoMode.Password)
         self.in_pin.setPlaceholderText("Requerido solo si incluyes la contraseña arriba")
@@ -386,9 +383,9 @@ class DialogoGenerarPerfil(QDialog):
         l.addWidget(self.in_pin)
 
         from src.nucleo.bd import existe_bd_base, info_bd_base
-        self.chk_bd_base = QCheckBox("Incluir la BD Base Institucional en este perfil")
+        self.chk_bd_base= QCheckBox("Incluir la BD Base Institucional en este perfil")
         if existe_bd_base():
-            info = info_bd_base()
+            info= info_bd_base()
             self.chk_bd_base.setToolTip(
                 f"BD Base guardada el {info['modificado']} ({info['tamano_kb']} KB).")
             l.addWidget(self.chk_bd_base)
@@ -403,13 +400,13 @@ class DialogoGenerarPerfil(QDialog):
                 "BD Base Institucional para generarla primero.")
             l.addWidget(self.chk_bd_base)
 
-        fila_botones = QHBoxLayout()
-        btn_cancelar = QPushButton("Cancelar")
+        fila_botones= QHBoxLayout()
+        btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.setIcon(icono_emoji("✖"))
         btn_cancelar.setIconSize(_QSize_emoji(16, 16))
         btn_cancelar.clicked.connect(self.reject)
         fila_botones.addWidget(btn_cancelar)
-        btn_generar = QPushButton("Generar Perfil")
+        btn_generar= QPushButton("Generar Perfil")
         btn_generar.setIcon(icono_emoji("👤"))
         btn_generar.setIconSize(_QSize_emoji(16, 16))
         btn_generar.setObjectName("BtnAccionAgregar")
@@ -418,62 +415,62 @@ class DialogoGenerarPerfil(QDialog):
         l.addLayout(fila_botones)
 
     def _cargar_usuarios_combo(self):
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("""SELECT id, username, nombre_completo, rol FROM usuarios
                      ORDER BY nombre_completo, username""")
-        filas = c.fetchall()
+        filas= c.fetchall()
         conn.close()
         self.combo_usuario.clear()
         for f in filas:
-            etiqueta = f"{f['nombre_completo'] or f['username']} ({f['username']}) — {f['rol']}"
+            etiqueta= f"{f['nombre_completo'] or f['username']} ({f['username']}) — {f['rol']}"
             self.combo_usuario.addItem(etiqueta, userData=f["id"])
         if filas:
-            self.usuario_id = filas[0]["id"]
-            self.username = filas[0]["username"]
+            self.usuario_id= filas[0]["id"]
+            self.username= filas[0]["username"]
         conectar_tooltip_seleccion(self.combo_usuario, "Usuario para el que se genera el Perfil Institucional")
 
     def _usuario_combo_cambio(self):
-        self.usuario_id = self.combo_usuario.currentData()
-        conn = get_connection()
-        c = conn.cursor()
+        self.usuario_id= self.combo_usuario.currentData()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("SELECT username FROM usuarios WHERE id=?", (self.usuario_id,))
-        f = c.fetchone()
+        f= c.fetchone()
         conn.close()
-        self.username = f["username"] if f else None
+        self.username= f["username"] if f else None
         self._actualizar_intro()
 
     def _actualizar_intro(self):
         if self.usuario_id is None:
             self.lbl_intro.setText("Elige un usuario arriba para continuar.")
             return
-        nombre_archivo = f"{self.username}{EXTENSION}" if self.username else f"usuario{EXTENSION}"
+        nombre_archivo= f"{self.username}{EXTENSION}" if self.username else f"usuario{EXTENSION}"
         self.lbl_intro.setText(f"Se generará un archivo <b>{nombre_archivo}</b> con la configuración "
                                 "de este usuario para que la importe desde su equipo.")
 
     def _elegir_carpeta(self):
-        carpeta = QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
+        carpeta= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
         if carpeta:
             self.in_carpeta.setText(carpeta)
 
     def _generar(self):
         from src.nucleo.iconos import mostrar_mensaje
-        from src.nucleo.bd import check_password, RUTA_BD_BASE
+        from src.nucleo.bd import verificar_contrasena, RUTA_BD_BASE
 
         if self.usuario_id is None:
             mostrar_mensaje("advertencia", "Falta usuario", "Elige el usuario para el que quieres "
                             "generar el perfil.", self)
             return
 
-        password_plana = self.in_password.text().strip()
-        pin = self.in_pin.text().strip()
+        password_plana= self.in_password.text().strip()
+        pin= self.in_pin.text().strip()
         if password_plana:
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT password FROM usuarios WHERE id=?", (self.usuario_id,))
-            f = c.fetchone()
+            f= c.fetchone()
             conn.close()
-            if not f or not check_password(password_plana, f["password"]):
+            if not f or not verificar_contrasena(password_plana, f["password"]):
                 mostrar_mensaje("error", "Contraseña incorrecta",
                                 "La contraseña ingresada no coincide con la contraseña actual de este "
                                 "usuario. Verifícala o deja el campo vacío para generar el perfil sin ella.",
@@ -486,9 +483,9 @@ class DialogoGenerarPerfil(QDialog):
                                 "usuario por separado.", self)
                 return
 
-        incluir_bd_base = self.chk_bd_base.isChecked()
+        incluir_bd_base= self.chk_bd_base.isChecked()
 
-        nombre_sugerido = f"{self.username}{EXTENSION}" if self.username else f"perfil{EXTENSION}"
+        nombre_sugerido= f"{self.username}{EXTENSION}" if self.username else f"perfil{EXTENSION}"
         ruta, _ = QFileDialog.getSaveFileName(
             self, "Guardar Perfil Institucional", nombre_sugerido, f"Perfil AcaDeXI (*{EXTENSION})")
         if not ruta:
@@ -503,7 +500,7 @@ class DialogoGenerarPerfil(QDialog):
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo generar el perfil:\n{e}", self)
             return
-        avisos = ""
+        avisos= ""
         if password_plana:
             avisos += ("\n\n Este archivo incluye la contraseña, cifrada con el PIN que definiste. "
                        "Recuerda comunicarle el PIN al usuario por un medio DISTINTO al archivo "
@@ -517,40 +514,37 @@ class DialogoGenerarPerfil(QDialog):
         self.accept()
 
 
-# ============================================================
-# DIÁLOGO: EXPORTAR MI PROPIO PERFIL (.acdx) — autoservicio, desde
-# Configuración → Mi Cuenta. Cualquier usuario logueado puede generar
-# ÚNICAMENTE su propio perfil, nunca el de otro usuario.
-# ============================================================
+#Diálogo: exportar mi propio perfil (.acdx) — autoservicio, desde Configuración → Mi Cuenta. Cualquier usuario
+#logueado puede generar ÚNICAMENTE su propio perfil, nunca el de otro usuario.
 class DialogoExportarPerfilPropio(QDialog):
     def __init__(self, main_window):
         super().__init__(main_window)
-        self.main_window = main_window
-        self.usuario_id = getattr(main_window, "id_usuario_actual", None)
-        self.username = getattr(main_window, "usuario_actual", "") or "usuario"
+        self.main_window= main_window
+        self.usuario_id= getattr(main_window, "id_usuario_actual", None)
+        self.username= getattr(main_window, "usuario_actual", "") or "usuario"
         self.setWindowTitle(f"Exportar Mi Perfil Institucional — {self.username}")
         aplicar_icono_ventana(self, ICONO_DOCUMENTO)
         self.setMinimumWidth(440)
 
-        l = QVBoxLayout(self)
+        l= QVBoxLayout(self)
         l.addWidget(QLabel(f"Se generará el archivo <b>{self.username}{EXTENSION}</b> con tu configuración "
                             "actual. Incluirá tu contraseña vigente, cifrada con el PIN que definas abajo, "
                             "para que puedas importarlo directamente en otro equipo sin tener que volver a "
                             "escribirla — siempre que también tengas ese PIN a la mano."))
 
         l.addWidget(QLabel("Confirma tu contraseña actual:"))
-        self.in_password = QLineEdit()
+        self.in_password= QLineEdit()
         limitar_campo_texto(self.in_password, 128)
         self.in_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.in_password.setPlaceholderText("Tu contraseña actual")
         l.addWidget(self.in_password)
 
-        lbl_pin = QLabel(f"Define un PIN para proteger la contraseña (mín. {PIN_MINIMO} caracteres):")
+        lbl_pin= QLabel(f"Define un PIN para proteger la contraseña (mín. {PIN_MINIMO} caracteres):")
         lbl_pin.setToolTip(
             "Este PIN NO viaja dentro del archivo. Anótalo o recuérdalo: lo necesitarás al importar "
             "este mismo perfil en otro equipo para que la contraseña se autocomplete.")
         l.addWidget(lbl_pin)
-        self.in_pin = QLineEdit()
+        self.in_pin= QLineEdit()
         limitar_campo_texto(self.in_pin, 300)
         self.in_pin.setEchoMode(QLineEdit.EchoMode.Password)
         self.in_pin.setPlaceholderText("PIN que recordarás para importar este perfil")
@@ -558,36 +552,36 @@ class DialogoExportarPerfilPropio(QDialog):
         l.addWidget(self.in_pin)
 
         l.addWidget(QLabel("Modo de trabajo:"))
-        self.combo_modo = QComboBox()
+        self.combo_modo= QComboBox()
         self.combo_modo.addItems(MODOS_TRABAJO)
         conectar_tooltip_seleccion(self.combo_modo, "Modo de trabajo de este equipo")
         _aplicar_tooltips_modos(self.combo_modo)
-        modo_actual = getattr(main_window, "modo_trabajo", None)
+        modo_actual= getattr(main_window, "modo_trabajo", None)
         if modo_actual in MODOS_TRABAJO:
             self.combo_modo.setCurrentText(modo_actual)
         l.addWidget(self.combo_modo)
 
         l.addWidget(QLabel("Carpeta de sincronización (opcional):"))
-        fila = QHBoxLayout()
-        self.in_carpeta = QLineEdit()
+        fila= QHBoxLayout()
+        self.in_carpeta= QLineEdit()
         limitar_campo_texto(self.in_carpeta, 300)
         self.in_carpeta.setText(getattr(main_window, "carpeta_sincronizacion", "") or "")
         self.in_carpeta.setPlaceholderText("Sin carpeta de sincronización")
         fila.addWidget(self.in_carpeta)
-        btn_examinar = QPushButton("")
+        btn_examinar= QPushButton("")
         btn_examinar.setIcon(icono_emoji("📁"))
         btn_examinar.setIconSize(_QSize_emoji(16, 16))
         btn_examinar.clicked.connect(self._elegir_carpeta)
         fila.addWidget(btn_examinar)
         l.addLayout(fila)
 
-        fila_botones = QHBoxLayout()
-        btn_cancelar = QPushButton("Cancelar")
+        fila_botones= QHBoxLayout()
+        btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.setIcon(icono_emoji("✖"))
         btn_cancelar.setIconSize(_QSize_emoji(16, 16))
         btn_cancelar.clicked.connect(self.reject)
         fila_botones.addWidget(btn_cancelar)
-        btn_generar = QPushButton("Exportar Mi Perfil")
+        btn_generar= QPushButton("Exportar Mi Perfil")
         btn_generar.setIcon(icono_emoji("\uE002"))
         btn_generar.setIconSize(_QSize_emoji(16, 16))
         btn_generar.setObjectName("BtnAccionAgregar")
@@ -596,36 +590,36 @@ class DialogoExportarPerfilPropio(QDialog):
         l.addLayout(fila_botones)
 
     def _elegir_carpeta(self):
-        carpeta = QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
+        carpeta= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
         if carpeta:
             self.in_carpeta.setText(carpeta)
 
     def _generar(self):
         from src.nucleo.iconos import mostrar_mensaje
-        from src.nucleo.bd import check_password
+        from src.nucleo.bd import verificar_contrasena
 
         if self.usuario_id is None:
             mostrar_mensaje("error", "Sin sesión", "No se detectó un usuario con sesión iniciada.", self)
             return
 
-        password = self.in_password.text().strip()
+        password= self.in_password.text().strip()
         if not password:
             mostrar_mensaje("advertencia", "Falta contraseña",
                             "Ingresa tu contraseña actual para continuar.", self)
             return
-        pin = self.in_pin.text().strip()
+        pin= self.in_pin.text().strip()
         if len(pin) < PIN_MINIMO:
             mostrar_mensaje("advertencia", "PIN requerido",
                             f"Define un PIN de al menos {PIN_MINIMO} caracteres para proteger tu "
                             "contraseña dentro del perfil.", self)
             return
 
-        conn = get_connection()
-        c = conn.cursor()
+        conn= obtener_conexion()
+        c= conn.cursor()
         c.execute("SELECT password FROM usuarios WHERE id=?", (self.usuario_id,))
-        f = c.fetchone()
+        f= c.fetchone()
         conn.close()
-        if not f or not check_password(password, f["password"]):
+        if not f or not verificar_contrasena(password, f["password"]):
             mostrar_mensaje("error", "Contraseña incorrecta", "La contraseña ingresada no es correcta.", self)
             return
 

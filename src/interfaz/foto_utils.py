@@ -26,21 +26,21 @@ class VisorFotoDialog(QDialog):
         aplicar_icono_ventana(self, ICONO_RECORTE)
         self.setMinimumSize(360, 360)
 
-        layout = QVBoxLayout(self)
+        layout= QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
 
-        lbl_imagen = QLabel()
+        lbl_imagen= QLabel()
         lbl_imagen.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        pixmap = QPixmap(ruta_imagen)
+        pixmap= QPixmap(ruta_imagen)
         if not pixmap.isNull():
-            pixmap = pixmap.scaled(560, 560, Qt.AspectRatioMode.KeepAspectRatio,
+            pixmap= pixmap.scaled(560, 560, Qt.AspectRatioMode.KeepAspectRatio,
                                     Qt.TransformationMode.SmoothTransformation)
             lbl_imagen.setPixmap(pixmap)
         else:
             lbl_imagen.setText("No se pudo cargar la imagen.")
         layout.addWidget(lbl_imagen)
 
-        btn_cerrar = QPushButton("Cerrar")
+        btn_cerrar= QPushButton("Cerrar")
         btn_cerrar.setIcon(icono_emoji("✖"))
         btn_cerrar.setIconSize(_QSize_emoji(16, 16))
         btn_cerrar.clicked.connect(self.accept)
@@ -53,58 +53,58 @@ class DialogoRecorteFoto(QDialog):
     """Permite seleccionar (arrastrando el mouse) una región rectangular de la imagen
     y devuelve la imagen recortada en self.imagen_recortada (QImage) si se acepta."""
 
-    LADO_MAXIMO = 480
+    LADO_MAXIMO= 480
 
     def __init__(self, ruta_imagen, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Recortar Fotografía")
         aplicar_icono_ventana(self, ICONO_RECORTE)
-        self.imagen_original = QImage(ruta_imagen)
-        self.imagen_recortada = None
-        self.origen_seleccion = QPoint()
-        self.rubber_band = None
-        self._rect_seleccion = QRect()
+        self.imagen_original= QImage(ruta_imagen)
+        self.imagen_recortada= None
+        self.origen_seleccion= QPoint()
+        self.rubber_band= None
+        self._rect_seleccion= QRect()
 
-        layout = QVBoxLayout(self)
+        layout= QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
 
-        info = QLabel("Arrastra sobre la imagen para seleccionar el área a recortar. "
+        info= QLabel("Arrastra sobre la imagen para seleccionar el área a recortar. "
                       "Si no seleccionas nada, se usará la imagen completa.")
         info.setWordWrap(True)
         layout.addWidget(info)
 
-        self.lbl_imagen = QLabel()
+        self.lbl_imagen= QLabel()
         self.lbl_imagen.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_imagen.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
-        self.pixmap_mostrado = QPixmap.fromImage(self.imagen_original).scaled(
+        self.pixmap_mostrado= QPixmap.fromImage(self.imagen_original).scaled(
             self.LADO_MAXIMO, self.LADO_MAXIMO, Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation)
         self.lbl_imagen.setPixmap(self.pixmap_mostrado)
         self.lbl_imagen.setFixedSize(self.pixmap_mostrado.size())
 
-        fila_centrada = QHBoxLayout()
+        fila_centrada= QHBoxLayout()
         fila_centrada.addStretch()
         fila_centrada.addWidget(self.lbl_imagen)
         fila_centrada.addStretch()
         layout.addLayout(fila_centrada)
 
         self.lbl_imagen.installEventFilter(self)
-        self.rubber_band = QRubberBand(QRubberBand.Shape.Rectangle, self.lbl_imagen)
+        self.rubber_band= QRubberBand(QRubberBand.Shape.Rectangle, self.lbl_imagen)
 
-        fila_botones = QHBoxLayout()
-        btn_reiniciar = QPushButton("Quitar selección")
+        fila_botones= QHBoxLayout()
+        btn_reiniciar= QPushButton("Quitar selección")
         btn_reiniciar.setIcon(icono_emoji("🗑"))
         btn_reiniciar.setIconSize(_QSize_emoji(16, 16))
         btn_reiniciar.clicked.connect(self._quitar_seleccion)
         fila_botones.addWidget(btn_reiniciar)
         fila_botones.addStretch()
-        btn_cancelar = QPushButton("Cancelar")
+        btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.setIcon(icono_emoji("✖"))
         btn_cancelar.setIconSize(_QSize_emoji(16, 16))
         btn_cancelar.clicked.connect(self.reject)
         fila_botones.addWidget(btn_cancelar)
-        btn_aceptar = QPushButton("Recortar y usar")
+        btn_aceptar= QPushButton("Recortar y usar")
         btn_aceptar.setIcon(icono_emoji("✂"))
         btn_aceptar.setIconSize(_QSize_emoji(16, 16))
         btn_aceptar.clicked.connect(self._confirmar)
@@ -114,42 +114,42 @@ class DialogoRecorteFoto(QDialog):
         centrar_y_al_frente(self, parent)
 
     def _quitar_seleccion(self):
-        self._rect_seleccion = QRect()
+        self._rect_seleccion= QRect()
         self.rubber_band.hide()
 
     def eventFilter(self, obj, event):
         if obj is self.lbl_imagen:
             if event.type() == event.Type.MouseButtonPress:
-                self.origen_seleccion = event.position().toPoint() if hasattr(event, "position") else event.pos()
+                self.origen_seleccion= event.position().toPoint() if hasattr(event, "position") else event.pos()
                 self.rubber_band.setGeometry(QRect(self.origen_seleccion, QSize()))
                 self.rubber_band.show()
                 return True
             elif event.type() == event.Type.MouseMove and self.rubber_band.isVisible():
-                pos_actual = event.position().toPoint() if hasattr(event, "position") else event.pos()
+                pos_actual= event.position().toPoint() if hasattr(event, "position") else event.pos()
                 self.rubber_band.setGeometry(QRect(self.origen_seleccion, pos_actual).normalized())
                 return True
             elif event.type() == event.Type.MouseButtonRelease and self.rubber_band.isVisible():
-                self._rect_seleccion = self.rubber_band.geometry()
+                self._rect_seleccion= self.rubber_band.geometry()
                 return True
         return super().eventFilter(obj, event)
 
     def _confirmar(self):
         if self._rect_seleccion.isValid() and self._rect_seleccion.width() > 10 and self._rect_seleccion.height() > 10:
-            factor_x = self.imagen_original.width() / self.pixmap_mostrado.width()
-            factor_y = self.imagen_original.height() / self.pixmap_mostrado.height()
-            rect_real = QRect(
+            factor_x= self.imagen_original.width() / self.pixmap_mostrado.width()
+            factor_y= self.imagen_original.height() / self.pixmap_mostrado.height()
+            rect_real= QRect(
                 int(self._rect_seleccion.x() * factor_x),
                 int(self._rect_seleccion.y() * factor_y),
                 int(self._rect_seleccion.width() * factor_x),
                 int(self._rect_seleccion.height() * factor_y),
             )
-            rect_real = rect_real.intersected(self.imagen_original.rect())
+            rect_real= rect_real.intersected(self.imagen_original.rect())
             if rect_real.isEmpty():
                 mostrar_mensaje("advertencia", "Selección inválida", "Selecciona un área válida dentro de la imagen.", self)
                 return
-            self.imagen_recortada = self.imagen_original.copy(rect_real)
+            self.imagen_recortada= self.imagen_original.copy(rect_real)
         else:
-            self.imagen_recortada = self.imagen_original
+            self.imagen_recortada= self.imagen_original
         self.accept()
 
 
@@ -162,14 +162,14 @@ def seleccionar_y_recortar_foto(parent, carpeta_destino, prefijo="foto"):
         return None
 
     try:
-        dialogo = DialogoRecorteFoto(ruta_origen, parent)
+        dialogo= DialogoRecorteFoto(ruta_origen, parent)
         if dialogo.exec() != QDialog.DialogCode.Accepted:
             return None
 
         os.makedirs(carpeta_destino, exist_ok=True)
-        nombre_archivo = f"{prefijo}_{uuid.uuid4().hex[:10]}.png"
-        destino = os.path.join(carpeta_destino, nombre_archivo)
-        imagen_final = dialogo.imagen_recortada or QImage(ruta_origen)
+        nombre_archivo= f"{prefijo}_{uuid.uuid4().hex[:10]}.png"
+        destino= os.path.join(carpeta_destino, nombre_archivo)
+        imagen_final= dialogo.imagen_recortada or QImage(ruta_origen)
         imagen_final.save(destino, "PNG")
         return destino
     except Exception as e:

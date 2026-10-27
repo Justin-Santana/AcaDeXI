@@ -48,21 +48,19 @@ from PySide6.QtGui import QIcon, QPainterPath, QColor, QBrush, QPolygonF
 from src.nucleo.iconos_emoji import (_r, _pluma, _sin_pluma, _linea, _rect_redondeado,
                            _poligono, _estrella, _check, _disco, _nuevo_lienzo,
                            _corazon, _grafico_lineas,
-                           # Dibujos MULTICOLOR reutilizados tal cual para
-                           # pixmap_categoria_color (ver docstring del módulo):
+                           #Dibujos MULTICOLOR reutilizados tal cual para
+                           #pixmap_categoria_color (ver docstring del módulo):
                            _sonrisa, _triangulo_alerta, _persona, _bombilla,
                            _lupa, _trofeo, _diana, _escudo, _reloj, _calendario,
                            _grafico_barras, _manos_saludo, _clip_tablero, _sobre,
-                           # Reutilizados tal cual para pixmap_categoria_material
-                           # (sección 3, ver más abajo):
+                           #Reutilizados tal cual para pixmap_categoria_material
+                           #(sección 3, ver más abajo):
                            _libro, _tubo_ensayo, _llave_inglesa, _pantalla,
                            _camara, _paleta, _paquete,
                            emoji_soportado, pixmap_emoji)
 
 
-# ============================================================
-# CATEGORÍAS
-# ============================================================
+#CATEGORÍAS
 def _cat_rendimiento(p, size, color):
     """Barras ascendentes: rendimiento académico en alza."""
     _rect_redondeado(p, size, 0.20, 0.58, 0.36, 0.82, color, radio=0.05)
@@ -84,12 +82,12 @@ def _cat_participacion(p, size, color):
     """Persona con el brazo en alto: participar / levantar la mano en clase."""
     p.setBrush(QBrush(QColor(color)))
     p.setPen(_sin_pluma())
-    p.drawEllipse(_r(size, 0.38, 0.12, 0.58, 0.32))  # cabeza
-    _rect_redondeado(p, size, 0.32, 0.38, 0.60, 0.82, color, radio=0.16)  # cuerpo
+    p.drawEllipse(_r(size, 0.38, 0.12, 0.58, 0.32))  #cabeza
+    _rect_redondeado(p, size, 0.32, 0.38, 0.60, 0.82, color, radio=0.16)  #cuerpo
     p.setPen(_pluma(color, 3.2))
-    p.drawLine(QPointF(0.56 * size, 0.44 * size), QPointF(0.82 * size, 0.14 * size))  # brazo
+    p.drawLine(QPointF(0.56 * size, 0.44 * size), QPointF(0.82 * size, 0.14 * size))  #brazo
     p.setPen(_sin_pluma())
-    _disco(p, size, 0.76, 0.06, 0.90, 0.20, color)  # mano en la punta
+    _disco(p, size, 0.76, 0.06, 0.90, 0.20, color)  #mano en la punta
 
 
 def _cat_comprension(p, size, color):
@@ -105,8 +103,8 @@ def _cat_comprension(p, size, color):
 
 def _cat_esfuerzo(p, size, color):
     """Llama: esfuerzo y energía invertida."""
-    path = QPainterPath()
-    s = size
+    path= QPainterPath()
+    s= size
     path.moveTo(0.50 * s, 0.10 * s)
     path.cubicTo(0.74 * s, 0.32 * s, 0.68 * s, 0.48 * s, 0.58 * s, 0.40 * s)
     path.cubicTo(0.68 * s, 0.58 * s, 0.62 * s, 0.80 * s, 0.44 * s, 0.88 * s)
@@ -141,7 +139,7 @@ def _cat_conducta(p, size, color):
     """Triángulo de aviso con exclamación: conducta inadecuada."""
     p.setBrush(Qt.BrushStyle.NoBrush)
     p.setPen(_pluma(color, 2.2))
-    tri = QPolygonF([QPointF(0.5 * size, 0.14 * size), QPointF(0.88 * size, 0.82 * size),
+    tri= QPolygonF([QPointF(0.5 * size, 0.14 * size), QPointF(0.88 * size, 0.82 * size),
                       QPointF(0.12 * size, 0.82 * size)])
     p.drawPolygon(tri)
     _linea(p, size, 0.5, 0.40, 0.5, 0.62, color, 2.4)
@@ -230,8 +228,8 @@ def _cat_seguimiento(p, size, color):
 
 def _cat_disciplinario(p, size, color):
     """Escudo con exclamación: problema disciplinario grave."""
-    path = QPainterPath()
-    s = size
+    path= QPainterPath()
+    s= size
     path.moveTo(0.5 * s, 0.10 * s)
     path.lineTo(0.82 * s, 0.22 * s)
     path.lineTo(0.82 * s, 0.52 * s)
@@ -262,9 +260,7 @@ def _cat_generico(p, size, color):
     _disco(p, size, 0.34, 0.34, 0.66, 0.66, color)
 
 
-# ============================================================
-# NATURALEZAS (Positiva / Informativa / Negativa)
-# ============================================================
+#NATURALEZAS (Positiva / Informativa / Negativa)
 def _nat_positiva(p, size, color):
     """Carita sonriente: observación de naturaleza positiva."""
     p.setBrush(Qt.BrushStyle.NoBrush)
@@ -272,7 +268,7 @@ def _nat_positiva(p, size, color):
     p.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
     _disco(p, size, 0.33, 0.38, 0.41, 0.46, color)
     _disco(p, size, 0.59, 0.38, 0.67, 0.46, color)
-    path = QPainterPath()
+    path= QPainterPath()
     path.moveTo(0.30 * size, 0.60 * size)
     path.quadTo(0.5 * size, 0.78 * size, 0.70 * size, 0.60 * size)
     p.drawPath(path)
@@ -294,13 +290,13 @@ def _nat_negativa(p, size, color):
     p.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
     _disco(p, size, 0.33, 0.38, 0.41, 0.46, color)
     _disco(p, size, 0.59, 0.38, 0.67, 0.46, color)
-    path = QPainterPath()
+    path= QPainterPath()
     path.moveTo(0.30 * size, 0.72 * size)
     path.quadTo(0.5 * size, 0.56 * size, 0.70 * size, 0.72 * size)
     p.drawPath(path)
 
 
-_DISPATCH = {
+_DISPATCH= {
     "rendimiento": _cat_rendimiento,
     "tareas": _cat_tareas,
     "participacion": _cat_participacion,
@@ -326,24 +322,24 @@ _DISPATCH = {
     "negativa": _nat_negativa,
 }
 
-_cache_categoria = {}
+_cache_categoria= {}
 
 
 def pixmap_categoria(clave, color, size=20):
     """QPixmap (transparente, `size`x`size`) del icono de la categoría/
     naturaleza `clave`, dibujado en un solo `color`. Cacheado por
     (clave, color, size)."""
-    clave_norm = (clave or "").strip().lower()
-    llave_cache = (clave_norm, color, size)
+    clave_norm= (clave or "").strip().lower()
+    llave_cache= (clave_norm, color, size)
     if llave_cache in _cache_categoria:
         return _cache_categoria[llave_cache]
     pix, p = _nuevo_lienzo(size)
-    dibujar = _DISPATCH.get(clave_norm, _cat_generico)
+    dibujar= _DISPATCH.get(clave_norm, _cat_generico)
     try:
         dibujar(p, size, color)
     finally:
         p.end()
-    _cache_categoria[llave_cache] = pix
+    _cache_categoria[llave_cache]= pix
     return pix
 
 
@@ -352,9 +348,7 @@ def icono_categoria(clave, color, size=20):
     return QIcon(pixmap_categoria(clave, color, size))
 
 
-# ============================================================
-# VERSIÓN MULTICOLOR (ver docstring del módulo, sección 2)
-# ============================================================
+#Versión multicolor (ver docstring del módulo, sección 2)
 def _catc_rendimiento(p, size):
     _grafico_barras(p, size)
 
@@ -374,8 +368,8 @@ def _catc_comprension(p, size):
 def _catc_esfuerzo(p, size):
     """Llama en degradado naranja/amarillo -mismo trazo que la versión
     monocromo (_cat_esfuerzo), pero con dos tonos en vez de un solo color."""
-    path = QPainterPath()
-    s = size
+    path= QPainterPath()
+    s= size
     path.moveTo(0.50 * s, 0.10 * s)
     path.cubicTo(0.74 * s, 0.32 * s, 0.68 * s, 0.48 * s, 0.58 * s, 0.40 * s)
     path.cubicTo(0.68 * s, 0.58 * s, 0.62 * s, 0.80 * s, 0.44 * s, 0.88 * s)
@@ -386,7 +380,7 @@ def _catc_esfuerzo(p, size):
     p.setBrush(QBrush(QColor("#F97316")))
     p.setPen(_sin_pluma())
     p.drawPath(path)
-    nucleo = QPainterPath()
+    nucleo= QPainterPath()
     nucleo.moveTo(0.50 * s, 0.32 * s)
     nucleo.cubicTo(0.60 * s, 0.44 * s, 0.56 * s, 0.58 * s, 0.48 * s, 0.66 * s)
     nucleo.cubicTo(0.42 * s, 0.58 * s, 0.40 * s, 0.46 * s, 0.50 * s, 0.32 * s)
@@ -464,7 +458,7 @@ def _catc_todas(p, size):
     """Cuadrícula 2x2 arcoíris -una casilla por tono- para "todas las
     categorías": deliberadamente multicolor, ya que representa el conjunto
     completo y no una categoría concreta."""
-    colores = ("#3B82F6", "#22C55E", "#F59E0B", "#8B5CF6")
+    colores= ("#3B82F6", "#22C55E", "#F59E0B", "#8B5CF6")
     for (x0, y0), color in zip(((0.16, 0.16), (0.54, 0.16), (0.16, 0.54), (0.54, 0.54)), colores):
         _rect_redondeado(p, size, x0, y0, x0 + 0.30, y0 + 0.30, color, radio=0.08)
 
@@ -498,13 +492,13 @@ def _catc_negativa(p, size):
     _disco(p, size, 0.59, 0.38, 0.67, 0.46, "white")
     p.setPen(_pluma("white", 2.4))
     p.setBrush(Qt.BrushStyle.NoBrush)
-    path = QPainterPath()
+    path= QPainterPath()
     path.moveTo(0.30 * size, 0.68 * size)
     path.quadTo(0.5 * size, 0.54 * size, 0.70 * size, 0.68 * size)
     p.drawPath(path)
 
 
-_DISPATCH_COLOR = {
+_DISPATCH_COLOR= {
     "rendimiento": _catc_rendimiento,
     "tareas": _catc_tareas,
     "participacion": _catc_participacion,
@@ -530,7 +524,7 @@ _DISPATCH_COLOR = {
     "negativa": _catc_negativa,
 }
 
-_cache_categoria_color = {}
+_cache_categoria_color= {}
 
 
 def pixmap_categoria_color(clave, size=20):
@@ -538,17 +532,17 @@ def pixmap_categoria_color(clave, size=20):
     categoría/naturaleza `clave` (ver sección 2 del docstring del módulo).
     Cacheado por (clave, size) -a diferencia de `pixmap_categoria`, aquí no
     hace falta cachear por color porque el dibujo ya trae sus colores fijos."""
-    clave_norm = (clave or "").strip().lower()
-    llave_cache = (clave_norm, size)
+    clave_norm= (clave or "").strip().lower()
+    llave_cache= (clave_norm, size)
     if llave_cache in _cache_categoria_color:
         return _cache_categoria_color[llave_cache]
     pix, p = _nuevo_lienzo(size)
-    dibujar = _DISPATCH_COLOR.get(clave_norm, _catc_generico)
+    dibujar= _DISPATCH_COLOR.get(clave_norm, _catc_generico)
     try:
         dibujar(p, size)
     finally:
         p.end()
-    _cache_categoria_color[llave_cache] = pix
+    _cache_categoria_color[llave_cache]= pix
     return pix
 
 
@@ -557,37 +551,35 @@ def icono_categoria_color(clave, size=20):
     return QIcon(pixmap_categoria_color(clave, size))
 
 
-# ============================================================
-# 3. MATERIALES (ver sección 3 del docstring del módulo)
-# ============================================================
-# Dibujos reutilizados TAL CUAL desde iconos_emoji.py (misma composición que
-# usan sus emojis equivalentes -📚🧪🔧🖥📷🎨📦-, así se ven consistentes con
-# el resto de la app en vez de inventar un estilo aparte):
-#   libros -> _libro · laboratorio -> _tubo_ensayo · taller -> _llave_inglesa
-#   tecnologia -> _pantalla · audiovisual -> _camara · arte -> _paleta
-#   otro -> _paquete
-# Los que no tenían un emoji "de verdad" ya dibujado en iconos_emoji.py se
-# crean aquí mismo, con las mismas primitivas (_disco, _linea, _poligono...).
+#3. MATERIALES (ver sección 3 del docstring del módulo)
+#Dibujos reutilizados TAL CUAL desde iconos_emoji.py (misma composición que usan sus emojis equivalentes
+#-📚🧪🔧🖥📷🎨📦-, así se ven consistentes con
+#el resto de la app en vez de inventar un estilo aparte):
+#libros -> _libro · laboratorio -> _tubo_ensayo · taller -> _llave_inglesa
+#tecnologia -> _pantalla · audiovisual -> _camara · arte -> _paleta
+#otro -> _paquete
+#Los que no tenían un emoji "de verdad" ya dibujado en iconos_emoji.py se crean aquí mismo, con las mismas
+#primitivas (_disco, _linea, _poligono...).
 def _matc_deportivo(p, size):
     """Balón: disco naranja con costuras curvas -material deportivo."""
     _disco(p, size, 0.12, 0.12, 0.88, 0.88, "#F97316", borde="#9A3412")
     p.setPen(_pluma("#9A3412", 1.6))
     p.setBrush(Qt.BrushStyle.NoBrush)
     p.drawLine(QPointF(0.5 * size, 0.14 * size), QPointF(0.5 * size, 0.86 * size))
-    arco = _r(size, 0.12, 0.12, 0.88, 0.88)
+    arco= _r(size, 0.12, 0.12, 0.88, 0.88)
     p.drawArc(arco, 55 * 16, 70 * 16)
     p.drawArc(arco, 235 * 16, 70 * 16)
 
 
 def _matc_musica(p, size):
     """Corchea (nota musical): cabeza + plica + bandera -instrumentos/música."""
-    color = "#EC4899"
+    color= "#EC4899"
     _disco(p, size, 0.24, 0.62, 0.44, 0.80, color)
     p.setPen(_pluma(color, 3.0))
     p.setBrush(Qt.BrushStyle.NoBrush)
     p.drawLine(QPointF(0.43 * size, 0.71 * size), QPointF(0.43 * size, 0.18 * size))
-    bandera = QPainterPath()
-    s = size
+    bandera= QPainterPath()
+    s= size
     bandera.moveTo(0.43 * s, 0.18 * s)
     bandera.cubicTo(0.62 * s, 0.24 * s, 0.66 * s, 0.38 * s, 0.54 * s, 0.48 * s)
     p.drawPath(bandera)
@@ -595,9 +587,9 @@ def _matc_musica(p, size):
 
 def _matc_uniforme(p, size):
     """Silueta simple de camiseta -uniformes y vestuario."""
-    s = size
+    s= size
     color, borde = "#06B6D4", "#0E7490"
-    path = QPainterPath()
+    path= QPainterPath()
     path.moveTo(0.36 * s, 0.14 * s)
     path.lineTo(0.14 * s, 0.26 * s)
     path.lineTo(0.22 * s, 0.42 * s)
@@ -617,7 +609,7 @@ def _matc_uniforme(p, size):
 
 def _matc_mobiliario(p, size):
     """Silla simple -mobiliario y equipamiento."""
-    color = "#78716C"
+    color= "#78716C"
     _rect_redondeado(p, size, 0.30, 0.12, 0.70, 0.48, color, radio=0.06)
     _rect_redondeado(p, size, 0.22, 0.48, 0.78, 0.62, color, radio=0.05)
     p.setPen(_pluma(color, 3.0))
@@ -675,11 +667,10 @@ def _matc_otro(p, size):
     _paquete(p, size)
 
 
-# Claves normalizadas (sin tildes/espacios/mayúsculas, ver _normalizar_clave_material)
-# -> función de dibujo. Varios alias apuntan al mismo dibujo para que el
-# selector y una clave escrita a mano (o heredada de una versión anterior)
-# coincidan igual.
-_DISPATCH_MATERIAL = {
+#Claves normalizadas (sin tildes/espacios/mayúsculas, ver _normalizar_clave_material)
+#-> función de dibujo. Varios alias apuntan al mismo dibujo para que el
+#selector y una clave escrita a mano (o heredada de una versión anterior) coincidan igual.
+_DISPATCH_MATERIAL= {
     "libros": _matc_libros,
     "biblioteca": _matc_libros,
     "laboratorio": _matc_laboratorio,
@@ -704,10 +695,9 @@ _DISPATCH_MATERIAL = {
     "general": _matc_otro,
 }
 
-# Set curado que ofrece el selector de íconos de "Gestionar categorías" en
-# materiales.py: (clave a guardar en categorias_material.icono, etiqueta).
-# El orden aquí es el orden en que se muestran en la grilla del selector.
-CATEGORIAS_SUGERIDAS_MATERIAL = [
+#Set curado que ofrece el selector de íconos de "Gestionar categorías" en materiales.py: (clave a guardar en
+#categorias_material.icono, etiqueta). El orden aquí es el orden en que se muestran en la grilla del selector.
+CATEGORIAS_SUGERIDAS_MATERIAL= [
     ("libros", "Libros / Biblioteca"),
     ("laboratorio", "Laboratorio"),
     ("taller", "Taller / Herramientas"),
@@ -723,7 +713,7 @@ CATEGORIAS_SUGERIDAS_MATERIAL = [
     ("otro", "Otro / General"),
 ]
 
-_cache_categoria_material = {}
+_cache_categoria_material= {}
 
 
 def _normalizar_clave_material(texto):
@@ -731,7 +721,7 @@ def _normalizar_clave_material(texto):
     y 'Laboratório' (o una clave vieja con espacios) resuelvan al mismo
     dibujo. Un emoji Unicode se queda vacío tras esto (no tiene forma
     ascii) y por lo tanto nunca choca por accidente con una clave curada."""
-    sin_tildes = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode("ascii")
+    sin_tildes= unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode("ascii")
     return re.sub(r"[^a-z0-9]", "", sin_tildes.lower())
 
 
@@ -751,22 +741,22 @@ def pixmap_categoria_material(valor, size=20):
          ni el glifo de fuente crudo del sistema operativo.
 
     Cacheado por (valor, size), igual que el resto de este archivo."""
-    valor = valor or ""
-    llave_cache = (valor, size)
+    valor= valor or ""
+    llave_cache= (valor, size)
     if llave_cache in _cache_categoria_material:
         return _cache_categoria_material[llave_cache]
-    clave = _normalizar_clave_material(valor)
-    dibujar = _DISPATCH_MATERIAL.get(clave)
+    clave= _normalizar_clave_material(valor)
+    dibujar= _DISPATCH_MATERIAL.get(clave)
     if dibujar is None and emoji_soportado(valor):
-        pix = pixmap_emoji(valor, size)  # ya cacheado dentro de iconos_emoji.py
-        _cache_categoria_material[llave_cache] = pix
+        pix= pixmap_emoji(valor, size)  #ya cacheado dentro de iconos_emoji.py
+        _cache_categoria_material[llave_cache]= pix
         return pix
     pix, p = _nuevo_lienzo(size)
     try:
         (dibujar or _matc_otro)(p, size)
     finally:
         p.end()
-    _cache_categoria_material[llave_cache] = pix
+    _cache_categoria_material[llave_cache]= pix
     return pix
 
 

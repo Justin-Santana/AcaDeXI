@@ -59,3 +59,10 @@ _tmp_*
 _tmp_*.json
 _tmp_*.txt
 _tmp_*.py
+
+# Carpetas irrelevantes
+
+.kilocode
+.workbuddy-ai
+.pytest_cache
+_pycache_

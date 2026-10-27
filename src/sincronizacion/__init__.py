@@ -1,1 +1,1 @@
-# Paquete src.sincronizacion — sincronizacion con backends remotos y servidor institucional.
+#Paquete src.sincronizacion — sincronizacion con backends remotos y servidor institucional.

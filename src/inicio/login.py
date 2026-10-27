@@ -2,14 +2,14 @@ import os
 import secrets
 import sys
 from datetime import datetime, timedelta
-from src.nucleo.bd import (get_connection, registrar_auditoria, hash_password, check_password, enviar_correo,
+from src.nucleo.bd import (obtener_conexion, registrar_auditoria, hash_password, verificar_contrasena, enviar_correo,
     verificar_bloqueo_login, registrar_intento_fallido_login, resetear_intentos_login)
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QLineEdit, QPushButton, QFrame, QMessageBox, QCheckBox, QGraphicsDropShadowEffect,
     QTabWidget, QWidget, QFileDialog, QApplication, QInputDialog)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap, QColor
-from src.nucleo.iconos import (get_icon, icono_app, aplicar_icono_ventana, ICONO_OK, ICONO_WARNING,
+from src.nucleo.iconos import (obtener_icono, icono_app, aplicar_icono_ventana, ICONO_OK, ICONO_WARNING,
     ICONO_ERROR, ICONO_LOGIN, pixmap_logo_app)
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
@@ -17,7 +17,7 @@ from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_tex
 
 
 def _hex_a_rgba(hex_color, alpha):
-    hex_color = hex_color.lstrip("#")
+    hex_color= hex_color.lstrip("#")
     r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
@@ -29,20 +29,20 @@ def _centrar_y_al_frente(dialogo, parent):
     tanto. Sin esto, en apps con varias ventanas los diálogos pueden abrirse
     "detrás" y el usuario tiene que buscarlos en la barra de tareas."""
     dialogo.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
-    referencia = parent if (parent is not None and parent.isVisible()) else None
+    referencia= parent if (parent is not None and parent.isVisible()) else None
     if referencia is not None:
-        geo_padre = referencia.frameGeometry()
+        geo_padre= referencia.frameGeometry()
         dialogo.adjustSize()
-        x = geo_padre.x() + (geo_padre.width() - dialogo.width()) // 2
-        y = geo_padre.y() + (geo_padre.height() - dialogo.height()) // 2
+        x= geo_padre.x() + (geo_padre.width() - dialogo.width()) // 2
+        y= geo_padre.y() + (geo_padre.height() - dialogo.height()) // 2
         dialogo.move(max(0, x), max(0, y))
     else:
-        pantalla = dialogo.screen() if hasattr(dialogo, "screen") and dialogo.screen() else None
+        pantalla= dialogo.screen() if hasattr(dialogo, "screen") and dialogo.screen() else None
         if pantalla is not None:
-            geo = pantalla.availableGeometry()
+            geo= pantalla.availableGeometry()
             dialogo.adjustSize()
-            x = geo.x() + (geo.width() - dialogo.width()) // 2
-            y = geo.y() + (geo.height() - dialogo.height()) // 2
+            x= geo.x() + (geo.width() - dialogo.width()) // 2
+            y= geo.y() + (geo.height() - dialogo.height()) // 2
             dialogo.move(max(0, x), max(0, y))
     dialogo.raise_()
     dialogo.activateWindow()
@@ -50,27 +50,27 @@ def _centrar_y_al_frente(dialogo, parent):
 
 def _msg(main_window, parent, icono, titulo, texto):
     try:
-        paleta = main_window.theme_palettes.get(
+        paleta= main_window.theme_palettes.get(
             main_window.tema_actual, main_window.theme_palettes["Indigo"])
-        idx = 1 if main_window.modo_oscuro else 0
+        idx= 1 if main_window.modo_oscuro else 0
         bg, txt = paleta["display_bg"][idx], paleta["text_primary"][idx]
-        accent = paleta["btn_op_bg"][idx]
-        hv_accent = paleta["btn_op_hover"][idx]
+        accent= paleta["btn_op_bg"][idx]
+        hv_accent= paleta["btn_op_hover"][idx]
     except Exception:
         bg, txt, accent, hv_accent = "#1E293B", "#F8FAFC", "#6366F1", "#4F46E5"
 
-    box = QMessageBox(parent)
+    box= QMessageBox(parent)
     box.setWindowTitle(titulo)
     box.setText(texto)
     box.setIcon(icono)
     box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
     if icono == QMessageBox.Icon.Information:
-        box.setWindowIcon(get_icon(ICONO_OK))
+        box.setWindowIcon(obtener_icono(ICONO_OK))
     elif icono == QMessageBox.Icon.Warning:
-        box.setWindowIcon(get_icon(ICONO_WARNING))
+        box.setWindowIcon(obtener_icono(ICONO_WARNING))
     elif icono == QMessageBox.Icon.Critical:
-        box.setWindowIcon(get_icon(ICONO_ERROR))
+        box.setWindowIcon(obtener_icono(ICONO_ERROR))
     else:
         box.setWindowIcon(icono_app())
 
@@ -90,14 +90,14 @@ def _msg(main_window, parent, icono, titulo, texto):
 class LoginWindow(QDialog):
     def __init__(self, main_window):
         super().__init__()
-        self.main_window = main_window
-        self.usuario_actual = None
-        self.rol_actual = None
-        self.id_usuario_actual = None
-        self.nombre_completo = None
-        self.password_visible = False
-        self.translucido = getattr(main_window, "login_translucido", True)
-        self._drag_pos = None
+        self.main_window= main_window
+        self.usuario_actual= None
+        self.rol_actual= None
+        self.id_usuario_actual= None
+        self.nombre_completo= None
+        self.password_visible= False
+        self.translucido= getattr(main_window, "login_translucido", True)
+        self._drag_pos= None
         aplicar_icono_ventana(self, ICONO_LOGIN)
         self._build_ui()
         self._apply_theme()
@@ -109,24 +109,24 @@ class LoginWindow(QDialog):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
-        layout_principal = QVBoxLayout(self)
+        layout_principal= QVBoxLayout(self)
         layout_principal.setContentsMargins(24, 24, 24, 24)
         layout_principal.setSpacing(0)
 
-        self.frame_fondo = QFrame()
+        self.frame_fondo= QFrame()
         self.frame_fondo.setObjectName("LoginFrame")
-        sombra = QGraphicsDropShadowEffect()
+        sombra= QGraphicsDropShadowEffect()
         sombra.setBlurRadius(40)
         sombra.setOffset(0, 10)
         sombra.setColor(QColor(0, 0, 0, 140))
         self.frame_fondo.setGraphicsEffect(sombra)
 
-        layout_frame = QVBoxLayout(self.frame_fondo)
+        layout_frame= QVBoxLayout(self.frame_fondo)
         layout_frame.setContentsMargins(36, 22, 36, 26)
         layout_frame.setSpacing(9)
 
-        fila_superior = QHBoxLayout()
-        self.btn_translucido = QPushButton("" if self.translucido else "▢")
+        fila_superior= QHBoxLayout()
+        self.btn_translucido= QPushButton("" if self.translucido else "▢")
         self.btn_translucido.setAutoDefault(False)
         self.btn_translucido.setFixedSize(30, 30)
         self.btn_translucido.setObjectName("BtnTranslucidoLogin")
@@ -137,7 +137,7 @@ class LoginWindow(QDialog):
         self.btn_translucido.clicked.connect(self._toggle_translucido)
         fila_superior.addWidget(self.btn_translucido)
         fila_superior.addStretch()
-        btn_cerrar = QPushButton("")
+        btn_cerrar= QPushButton("")
         btn_cerrar.setIcon(icono_emoji("✖"))
         btn_cerrar.setIconSize(_QSize_emoji(16, 16))
         btn_cerrar.setAutoDefault(False)
@@ -148,55 +148,53 @@ class LoginWindow(QDialog):
         fila_superior.addWidget(btn_cerrar)
         layout_frame.addLayout(fila_superior)
 
-        contenedor_logo = QFrame()
+        contenedor_logo= QFrame()
         contenedor_logo.setObjectName("LoginLogoAro")
         contenedor_logo.setFixedSize(160, 160)
-        layout_logo_aro = QVBoxLayout(contenedor_logo)
+        layout_logo_aro= QVBoxLayout(contenedor_logo)
         layout_logo_aro.setContentsMargins(0, 0, 0, 0)
-        self.lbl_logo = QLabel()
+        self.lbl_logo= QLabel()
         self.lbl_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_logo_aro.addWidget(self.lbl_logo)
 
-        logo_cargado = False
-        self.nombre_institucion = None
+        logo_cargado= False
+        self.nombre_institucion= None
         try:
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT logo_path, nombre_institucion FROM configuracion WHERE id = 1")
-            result = c.fetchone()
+            result= c.fetchone()
             conn.close()
             if result and result["logo_path"] and os.path.exists(result["logo_path"]):
-                pixmap = QPixmap(result["logo_path"])
+                pixmap= QPixmap(result["logo_path"])
                 if not pixmap.isNull():
-                    scaled = pixmap.scaled(132, 132, Qt.AspectRatioMode.KeepAspectRatio,
+                    scaled= pixmap.scaled(132, 132, Qt.AspectRatioMode.KeepAspectRatio,
                                             Qt.TransformationMode.SmoothTransformation)
                     self.lbl_logo.setPixmap(scaled)
-                    logo_cargado = True
-            self.nombre_institucion = result["nombre_institucion"] if result and result["nombre_institucion"] else None
+                    logo_cargado= True
+            self.nombre_institucion= result["nombre_institucion"] if result and result["nombre_institucion"] else None
         except Exception:
             pass
 
         if not logo_cargado:
-            # Sin logo institucional todavía: en vez de dejar el aro vacío,
-            # se muestra el logo de la propia app (el escudo) para que el
-            # login no se vea "roto". El nombre de la institución (o su
-            # ausencia) sigue resolviéndose exactamente igual más abajo en
-            # self.lbl_titulo -esto NO lo reemplaza-.
-            logo_app = pixmap_logo_app(132)
+            #Sin logo institucional todavía: en vez de dejar el aro vacío, se muestra el logo de la propia app (el escudo)
+            #para que el login no se vea "roto". El nombre de la institución (o su ausencia) sigue resolviéndose
+            #exactamente igual más abajo en self.lbl_titulo -esto NO lo reemplaza-.
+            logo_app= pixmap_logo_app(132)
             if logo_app is not None:
                 self.lbl_logo.setPixmap(logo_app)
             else:
                 self.lbl_logo.setText("")
                 self.lbl_logo.setStyleSheet("font-size: 72px; background-color: transparent;")
 
-        fila_logo = QHBoxLayout()
+        fila_logo= QHBoxLayout()
         fila_logo.addStretch()
         fila_logo.addWidget(contenedor_logo)
         fila_logo.addStretch()
         layout_frame.addLayout(fila_logo)
 
         if not logo_cargado:
-            self.lbl_nombre_app_logo = QLabel("AcaDeXI")
+            self.lbl_nombre_app_logo= QLabel("AcaDeXI")
             self.lbl_nombre_app_logo.setObjectName("LoginNombreAppLogo")
             self.lbl_nombre_app_logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.lbl_nombre_app_logo.setStyleSheet(
@@ -206,41 +204,41 @@ class LoginWindow(QDialog):
 
         layout_frame.addSpacing(2)
 
-        self.lbl_titulo = QLabel(self.nombre_institucion or "AcaDeXI")
+        self.lbl_titulo= QLabel(self.nombre_institucion or "AcaDeXI")
         self.lbl_titulo.setObjectName("LoginTitulo")
         self.lbl_titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_titulo.setWordWrap(True)
         layout_frame.addWidget(self.lbl_titulo)
 
-        self.lbl_subtitulo = QLabel("Sistema de Gestión Escolar")
+        self.lbl_subtitulo= QLabel("Sistema de Gestión Escolar")
         self.lbl_subtitulo.setObjectName("LoginSubtitulo")
         self.lbl_subtitulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout_frame.addWidget(self.lbl_subtitulo)
         layout_frame.addSpacing(10)
 
-        lbl_usuario = QLabel("USUARIO")
+        lbl_usuario= QLabel("USUARIO")
         lbl_usuario.setObjectName("LoginLabel")
         layout_frame.addWidget(lbl_usuario)
-        self.input_usuario = QLineEdit()
+        self.input_usuario= QLineEdit()
         limitar_campo_texto(self.input_usuario, 300)
         self.input_usuario.setObjectName("LoginInput")
         self.input_usuario.setPlaceholderText("Nombre de usuario")
         self.input_usuario.returnPressed.connect(self._iniciar_sesion)
         layout_frame.addWidget(self.input_usuario)
 
-        lbl_password = QLabel("CONTRASEÑA")
+        lbl_password= QLabel("CONTRASEÑA")
         lbl_password.setObjectName("LoginLabel")
         layout_frame.addWidget(lbl_password)
-        fila_pass = QHBoxLayout()
+        fila_pass= QHBoxLayout()
         fila_pass.setSpacing(6)
-        self.input_password = QLineEdit()
+        self.input_password= QLineEdit()
         limitar_campo_texto(self.input_password, 128)
         self.input_password.setObjectName("LoginInput")
         self.input_password.setPlaceholderText("Contraseña")
         self.input_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.input_password.returnPressed.connect(self._iniciar_sesion)
         fila_pass.addWidget(self.input_password)
-        self.btn_ver_pass = QPushButton("")
+        self.btn_ver_pass= QPushButton("")
         self.btn_ver_pass.setIcon(icono_emoji("🙈"))
         self.btn_ver_pass.setIconSize(_QSize_emoji(16, 16))
         self.btn_ver_pass.setAutoDefault(False)
@@ -251,27 +249,26 @@ class LoginWindow(QDialog):
         fila_pass.addWidget(self.btn_ver_pass)
         layout_frame.addLayout(fila_pass)
 
-        # Aviso de Bloq Mayús: se consulta el estado REAL del teclado del
-        # sistema (no un toggle interno) cada vez que se presiona CapsLock o
-        # se enfocan los campos usuario/contraseña. Así, aunque el Bloq Mayús
-        # quedara activado fuera de la app (p. ej. al escribir el PIN de
-        # Windows), el aviso refleja el estado verdadero desde el inicio.
-        self.lbl_capslock = QLabel("Bloq Mayús activado")
+        #Aviso de Bloq Mayús: se consulta el estado REAL del teclado del
+        #sistema (no un toggle interno) cada vez que se presiona CapsLock o
+        #se enfocan los campos usuario/contraseña. Así, aunque el Bloq Mayús quedara activado fuera de la app (p. ej.
+        #al escribir el PIN de Windows), el aviso refleja el estado verdadero desde el inicio.
+        self.lbl_capslock= QLabel("Bloq Mayús activado")
         self.lbl_capslock.setObjectName("LoginCapsLock")
         self.lbl_capslock.setVisible(False)
         layout_frame.addWidget(self.lbl_capslock)
 
-        self._capslock_on = False
+        self._capslock_on= False
         self.input_usuario.installEventFilter(self)
         self.input_password.installEventFilter(self)
 
-        fila_extra = QHBoxLayout()
-        self.chk_recordar = QCheckBox("Recordar usuario")
+        fila_extra= QHBoxLayout()
+        self.chk_recordar= QCheckBox("Recordar usuario")
         self.chk_recordar.setObjectName("ChkRecordar")
         self.chk_recordar.setCursor(Qt.CursorShape.PointingHandCursor)
         fila_extra.addWidget(self.chk_recordar)
         fila_extra.addStretch()
-        btn_olvido = QPushButton("¿Olvidó su contraseña?")
+        btn_olvido= QPushButton("¿Olvidó su contraseña?")
         btn_olvido.setObjectName("BtnLinkLogin")
         btn_olvido.setAutoDefault(False)
         btn_olvido.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -280,21 +277,20 @@ class LoginWindow(QDialog):
         layout_frame.addLayout(fila_extra)
         layout_frame.addSpacing(6)
 
-        self.btn_ingresar = QPushButton("Iniciar Sesión")
+        self.btn_ingresar= QPushButton("Iniciar Sesión")
         self.btn_ingresar.setIcon(icono_emoji("🔑"))
         self.btn_ingresar.setIconSize(_QSize_emoji(16, 16))
         self.btn_ingresar.setObjectName("LoginButton")
         self.btn_ingresar.setMinimumHeight(44)
         self.btn_ingresar.setCursor(Qt.CursorShape.PointingHandCursor)
-        # Evita que se dispare 2 veces al presionar Enter: sin esto, Qt ejecuta
-        # tanto el returnPressed del campo contraseña como el click implícito
-        # del botón por defecto del diálogo, mostrando el error duplicado.
+        #Evita que se dispare 2 veces al presionar Enter: sin esto, Qt ejecuta tanto el returnPressed del campo
+        #contraseña como el click implícito del botón por defecto del diálogo, mostrando el error duplicado.
         self.btn_ingresar.setAutoDefault(False)
         self.btn_ingresar.setDefault(False)
         self.btn_ingresar.clicked.connect(self._iniciar_sesion)
         layout_frame.addWidget(self.btn_ingresar)
 
-        btn_importar_perfil = QPushButton("Importar Perfil Institucional (.acdx)")
+        btn_importar_perfil= QPushButton("Importar Perfil Institucional (.acdx)")
         btn_importar_perfil.setIcon(icono_emoji("\uE001"))
         btn_importar_perfil.setIconSize(_QSize_emoji(16, 16))
         btn_importar_perfil.setObjectName("BtnLinkLogin")
@@ -314,42 +310,39 @@ class LoginWindow(QDialog):
         try:
             if sys.platform == "win32":
                 import ctypes
-                # VK_CAPITAL = 0x14; el bit menos significativo indica toggle activo
+                #VK_CAPITAL = 0x14; el bit menos significativo indica toggle activo
                 return bool(ctypes.windll.user32.GetKeyState(0x14) & 1)
             if sys.platform == "darwin":
                 import Quartz
                 return bool(Quartz.CGEventSourceKeyState(
-                    Quartz.kCGEventSourceStateHIDSystemState, 57))  # 57 = kVK_CapsLock
+                    Quartz.kCGEventSourceStateHIDSystemState, 57))  #57 = kVK_CapsLock
         except Exception:
             pass
         return None
 
     def _actualizar_capslock(self):
         """Sincroniza el aviso con el estado real de Bloq Mayús del sistema."""
-        estado = self._consultar_capslock()
+        estado= self._consultar_capslock()
         if estado is not None:
-            self._capslock_on = estado
+            self._capslock_on= estado
             self.lbl_capslock.setVisible(estado)
 
     def eventFilter(self, obj, event):
         if obj in (self.input_usuario, self.input_password):
             if event.type() == event.Type.KeyPress and event.key() == Qt.Key.Key_CapsLock:
-                # Al presionar CapsLock consultamos el estado real del SO
-                # (GetKeyState), en lugar de alternar una bandera. OJO: el
-                # toggle NO se refleja en GetKeyState durante el propio
-                # KeyPress (se actualiza ~30-40 ms después), así que la
-                # consulta se poslona con un QTimer; de lo contrario leería
-                # el estado anterior y el aviso nunca cambiaría.
+                #Al presionar CapsLock consultamos el estado real del SO (GetKeyState), en lugar de alternar una bandera. OJO:
+                #el toggle NO se refleja en GetKeyState durante el propio
+                #KeyPress (se actualiza ~30-40 ms después), así que la
+                #consulta se poslona con un QTimer; de lo contrario leería el estado anterior y el aviso nunca cambiaría.
                 QTimer.singleShot(50, self._actualizar_capslock)
             elif event.type() == event.Type.FocusIn:
-                # Al enfocar usuario/contraseña, sincronizar con el estado
-                # real actual (cubre el caso de mayúsculas activadas fuera
-                # de la app, p. ej. al escribir el PIN del dispositivo).
+                #Al enfocar usuario/contraseña, sincronizar con el estado real actual (cubre el caso de mayúsculas activadas
+                #fuera de la app, p. ej. al escribir el PIN del dispositivo).
                 self._actualizar_capslock()
         return super().eventFilter(obj, event)
 
     def showEvent(self, event):
-        # Estado real de Bloq Mayús ya al abrir el diálogo de login.
+        #Estado real de Bloq Mayús ya al abrir el diálogo de login.
         self._actualizar_capslock()
         super().showEvent(event)
 
@@ -377,19 +370,18 @@ class LoginWindow(QDialog):
         if not ruta:
             return
         try:
-            datos = leer_perfil_archivo(ruta)
+            datos= leer_perfil_archivo(ruta)
         except Exception as e:
             mostrar_mensaje("error", "Perfil inválido", str(e), self)
             return
 
-        ruta_backup_bd = None
+        ruta_backup_bd= None
         if perfil_incluye_bd_base(datos):
-            # Este perfil trae su propia BD Base institucional embebida: es el caso
-            # típico de un Docente/Personal que instaló la app (sin ninguna BD) y
-            # solo tiene este .acdx para arrancar.
-            proceder = True
+            #Este perfil trae su propia BD Base institucional embebida: es el caso típico de un Docente/Personal que
+            #instaló la app (sin ninguna BD) y solo tiene este .acdx para arrancar.
+            proceder= True
             if local_ya_tiene_usuarios():
-                proceder = mostrar_mensaje(
+                proceder= mostrar_mensaje(
                     "pregunta", "Reemplazar base de datos local",
                     "Este perfil incluye una Base de Datos Institucional inicial, pero este equipo ya "
                     "tiene datos guardados localmente.\n\n¿Deseas reemplazar la base de datos local por "
@@ -398,23 +390,21 @@ class LoginWindow(QDialog):
                     self) == QMessageBox.StandardButton.Yes
             if proceder:
                 try:
-                    ruta_backup_bd = aplicar_bd_base(datos)
+                    ruta_backup_bd= aplicar_bd_base(datos)
                 except Exception as e:
                     mostrar_mensaje("error", "Error",
                                     f"No se pudo aplicar la base de datos incluida en el perfil:\n{e}", self)
 
-        existe = aplicar_perfil(self.main_window, datos)
+        existe= aplicar_perfil(self.main_window, datos)
         self.input_usuario.setText(datos.get("usuario", ""))
         self.chk_recordar.setChecked(True)
 
-        # Perfiles nuevos (versión 3+): la contraseña, si viene, está cifrada
-        # con un PIN que el usuario debe conocer por separado (no viaja en el
-        # archivo). Perfiles viejos (generados antes de este cambio) todavía
-        # pueden traer "password" en texto plano — se soporta por
-        # compatibilidad, con una advertencia más fuerte.
-        password_incluida = ""
-        password_protegida = bool(datos.get("password_cifrada"))
-        pin_incorrecto = False
+        #Perfiles nuevos (versión 3+): la contraseña, si viene, está cifrada con un PIN que el usuario debe conocer por
+        #separado (no viaja en el archivo). Perfiles viejos (generados antes de este cambio) todavía pueden traer
+        #"password" en texto plano — se soporta por compatibilidad, con una advertencia más fuerte.
+        password_incluida= ""
+        password_protegida= bool(datos.get("password_cifrada"))
+        pin_incorrecto= False
         if password_protegida:
             pin, ok = QInputDialog.getText(
                 self, "Contraseña protegida por PIN",
@@ -423,41 +413,41 @@ class LoginWindow(QDialog):
                 QLineEdit.EchoMode.Password)
             if ok and pin:
                 try:
-                    password_incluida = descifrar_password_perfil(datos, pin.strip())
+                    password_incluida= descifrar_password_perfil(datos, pin.strip())
                 except Exception:
-                    pin_incorrecto = True
+                    pin_incorrecto= True
         elif datos.get("password"):
-            # Compatibilidad con perfiles viejos (texto plano, sin PIN).
-            password_incluida = datos.get("password", "")
+            #Compatibilidad con perfiles viejos (texto plano, sin PIN).
+            password_incluida= datos.get("password", "")
 
         if password_incluida:
             self.input_password.setText(password_incluida)
-            self.password_visible = True
+            self.password_visible= True
             self.input_password.setEchoMode(QLineEdit.EchoMode.Normal)
             self.btn_ver_pass.setText("")
         self.input_password.setFocus()
 
-        aviso_extra = "" if existe else ("\n\n Este usuario todavía no existe en esta base de datos local."
+        aviso_extra= "" if existe else ("\n\n Este usuario todavía no existe en esta base de datos local."
                                           "Pide al Director que lo cree o sincronice antes de iniciar sesión.")
         if password_incluida:
-            # Ya no se repite la contraseña en texto dentro de este mensaje: quedó
-            # precargada en el campo de contraseña, no hace falta mostrarla de nuevo.
-            aviso_password = ("\n\n La contraseña se descifró con el PIN y quedó precargada en el "
+            #Ya no se repite la contraseña en texto dentro de este mensaje: quedó precargada en el campo de contraseña, no
+            #hace falta mostrarla de nuevo.
+            aviso_password= ("\n\n La contraseña se descifró con el PIN y quedó precargada en el "
                                "formulario. Si compartes este equipo con alguien más, ciérrala o cámbiala "
                                "después desde tu cuenta.")
         elif password_protegida and pin_incorrecto:
-            aviso_password = ("\n\n El PIN ingresado no permitió descifrar la contraseña de este "
+            aviso_password= ("\n\n El PIN ingresado no permitió descifrar la contraseña de este "
                                "perfil. Escríbela manualmente para iniciar sesión.")
         elif password_protegida:
-            aviso_password = ("\n\n Este perfil incluye una contraseña protegida por PIN. Escríbela "
+            aviso_password= ("\n\n Este perfil incluye una contraseña protegida por PIN. Escríbela "
                                "manualmente o vuelve a importar el perfil con el PIN correcto.")
         else:
-            aviso_password = "\n\n(Este perfil no incluye contraseña; deberás escribirla manualmente.)"
-        aviso_bd = ""
+            aviso_password= "\n\n(Este perfil no incluye contraseña; deberás escribirla manualmente.)"
+        aviso_bd= ""
         if perfil_incluye_bd_base(datos) and ruta_backup_bd is not None:
-            aviso_bd = f"\n\n📀 Se reemplazó la base de datos local. Respaldo de la anterior en:\n{ruta_backup_bd}"
+            aviso_bd= f"\n\n📀 Se reemplazó la base de datos local. Respaldo de la anterior en:\n{ruta_backup_bd}"
         elif perfil_incluye_bd_base(datos) and ruta_backup_bd is None:
-            aviso_bd = "\n\n Se aplicó la Base de Datos Institucional incluida en este perfil."
+            aviso_bd= "\n\n Se aplicó la Base de Datos Institucional incluida en este perfil."
         mostrar_mensaje("exito", "Perfil Importado",
                         f"Institución: {datos.get('institucion', '')}\n"
                         f"Usuario: {datos.get('usuario', '')}\n"
@@ -465,22 +455,21 @@ class LoginWindow(QDialog):
                         f"Modo de trabajo: {datos.get('modo', '')}" + aviso_password + aviso_bd + aviso_extra, self)
 
     def _toggle_password(self):
-        self.password_visible = not self.password_visible
+        self.password_visible= not self.password_visible
         self.input_password.setEchoMode(
             QLineEdit.EchoMode.Normal if self.password_visible else QLineEdit.EchoMode.Password)
-        # Icono de estado: ojo abierto cuando la contraseña se muestra,
-        # mono tapando los ojos cuando está oculta (como antes).
+        #Icono de estado: ojo abierto cuando la contraseña se muestra, mono tapando los ojos cuando está oculta (como
+        #antes).
         self.btn_ver_pass.setIcon(icono_emoji("👁" if self.password_visible else "🙈"))
         self.btn_ver_pass.setToolTip(
             "Ocultar contraseña" if self.password_visible else "Mostrar contraseña")
 
 
     def _toggle_translucido(self):
-        self.translucido = not self.translucido
-        self.main_window.login_translucido = self.translucido
-        self.main_window.save_config()
-        # Icono de estado: bruma cuando el panel es translúcido, ventana
-        # sólida cuando no lo es.
+        self.translucido= not self.translucido
+        self.main_window.login_translucido= self.translucido
+        self.main_window.guardar_configuracion()
+        #Icono de estado: bruma cuando el panel es translúcido, ventana sólida cuando no lo es.
         self.btn_translucido.setIcon(icono_emoji("🌫" if self.translucido else "🪟"))
         self.btn_translucido.setText("")
         self.btn_translucido.setToolTip(
@@ -489,21 +478,20 @@ class LoginWindow(QDialog):
         self._apply_theme()
 
     def _abrir_recuperacion(self):
-        dialogo = RecuperarPasswordDialog(self.main_window, self)
+        dialogo= RecuperarPasswordDialog(self.main_window, self)
         dialogo.exec()
 
     def _iniciar_sesion(self):
-        usuario = self.input_usuario.text().strip()
-        password = self.input_password.text().strip()
+        usuario= self.input_usuario.text().strip()
+        password= self.input_password.text().strip()
 
         if not usuario or not password:
             _msg(self.main_window, self, QMessageBox.Icon.Warning, "Campos incompletos",
                  "Ingrese usuario y contraseña.")
             return
 
-        # Protección contra fuerza bruta: si esta cuenta acumuló demasiados
-        # intentos fallidos recientes, se rechaza sin siquiera consultar la
-        # contraseña, aunque la que están escribiendo ahora sea la correcta.
+        #Protección contra fuerza bruta: si esta cuenta acumuló demasiados intentos fallidos recientes, se rechaza sin
+        #siquiera consultar la contraseña, aunque la que están escribiendo ahora sea la correcta.
         try:
             bloqueada, minutos_restantes = verificar_bloqueo_login(usuario)
         except Exception:
@@ -515,31 +503,28 @@ class LoginWindow(QDialog):
                  f"\"¿Olvidó su contraseña?\" si no recuerdas tu contraseña.")
             return
 
-        # Feedback visual mientras se consulta la BD: en instalaciones con BD
-        # sincronizada/en red la consulta puede tardar un poco y, sin esto,
-        # el botón se ve "muerto" (sin respuesta) durante ese momento.
+        #Feedback visual mientras se consulta la BD: en instalaciones con BD sincronizada/en red la consulta puede
+        #tardar un poco y, sin esto, el botón se ve "muerto" (sin respuesta) durante ese momento.
         self.btn_ingresar.setEnabled(False)
         self.btn_ingresar.setText("⏳ Verificando...")
         QApplication.processEvents()
         try:
             try:
-                conn = get_connection()
-                c = conn.cursor()
+                conn= obtener_conexion()
+                c= conn.cursor()
                 c.execute("SELECT * FROM usuarios WHERE username = ?", (usuario,))
-                fila = c.fetchone()
+                fila= c.fetchone()
                 conn.close()
             except Exception as e:
                 _msg(self.main_window, self, QMessageBox.Icon.Critical, "Error",
                      f"No se pudo consultar la base de datos:\n{e}")
                 return
 
-            if not fila or not check_password(password, fila["password"]):
+            if not fila or not verificar_contrasena(password, fila["password"]):
                 registrar_auditoria("Login", "Intento fallido", usuario)
                 if fila:
-                    # Solo se cuenta el intento contra el bloqueo si la cuenta
-                    # existe: así un simple error de tipeo en el usuario no
-                    # puede usarse para bloquear cuentas ajenas (bloqueo por
-                    # nombre de usuario inexistente no tiene sentido).
+                    #Solo se cuenta el intento contra el bloqueo si la cuenta existe: así un simple error de tipeo en el usuario no
+                    #puede usarse para bloquear cuentas ajenas (bloqueo por nombre de usuario inexistente no tiene sentido).
                     try:
                         bloqueada_ahora, intentos_restantes = registrar_intento_fallido_login(usuario)
                     except Exception:
@@ -565,19 +550,19 @@ class LoginWindow(QDialog):
                      "Esta cuenta ha sido desactivada. Contacte al administrador.")
                 return
 
-            self.usuario_actual = fila["username"]
-            self.rol_actual = fila["rol"]
-            self.id_usuario_actual = fila["id"]
-            self.nombre_completo = fila["nombre_completo"] or fila["username"]
+            self.usuario_actual= fila["username"]
+            self.rol_actual= fila["rol"]
+            self.id_usuario_actual= fila["id"]
+            self.nombre_completo= fila["nombre_completo"] or fila["username"]
 
             try:
                 resetear_intentos_login(usuario)
             except Exception:
                 pass
 
-            self.main_window.recordar_usuario = self.chk_recordar.isChecked()
-            self.main_window.ultimo_usuario = usuario if self.chk_recordar.isChecked() else ""
-            self.main_window.save_config()
+            self.main_window.recordar_usuario= self.chk_recordar.isChecked()
+            self.main_window.ultimo_usuario= usuario if self.chk_recordar.isChecked() else ""
+            self.main_window.guardar_configuracion()
 
             registrar_auditoria("Login", "Inicio de sesión exitoso", usuario, f"Rol: {fila['rol']}")
             self.accept()
@@ -586,15 +571,15 @@ class LoginWindow(QDialog):
             self.btn_ingresar.setText("Iniciar Sesión")
 
     def _apply_theme(self):
-        paleta = self.main_window.theme_palettes.get(
+        paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
-        idx = 1 if self.main_window.modo_oscuro else 0
+        idx= 1 if self.main_window.modo_oscuro else 0
         bg_window, bg_panel = paleta["window_bg"][idx], paleta["display_bg"][idx]
         txt_prim, txt_sec = paleta["text_primary"][idx], paleta["text_secondary"][idx]
         bg_btn, accent = paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
-        hv_accent = paleta["btn_op_hover"][idx]
+        hv_accent= paleta["btn_op_hover"][idx]
 
-        opacidad_panel = 235 if self.translucido else 255
+        opacidad_panel= 235 if self.translucido else 255
 
         self.setStyleSheet(f"""
             QDialog {{ background-color: transparent; }}
@@ -638,7 +623,7 @@ class LoginWindow(QDialog):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            self._drag_pos= event.globalPosition().toPoint() - self.frameGeometry().topLeft()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -647,7 +632,7 @@ class LoginWindow(QDialog):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        self._drag_pos = None
+        self._drag_pos= None
         super().mouseReleaseEvent(event)
 
 
@@ -657,7 +642,7 @@ class RecuperarPasswordDialog(QDialog):
 
     def __init__(self, main_window, parent=None):
         super().__init__(parent)
-        self.main_window = main_window
+        self.main_window= main_window
         aplicar_icono_ventana(self, ICONO_LOGIN)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog
                              | Qt.WindowType.WindowStaysOnTopHint)
@@ -668,10 +653,10 @@ class RecuperarPasswordDialog(QDialog):
         _centrar_y_al_frente(self, parent)
 
     def _campo(self, layout, etiqueta, placeholder="", es_password=False):
-        lbl = QLabel(etiqueta)
+        lbl= QLabel(etiqueta)
         lbl.setObjectName("LoginLabel")
         layout.addWidget(lbl)
-        entrada = QLineEdit()
+        entrada= QLineEdit()
         limitar_campo_texto(entrada, 300)
         entrada.setObjectName("LoginInput")
         entrada.setPlaceholderText(placeholder)
@@ -679,15 +664,14 @@ class RecuperarPasswordDialog(QDialog):
             layout.addWidget(entrada)
             return entrada
 
-        # Igual que en el login principal: un botón 👁 al lado del campo para
-        # mostrar/ocultar la contraseña mientras se escribe, útil sobre todo
-        # aquí porque son contraseñas NUEVAS que el usuario está inventando
-        # (más fácil equivocarse sin verlas).
+        #Igual que en el login principal: un botón 👁 al lado del campo para mostrar/ocultar la contraseña mientras se
+        #escribe, útil sobre todo aquí porque son contraseñas NUEVAS que el usuario está inventando (más fácil
+        #equivocarse sin verlas).
         entrada.setEchoMode(QLineEdit.EchoMode.Password)
-        fila = QHBoxLayout()
+        fila= QHBoxLayout()
         fila.setSpacing(6)
         fila.addWidget(entrada)
-        btn_ver = QPushButton("")
+        btn_ver= QPushButton("")
         btn_ver.setIcon(icono_emoji("🔒"))
         btn_ver.setIconSize(_QSize_emoji(16, 16))
         btn_ver.setAutoDefault(False)
@@ -703,24 +687,24 @@ class RecuperarPasswordDialog(QDialog):
         return entrada
 
     def _build_ui(self):
-        layout_principal = QVBoxLayout(self)
+        layout_principal= QVBoxLayout(self)
         layout_principal.setContentsMargins(24, 24, 24, 24)
 
-        self.frame = QFrame()
+        self.frame= QFrame()
         self.frame.setObjectName("LoginFrame")
-        sombra = QGraphicsDropShadowEffect()
+        sombra= QGraphicsDropShadowEffect()
         sombra.setBlurRadius(40)
         sombra.setOffset(0, 10)
         sombra.setColor(QColor(0, 0, 0, 140))
         self.frame.setGraphicsEffect(sombra)
 
-        layout = QVBoxLayout(self.frame)
+        layout= QVBoxLayout(self.frame)
         layout.setContentsMargins(28, 20, 28, 24)
         layout.setSpacing(6)
 
-        fila_top = QHBoxLayout()
+        fila_top= QHBoxLayout()
         fila_top.addStretch()
-        btn_cerrar = QPushButton("")
+        btn_cerrar= QPushButton("")
         btn_cerrar.setIcon(icono_emoji("✖"))
         btn_cerrar.setIconSize(_QSize_emoji(16, 16))
         btn_cerrar.setAutoDefault(False)
@@ -731,14 +715,14 @@ class RecuperarPasswordDialog(QDialog):
         fila_top.addWidget(btn_cerrar)
         layout.addLayout(fila_top)
 
-        titulo = QLabel("Restablecer contraseña")
+        titulo= QLabel("Restablecer contraseña")
         titulo.setObjectName("LoginTitulo")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         titulo.setStyleSheet("font-size: 18px;")
         layout.addWidget(titulo)
         layout.addSpacing(8)
 
-        self.tabs = QTabWidget()
+        self.tabs= QTabWidget()
         layout.addWidget(self.tabs)
         self.tabs.addTab(self._tab_admin(), "Autorización Admin")
         self.tabs.addTab(self._tab_correo(), "Por Correo")
@@ -751,33 +735,33 @@ class RecuperarPasswordDialog(QDialog):
             return
         super().keyPressEvent(event)
 
-    # ---------------- TAB: AUTORIZACIÓN DE ADMINISTRADOR ----------------
+    #---------------- TAB: AUTORIZACIÓN DE ADMINISTRADOR ----------------
     def _tab_admin(self):
-        w = QWidget()
-        layout = QVBoxLayout(w)
+        w= QWidget()
+        layout= QVBoxLayout(w)
         layout.setContentsMargins(0, 8, 0, 0)
         layout.setSpacing(6)
 
-        self.input_cuenta = self._campo(layout, "CUENTA A RESTABLECER", "Usuario de la cuenta afectada")
+        self.input_cuenta= self._campo(layout, "CUENTA A RESTABLECER", "Usuario de la cuenta afectada")
 
         layout.addSpacing(4)
-        linea = QFrame()
+        linea= QFrame()
         linea.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(linea)
         layout.addSpacing(4)
 
-        self.input_admin_user = self._campo(layout, "AUTORIZACIÓN - USUARIO ADMIN", "Usuario administrador")
-        self.input_admin_pass = self._campo(layout, "AUTORIZACIÓN - CONTRASEÑA ADMIN", "Contraseña administrador",
+        self.input_admin_user= self._campo(layout, "AUTORIZACIÓN - USUARIO ADMIN", "Usuario administrador")
+        self.input_admin_pass= self._campo(layout, "AUTORIZACIÓN - CONTRASEÑA ADMIN", "Contraseña administrador",
                                              es_password=True)
 
         layout.addSpacing(4)
-        self.input_nueva = self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
-        self.input_confirmar = self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
+        self.input_nueva= self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
+        self.input_confirmar= self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
                                             es_password=True)
         self.input_confirmar.returnPressed.connect(self._restablecer_por_admin)
 
         layout.addSpacing(8)
-        btn_restablecer = QPushButton("Restablecer contraseña")
+        btn_restablecer= QPushButton("Restablecer contraseña")
         btn_restablecer.setIcon(icono_emoji("♻"))
         btn_restablecer.setIconSize(_QSize_emoji(16, 16))
         btn_restablecer.setObjectName("LoginButton")
@@ -787,14 +771,14 @@ class RecuperarPasswordDialog(QDialog):
         layout.addWidget(btn_restablecer)
         return w
 
-    # ---------------- TAB: RECUPERACIÓN POR CORREO ----------------
+    #---------------- TAB: RECUPERACIÓN POR CORREO ----------------
     def _tab_correo(self):
-        w = QWidget()
-        layout = QVBoxLayout(w)
+        w= QWidget()
+        layout= QVBoxLayout(w)
         layout.setContentsMargins(0, 8, 0, 0)
         layout.setSpacing(6)
 
-        info = QLabel("Se enviará un código de verificación de 6 dígitos al correo "
+        info= QLabel("Se enviará un código de verificación de 6 dígitos al correo "
                       "registrado de la cuenta. El código expira en 15 minutos.")
         info.setObjectName("LoginInfoText")
         info.setWordWrap(True)
@@ -805,9 +789,9 @@ class RecuperarPasswordDialog(QDialog):
         layout.addWidget(info)
         layout.addSpacing(4)
 
-        self.input_cuenta_correo = self._campo(layout, "CUENTA", "Usuario de la cuenta afectada")
+        self.input_cuenta_correo= self._campo(layout, "CUENTA", "Usuario de la cuenta afectada")
 
-        btn_enviar_codigo = QPushButton("Enviar código al correo")
+        btn_enviar_codigo= QPushButton("Enviar código al correo")
         btn_enviar_codigo.setIcon(icono_emoji("✉"))
         btn_enviar_codigo.setIconSize(_QSize_emoji(16, 16))
         btn_enviar_codigo.setObjectName("LoginButton")
@@ -817,19 +801,19 @@ class RecuperarPasswordDialog(QDialog):
         layout.addWidget(btn_enviar_codigo)
 
         layout.addSpacing(6)
-        linea = QFrame()
+        linea= QFrame()
         linea.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(linea)
         layout.addSpacing(6)
 
-        self.input_codigo = self._campo(layout, "CÓDIGO RECIBIDO", "Ej. 482913")
-        self.input_nueva_correo = self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
-        self.input_confirmar_correo = self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
+        self.input_codigo= self._campo(layout, "CÓDIGO RECIBIDO", "Ej. 482913")
+        self.input_nueva_correo= self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
+        self.input_confirmar_correo= self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
                                                     es_password=True)
         self.input_confirmar_correo.returnPressed.connect(self._restablecer_por_correo)
 
         layout.addSpacing(8)
-        btn_restablecer2 = QPushButton("Restablecer con código")
+        btn_restablecer2= QPushButton("Restablecer con código")
         btn_restablecer2.setIcon(icono_emoji("♻"))
         btn_restablecer2.setIconSize(_QSize_emoji(16, 16))
         btn_restablecer2.setObjectName("LoginButton")
@@ -840,13 +824,13 @@ class RecuperarPasswordDialog(QDialog):
         return w
 
     def _apply_theme(self):
-        paleta = self.main_window.theme_palettes.get(
+        paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
-        idx = 1 if self.main_window.modo_oscuro else 0
+        idx= 1 if self.main_window.modo_oscuro else 0
         bg_window, bg_panel = paleta["window_bg"][idx], paleta["display_bg"][idx]
         txt_prim, txt_sec = paleta["text_primary"][idx], paleta["text_secondary"][idx]
         bg_btn, accent = paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
-        hv_accent = paleta["btn_op_hover"][idx]
+        hv_accent= paleta["btn_op_hover"][idx]
 
         self.setStyleSheet(f"""
             QDialog {{ background-color: transparent; }}
@@ -882,11 +866,11 @@ class RecuperarPasswordDialog(QDialog):
         """)
 
     def _restablecer_por_admin(self):
-        cuenta = self.input_cuenta.text().strip()
-        admin_user = self.input_admin_user.text().strip()
-        admin_pass = self.input_admin_pass.text().strip()
-        nueva = self.input_nueva.text().strip()
-        confirmar = self.input_confirmar.text().strip()
+        cuenta= self.input_cuenta.text().strip()
+        admin_user= self.input_admin_user.text().strip()
+        admin_pass= self.input_admin_pass.text().strip()
+        nueva= self.input_nueva.text().strip()
+        confirmar= self.input_confirmar.text().strip()
 
         if not all([cuenta, admin_user, admin_pass, nueva]):
             _msg(self.main_window, self, QMessageBox.Icon.Warning, "Campos incompletos",
@@ -902,10 +886,10 @@ class RecuperarPasswordDialog(QDialog):
             return
 
         try:
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT id, rol, activo, password FROM usuarios WHERE username=?", (admin_user,))
-            admin = c.fetchone()
+            admin= c.fetchone()
 
             if not admin or admin["rol"] not in ("Administrador", "Director") or not admin["activo"]:
                 conn.close()
@@ -913,11 +897,9 @@ class RecuperarPasswordDialog(QDialog):
                      "Esas credenciales no corresponden a un Administrador/Director activo.")
                 return
 
-            # Esta pestaña es OTRA forma de autenticarse (con la contraseña del
-            # admin) además del login normal, así que debe compartir el mismo
-            # límite de intentos: sin esto, alguien podía probar la
-            # contraseña del administrador aquí sin ningún freno, evadiendo
-            # por completo el bloqueo de _iniciar_sesion.
+            #Esta pestaña es OTRA forma de autenticarse (con la contraseña del admin) además del login normal, así que debe
+            #compartir el mismo límite de intentos: sin esto, alguien podía probar la contraseña del administrador aquí sin
+            #ningún freno, evadiendo por completo el bloqueo de _iniciar_sesion.
             conn.close()
             bloqueada, minutos_restantes = verificar_bloqueo_login(admin_user)
             if bloqueada:
@@ -926,7 +908,7 @@ class RecuperarPasswordDialog(QDialog):
                      f"Intenta de nuevo en {minutos_restantes} minuto(s).")
                 return
 
-            if not check_password(admin_pass, admin["password"]):
+            if not verificar_contrasena(admin_pass, admin["password"]):
                 registrar_auditoria("Seguridad", "Intento fallido de autorización de admin", admin_user)
                 bloqueada_ahora, intentos_restantes = registrar_intento_fallido_login(admin_user)
                 if bloqueada_ahora:
@@ -941,8 +923,8 @@ class RecuperarPasswordDialog(QDialog):
 
             resetear_intentos_login(admin_user)
 
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT id FROM usuarios WHERE username=?", (cuenta,))
             if not c.fetchone():
                 conn.close()
@@ -950,7 +932,7 @@ class RecuperarPasswordDialog(QDialog):
                      f"No existe ninguna cuenta con el usuario '{cuenta}'.")
                 return
 
-            nueva_hash = hash_password(nueva)
+            nueva_hash= hash_password(nueva)
             c.execute("UPDATE usuarios SET password=? WHERE username=?", (nueva_hash, cuenta))
             conn.commit()
             conn.close()
@@ -964,18 +946,18 @@ class RecuperarPasswordDialog(QDialog):
              f"La contraseña de '{cuenta}' fue actualizada correctamente.")
         self.accept()
 
-    # ---------------- LÓGICA: RECUPERACIÓN POR CORREO ----------------
+    #---------------- LÓGICA: RECUPERACIÓN POR CORREO ----------------
     def _enviar_codigo(self):
-        cuenta = self.input_cuenta_correo.text().strip()
+        cuenta= self.input_cuenta_correo.text().strip()
         if not cuenta:
             _msg(self.main_window, self, QMessageBox.Icon.Warning, "Campo requerido",
                  "Ingresa el usuario de la cuenta.")
             return
         try:
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT id, correo, activo FROM usuarios WHERE username=?", (cuenta,))
-            usuario = c.fetchone()
+            usuario= c.fetchone()
 
             if not usuario:
                 conn.close()
@@ -994,14 +976,13 @@ class RecuperarPasswordDialog(QDialog):
                      "autorización de Administrador.")
                 return
 
-            token = f"{secrets.randbelow(1000000):06d}"
-            ahora = datetime.now()
-            expira = ahora + timedelta(minutes=15)
+            token= f"{secrets.randbelow(1000000):06d}"
+            ahora= datetime.now()
+            expira= ahora + timedelta(minutes=15)
 
-            # Invalidar cualquier código anterior sin usar de esta cuenta:
-            # sin esto, cada vez que alguien pide "reenviar código" quedan
-            # varios tokens simultáneamente válidos por 15 minutos cada uno,
-            # ampliando la ventana de ataque innecesariamente.
+            #Invalidar cualquier código anterior sin usar de esta cuenta:
+            #sin esto, cada vez que alguien pide "reenviar código" quedan varios tokens simultáneamente válidos por 15
+            #minutos cada uno, ampliando la ventana de ataque innecesariamente.
             c.execute("UPDATE tokens_recuperacion SET usado=1 WHERE usuario_id=? AND usado=0",
                       (usuario["id"],))
 
@@ -1028,10 +1009,10 @@ class RecuperarPasswordDialog(QDialog):
              f"Se envió un código de verificación a {usuario['correo']}.")
 
     def _restablecer_por_correo(self):
-        cuenta = self.input_cuenta_correo.text().strip()
-        codigo = self.input_codigo.text().strip()
-        nueva = self.input_nueva_correo.text().strip()
-        confirmar = self.input_confirmar_correo.text().strip()
+        cuenta= self.input_cuenta_correo.text().strip()
+        codigo= self.input_codigo.text().strip()
+        nueva= self.input_nueva_correo.text().strip()
+        confirmar= self.input_confirmar_correo.text().strip()
 
         if not all([cuenta, codigo, nueva]):
             _msg(self.main_window, self, QMessageBox.Icon.Warning, "Campos incompletos",
@@ -1047,10 +1028,10 @@ class RecuperarPasswordDialog(QDialog):
             return
 
         try:
-            conn = get_connection()
-            c = conn.cursor()
+            conn= obtener_conexion()
+            c= conn.cursor()
             c.execute("SELECT id FROM usuarios WHERE username=?", (cuenta,))
-            usuario = c.fetchone()
+            usuario= c.fetchone()
             if not usuario:
                 conn.close()
                 _msg(self.main_window, self, QMessageBox.Icon.Warning, "Cuenta no encontrada",
@@ -1060,19 +1041,17 @@ class RecuperarPasswordDialog(QDialog):
             c.execute("""SELECT id, expira, usado, intentos FROM tokens_recuperacion
                          WHERE usuario_id=? AND token=? ORDER BY id DESC LIMIT 1""",
                       (usuario["id"], codigo))
-            token_fila = c.fetchone()
+            token_fila= c.fetchone()
             if not token_fila:
-                # No hubo coincidencia exacta de token: se cuenta como intento
-                # fallido contra el ÚLTIMO código vigente de esta cuenta (si
-                # existe), para poner un límite a cuántos códigos se pueden
-                # probar sin acertar. Sin esto, alguien podría intentar los
-                # 1,000,000 de combinaciones posibles sin ningún freno.
+                #No hubo coincidencia exacta de token: se cuenta como intento fallido contra el ÚLTIMO código vigente de esta
+                #cuenta (si existe), para poner un límite a cuántos códigos se pueden probar sin acertar. Sin esto, alguien
+                #podría intentar los 1,000,000 de combinaciones posibles sin ningún freno.
                 c.execute("""SELECT id, intentos FROM tokens_recuperacion
                              WHERE usuario_id=? AND usado=0 ORDER BY id DESC LIMIT 1""",
                           (usuario["id"],))
-                vigente = c.fetchone()
+                vigente= c.fetchone()
                 if vigente:
-                    nuevos_intentos = (vigente["intentos"] or 0) + 1
+                    nuevos_intentos= (vigente["intentos"] or 0) + 1
                     c.execute("UPDATE tokens_recuperacion SET intentos=? WHERE id=?",
                               (nuevos_intentos, vigente["id"]))
                     if nuevos_intentos >= 5:
@@ -1101,7 +1080,7 @@ class RecuperarPasswordDialog(QDialog):
                      "El código expiró. Solicita uno nuevo.")
                 return
 
-            nueva_hash = hash_password(nueva)
+            nueva_hash= hash_password(nueva)
             c.execute("UPDATE usuarios SET password=? WHERE id=?", (nueva_hash, usuario["id"]))
             c.execute("UPDATE tokens_recuperacion SET usado=1 WHERE id=?", (token_fila["id"],))
             conn.commit()
