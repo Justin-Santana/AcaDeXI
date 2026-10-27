@@ -11,6 +11,7 @@ AcaDeXI es una aplicación de escritorio diseñada para optimizar la administrac
 - **Calificaciones**: Notas por competencias, boletines oficiales (formato MINERD), evaluación técnica con RA.
 - **Horarios**: Vista semanal interactiva, gestión de aulas y asignación de clases.
 - **Banco de Tareas**: Creación de tareas, seguimiento de entregas, calificación por competencias.
+- **Secuencias Didácticas**: Planificación de unidades de aprendizaje con el esquema del MINERD (situación de aprendizaje, competencias, indicadores de logro, contenidos y sesiones con evidencias e instrumentos), ligada a las competencias y tareas de la app y exportable a Word.
 - **Calendario**: Eventos institucionales, recordatorios y alarmas con notificaciones.
 - **Observaciones**: Registro de incidencias, seguimiento conductual y académico.
 - **Psicología**: Módulo confidencial para el área de psicología (acceso restringido).
