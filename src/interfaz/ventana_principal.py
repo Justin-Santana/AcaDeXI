@@ -1450,7 +1450,7 @@ class MainWindow(QMainWindow):
         for i, nombre in enumerate(self.modulos):
             item= self.nav_list.item(i)
             visible= modulo_visible(self.rol_actual, nombre)
-            #"Calificaciones Técnicas" para el rol Profesor: además de estar en ACCESO_MODULOS, depende de
+            #"Calificaciones Técnicas" para el rol Profesor: además de estar en PERMISOS_TECHO, depende de
             #self.mostrar_calif_tecnicas, que se resolvió en mostrar_login() — True si el docente activó su preferencia
             #personal, O automáticamente si la institución es un
             #Politécnico (ver mostrar_login(). Los roles gerenciales NO

@@ -1,69 +1,68 @@
-"""Base de datos propia de la edición AcaDeXI Single Teacher.
-
-Decisión aprobada (Pieza 3(b) del prompt de arquitectura de las 4
-ediciones): NO reutiliza bd.py completo. bd.py trae todo el aparato
-institucional (auditoría multiusuario, matrícula masiva, facultades,
-Personal/Profesores plural) que un docente independiente no necesita y que
-sería peso muerto a mantener sincronizado en cada fix futuro (el mismo
-problema que ya pasó con la nota mínima duplicada en 6 archivos).
-
-En su lugar, promueve el PATRÓN de datos_locales_docente.py (SQLite propio,
-por usuario, en la carpeta de datos de la app) a FUENTE DE VERDAD ÚNICA:
-aquí no hay overrides porque no hay nada institucional debajo que
-respetar -el docente escribe directo.
-
-Módulos con tabla propia aquí (aprobados en la propuesta):
-  Estudiantes, Materias/Secciones, Calificaciones, Calificaciones Técnicas
-  (categoria libre dentro de calificaciones), Asistencia, Horario, Banco de
-  Tareas, Observaciones, Secuencias Didácticas.
-Excluidos (no tienen sentido para un docente independiente, ver propuesta):
-  Personal/Profesores múltiples, Auditoría multiusuario, matrícula masiva
-  institucional, Dashboard cross-institución, Politécnico/Universidad como
-  nivel institucional (facultades, pasantías).
-
-Reutiliza el mismo fix de nota mínima por nivel educativo (Primaria/
-Secundaria) que Full Institutional: la columna nivel_educativo vive en
-`secciones` aquí (no en una tabla `grados` aparte, porque Single Teacher no
-tiene jerarquía de grados institucional: cada "sección" ES el curso del
-docente, ej. "8vo A - Matemáticas 2026").
-"""
+#Base de datos de la edición Single Teacher. Un solo docente, un solo archivo SQLite.
+#
+#No reutiliza bd.py: ese trae todo lo institucional (auditoría de varios usuarios, matrícula masiva,
+#facultades, varios profesores) que un docente independiente no necesita y que habría que mantener
+#al día en cada arreglo. Acá no hay "overrides" como en datos_locales_docente.py porque no hay datos
+#institucionales debajo: el docente escribe directo en su base.
+#
+#Lo que se guarda: estudiantes, materias y secciones, calificaciones (las técnicas son una categoría
+#libre dentro de calificaciones), asistencia, horario, banco de tareas, observaciones y secuencias
+#didácticas. Lo institucional (varios profesores, auditoría, dashboard, politécnico, universidad)
+#no existe en esta edición.
+#
+#Acá "secciones" es el curso completo del docente (por ejemplo "8vo A - Matemáticas 2026"), no hay
+#grados institucionales por encima. Por eso nivel_educativo vive en secciones y no en una tabla
+#grados aparte: así sigue funcionando la nota mínima por nivel (Primaria o Secundaria).
 import os
 import sqlite3
 
 from src.nucleo.bd import get_app_data_dir
 
 
-def _ruta_bd(main_window=None):
-    """Un solo docente, un solo archivo: a diferencia de
-    datos_locales_docente.py (que separa por usuario porque varios docentes
-    pueden compartir un equipo institucional), Single Teacher asume que
-    quien instaló esta copia es el único dueño del equipo -sigue viviendo en
-    una subcarpeta propia por prolijidad y para no chocar nunca con
-    acadexi.db si alguna vez conviven en el mismo %APPDATA%\\AcaDeXI en un
-    equipo de pruebas."""
-    carpeta = os.path.join(get_app_data_dir(), "single_teacher")
+def _ruta_bd():
+
+    #La carpeta va aparte para no chocar con acadexi.db si las dos ediciones conviven en un equipo
+    #de pruebas. No se separa por usuario: quien instaló esta copia es el único dueño del equipo.
+    carpeta= os.path.join(get_app_data_dir(), "single_teacher")
     os.makedirs(carpeta, exist_ok=True)
+
     return os.path.join(carpeta, "acadexi_single_teacher.db")
 
 
-DB_PATH = _ruta_bd()
+DB_PATH= _ruta_bd()
 
-# Bandera espejo de bd.SANDBOX_TUTORIAL_ACTIVO (ver tutoriales.py, sandbox
-# del Tutorial Detallado): mientras esté en True, DB_PATH apunta a una
-# copia de práctica desechable, no al archivo real del docente.
-SANDBOX_TUTORIAL_ACTIVO = False
+#Igual que SANDBOX_TUTORIAL_ACTIVO de bd.py (ver tutoriales.py): mientras esté en True, DB_PATH apunta a
+#una copia de práctica y no al archivo real del docente.
+SANDBOX_TUTORIAL_ACTIVO= False
 
 
-def get_connection(main_window=None):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+#main_window no se usa acá, pero se recibe porque así la llama todo el resto del código.
+def obtener_conexion(main_window=None):
+
+    conn= sqlite3.connect(DB_PATH)
+    conn.row_factory= sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     _inicializar(conn)
+
     return conn
 
 
+# -----------------------------------------
+# crear las tablas
+# -----------------------------------------
 def _inicializar(conn):
-    c = conn.cursor()
+
+    c= conn.cursor()
+
+    _crear_configuracion(c)
+    _crear_tablas_del_curso(c)
+    _crear_tablas_de_secuencias(c)
+
+    conn.commit()
+
+
+def _crear_configuracion(c):
+
     c.execute("""CREATE TABLE IF NOT EXISTS configuracion (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         nombre_docente TEXT,
@@ -73,16 +72,16 @@ def _inicializar(conn):
         nota_minima_secundaria REAL,
         sistema_calificacion TEXT DEFAULT 'Numérico (Personalizado)'
     )""")
+
+    #la configuración es una sola fila, con id 1
     c.execute("SELECT COUNT(*) as n FROM configuracion")
+
     if c.fetchone()["n"] == 0:
         c.execute("INSERT INTO configuracion (id) VALUES (1)")
 
-    # "secciones" es aquí el curso completo del docente (no hay grados
-    # institucionales por encima): nombre libre, con su propio
-    # nivel_educativo para que aplique el mismo fix de nota mínima por
-    # nivel que ya usa Full Institutional (ver bd.resolver_nota_minima
-    # equivalente, a implementar en configuracion.py cuando se conecte este
-    # módulo a la UI).
+
+def _crear_tablas_del_curso(c):
+
     c.execute("""CREATE TABLE IF NOT EXISTS secciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
@@ -182,9 +181,12 @@ def _inicializar(conn):
         FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE
     )""")
 
-    # Secuencias didácticas (planificación MINERD). Aquí no hay competencias
-    # específicas/indicadores catalogados como en la edición institucional,
-    # así que se escriben como texto (una por línea) dentro de la secuencia.
+
+#Planificación de unidades (formato MINERD). Acá no hay catálogo de competencias ni de indicadores
+#como en la edición institucional, así que se escriben como texto, una por línea, dentro de la
+#propia secuencia.
+def _crear_tablas_de_secuencias(c):
+
     c.execute("""CREATE TABLE IF NOT EXISTS secuencias_didacticas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo TEXT NOT NULL,
@@ -236,43 +238,47 @@ def _inicializar(conn):
         UNIQUE(secuencia_id, tarea_id)
     )""")
 
-    conn.commit()
 
-
+# -----------------------------------------
+# asistente de primer uso y tutorial
+# -----------------------------------------
 def wizard_completado(main_window=None):
-    conn = get_connection(main_window)
-    c = conn.cursor()
+
+    conn= obtener_conexion(main_window)
+    c= conn.cursor()
     c.execute("SELECT wizard_completado FROM configuracion WHERE id=1")
-    f = c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return bool(f and f["wizard_completado"])
+
+    return bool(fila and fila["wizard_completado"])
 
 
 def marcar_wizard_completado(main_window=None, nombre_docente=""):
-    conn = get_connection(main_window)
-    c = conn.cursor()
+
+    conn= obtener_conexion(main_window)
+    c= conn.cursor()
     c.execute("UPDATE configuracion SET wizard_completado=1, nombre_docente=? WHERE id=1", (nombre_docente,))
     conn.commit()
     conn.close()
 
 
+#Si el docente ya vio el tutorial de primer uso (ver tutoriales.py, tipo "single_teacher"). Se guarda
+#acá y no en la tabla usuarios de bd.py porque esta edición no tiene usuarios: hay un solo docente.
 def tutorial_visto(main_window=None):
-    """Persistencia del tutorial de primer uso de Single Teacher (ver
-    tutoriales.py, tipo="single_teacher"). Vive aquí -no en la tabla
-    `usuarios` de bd.py, que Single Teacher ni siquiera tiene- porque esta
-    edición no tiene sesiones multiusuario: hay un solo docente, un solo
-    archivo, igual que el resto de esta configuración."""
-    conn = get_connection(main_window)
-    c = conn.cursor()
+
+    conn= obtener_conexion(main_window)
+    c= conn.cursor()
     c.execute("SELECT tutorial_visto FROM configuracion WHERE id=1")
-    f = c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return bool(f and f["tutorial_visto"])
+
+    return bool(fila and fila["tutorial_visto"])
 
 
 def marcar_tutorial_visto(main_window=None, visto=True):
-    conn = get_connection(main_window)
-    c = conn.cursor()
+
+    conn= obtener_conexion(main_window)
+    c= conn.cursor()
     c.execute("UPDATE configuracion SET tutorial_visto=? WHERE id=1", (1 if visto else 0,))
     conn.commit()
     conn.close()

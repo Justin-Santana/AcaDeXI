@@ -1,35 +1,38 @@
-"""Secuencias didácticas (planificación de una unidad de aprendizaje, formato MINERD).
-
-Capa de datos y exportación SIN Qt: la pantalla vive en src/modulos/secuencias.py.
-Estructura (esquema de planificación por unidad de aprendizaje del MINERD):
-
-    Encabezado ........ centro, materia, grado, sección, período, docente
-    Cuerpo ............ eje transversal, situación de aprendizaje,
-                        competencias fundamentales y específicas,
-                        contenidos (conceptos / procedimientos / actitudes y valores),
-                        indicadores de logro, estrategia de enseñanza y aprendizaje
-    Secuencia ......... sesiones ordenadas: fecha, momento (inicio/desarrollo/cierre),
-                        actividades de aprendizaje, evidencias, instrumentos de
-                        evaluación, metacognición y recursos
-
-Las competencias específicas y los indicadores de logro son los MISMOS registros
-que usa Calificaciones (tablas competencias_especificas / indicadores_logro), así
-que planificar y evaluar quedan conectados.
-"""
+#Secuencias didácticas: la planificación de una unidad de aprendizaje con el formato del MINERD.
+#Acá no hay nada de Qt, solo datos y la exportación a Word. La pantalla está en src/modulos/secuencias.py.
+#
+#Una secuencia tiene tres partes:
+#  encabezado: centro, materia, grado, sección, período y docente
+#  cuerpo: eje transversal, situación de aprendizaje, competencias fundamentales y específicas,
+#          contenidos (conceptos, procedimientos, actitudes y valores), indicadores de logro y
+#          estrategia de enseñanza y aprendizaje
+#  sesiones: van en orden y cada una tiene fecha, momento (inicio, desarrollo o cierre),
+#            actividades, evidencias, instrumento de evaluación, metacognición y recursos
+#
+#Las competencias específicas y los indicadores de logro son los mismos registros que usa
+#Calificaciones (tablas competencias_especificas e indicadores_logro), así que planificar y evaluar
+#quedan conectados.
 from datetime import datetime, timedelta
 
-from src.nucleo.bd import get_connection
+from src.nucleo.bd import obtener_conexion
 
-MOMENTOS = ["Inicio", "Desarrollo", "Cierre"]
-ESTADOS_SECUENCIA = ["Borrador", "En curso", "Completada", "Archivada"]
-INSTRUMENTOS_EVALUACION = [
+
+# -----------------------------------------
+# constantes
+# -----------------------------------------
+MOMENTOS= ["Inicio", "Desarrollo", "Cierre"]
+
+ESTADOS_SECUENCIA= ["Borrador", "En curso", "Completada", "Archivada"]
+
+INSTRUMENTOS_EVALUACION= [
     "Lista de cotejo", "Rúbrica", "Escala de estimación", "Guía de observación",
     "Registro anecdótico", "Prueba escrita", "Portafolio", "Diario reflexivo",
 ]
-# Competencias fundamentales del currículo dominicano (se re-declaran aquí porque
-# nucleo no puede importar de interfaz; deben coincidir con
-# configuracion.COMPETENCIAS_FUNDAMENTALES_RD, lo verifica tests/test_secuencias.py).
-COMPETENCIAS_FUNDAMENTALES = [
+
+#Competencias fundamentales del currículo dominicano. Se repiten acá porque nucleo no puede importar
+#de interfaz; tienen que coincidir con configuracion.COMPETENCIAS_FUNDAMENTALES_RD y
+#tests/test_secuencias.py lo comprueba.
+COMPETENCIAS_FUNDAMENTALES= [
     "Ética y Ciudadana",
     "Comunicativa",
     "Pensamiento Lógico, Creativo y Crítico",
@@ -38,108 +41,190 @@ COMPETENCIAS_FUNDAMENTALES = [
     "Ambiental y de la Salud",
     "Desarrollo Personal y Espiritual",
 ]
-_SEP_LISTA = " | "
 
-_CAMPOS_SECUENCIA = (
+#Las competencias fundamentales elegidas se guardan en un solo texto, separadas por " | ".
+SEPARADOR_COMPETENCIAS= " | "
+
+#Los únicos campos de la tabla secuencias_didacticas que se aceptan al guardar.
+CAMPOS_SECUENCIA= (
     "titulo", "materia_id", "grado_id", "seccion_id", "profesor_id", "periodo_id",
     "anio_academico", "eje_transversal", "situacion_aprendizaje",
     "competencias_fundamentales", "contenido_conceptos", "contenido_procedimientos",
     "contenido_actitudes", "estrategia", "estado", "fecha_inicio", "fecha_fin",
 )
-_CAMPOS_SESION = ("fecha", "momento", "actividad", "evidencia", "instrumento",
-                  "metacognicion", "recursos", "duracion_min", "realizada")
 
 
-def _ahora():
+def fecha_y_hora_actual():
+
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def unir_competencias_fundamentales(lista):
-    return _SEP_LISTA.join(x for x in lista if x)
+
+    return SEPARADOR_COMPETENCIAS.join(nombre for nombre in lista if nombre)
 
 
 def separar_competencias_fundamentales(texto):
-    return [x.strip() for x in (texto or "").split("|") if x.strip()]
+
+    return [nombre.strip() for nombre in (texto or "").split("|") if nombre.strip()]
 
 
-# ------------------------------------------------------------
-# CRUD de la secuencia
-# ------------------------------------------------------------
+# -----------------------------------------
+# guardar
+# -----------------------------------------
+#Valida los datos que llegan de la pantalla y se queda solo con los campos conocidos. Los campos que
+#no vengan en datos no se tocan al editar una secuencia que ya existe.
 def _limpiar_datos(datos):
-    limpio = {k: datos.get(k) for k in _CAMPOS_SECUENCIA if k in datos}
-    titulo = (limpio.get("titulo") or "").strip()
+
+    limpio= {campo: datos.get(campo) for campo in CAMPOS_SECUENCIA if campo in datos}
+
+    titulo= (limpio.get("titulo") or "").strip()
+
     if not titulo:
         raise ValueError("La secuencia necesita un título.")
-    limpio["titulo"] = titulo
+
+    limpio["titulo"]= titulo
+
     if limpio.get("estado") not in ESTADOS_SECUENCIA:
-        limpio["estado"] = "Borrador"
-    fi, ff = limpio.get("fecha_inicio"), limpio.get("fecha_fin")
-    if fi and ff and ff < fi:
+        limpio["estado"]= "Borrador"
+
+    fecha_inicio= limpio.get("fecha_inicio")
+    fecha_fin= limpio.get("fecha_fin")
+
+    if fecha_inicio and fecha_fin and fecha_fin < fecha_inicio:
         raise ValueError("La fecha de fin no puede ser anterior a la de inicio.")
+
     return limpio
 
 
-def _reemplazar_vinculos(c, tabla, columna, secuencia_id, ids):
-    c.execute(f"DELETE FROM {tabla} WHERE secuencia_id=?", (secuencia_id,))
-    for i in dict.fromkeys(ids or []):  # sin duplicados, conserva orden
-        c.execute(f"INSERT INTO {tabla} (secuencia_id, {columna}) VALUES (?, ?)", (secuencia_id, i))
-
-
+#Crea la secuencia si secuencia_id es None, o la actualiza si ya existe. Si sesiones no es None,
+#REEMPLAZA todas las sesiones que tenía. Todo ocurre en una sola transacción: o se guarda completo
+#o no se guarda nada. Devuelve el id de la secuencia.
 def guardar_secuencia(datos, competencias_ids=(), indicadores_ids=(), tareas_ids=(),
                       sesiones=None, secuencia_id=None):
-    """Crea (secuencia_id=None) o actualiza una secuencia con sus vínculos y,
-    si `sesiones` no es None, REEMPLAZA su lista de sesiones. Todo en una sola
-    transacción. Devuelve el id."""
-    limpio = _limpiar_datos(datos)
-    conn = get_connection()
+
+    limpio= _limpiar_datos(datos)
+    conn= obtener_conexion()
+
     try:
-        c = conn.cursor()
+
+        c= conn.cursor()
+
         if secuencia_id is None:
-            limpio["creado"] = limpio["actualizado"] = _ahora()
-            cols = ", ".join(limpio)
-            c.execute(f"INSERT INTO secuencias_didacticas ({cols}) VALUES ({', '.join('?' * len(limpio))})",
-                      list(limpio.values()))
-            secuencia_id = c.lastrowid
+            secuencia_id= insertar_secuencia(c, limpio)
         else:
-            limpio["actualizado"] = _ahora()
-            sets = ", ".join(f"{k}=?" for k in limpio)
-            c.execute(f"UPDATE secuencias_didacticas SET {sets} WHERE id=?",
-                      list(limpio.values()) + [secuencia_id])
-            if c.rowcount == 0:
-                raise ValueError("La secuencia ya no existe.")
-        _reemplazar_vinculos(c, "secuencia_competencia", "competencia_id", secuencia_id, competencias_ids)
-        _reemplazar_vinculos(c, "secuencia_indicador", "indicador_id", secuencia_id, indicadores_ids)
-        _reemplazar_vinculos(c, "secuencia_tarea", "tarea_id", secuencia_id, tareas_ids)
+            actualizar_secuencia(c, limpio, secuencia_id)
+
+        _guardar_competencias(c, secuencia_id, competencias_ids)
+        _guardar_indicadores(c, secuencia_id, indicadores_ids)
+        guardar_tareas_de_secuencia(c, secuencia_id, tareas_ids)
+
         if sesiones is not None:
-            _guardar_sesiones(c, secuencia_id, sesiones)
+            guardar_sesiones(c, secuencia_id, sesiones)
+
         conn.commit()
+
         return secuencia_id
+
     except Exception:
         conn.rollback()
         raise
+
     finally:
         conn.close()
 
 
-def _guardar_sesiones(c, secuencia_id, sesiones):
+#insertar_secuencia, actualizar_secuencia y leer_sesiones también las usa Single Teacher: su tabla
+#secuencias_didacticas tiene otras columnas, pero estas funciones solo usan las que vienen en limpio.
+def insertar_secuencia(c, limpio):
+
+    valores= dict(limpio)
+    valores["creado"]= fecha_y_hora_actual()
+    valores["actualizado"]= valores["creado"]
+
+    columnas= ", ".join(valores)
+    marcadores= ", ".join("?" * len(valores))
+    c.execute(f"INSERT INTO secuencias_didacticas ({columnas}) VALUES ({marcadores})", list(valores.values()))
+
+    return c.lastrowid
+
+
+def actualizar_secuencia(c, limpio, secuencia_id):
+
+    valores= dict(limpio)
+    valores["actualizado"]= fecha_y_hora_actual()
+
+    asignaciones= ", ".join(f"{columna}=?" for columna in valores)
+    c.execute(f"UPDATE secuencias_didacticas SET {asignaciones} WHERE id=?", list(valores.values()) + [secuencia_id])
+
+    if c.rowcount == 0:
+        raise ValueError("La secuencia ya no existe.")
+
+
+#Los tres vínculos se guardan igual: se borran los que había y se insertan los nuevos, sin repetidos
+#y en el mismo orden en que llegaron.
+def _guardar_competencias(c, secuencia_id, competencias_ids):
+
+    c.execute("DELETE FROM secuencia_competencia WHERE secuencia_id=?", (secuencia_id,))
+
+    for competencia_id in dict.fromkeys(competencias_ids or []):
+        c.execute("INSERT INTO secuencia_competencia (secuencia_id, competencia_id) VALUES (?, ?)",
+                  (secuencia_id, competencia_id))
+
+
+def _guardar_indicadores(c, secuencia_id, indicadores_ids):
+
+    c.execute("DELETE FROM secuencia_indicador WHERE secuencia_id=?", (secuencia_id,))
+
+    for indicador_id in dict.fromkeys(indicadores_ids or []):
+        c.execute("INSERT INTO secuencia_indicador (secuencia_id, indicador_id) VALUES (?, ?)",
+                  (secuencia_id, indicador_id))
+
+
+#La usan las dos ediciones (institucional y Single Teacher): la tabla secuencia_tarea es igual en ambas.
+def guardar_tareas_de_secuencia(c, secuencia_id, tareas_ids):
+
+    c.execute("DELETE FROM secuencia_tarea WHERE secuencia_id=?", (secuencia_id,))
+
+    for tarea_id in dict.fromkeys(tareas_ids or []):
+        c.execute("INSERT INTO secuencia_tarea (secuencia_id, tarea_id) VALUES (?, ?)",
+                  (secuencia_id, tarea_id))
+
+
+#Borra las sesiones de la secuencia y guarda las nuevas numerándolas desde 1. También la usa Single Teacher.
+def guardar_sesiones(c, secuencia_id, sesiones):
+
     c.execute("DELETE FROM secuencia_sesiones WHERE secuencia_id=?", (secuencia_id,))
-    for orden, s in enumerate(sesiones, start=1):
-        momento = s.get("momento") if s.get("momento") in MOMENTOS else "Desarrollo"
-        valores = {k: s.get(k) for k in _CAMPOS_SESION}
-        valores["momento"] = momento
-        valores["duracion_min"] = int(valores.get("duracion_min") or 0)
-        valores["realizada"] = 1 if valores.get("realizada") else 0
-        c.execute(
-            "INSERT INTO secuencia_sesiones (secuencia_id, orden, " + ", ".join(_CAMPOS_SESION) +
-            ") VALUES (?, ?, " + ", ".join("?" * len(_CAMPOS_SESION)) + ")",
-            [secuencia_id, orden] + [valores[k] for k in _CAMPOS_SESION])
+
+    for orden, sesion in enumerate(sesiones, start=1):
+
+        momento= sesion.get("momento")
+
+        if momento not in MOMENTOS:
+            momento= "Desarrollo"
+
+        c.execute("""INSERT INTO secuencia_sesiones
+                     (secuencia_id, orden, fecha, momento, actividad, evidencia, instrumento,
+                      metacognicion, recursos, duracion_min, realizada)
+                     VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                  (secuencia_id, orden, sesion.get("fecha"), momento, sesion.get("actividad"),
+                   sesion.get("evidencia"), sesion.get("instrumento"), sesion.get("metacognicion"),
+                   sesion.get("recursos"), int(sesion.get("duracion_min") or 0),
+                   1 if sesion.get("realizada") else 0))
 
 
+# -----------------------------------------
+# leer
+# -----------------------------------------
+#La secuencia completa como diccionario (con los nombres de materia, grado, etc., los vínculos y las
+#sesiones), o None si no existe.
 def obtener_secuencia(secuencia_id):
-    """Secuencia completa como dict (con nombres legibles, vínculos y sesiones) o None."""
-    conn = get_connection()
+
+    conn= obtener_conexion()
+
     try:
-        c = conn.cursor()
+
+        c= conn.cursor()
         c.execute("""SELECT s.*, m.nombre AS materia, g.nombre AS grado, sec.nombre AS seccion,
                             p.nombre AS periodo,
                             TRIM(COALESCE(pr.nombre,'') || ' ' || COALESCE(pr.apellidos,'')) AS profesor
@@ -150,60 +235,105 @@ def obtener_secuencia(secuencia_id):
                      LEFT JOIN periodos p ON s.periodo_id = p.id
                      LEFT JOIN profesores pr ON s.profesor_id = pr.id
                      WHERE s.id=?""", (secuencia_id,))
-        fila = c.fetchone()
+        fila= c.fetchone()
+
         if fila is None:
             return None
-        sec = dict(fila)
-        c.execute("""SELECT ce.* FROM secuencia_competencia sc
-                     JOIN competencias_especificas ce ON sc.competencia_id = ce.id
-                     WHERE sc.secuencia_id=? ORDER BY ce.orden, ce.codigo""", (secuencia_id,))
-        sec["competencias"] = [dict(f) for f in c.fetchall()]
-        c.execute("""SELECT il.*, ce.codigo AS codigo_competencia FROM secuencia_indicador si
-                     JOIN indicadores_logro il ON si.indicador_id = il.id
-                     JOIN competencias_especificas ce ON il.competencia_id = ce.id
-                     WHERE si.secuencia_id=? ORDER BY ce.orden, ce.codigo, il.orden, il.codigo""",
-                  (secuencia_id,))
-        sec["indicadores"] = [dict(f) for f in c.fetchall()]
-        c.execute("""SELECT t.id, t.titulo, t.categoria, t.fecha_entrega FROM secuencia_tarea st
-                     JOIN tareas t ON st.tarea_id = t.id WHERE st.secuencia_id=?
-                     ORDER BY t.fecha_entrega, t.titulo""", (secuencia_id,))
-        sec["tareas"] = [dict(f) for f in c.fetchall()]
-        c.execute("SELECT * FROM secuencia_sesiones WHERE secuencia_id=? ORDER BY orden, id", (secuencia_id,))
-        sec["sesiones"] = [dict(f) for f in c.fetchall()]
-        sec["competencias_fundamentales_lista"] = separar_competencias_fundamentales(
-            sec.get("competencias_fundamentales"))
-        return sec
+
+        secuencia= dict(fila)
+        secuencia["competencias"]= _leer_competencias(c, secuencia_id)
+        secuencia["indicadores"]= _leer_indicadores(c, secuencia_id)
+        secuencia["tareas"]= _leer_tareas(c, secuencia_id)
+        secuencia["sesiones"]= leer_sesiones(c, secuencia_id)
+        secuencia["competencias_fundamentales_lista"]= separar_competencias_fundamentales(
+            secuencia.get("competencias_fundamentales"))
+
+        return secuencia
+
     finally:
         conn.close()
 
 
+def _leer_competencias(c, secuencia_id):
+
+    c.execute("""SELECT ce.* FROM secuencia_competencia sc
+                 JOIN competencias_especificas ce ON sc.competencia_id = ce.id
+                 WHERE sc.secuencia_id=? ORDER BY ce.orden, ce.codigo""", (secuencia_id,))
+
+    return [dict(fila) for fila in c.fetchall()]
+
+
+def _leer_indicadores(c, secuencia_id):
+
+    c.execute("""SELECT il.*, ce.codigo AS codigo_competencia FROM secuencia_indicador si
+                 JOIN indicadores_logro il ON si.indicador_id = il.id
+                 JOIN competencias_especificas ce ON il.competencia_id = ce.id
+                 WHERE si.secuencia_id=? ORDER BY ce.orden, ce.codigo, il.orden, il.codigo""",
+              (secuencia_id,))
+
+    return [dict(fila) for fila in c.fetchall()]
+
+
+def _leer_tareas(c, secuencia_id):
+
+    c.execute("""SELECT t.id, t.titulo, t.categoria, t.fecha_entrega FROM secuencia_tarea st
+                 JOIN tareas t ON st.tarea_id = t.id WHERE st.secuencia_id=?
+                 ORDER BY t.fecha_entrega, t.titulo""", (secuencia_id,))
+
+    return [dict(fila) for fila in c.fetchall()]
+
+
+def leer_sesiones(c, secuencia_id):
+
+    c.execute("SELECT * FROM secuencia_sesiones WHERE secuencia_id=? ORDER BY orden, id", (secuencia_id,))
+
+    return [dict(fila) for fila in c.fetchall()]
+
+
+#Resumen para la tabla principal. materias_permitidas (un set de ids) limita a un Profesor a sus
+#materias, igual que el resto de módulos; None significa sin restricción. Un Profesor también ve las
+#secuencias que él mismo creó (profesor_id), aunque la materia no sea suya.
 def listar_secuencias(profesor_id=None, materias_permitidas=None, materia_id=None,
                       grado_id=None, estado=None, texto=""):
-    """Resumen para la tabla. `materias_permitidas` (set de ids) restringe a un
-    Profesor a sus materias, igual que el resto de módulos; None = sin restricción.
-    Un Profesor también ve las secuencias que él mismo creó (profesor_id)."""
-    condiciones, params = [], []
+
+    condiciones= []
+    valores= []
+
     if materias_permitidas is not None:
-        marcas = ", ".join("?" * len(materias_permitidas)) or "NULL"
-        cond = f"s.materia_id IN ({marcas})"
-        params.extend(sorted(materias_permitidas))
+
+        marcadores= ", ".join("?" * len(materias_permitidas)) or "NULL"
+        condicion= f"s.materia_id IN ({marcadores})"
+        valores.extend(sorted(materias_permitidas))
+
         if profesor_id is not None:
-            cond = f"({cond} OR s.profesor_id = ?)"
-            params.append(profesor_id)
-        condiciones.append(cond)
+            condicion= f"({condicion} OR s.profesor_id = ?)"
+            valores.append(profesor_id)
+
+        condiciones.append(condicion)
+
     if materia_id:
-        condiciones.append("s.materia_id = ?"); params.append(materia_id)
+        condiciones.append("s.materia_id = ?")
+        valores.append(materia_id)
+
     if grado_id:
-        condiciones.append("s.grado_id = ?"); params.append(grado_id)
+        condiciones.append("s.grado_id = ?")
+        valores.append(grado_id)
+
     if estado:
-        condiciones.append("s.estado = ?"); params.append(estado)
+        condiciones.append("s.estado = ?")
+        valores.append(estado)
+
     if texto and texto.strip():
         condiciones.append("(s.titulo LIKE ? OR s.situacion_aprendizaje LIKE ?)")
-        params.extend([f"%{texto.strip()}%"] * 2)
-    where = ("WHERE " + " AND ".join(condiciones)) if condiciones else ""
-    conn = get_connection()
+        valores.extend([f"%{texto.strip()}%"] * 2)
+
+    donde= ("WHERE " + " AND ".join(condiciones)) if condiciones else ""
+
+    conn= obtener_conexion()
+
     try:
-        c = conn.cursor()
+
+        c= conn.cursor()
         c.execute(f"""SELECT s.id, s.titulo, s.estado, s.fecha_inicio, s.fecha_fin,
                              m.nombre AS materia, g.nombre AS grado, sec.nombre AS seccion,
                              p.nombre AS periodo,
@@ -215,317 +345,517 @@ def listar_secuencias(profesor_id=None, materias_permitidas=None, materia_id=Non
                       LEFT JOIN grados g ON s.grado_id = g.id
                       LEFT JOIN secciones sec ON s.seccion_id = sec.id
                       LEFT JOIN periodos p ON s.periodo_id = p.id
-                      {where}
-                      ORDER BY COALESCE(s.fecha_inicio, s.creado) DESC, s.id DESC""", params)
-        return [dict(f) for f in c.fetchall()]
+                      {donde}
+                      ORDER BY COALESCE(s.fecha_inicio, s.creado) DESC, s.id DESC""", valores)
+
+        return [dict(fila) for fila in c.fetchall()]
+
     finally:
         conn.close()
 
 
+# -----------------------------------------
+# eliminar, duplicar y marcar avance
+# -----------------------------------------
 def eliminar_secuencia(secuencia_id):
-    conn = get_connection()
+
+    conn= obtener_conexion()
+
     try:
         conn.execute("DELETE FROM secuencias_didacticas WHERE id=?", (secuencia_id,))
         conn.commit()
+
     finally:
         conn.close()
 
 
+#Copia una secuencia para reutilizarla en otro grupo o período: queda en Borrador, sin fechas y con
+#ninguna sesión realizada. No copia las tareas vinculadas. Devuelve el id de la copia.
 def duplicar_secuencia(secuencia_id, nuevo_titulo=None):
-    """Copia una secuencia (sin fechas, sin marcar sesiones como realizadas, en
-    Borrador) para reutilizarla en otro grupo o período. Devuelve el id nuevo."""
-    sec = obtener_secuencia(secuencia_id)
-    if sec is None:
+
+    secuencia= obtener_secuencia(secuencia_id)
+
+    if secuencia is None:
         raise ValueError("La secuencia ya no existe.")
-    datos = {k: sec.get(k) for k in _CAMPOS_SECUENCIA}
-    datos["titulo"] = nuevo_titulo or f"{sec['titulo']} (copia)"
-    datos["estado"] = "Borrador"
-    datos["fecha_inicio"] = datos["fecha_fin"] = None
-    sesiones = [dict(s, fecha=None, realizada=0) for s in sec["sesiones"]]
+
+    datos= {campo: secuencia.get(campo) for campo in CAMPOS_SECUENCIA}
+    datos["titulo"]= nuevo_titulo or f"{secuencia['titulo']} (copia)"
+    datos["estado"]= "Borrador"
+    datos["fecha_inicio"]= None
+    datos["fecha_fin"]= None
+
+    sesiones= [dict(sesion, fecha=None, realizada=0) for sesion in secuencia["sesiones"]]
+
     return guardar_secuencia(
-        datos, [x["id"] for x in sec["competencias"]], [x["id"] for x in sec["indicadores"]],
-        [], sesiones)
+        datos,
+        competencias_ids=[competencia["id"] for competencia in secuencia["competencias"]],
+        indicadores_ids=[indicador["id"] for indicador in secuencia["indicadores"]],
+        tareas_ids=[],
+        sesiones=sesiones)
 
 
 def marcar_sesion_realizada(sesion_id, realizada=True):
-    conn = get_connection()
+
+    conn= obtener_conexion()
+
     try:
         conn.execute("UPDATE secuencia_sesiones SET realizada=? WHERE id=?", (1 if realizada else 0, sesion_id))
         conn.commit()
+
     finally:
         conn.close()
 
 
-# ------------------------------------------------------------
-# Sesiones: plantilla, fechas y avance
-# ------------------------------------------------------------
+# -----------------------------------------
+# sesiones: plantilla, fechas y avance
+# -----------------------------------------
+#Plantilla inicial: la primera sesión es de Inicio, la última de Cierre y las del medio de Desarrollo.
+#Si es una sola sesión, es de Desarrollo.
 def sesiones_base(cantidad=3):
-    """Plantilla inicial: la primera sesión es de Inicio, la última de Cierre y
-    el resto de Desarrollo. Con 1 sola sesión se usa Desarrollo."""
-    cantidad = max(1, int(cantidad))
-    sesiones = []
-    for i in range(cantidad):
-        if cantidad == 1:
-            momento = "Desarrollo"
-        elif i == 0:
-            momento = "Inicio"
-        elif i == cantidad - 1:
-            momento = "Cierre"
-        else:
-            momento = "Desarrollo"
-        sesiones.append({"fecha": None, "momento": momento, "actividad": "", "evidencia": "",
-                         "instrumento": "", "metacognicion": "", "recursos": "",
-                         "duracion_min": 0, "realizada": 0})
+
+    cantidad= max(1, int(cantidad))
+    sesiones= []
+
+    for posicion in range(cantidad):
+        sesiones.append({"fecha": None, "momento": _momento_de_sesion(posicion, cantidad),
+                         "actividad": "", "evidencia": "", "instrumento": "", "metacognicion": "",
+                         "recursos": "", "duracion_min": 0, "realizada": 0})
+
     return sesiones
 
 
+def _momento_de_sesion(posicion, cantidad):
+
+    if cantidad == 1:
+        return "Desarrollo"
+
+    if posicion == 0:
+        return "Inicio"
+
+    if posicion == cantidad - 1:
+        return "Cierre"
+
+    return "Desarrollo"
+
+
+#Las fechas (YYYY-MM-DD) de las sesiones a partir de fecha_inicio, usando solo los días de la semana
+#indicados (0 es lunes) y saltando los feriados.
 def distribuir_fechas(fecha_inicio, cantidad, dias_semana=(0, 1, 2, 3, 4), feriados=()):
-    """Fechas ISO (YYYY-MM-DD) de `cantidad` sesiones desde `fecha_inicio`,
-    usando solo los días de la semana indicados (0=lunes) y saltando feriados."""
+
     if cantidad <= 0:
         return []
-    dias = set(dias_semana)
+
+    dias= set(dias_semana)
+
     if not dias:
         raise ValueError("Indica al menos un día de clase.")
-    saltar = {str(f)[:10] for f in feriados}
-    dia = datetime.strptime(str(fecha_inicio)[:10], "%Y-%m-%d")
-    fechas = []
+
+    feriados_saltados= {str(feriado)[:10] for feriado in feriados}
+    dia= datetime.strptime(str(fecha_inicio)[:10], "%Y-%m-%d")
+    fechas= []
+
     while len(fechas) < cantidad:
-        iso = dia.strftime("%Y-%m-%d")
-        if dia.weekday() in dias and iso not in saltar:
-            fechas.append(iso)
+
+        fecha_iso= dia.strftime("%Y-%m-%d")
+
+        if dia.weekday() in dias and fecha_iso not in feriados_saltados:
+            fechas.append(fecha_iso)
+
         dia += timedelta(days=1)
+
     return fechas
 
 
+#Devuelve (sesiones realizadas, total de sesiones, porcentaje entero).
 def progreso(sesiones):
-    """(realizadas, total, porcentaje entero) a partir de la lista de sesiones."""
-    total = len(sesiones)
-    hechas = sum(1 for s in sesiones if s.get("realizada"))
-    return hechas, total, (round(100 * hechas / total) if total else 0)
+
+    total= len(sesiones)
+    realizadas= sum(1 for sesion in sesiones if sesion.get("realizada"))
+    porcentaje= round(100 * realizadas / total) if total else 0
+
+    return realizadas, total, porcentaje
 
 
-def validar_secuencia(sec):
-    """Lista de advertencias (no bloquean el guardado) para ayudar al docente a
-    completar lo que el formato del MINERD espera de una secuencia."""
-    avisos = []
-    if not (sec.get("situacion_aprendizaje") or "").strip():
+# -----------------------------------------
+# validación pedagógica
+# -----------------------------------------
+#Lista de avisos para ayudar al docente a completar lo que el formato del MINERD espera. No impiden
+#guardar la secuencia.
+def validar_secuencia(secuencia):
+
+    avisos= []
+
+    if not (secuencia.get("situacion_aprendizaje") or "").strip():
         avisos.append("Falta la situación de aprendizaje.")
-    if not sec.get("competencias") and not sec.get("competencias_fundamentales_lista"):
+
+    if not secuencia.get("competencias") and not secuencia.get("competencias_fundamentales_lista"):
         avisos.append("No se ha seleccionado ninguna competencia.")
-    if sec.get("competencias") and not sec.get("indicadores"):
+
+    if secuencia.get("competencias") and not secuencia.get("indicadores"):
         avisos.append("Hay competencias específicas pero ningún indicador de logro.")
-    if not any((sec.get(k) or "").strip() for k in
-               ("contenido_conceptos", "contenido_procedimientos", "contenido_actitudes")):
+
+    campos_de_contenido= ("contenido_conceptos", "contenido_procedimientos", "contenido_actitudes")
+
+    if not any((secuencia.get(campo) or "").strip() for campo in campos_de_contenido):
         avisos.append("No se han descrito contenidos (conceptos, procedimientos o actitudes y valores).")
-    sesiones = sec.get("sesiones") or []
-    if not sesiones:
-        avisos.append("La secuencia no tiene sesiones.")
-    else:
-        if not any(s.get("momento") == "Inicio" for s in sesiones):
-            avisos.append("Ninguna sesión es de Inicio (recuperación de saberes previos).")
-        if not any(s.get("momento") == "Cierre" for s in sesiones):
-            avisos.append("Ninguna sesión es de Cierre.")
-        sin_actividad = [i for i, s in enumerate(sesiones, 1) if not (s.get("actividad") or "").strip()]
-        if sin_actividad:
-            avisos.append("Sesiones sin actividad descrita: " + ", ".join(map(str, sin_actividad)) + ".")
-        sin_evaluar = [i for i, s in enumerate(sesiones, 1)
-                       if (s.get("evidencia") or "").strip() and not (s.get("instrumento") or "").strip()]
-        if sin_evaluar:
-            avisos.append("Sesiones con evidencia pero sin instrumento de evaluación: "
-                          + ", ".join(map(str, sin_evaluar)) + ".")
+
+    avisos.extend(_avisos_de_sesiones(secuencia.get("sesiones") or []))
+
     return avisos
 
 
-# ------------------------------------------------------------
-# Catálogos para los selectores de la pantalla
-# ------------------------------------------------------------
+def _avisos_de_sesiones(sesiones):
+
+    if not sesiones:
+        return ["La secuencia no tiene sesiones."]
+
+    avisos= []
+
+    if not any(sesion.get("momento") == "Inicio" for sesion in sesiones):
+        avisos.append("Ninguna sesión es de Inicio (recuperación de saberes previos).")
+
+    if not any(sesion.get("momento") == "Cierre" for sesion in sesiones):
+        avisos.append("Ninguna sesión es de Cierre.")
+
+    #los números de sesión empiezan en 1, como los ve el docente en la tabla
+    sin_actividad= [numero for numero, sesion in enumerate(sesiones, 1)
+                    if not (sesion.get("actividad") or "").strip()]
+
+    if sin_actividad:
+        avisos.append("Sesiones sin actividad descrita: " + ", ".join(map(str, sin_actividad)) + ".")
+
+    sin_instrumento= [numero for numero, sesion in enumerate(sesiones, 1)
+                      if (sesion.get("evidencia") or "").strip() and not (sesion.get("instrumento") or "").strip()]
+
+    if sin_instrumento:
+        avisos.append("Sesiones con evidencia pero sin instrumento de evaluación: "
+                      + ", ".join(map(str, sin_instrumento)) + ".")
+
+    return avisos
+
+
+# -----------------------------------------
+# listas para los selectores de la pantalla
+# -----------------------------------------
+#Los indicadores de logro de las competencias elegidas.
 def indicadores_de_competencias(competencias_ids):
-    """Indicadores de logro de las competencias dadas (para el selector)."""
-    ids = list(competencias_ids or [])
+
+    ids= list(competencias_ids or [])
+
     if not ids:
         return []
-    conn = get_connection()
+
+    conn= obtener_conexion()
+
     try:
-        c = conn.cursor()
+
+        c= conn.cursor()
         c.execute(f"""SELECT il.*, ce.codigo AS codigo_competencia FROM indicadores_logro il
                       JOIN competencias_especificas ce ON il.competencia_id = ce.id
                       WHERE il.competencia_id IN ({', '.join('?' * len(ids))})
                       ORDER BY ce.orden, ce.codigo, il.orden, il.codigo""", ids)
-        return [dict(f) for f in c.fetchall()]
+
+        return [dict(fila) for fila in c.fetchall()]
+
     finally:
         conn.close()
 
 
+#Las tareas del Banco de Tareas de una materia (y de un grado, si se indica) para poder vincularlas.
 def tareas_de_materia(materia_id, grado_id=None):
-    """Tareas del Banco de Tareas de una materia (opcionalmente de un grado) para vincular."""
+
     if not materia_id:
         return []
-    conn = get_connection()
+
+    conn= obtener_conexion()
+
     try:
-        c = conn.cursor()
-        sql = "SELECT id, titulo, categoria, fecha_entrega FROM tareas WHERE materia_id=?"
-        params = [materia_id]
+
+        c= conn.cursor()
+
         if grado_id:
-            sql += " AND (curso_id IS NULL OR curso_id=?)"
-            params.append(grado_id)
-        c.execute(sql + " ORDER BY fecha_entrega, titulo", params)
-        return [dict(f) for f in c.fetchall()]
+            c.execute("""SELECT id, titulo, categoria, fecha_entrega FROM tareas
+                         WHERE materia_id=? AND (curso_id IS NULL OR curso_id=?)
+                         ORDER BY fecha_entrega, titulo""", (materia_id, grado_id))
+        else:
+            c.execute("""SELECT id, titulo, categoria, fecha_entrega FROM tareas
+                         WHERE materia_id=? ORDER BY fecha_entrega, titulo""", (materia_id,))
+
+        return [dict(fila) for fila in c.fetchall()]
+
     finally:
         conn.close()
 
 
-# ------------------------------------------------------------
-# Exportación a Word (.docx) con el esquema del MINERD
-# ------------------------------------------------------------
-def _fmt_fecha(iso):
-    try:
-        return datetime.strptime(str(iso)[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
-    except (ValueError, TypeError):
-        return ""
+# -----------------------------------------
+# exportar a Word (.docx) con el esquema del MINERD
+# -----------------------------------------
+#Genera el Word de la secuencia y devuelve la ruta. Lanza ValueError si la secuencia no existe.
+def exportar_docx(secuencia_id, ruta_salida):
+
+    secuencia= obtener_secuencia(secuencia_id)
+
+    if secuencia is None:
+        raise ValueError("La secuencia ya no existe.")
+
+    return escribir_docx(secuencia, ruta_salida, _nombre_centro())
 
 
 def _nombre_centro():
+
     try:
-        conn = get_connection()
-        try:
-            f = conn.execute("SELECT nombre_institucion FROM configuracion WHERE id=1").fetchone()
-        finally:
-            conn.close()
-        return (f["nombre_institucion"] if f else "") or ""
+
+        conn= obtener_conexion()
+        fila= conn.execute("SELECT nombre_institucion FROM configuracion WHERE id=1").fetchone()
+        conn.close()
+
+        return (fila["nombre_institucion"] if fila else "") or ""
+
     except Exception:
         return ""
 
 
-def exportar_docx(secuencia_id, ruta_salida):
-    """Genera el documento Word de la secuencia (horizontal, editable por el
-    docente). Devuelve `ruta_salida`. Lanza ValueError si la secuencia no existe."""
-    sec = obtener_secuencia(secuencia_id)
-    if sec is None:
-        raise ValueError("La secuencia ya no existe.")
-    return escribir_docx(sec, ruta_salida, _nombre_centro())
+#Escribe el Word a partir del diccionario de una secuencia. Lo usan las dos ediciones: en Single
+#Teacher las competencias y los indicadores vienen sin código. python-docx se importa acá adentro,
+#y no arriba, para que la app arranque aunque la librería no esté instalada.
+def escribir_docx(secuencia, ruta_salida, centro=""):
 
-
-def _codigo_y_texto(codigo, descripcion, separador=". "):
-    return f"{codigo}{separador}{descripcion}" if codigo else descripcion
-
-
-def escribir_docx(sec, ruta_salida, centro=""):
-    """Escribe el Word a partir de un dict de secuencia (el de obtener_secuencia
-    o el equivalente de Single Teacher, cuyas competencias/indicadores pueden
-    venir sin código). Compartido por ambas ediciones."""
     from docx import Document
+
+    documento= Document()
+
+    _preparar_pagina(documento)
+    _escribir_encabezado(documento, centro)
+    _escribir_tabla_de_datos(documento, secuencia)
+    _escribir_cuerpo(documento, secuencia)
+    _escribir_tabla_de_sesiones(documento, secuencia)
+    _escribir_tareas(documento, secuencia)
+
+    documento.save(ruta_salida)
+
+    return ruta_salida
+
+
+def _preparar_pagina(documento):
+
     from docx.enum.section import WD_ORIENT
-    from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.shared import Cm, Pt
+
+    pagina= documento.sections[0]
+    pagina.orientation= WD_ORIENT.LANDSCAPE
+    pagina.page_width, pagina.page_height= pagina.page_height, pagina.page_width
+
+    for margen in ("left_margin", "right_margin", "top_margin", "bottom_margin"):
+        setattr(pagina, margen, Cm(1.8))
+
+    documento.styles["Normal"].font.name= "Calibri"
+    documento.styles["Normal"].font.size= Pt(10)
+
+
+def _escribir_encabezado(documento, centro):
+
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Pt
+
+    parrafo= documento.add_paragraph()
+    parrafo.alignment= WD_ALIGN_PARAGRAPH.CENTER
+
+    if centro:
+        texto_centro= parrafo.add_run(centro + "\n")
+        texto_centro.bold= True
+        texto_centro.font.size= Pt(13)
+
+    titulo= parrafo.add_run("Planificación de Unidad de Aprendizaje — Secuencia Didáctica")
+    titulo.bold= True
+    titulo.font.size= Pt(12)
+
+
+#Cuadro de arriba: tres filas con dos pares "rótulo y valor" cada una.
+def _escribir_tabla_de_datos(documento, secuencia):
+
+    fechas= _unir(" – ", _fecha_para_word(secuencia.get("fecha_inicio")), _fecha_para_word(secuencia.get("fecha_fin")))
+
+    filas= [
+        ("Título de la unidad", secuencia["titulo"], "Asignatura", secuencia.get("materia") or ""),
+        ("Grado / Sección", _unir(" ", secuencia.get("grado"), secuencia.get("seccion")),
+         "Período / Año escolar", _unir(" · ", secuencia.get("periodo"), secuencia.get("anio_academico"))),
+        ("Docente", secuencia.get("profesor") or "", "Fechas", fechas),
+    ]
+
+    tabla= documento.add_table(rows=3, cols=4)
+    tabla.style= "Table Grid"
+
+    for fila_tabla, (rotulo1, valor1, rotulo2, valor2) in zip(tabla.rows, filas):
+
+        _poner_texto_celda(fila_tabla.cells[0], rotulo1, negrita=True)
+        _sombrear_celda(fila_tabla.cells[0])
+        _poner_texto_celda(fila_tabla.cells[1], valor1)
+        _poner_texto_celda(fila_tabla.cells[2], rotulo2, negrita=True)
+        _sombrear_celda(fila_tabla.cells[2])
+        _poner_texto_celda(fila_tabla.cells[3], valor2)
+
+
+#Todo lo que va entre el cuadro de datos y la tabla de sesiones. Cada bloque solo sale si tiene algo escrito.
+def _escribir_cuerpo(documento, secuencia):
+
+    _escribir_bloque(documento, "Eje transversal / Descriptores", secuencia.get("eje_transversal"))
+    _escribir_bloque(documento, "Situación de aprendizaje", secuencia.get("situacion_aprendizaje"))
+
+    if secuencia.get("competencias_fundamentales_lista"):
+
+        _escribir_titulo(documento, "Competencias fundamentales")
+
+        for nombre in secuencia["competencias_fundamentales_lista"]:
+            documento.add_paragraph(nombre, style="List Bullet")
+
+    if secuencia.get("competencias"):
+
+        _escribir_titulo(documento, "Competencias específicas")
+
+        for competencia in secuencia["competencias"]:
+            documento.add_paragraph(_codigo_y_texto(competencia.get("codigo"), competencia["descripcion"]),
+                                    style="List Bullet")
+
+    _escribir_contenidos(documento, secuencia)
+
+    if secuencia.get("indicadores"):
+
+        _escribir_titulo(documento, "Indicadores de logro")
+
+        for indicador in secuencia["indicadores"]:
+            prefijo= _unir(" · ", indicador.get("codigo_competencia"), indicador.get("codigo"))
+            documento.add_paragraph(_codigo_y_texto(prefijo, indicador["descripcion"], ": "), style="List Bullet")
+
+    _escribir_bloque(documento, "Estrategia de enseñanza y de aprendizaje", secuencia.get("estrategia"))
+
+
+#Tabla de tres columnas: conceptos, procedimientos y actitudes y valores.
+def _escribir_contenidos(documento, secuencia):
+
+    contenidos= [("Conceptos", secuencia.get("contenido_conceptos")),
+                 ("Procedimientos", secuencia.get("contenido_procedimientos")),
+                 ("Actitudes y valores", secuencia.get("contenido_actitudes"))]
+
+    if not any((texto or "").strip() for _, texto in contenidos):
+        return
+
+    _escribir_titulo(documento, "Contenidos")
+
+    tabla= documento.add_table(rows=2, cols=3)
+    tabla.style= "Table Grid"
+
+    for columna, (rotulo, texto) in enumerate(contenidos):
+        _poner_texto_celda(tabla.rows[0].cells[columna], rotulo, negrita=True)
+        _sombrear_celda(tabla.rows[0].cells[columna])
+        _poner_texto_celda(tabla.rows[1].cells[columna], texto)
+
+
+def _escribir_tabla_de_sesiones(documento, secuencia):
+
+    _escribir_titulo(documento, "Secuencia didáctica")
+
+    columnas= ["Fecha", "Momento", "Actividades de aprendizaje", "Evidencias de aprendizaje",
+               "Instrumentos de evaluación", "Metacognición", "Recursos"]
+
+    tabla= documento.add_table(rows=1, cols=len(columnas))
+    tabla.style= "Table Grid"
+
+    for columna, nombre in enumerate(columnas):
+        _poner_texto_celda(tabla.rows[0].cells[columna], nombre, negrita=True)
+        _sombrear_celda(tabla.rows[0].cells[columna])
+
+    for sesion in secuencia["sesiones"]:
+
+        celdas= tabla.add_row().cells
+        valores= [_fecha_para_word(sesion.get("fecha")), sesion.get("momento") or "",
+                  sesion.get("actividad") or "", sesion.get("evidencia") or "",
+                  sesion.get("instrumento") or "", sesion.get("metacognicion") or "",
+                  sesion.get("recursos") or ""]
+
+        for celda, valor in zip(celdas, valores):
+            _poner_texto_celda(celda, valor)
+
+
+def _escribir_tareas(documento, secuencia):
+
+    if not secuencia.get("tareas"):
+        return
+
+    _escribir_titulo(documento, "Tareas vinculadas del Banco de Tareas")
+
+    for tarea in secuencia["tareas"]:
+
+        entrega= ""
+
+        if tarea.get("fecha_entrega"):
+            entrega= f" (entrega {_fecha_para_word(tarea['fecha_entrega'])})"
+
+        documento.add_paragraph(f"{tarea['titulo']} — {tarea.get('categoria') or 'Tarea'}{entrega}",
+                                style="List Bullet")
+
+
+# -----------------------------------------
+# piezas chicas del Word
+# -----------------------------------------
+def _escribir_titulo(documento, texto):
+
+    from docx.shared import Pt
+
+    parrafo= documento.add_paragraph()
+    letras= parrafo.add_run(texto)
+    letras.bold= True
+    letras.font.size= Pt(11)
+    parrafo.paragraph_format.space_before= Pt(8)
+    parrafo.paragraph_format.space_after= Pt(2)
+
+
+#Un título con su párrafo debajo, solo si el valor tiene algo escrito.
+def _escribir_bloque(documento, rotulo, valor):
+
+    if not (valor or "").strip():
+        return
+
+    _escribir_titulo(documento, rotulo)
+    documento.add_paragraph(valor.strip())
+
+
+def _poner_texto_celda(celda, texto, negrita=False):
+
+    celda.text= ""
+    letras= celda.paragraphs[0].add_run(texto or "")
+    letras.bold= negrita
+
+
+#Pinta el fondo de la celda. python-docx no trae una función para esto, hay que escribir el XML.
+def _sombrear_celda(celda, color="D9E2F3"):
+
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
 
-    doc = Document()
-    seccion = doc.sections[0]
-    seccion.orientation = WD_ORIENT.LANDSCAPE
-    seccion.page_width, seccion.page_height = seccion.page_height, seccion.page_width
-    for lado in ("left_margin", "right_margin", "top_margin", "bottom_margin"):
-        setattr(seccion, lado, Cm(1.8))
-    doc.styles["Normal"].font.name = "Calibri"
-    doc.styles["Normal"].font.size = Pt(10)
+    propiedades= celda._tc.get_or_add_tcPr()
+    sombra= OxmlElement("w:shd")
+    sombra.set(qn("w:val"), "clear")
+    sombra.set(qn("w:color"), "auto")
+    sombra.set(qn("w:fill"), color)
+    propiedades.append(sombra)
 
-    def sombrear(celda, color="D9E2F3"):
-        tc_pr = celda._tc.get_or_add_tcPr()
-        shd = OxmlElement("w:shd")
-        shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), color)
-        tc_pr.append(shd)
 
-    def texto_celda(celda, texto, negrita=False):
-        celda.text = ""
-        p = celda.paragraphs[0]
-        r = p.add_run(texto or "")
-        r.bold = negrita
-        return p
+#La fecha guardada es YYYY-MM-DD y en el Word va como DD/MM/YYYY. Si no hay fecha, queda vacío.
+def _fecha_para_word(fecha_iso):
 
-    def titulo(texto):
-        p = doc.add_paragraph()
-        r = p.add_run(texto)
-        r.bold = True
-        r.font.size = Pt(11)
-        p.paragraph_format.space_before = Pt(8)
-        p.paragraph_format.space_after = Pt(2)
+    try:
+        return datetime.strptime(str(fecha_iso)[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
 
-    cabecera = doc.add_paragraph()
-    cabecera.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if centro:
-        r = cabecera.add_run(centro + "\n"); r.bold = True; r.font.size = Pt(13)
-    r = cabecera.add_run("Planificación de Unidad de Aprendizaje — Secuencia Didáctica")
-    r.bold = True; r.font.size = Pt(12)
+    except (ValueError, TypeError):
+        return ""
 
-    t = doc.add_table(rows=3, cols=4)
-    t.style = "Table Grid"
-    pares = [
-        ("Título de la unidad", sec["titulo"], "Asignatura", sec.get("materia") or ""),
-        ("Grado / Sección", " ".join(x for x in (sec.get("grado"), sec.get("seccion")) if x),
-         "Período / Año escolar", " · ".join(x for x in (sec.get("periodo"), sec.get("anio_academico")) if x)),
-        ("Docente", sec.get("profesor") or "",
-         "Fechas", " – ".join(x for x in (_fmt_fecha(sec.get("fecha_inicio")), _fmt_fecha(sec.get("fecha_fin"))) if x)),
-    ]
-    for fila, (e1, v1, e2, v2) in zip(t.rows, pares):
-        for idx, (txt, neg) in enumerate(((e1, True), (v1, False), (e2, True), (v2, False))):
-            texto_celda(fila.cells[idx], txt, neg)
-            if neg:
-                sombrear(fila.cells[idx])
 
-    def bloque(rotulo, valor):
-        if (valor or "").strip():
-            titulo(rotulo)
-            doc.add_paragraph(valor.strip())
+#Une los textos que no estén vacíos con el separador. Sirve para "grado sección", "período · año", etc.
+def _unir(separador, *textos):
 
-    bloque("Eje transversal / Descriptores", sec.get("eje_transversal"))
-    bloque("Situación de aprendizaje", sec.get("situacion_aprendizaje"))
-    if sec.get("competencias_fundamentales_lista"):
-        titulo("Competencias fundamentales")
-        for x in sec["competencias_fundamentales_lista"]:
-            doc.add_paragraph(x, style="List Bullet")
-    if sec.get("competencias"):
-        titulo("Competencias específicas")
-        for ce in sec["competencias"]:
-            doc.add_paragraph(_codigo_y_texto(ce.get("codigo"), ce["descripcion"]), style="List Bullet")
+    return separador.join(texto for texto in textos if texto)
 
-    contenidos = [("Conceptos", sec.get("contenido_conceptos")),
-                  ("Procedimientos", sec.get("contenido_procedimientos")),
-                  ("Actitudes y valores", sec.get("contenido_actitudes"))]
-    if any((v or "").strip() for _, v in contenidos):
-        titulo("Contenidos")
-        tc = doc.add_table(rows=2, cols=3)
-        tc.style = "Table Grid"
-        for i, (rot, val) in enumerate(contenidos):
-            texto_celda(tc.rows[0].cells[i], rot, True); sombrear(tc.rows[0].cells[i])
-            texto_celda(tc.rows[1].cells[i], val)
 
-    if sec.get("indicadores"):
-        titulo("Indicadores de logro")
-        for il in sec["indicadores"]:
-            prefijo = " · ".join(x for x in (il.get("codigo_competencia"), il.get("codigo")) if x)
-            doc.add_paragraph(_codigo_y_texto(prefijo, il["descripcion"], ": "), style="List Bullet")
-    bloque("Estrategia de enseñanza y de aprendizaje", sec.get("estrategia"))
+def _codigo_y_texto(codigo, descripcion, separador=". "):
 
-    titulo("Secuencia didáctica")
-    columnas = ["Fecha", "Momento", "Actividades de aprendizaje", "Evidencias de aprendizaje",
-                "Instrumentos de evaluación", "Metacognición", "Recursos"]
-    ts = doc.add_table(rows=1, cols=len(columnas))
-    ts.style = "Table Grid"
-    for i, nombre in enumerate(columnas):
-        texto_celda(ts.rows[0].cells[i], nombre, True); sombrear(ts.rows[0].cells[i])
-    for s in sec["sesiones"]:
-        fila = ts.add_row().cells
-        valores = [_fmt_fecha(s.get("fecha")), s.get("momento") or "", s.get("actividad") or "",
-                   s.get("evidencia") or "", s.get("instrumento") or "",
-                   s.get("metacognicion") or "", s.get("recursos") or ""]
-        for celda, v in zip(fila, valores):
-            texto_celda(celda, v)
-    if sec.get("tareas"):
-        titulo("Tareas vinculadas del Banco de Tareas")
-        for tarea in sec["tareas"]:
-            extra = f" (entrega {_fmt_fecha(tarea['fecha_entrega'])})" if tarea.get("fecha_entrega") else ""
-            doc.add_paragraph(f"{tarea['titulo']} — {tarea.get('categoria') or 'Tarea'}{extra}",
-                              style="List Bullet")
-    doc.save(ruta_salida)
-    return ruta_salida
+    return f"{codigo}{separador}{descripcion}" if codigo else descripcion

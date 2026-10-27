@@ -2248,7 +2248,7 @@ def _modulo_visible_ahora(main_window, nombre):
     """Fuente de verdad REAL de qué módulos ve este usuario ahora mismo.
 
     Antes se repetía aquí la regla de permisos.modulo_visible(rol, nombre),
-    que solo mira la tabla ACCESO_MODULOS por rol -y por eso se quedaba
+    que solo mira la tabla PERMISOS_TECHO por rol -y por eso se quedaba
     corta en varios casos reales: no sabe si "Politécnico"/"Universidad"
     existen para el tipo de institución configurado (main_window solo
     agrega esos módulos a self.modulos si corresponde -ver
@@ -2293,7 +2293,7 @@ def _filtrar_pasos(main_window, lista):
 
 
 def _lanzar(main_window, tipo, titulo_carrusel, contenido_rapido, pasos_detallado, marcar_visto):
-    #El rol Estudiante no tiene el módulo "Configuración" en su menú (ver permisos.ACCESO_MODULOS), así que no
+    #El rol Estudiante no tiene el módulo "Configuración" en su menú (ver permisos.PERMISOS_TECHO), así que no
     #puede relanzarlo manualmente; por eso el texto de la pantalla de elección varía según el rol. En cualquier
     #caso, la oferta SOLO se hace una vez por usuario: el flag se marca al completar, al saltar o incluso al salir
     #a medias del

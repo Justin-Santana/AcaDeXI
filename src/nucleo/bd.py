@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
-from src.nucleo.rutas import get_app_root_dir  # noqa: F401  (re-export)
 
 try:
     from argon2 import PasswordHasher
@@ -32,9 +31,6 @@ def get_app_data_dir():
     os.makedirs(os.path.join(ruta, "fotos"), exist_ok=True)
     os.makedirs(os.path.join(ruta, "backups"), exist_ok=True)
     return ruta
-
-
-# get_app_root_dir vive en src.nucleo.rutas (se re-exporta aquí por compatibilidad)
 
 
 DB_PATH = os.path.join(get_app_data_dir(), "acadexi.db")
@@ -87,7 +83,7 @@ def info_bd_base():
     }
 
 
-def get_connection():
+def obtener_conexion():
     global _ruta_wal_configurada
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -112,7 +108,7 @@ def obtener_nivel_educativo_grado(grado_id):
     """'Primaria' | 'Secundaria' | None (no clasificado, o grado_id=None)."""
     if grado_id is None:
         return None
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT nivel_educativo FROM grados WHERE id=?", (grado_id,))
     f = c.fetchone()
@@ -124,7 +120,7 @@ def obtener_nivel_educativo_de_seccion(seccion_id):
     """Nivel educativo del grado/curso al que pertenece `seccion_id`."""
     if seccion_id is None:
         return None
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("""SELECT grados.nivel_educativo as nivel FROM secciones
                  LEFT JOIN grados ON secciones.grado_id = grados.id WHERE secciones.id=?""", (seccion_id,))
@@ -137,7 +133,7 @@ def obtener_nivel_educativo_de_estudiante(estudiante_id):
     """Nivel educativo del grado/curso del estudiante (vía su sección)."""
     if estudiante_id is None:
         return None
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("""SELECT grados.nivel_educativo as nivel FROM estudiantes
                  LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
@@ -166,7 +162,7 @@ def resolver_nivel_academico_grado(grado_id):
     si el grado de secundaria aún no fue clasificado por ciclo)."""
     if grado_id is None:
         return None, None
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT nivel_educativo, ciclo_secundaria FROM grados WHERE id=?", (grado_id,))
     f = c.fetchone()
@@ -180,7 +176,7 @@ def resolver_nivel_academico_de_seccion(seccion_id):
     """(nivel, ciclo) del Grado/Curso al que pertenece `seccion_id`."""
     if seccion_id is None:
         return None, None
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("""SELECT grados.nivel_educativo as nivel, grados.ciclo_secundaria as ciclo
                  FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id
@@ -200,7 +196,7 @@ def resolver_nivel_academico_estudiante(estudiante_id):
     relaciones todavía (estudiante recién creado sin matricular)."""
     if estudiante_id is None:
         return None, None
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("""SELECT estudiantes.carrera_id as carrera_id, estudiantes.seccion_id as seccion_id,
                  grados.nivel_educativo as nivel, grados.ciclo_secundaria as ciclo
@@ -229,7 +225,7 @@ def hash_password(password: str) -> str:
     return f"pbkdf2${salt}${digest}"
 
 
-def check_password(password: str, hashed: str) -> bool:
+def verificar_contrasena(password: str, hashed: str) -> bool:
     if hashed.startswith("pbkdf2$"):
         import hashlib
         import hmac
@@ -288,7 +284,7 @@ def obtener_criterio_numero_lista():
     Devuelve CRITERIO_APELLIDOS_NOMBRE si la instalación aún no tiene nada
     guardado (valor por defecto de la columna) o si el valor guardado ya no
     es válido, por ejemplo tras restaurar un backup viejo."""
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT criterio_numero_lista FROM configuracion WHERE id=1")
     fila = c.fetchone()
@@ -304,7 +300,7 @@ def establecer_criterio_numero_lista(criterio, recalcular=True):
     existente: simplemente deja de recalcularse solo)."""
     if criterio not in CRITERIOS_NUMERO_LISTA:
         raise ValueError(f"Criterio de número de lista no reconocido: {criterio!r}")
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("UPDATE configuracion SET criterio_numero_lista=? WHERE id=1", (criterio,))
     conn.commit()
@@ -343,7 +339,7 @@ def recalcular_numeros_lista(seccion_id, criterio=None):
     if criterio == CRITERIO_MANUAL:
         return
     orden_sql = _orden_sql_para_criterio(criterio)
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute(f"""SELECT id FROM estudiantes
                   WHERE seccion_id=? AND estado='Activo'
@@ -408,7 +404,7 @@ def recalcular_numeros_lista_todas_secciones(criterio=None):
     o desde el botón "Recalcular Números de Lista" del módulo Estudiantes
     cuando se quiere refrescar todo de una vez (por ejemplo, tras importar
     varios estudiantes nuevos)."""
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT DISTINCT seccion_id FROM estudiantes WHERE seccion_id IS NOT NULL")
     secciones = [fila["seccion_id"] for fila in c.fetchall()]
@@ -430,7 +426,7 @@ def verificar_bloqueo_login(username):
     Si el bloqueo ya venció, lo limpia (junto con el contador) para que la
     cuenta quede libre de nuevo sin que el usuario tenga que esperar a un
     login exitoso."""
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT bloqueado_hasta FROM usuarios WHERE username=?", (username,))
     fila = c.fetchone()
@@ -460,7 +456,7 @@ def registrar_intento_fallido_login(username):
     de quedar ya cerca del límite). Devuelve (bloqueada_ahora: bool,
     intentos_restantes: int) para que login.py pueda avisar cuántos intentos
     le quedan antes de bloquearse."""
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT intentos_fallidos FROM usuarios WHERE username=?", (username,))
     fila = c.fetchone()
@@ -484,7 +480,7 @@ def registrar_intento_fallido_login(username):
 def resetear_intentos_login(username):
     """Limpia el contador de intentos fallidos y cualquier bloqueo vigente de
     `username`. Se llama tras un login exitoso."""
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("UPDATE usuarios SET intentos_fallidos=0, bloqueado_hasta=NULL WHERE username=?", (username,))
     conn.commit()
@@ -512,7 +508,7 @@ def _agregar_columna_si_falta(conn, tabla, columna, definicion):
 
 
 def inicializar_bd():
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
 
     c.execute("""CREATE TABLE IF NOT EXISTS configuracion (
@@ -1889,7 +1885,7 @@ def inicializar_bd():
 
 
 def obtener_config_smtp():
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("""SELECT smtp_host, smtp_puerto, smtp_usuario, smtp_password, smtp_remitente,
                  smtp_seguridad, nombre_institucion FROM configuracion WHERE id=1""")
@@ -1948,7 +1944,7 @@ def enviar_correo(destinatario, asunto, cuerpo):
 
 def auditoria_esta_activa():
     try:
-        conn = get_connection()
+        conn = obtener_conexion()
         c = conn.cursor()
         c.execute("SELECT auditoria_activa FROM configuracion WHERE id=1")
         f = c.fetchone()
@@ -1965,7 +1961,7 @@ def registrar_auditoria(modulo, accion, usuario, detalle=""):
     if not es_cambio_del_interruptor and not auditoria_esta_activa():
         return
     try:
-        conn = get_connection()
+        conn = obtener_conexion()
         c = conn.cursor()
         c.execute(
             "INSERT INTO auditoria (fecha, modulo, accion, usuario, detalle) VALUES (?, ?, ?, ?, ?)",
@@ -1978,7 +1974,7 @@ def registrar_auditoria(modulo, accion, usuario, detalle=""):
 
 
 def obtener_config_backup():
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT backup_modo, backup_carpeta, backup_ultima_fecha FROM configuracion WHERE id=1")
     f = c.fetchone()
@@ -1993,7 +1989,7 @@ def obtener_config_backup():
 
 
 def guardar_config_backup(modo, carpeta):
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("UPDATE configuracion SET backup_modo=?, backup_carpeta=? WHERE id=1", (modo, carpeta or ""))
     conn.commit()
@@ -2001,7 +1997,7 @@ def guardar_config_backup(modo, carpeta):
 
 
 def mostrar_backups_gerenciales():
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT mostrar_backups_gerenciales FROM configuracion WHERE id=1")
     f = c.fetchone()
@@ -2010,7 +2006,7 @@ def mostrar_backups_gerenciales():
 
 
 def guardar_mostrar_backups_gerenciales(valor):
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("UPDATE configuracion SET mostrar_backups_gerenciales=? WHERE id=1", (1 if valor else 0,))
     conn.commit()
@@ -2019,7 +2015,7 @@ def guardar_mostrar_backups_gerenciales(valor):
 
 def _registrar_historial_backup(tipo, destino, usuario="Sistema", exitoso=True):
     try:
-        conn = get_connection()
+        conn = obtener_conexion()
         c = conn.cursor()
         tamano_kb = os.path.getsize(destino) / 1024 if os.path.exists(destino) else 0
         c.execute("""INSERT INTO backups (fecha, tipo, destino, tamano_kb, usuario, exitoso)
@@ -2033,7 +2029,7 @@ def _registrar_historial_backup(tipo, destino, usuario="Sistema", exitoso=True):
 
 
 def obtener_historial_backups(limite=100):
-    conn = get_connection()
+    conn = obtener_conexion()
     c = conn.cursor()
     c.execute("SELECT * FROM backups ORDER BY id DESC LIMIT ?", (limite,))
     filas = c.fetchall()
@@ -2071,7 +2067,7 @@ def crear_backup(carpeta_extra=None, tipo="Manual", usuario="Sistema"):
             _registrar_historial_backup(f"{tipo} (Carpeta Personalizada)", carpeta_extra, usuario, exitoso=False)
 
     try:
-        conn = get_connection()
+        conn = obtener_conexion()
         c = conn.cursor()
         c.execute("UPDATE configuracion SET backup_ultima_fecha=? WHERE id=1",
                   (datetime.now().strftime("%Y-%m-%d %H:%M:%S"),))

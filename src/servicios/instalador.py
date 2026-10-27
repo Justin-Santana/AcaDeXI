@@ -29,7 +29,8 @@ import zipfile
 import tempfile
 from datetime import datetime
 
-from src.nucleo.bd import get_app_data_dir, obtener_carpeta_raiz, DB_PATH, obtener_conexion, existe_bd_base, RUTA_BD_BASE
+from src.nucleo.rutas import obtener_carpeta_raiz
+from src.nucleo.bd import get_app_data_dir, DB_PATH, obtener_conexion, existe_bd_base, RUTA_BD_BASE
 from src.interfaz.ventana_principal import CONFIG_PATH
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto

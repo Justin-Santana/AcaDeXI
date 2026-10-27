@@ -7,11 +7,11 @@ RAIZ = Path(__file__).resolve().parents[1]
 
 SCRIPT = textwrap.dedent("""
     import sys, os
-    from src.nucleo.bd import inicializar_bd, get_connection
+    from src.nucleo.bd import inicializar_bd, obtener_conexion
     inicializar_bd()
     from src.nucleo import secuencias as S
 
-    conn = get_connection(); c = conn.cursor()
+    conn = obtener_conexion(); c = conn.cursor()
     c.execute("INSERT INTO grados (nombre, orden) VALUES ('1ro', 1)"); g = c.lastrowid
     c.execute("INSERT INTO materias (codigo, nombre) VALUES ('LEN','Lengua Española')"); m = c.lastrowid
     c.execute("INSERT INTO materias (codigo, nombre) VALUES ('MAT','Matemática')"); m2 = c.lastrowid
@@ -125,7 +125,7 @@ SCRIPT = textwrap.dedent("""
     # --- borrar secuencia limpia sesiones y vínculos (cascade), no toca tareas ni CE
     S.eliminar_secuencia(sid)
     assert S.obtener_secuencia(sid) is None
-    conn = get_connection()
+    conn = obtener_conexion()
     assert conn.execute("SELECT COUNT(*) FROM secuencia_sesiones WHERE secuencia_id=?", (sid,)).fetchone()[0] == 0
     assert conn.execute("SELECT COUNT(*) FROM tareas").fetchone()[0] == 1
     assert conn.execute("SELECT COUNT(*) FROM competencias_especificas").fetchone()[0] == 1
@@ -158,10 +158,11 @@ def test_competencias_fundamentales_coinciden_con_configuracion():
 SCRIPT_UI = textwrap.dedent("""
     import os, sys
     from PySide6.QtWidgets import QApplication, QWidget, QCheckBox
+    from PySide6.QtCore import Qt, QDate
     app = QApplication(sys.argv)
-    from src.nucleo.bd import inicializar_bd, get_connection
+    from src.nucleo.bd import inicializar_bd, obtener_conexion
     inicializar_bd()
-    conn = get_connection(); c = conn.cursor()
+    conn = obtener_conexion(); c = conn.cursor()
     c.execute("INSERT INTO grados (nombre, orden) VALUES ('2do', 2)"); g = c.lastrowid
     c.execute("INSERT INTO secciones (grado_id, nombre) VALUES (?, 'A')", (g,))
     c.execute("INSERT INTO materias (codigo, nombre) VALUES ('CS','Ciencias Sociales')"); m = c.lastrowid
@@ -177,28 +178,28 @@ SCRIPT_UI = textwrap.dedent("""
     mw = QWidget(); mw.rol_actual = None; mw.id_usuario_actual = None
 
     modulo = ui.ModuloSecuenciasDidacticas(mw)
-    assert modulo.tabla.rowCount() == 0 and modulo.chip_contador.text() == "0 secuencias"
+    assert modulo.tabla_secuencias.rowCount() == 0 and modulo.lbl_contador.text() == "0 secuencias"
 
     # editor nuevo: rellenar por la interfaz y guardar
     ed = ui.EditorSecuencia(mw)
-    assert ed.tabla.rowCount() == 3
+    assert ed.tabla_sesiones.rowCount() == 3
     ed.in_titulo.setText("La independencia")
-    ed.cb_materia.setCurrentIndex(ed.cb_materia.findData(m))
-    ed.cb_grado.setCurrentIndex(ed.cb_grado.findData(g))
-    assert ed.lista_ce.count() == 1 and ed.lista_tareas.count() == 1 and ed.lista_il.count() == 0
-    ed.lista_ce.item(0).setCheckState(ui.Qt.CheckState.Checked)       # dispara la carga de indicadores
-    assert ed.lista_il.count() == 1
-    ed.lista_il.item(0).setCheckState(ui.Qt.CheckState.Checked)
-    ed.lista_tareas.item(0).setCheckState(ui.Qt.CheckState.Checked)
-    ed.lista_fundamentales.item(1).setCheckState(ui.Qt.CheckState.Checked)
-    ed.tx_situacion.setPlainText("Investigan el 27 de febrero.")
-    ed.tabla.item(0, 2).setText("Lluvia de ideas")
-    ed.f_inicio.setDate(ui.QDate(2026, 11, 2))
-    ed._agregar_sesion()
-    assert ed.tabla.rowCount() == 4
-    ed._mover_sesion(-1)
-    ed.tabla.selectRow(1); ed._mover_sesion(1)
-    ed.tabla.cellWidget(0, 8).findChild(QCheckBox).setChecked(True)
+    ed.combo_materia.setCurrentIndex(ed.combo_materia.findData(m))
+    ed.combo_grado.setCurrentIndex(ed.combo_grado.findData(g))
+    assert ed.lista_competencias.count() == 1 and ed.lista_tareas.count() == 1 and ed.lista_indicadores.count() == 0
+    ed.lista_competencias.item(0).setCheckState(Qt.CheckState.Checked)       # dispara la carga de indicadores
+    assert ed.lista_indicadores.count() == 1
+    ed.lista_indicadores.item(0).setCheckState(Qt.CheckState.Checked)
+    ed.lista_tareas.item(0).setCheckState(Qt.CheckState.Checked)
+    ed.lista_fundamentales.item(1).setCheckState(Qt.CheckState.Checked)
+    ed.in_situacion.setPlainText("Investigan el 27 de febrero.")
+    ed.tabla_sesiones.item(0, 2).setText("Lluvia de ideas")
+    ed.in_fecha_inicio.setDate(QDate(2026, 11, 2))
+    ed.tabla_sesiones.agregar_despues_de_la_actual()
+    assert ed.tabla_sesiones.rowCount() == 4
+    ed.tabla_sesiones.mover_actual(-1)
+    ed.tabla_sesiones.selectRow(1); ed.tabla_sesiones.mover_actual(1)
+    ed.tabla_sesiones.cellWidget(0, 8).findChild(QCheckBox).setChecked(True)
     ed._guardar()
     assert ed.result() == 1 and ed.secuencia_id
     sec = S.obtener_secuencia(ed.secuencia_id)
@@ -212,23 +213,23 @@ SCRIPT_UI = textwrap.dedent("""
     # reabrir: debe volver a marcar todo lo guardado
     ed2 = ui.EditorSecuencia(mw, ed.secuencia_id)
     assert ed2.in_titulo.text() == "La independencia"
-    assert ed2.cb_materia.currentData() == m and ed2.cb_grado.currentData() == g
-    assert ed2._marcados(ed2.lista_ce) == [ce] and len(ed2._marcados(ed2.lista_il)) == 1
+    assert ed2.combo_materia.currentData() == m and ed2.combo_grado.currentData() == g
+    assert ed2._marcados(ed2.lista_competencias) == [ce] and len(ed2._marcados(ed2.lista_indicadores)) == 1
     assert len(ed2._marcados(ed2.lista_tareas)) == 1
-    assert ed2.tabla.rowCount() == 4 and ed2.f_inicio.date() == ui.QDate(2026, 11, 2)
-    assert ed2.cb_seccion.currentData() is None
-    assert ed2.lista_fundamentales.item(1).checkState() == ui.Qt.CheckState.Checked
+    assert ed2.tabla_sesiones.rowCount() == 4 and ed2.in_fecha_inicio.date() == QDate(2026, 11, 2)
+    assert ed2.combo_seccion.currentData() is None
+    assert ed2.lista_fundamentales.item(1).checkState() == Qt.CheckState.Checked
     # autocompletar fechas (sin diálogo): invoca la lógica con los mismos datos
-    ses = ed2._sesiones_desde_tabla()
+    ses = ed2.tabla_sesiones.sesiones()
     assert ses[0]["realizada"] is True and ses[0]["actividad"] == "Lluvia de ideas"
 
     # lista principal y exportación
     modulo.refrescar()
-    assert modulo.tabla.rowCount() == 1 and modulo.tabla.item(0, 0).text() == "La independencia"
-    assert modulo.tabla.item(0, 5).text() == "1/4 sesiones"
-    modulo.tabla.selectRow(0)
-    modulo._duplicar(); assert modulo.tabla.rowCount() == 2
-    modulo.in_buscar.setText("zzz"); assert modulo.tabla.rowCount() == 0
+    assert modulo.tabla_secuencias.rowCount() == 1 and modulo.tabla_secuencias.item(0, 0).text() == "La independencia"
+    assert modulo.tabla_secuencias.item(0, 5).text() == "1/4 sesiones"
+    modulo.tabla_secuencias.selectRow(0)
+    modulo._duplicar(); assert modulo.tabla_secuencias.rowCount() == 2
+    modulo.in_buscar.setText("zzz"); assert modulo.tabla_secuencias.rowCount() == 0
     modulo.in_buscar.setText(""); modulo.actualizar_tema()
     print("OK")
 """)
@@ -242,10 +243,12 @@ def test_secuencias_interfaz(tmp_path):
 SCRIPT_ST = textwrap.dedent("""
     import os, sys
     from PySide6.QtWidgets import QApplication, QWidget, QCheckBox
+    from PySide6.QtCore import Qt
     app = QApplication(sys.argv)
     from src.nucleo import bd_single_teacher as db
     from src.nucleo import secuencias_st as S
-    conn = db.get_connection(); c = conn.cursor()
+    from src.nucleo import secuencias as C
+    conn = db.obtener_conexion(); c = conn.cursor()
     c.execute("UPDATE configuracion SET nombre_docente='Luis Mejía' WHERE id=1")
     c.execute("INSERT INTO secciones (nombre, nivel_educativo) VALUES ('8vo A','Secundaria')"); sec_id = c.lastrowid
     c.execute("INSERT INTO materias (nombre) VALUES ('Matemática')"); m = c.lastrowid
@@ -261,19 +264,19 @@ SCRIPT_ST = textwrap.dedent("""
             S.guardar_secuencia(malo); raise SystemExit("debió fallar")
         except ValueError:
             pass
-    ses = S.sesiones_base(3); ses[0].update(actividad="Explorar", evidencia="Esquema", instrumento="Rúbrica")
+    ses = C.sesiones_base(3); ses[0].update(actividad="Explorar", evidencia="Esquema", instrumento="Rúbrica")
     sid = S.guardar_secuencia(
         {"titulo": "Ecuaciones", "materia_id": m, "seccion_id": sec_id,
          "situacion_aprendizaje": "Calculan el costo de una fiesta.",
          "competencias_especificas": " Resuelve ecuaciones \\n\\n Argumenta ", "indicadores_logro": "Plantea la ecuación",
-         "competencias_fundamentales": S.unir_competencias_fundamentales(["Resolución de Problemas"]),
+         "competencias_fundamentales": C.unir_competencias_fundamentales(["Resolución de Problemas"]),
          "contenido_conceptos": "Ecuación lineal"}, tareas_ids=[t, t], sesiones=ses)
     sec = S.obtener_secuencia(sid)
     assert sec["materia"] == "Matemática" and sec["grado"] == "8vo A" and sec["profesor"] == "Luis Mejía"
     assert [x["descripcion"] for x in sec["competencias"]] == ["Resuelve ecuaciones", "Argumenta"]
     assert [x["descripcion"] for x in sec["indicadores"]] == ["Plantea la ecuación"]
     assert [x["titulo"] for x in sec["tareas"]] == ["Taller"] and len(sec["sesiones"]) == 3
-    avisos = S.validar_secuencia(sec)
+    avisos = C.validar_secuencia(sec)
     assert any("Sesiones sin actividad" in a for a in avisos) and not any("indicador" in a.lower() for a in avisos), avisos
     assert [r["titulo"] for r in S.listar_secuencias(materia_id=m)] == ["Ecuaciones"]
     assert S.listar_secuencias(materia_id=m2) == [] and S.listar_secuencias(texto="fiesta")[0]["total_sesiones"] == 3
@@ -286,7 +289,7 @@ SCRIPT_ST = textwrap.dedent("""
     assert "Resuelve ecuaciones" in texto and "Plantea la ecuación" in texto and "Taller" in texto
     assert {"Explorar", "Rúbrica", "Luis Mejía", "8vo A", "Matemática"} <= celdas, celdas
     # borrar materia no borra la secuencia; borrar secuencia no borra tareas
-    conn = db.get_connection(); conn.execute("DELETE FROM materias WHERE id=?", (m,)); conn.commit(); conn.close()
+    conn = db.obtener_conexion(); conn.execute("DELETE FROM materias WHERE id=?", (m,)); conn.commit(); conn.close()
     assert S.obtener_secuencia(sid)["materia_id"] is None
     S.eliminar_secuencia(dup["id"]); assert S.obtener_secuencia(dup["id"]) is None
 
@@ -295,25 +298,25 @@ SCRIPT_ST = textwrap.dedent("""
     ui.mostrar_mensaje = lambda *a, **k: None
     mw = QWidget()
     modulo = ui.ModuloSecuenciasST(mw)
-    assert modulo.tabla.rowCount() == 1
+    assert modulo.tabla_secuencias.rowCount() == 1
     ed = ui.EditorSecuenciaST(mw, sid, mw)
-    assert ed.in_titulo.text() == "Ecuaciones" and ed.tx_ce.toPlainText() == "Resuelve ecuaciones\\nArgumenta"
-    assert ed.tabla.rowCount() == 3 and ed.cb_curso.currentData() == sec_id
-    ed.in_titulo.setText("Ecuaciones II"); ed.tabla.cellWidget(0, 8).findChild(QCheckBox).setChecked(True)
+    assert ed.in_titulo.text() == "Ecuaciones" and ed.in_competencias.toPlainText() == "Resuelve ecuaciones\\nArgumenta"
+    assert ed.tabla_sesiones.rowCount() == 3 and ed.combo_curso.currentData() == sec_id
+    ed.in_titulo.setText("Ecuaciones II"); ed.tabla_sesiones.cellWidget(0, 8).findChild(QCheckBox).setChecked(True)
     ed._guardar()
     sec = S.obtener_secuencia(sid)
-    assert sec["titulo"] == "Ecuaciones II" and S.progreso(sec["sesiones"])[0] == 1
+    assert sec["titulo"] == "Ecuaciones II" and C.progreso(sec["sesiones"])[0] == 1
     nuevo = ui.EditorSecuenciaST(mw)
     nuevo.in_titulo.setText("Funciones")
-    nuevo.cb_materia.setCurrentIndex(nuevo.cb_materia.findData(m2))
+    nuevo.combo_materia.setCurrentIndex(nuevo.combo_materia.findData(m2))
     assert nuevo.lista_tareas.count() == 1           # 'Otra'
-    nuevo.lista_tareas.item(0).setCheckState(ui.Qt.CheckState.Checked)
-    nuevo.tx_ce.setPlainText("Grafica\\nInterpreta")
+    nuevo.lista_tareas.item(0).setCheckState(Qt.CheckState.Checked)
+    nuevo.in_competencias.setPlainText("Grafica\\nInterpreta")
     nuevo._guardar()
     n = S.obtener_secuencia(nuevo.secuencia_id)
     assert [t["titulo"] for t in n["tareas"]] == ["Otra"] and n["competencias"][1]["descripcion"] == "Interpreta"
-    modulo.refrescar(); assert modulo.tabla.rowCount() == 2
-    modulo.tabla.selectRow(0); modulo._duplicar(); assert modulo.tabla.rowCount() == 3
+    modulo.refrescar(); assert modulo.tabla_secuencias.rowCount() == 2
+    modulo.tabla_secuencias.selectRow(0); modulo._duplicar(); assert modulo.tabla_secuencias.rowCount() == 3
     import importlib
     v = importlib.import_module("src.interfaz.ventana_principal")
     mod, cls = v._FABRICAS_MODULOS_SINGLE_TEACHER["Secuencias Didácticas"]
