@@ -1,29 +1,28 @@
-# -----------------------------------------
-# intercambio de datos entre las cuatro ediciones
-# permisos.py resuelve qué puede ver cada edición; esto resuelve otra cosa: cómo un estudiante, una
-# calificación o una asistencia capturada en UNA edición viaja y se entiende en OTRA, aunque el
-# esquema de base de datos sea distinto (Single Teacher no tiene nada institucional debajo, Full y
-# Docentes sí).
-# Sirve para: un profesor de Single Teacher que entra a una institución y pasa sus estudiantes y
-# calificaciones a Dirección; un profesor de Docentes que exporta sus estudiantes ya combinados con
-# sus overrides para respaldarlos o pasárselos a un colega; o exportar las calificaciones de un
-# periodo para que otra edición las revise.
-# No reemplaza al .acdx del perfil ni a sincronizacion.py: esos mantienen una misma base igual
-# entre equipos, esto mueve un pedazo de datos entre instalaciones que no comparten base.
-#
-# El paquete es un JSON plano con extensión .acdxpkg, sin cifrar, porque son datos que la propia
-# institución maneja entre los suyos:
-#    {
-#        "version_formato": 1,
-#        "tipo": "estudiantes" | "calificaciones" | "asistencia",
-#        "edicion_origen": "full" | "docentes" | "single_teacher" | "side_stepper",
-#        "generado": "2026-08-21 10:00:00",
-#        "registros": [ {...}, ... ]
-#    }
-# El emparejamiento nunca usa el id interno, que es distinto en cada instalación: los estudiantes
-# se emparejan por nombre, apellidos y fecha de nacimiento, y las calificaciones por el NOMBRE de
-# la materia y del periodo. Si el estudiante ya existe se actualiza; si no, se crea.
-# -----------------------------------------
+#-----------------------------------------
+#intercambio de datos entre las cuatro ediciones
+#permisos.py resuelve qué puede ver cada edición; esto resuelve otra cosa: cómo un estudiante, una
+#calificación o una asistencia capturada en UNA edición viaja y se entiende en OTRA, aunque el
+#esquema de base de datos sea distinto (Single Teacher no tiene nada institucional debajo, Full y
+#Docentes sí).
+#Sirve para: un profesor de Single Teacher que entra a una institución y pasa sus estudiantes y
+#calificaciones a Dirección; un profesor de Docentes que exporta sus estudiantes ya combinados con
+#sus overrides para respaldarlos o pasárselos a un colega; o exportar las calificaciones de un
+#periodo para que otra edición las revise.
+#No reemplaza al .acdx del perfil ni a sincronizacion.py: esos mantienen una misma base igual
+#entre equipos, esto mueve un pedazo de datos entre instalaciones que no comparten base.
+##El paquete es un JSON plano con extensión .acdxpkg, sin cifrar, porque son datos que la propia
+#institución maneja entre los suyos:
+#{
+#"version_formato": 1,
+#"tipo": "estudiantes" | "calificaciones" | "asistencia",
+#"edicion_origen": "full" | "docentes" | "single_teacher" | "side_stepper",
+#"generado": "2026-08-21 10:00:00",
+#"registros": [ {...}, ... ]
+#}
+#El emparejamiento nunca usa el id interno, que es distinto en cada instalación: los estudiantes
+#se emparejan por nombre, apellidos y fecha de nacimiento, y las calificaciones por el NOMBRE de
+#la materia y del periodo. Si el estudiante ya existe se actualiza; si no, se crea.
+#-----------------------------------------
 import json
 from datetime import datetime
 
@@ -34,11 +33,11 @@ CAMPOS_CANONICOS_ESTUDIANTE= ["nombre", "apellidos", "sexo", "fecha_nacimiento",
                               "direccion", "telefono", "correo", "tutor", "tutor2", "estado"]
 
 
-# -----------------------------------------
-# conexión según la edición
-# el resto del módulo trabaja siempre sobre listas de dicts, así que este es el único punto que
-# sabe de qué esquema vienen y a cuál van.
-# -----------------------------------------
+#-----------------------------------------
+#conexión según la edición
+#el resto del módulo trabaja siempre sobre listas de dicts, así que este es el único punto que
+#sabe de qué esquema vienen y a cuál van.
+#-----------------------------------------
 def _conexion_para_edicion(main_window):
 
     try:
@@ -57,12 +56,12 @@ def _conexion_para_edicion(main_window):
     return obtener_conexion(), edicion
 
 
-# -----------------------------------------
-# estudiantes
-# -----------------------------------------
-# exporta los estudiantes de una sección, o todos si seccion_id es None. En la edición Docentes se
-# exporta la versión ya combinada con los overrides locales, que es la que el docente ve como
-# correcta, no el dato institucional crudo.
+#-----------------------------------------
+#estudiantes
+#-----------------------------------------
+#exporta los estudiantes de una sección, o todos si seccion_id es None. En la edición Docentes se
+#exporta la versión ya combinada con los overrides locales, que es la que el docente ve como
+#correcta, no el dato institucional crudo.
 def exportar_estudiantes(main_window, ruta_archivo, seccion_id=None):
 
     conn, edicion= _conexion_para_edicion(main_window)
@@ -89,9 +88,9 @@ def exportar_estudiantes(main_window, ruta_archivo, seccion_id=None):
     return len(registros)
 
 
-# importa un paquete de estudiantes. Si el estudiante ya existe por nombre, apellidos y fecha de
-# nacimiento, actualiza sus campos; si no, lo crea y lo deja en la sección de destino cuando se
-# indicó una.
+#importa un paquete de estudiantes. Si el estudiante ya existe por nombre, apellidos y fecha de
+#nacimiento, actualiza sus campos; si no, lo crea y lo deja en la sección de destino cuando se
+#indicó una.
 def importar_estudiantes(main_window, ruta_archivo, seccion_id_destino=None):
 
     datos= _leer_paquete(ruta_archivo, tipo_esperado="estudiantes")
@@ -134,11 +133,11 @@ def importar_estudiantes(main_window, ruta_archivo, seccion_id_destino=None):
     return {"creados": creados, "actualizados": actualizados}
 
 
-# -----------------------------------------
-# calificaciones
-# acá el destino siempre se pide explícito: mezclar notas de una materia con otra por nombre sería
-# demasiado arriesgado para hacerlo solo.
-# -----------------------------------------
+#-----------------------------------------
+#calificaciones
+#acá el destino siempre se pide explícito: mezclar notas de una materia con otra por nombre sería
+#demasiado arriesgado para hacerlo solo.
+#-----------------------------------------
 def exportar_calificaciones(main_window, ruta_archivo, materia_id, periodo_id=None):
 
     conn, edicion= _conexion_para_edicion(main_window)
@@ -183,8 +182,8 @@ def exportar_calificaciones(main_window, ruta_archivo, materia_id, periodo_id=No
     return len(registros)
 
 
-# solo importa la nota si el estudiante ya existe en el destino. Los que falten se devuelven en una
-# lista para que quien importa los cargue primero con importar_estudiantes.
+#solo importa la nota si el estudiante ya existe en el destino. Los que falten se devuelven en una
+#lista para que quien importa los cargue primero con importar_estudiantes.
 def importar_calificaciones(main_window, ruta_archivo, materia_id_destino, periodo_id_destino):
 
     datos= _leer_paquete(ruta_archivo, tipo_esperado="calificaciones")
@@ -221,9 +220,9 @@ def importar_calificaciones(main_window, ruta_archivo, materia_id_destino, perio
     return {"importadas": importadas, "estudiantes_faltantes": faltantes}
 
 
-# -----------------------------------------
-# leer y escribir el paquete
-# -----------------------------------------
+#-----------------------------------------
+#leer y escribir el paquete
+#-----------------------------------------
 def _escribir_paquete(ruta_archivo, tipo, edicion, registros):
 
     paquete= {
@@ -238,8 +237,8 @@ def _escribir_paquete(ruta_archivo, tipo, edicion, registros):
         json.dump(paquete, archivo, ensure_ascii=False, indent=2)
 
 
-# se niega a abrir un paquete de otro tipo o de una versión más nueva, con un mensaje que se pueda
-# entender sin saber nada del formato.
+#se niega a abrir un paquete de otro tipo o de una versión más nueva, con un mensaje que se pueda
+#entender sin saber nada del formato.
 def _leer_paquete(ruta_archivo, tipo_esperado):
 
     with open(ruta_archivo, "r", encoding="utf-8") as archivo:

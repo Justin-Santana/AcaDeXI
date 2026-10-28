@@ -1,15 +1,15 @@
-# -----------------------------------------
-# estado vacío para tablas con filtro obligatorio
-# Cuando la tabla depende de un filtro que el usuario todavía no eligió (curso, materia, rango de
-# fechas), antes quedaba vacía sin decir nada y parecía que no había datos o que había fallado la
-# carga. Este módulo pone encima de la tabla un cartel centrado con un icono y un texto, que se
-# muestra solo cuando no hay nada que mostrar.
-# Se usa una vez, justo después de crear la tabla:
-#    self.tabla= QTableWidget()
-#    self.estado_vacio= EstadoVacioFiltro(self.tabla)
-# y después, cada vez que se repuebla según el filtro:
-#    self.estado_vacio.actualizar(hay_filtro_elegido=curso_id is not None)
-# -----------------------------------------
+#-----------------------------------------
+#estado vacío para tablas con filtro obligatorio
+#Cuando la tabla depende de un filtro que el usuario todavía no eligió (curso, materia, rango de
+#fechas), antes quedaba vacía sin decir nada y parecía que no había datos o que había fallado la
+#carga. Este módulo pone encima de la tabla un cartel centrado con un icono y un texto, que se
+#muestra solo cuando no hay nada que mostrar.
+#Se usa una vez, justo después de crear la tabla:
+#self.tabla= QTableWidget()
+#self.estado_vacio= EstadoVacioFiltro(self.tabla)
+#y después, cada vez que se repuebla según el filtro:
+#self.estado_vacio.actualizar(hay_filtro_elegido=curso_id is not None)
+#-----------------------------------------
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from PySide6.QtCore import Qt
 
@@ -19,12 +19,12 @@ TEXTO_FILTRA_PRIMERO= "Filtra primero para revelar el contenido"
 TEXTO_SIN_RESULTADOS= "No hay resultados con los filtros actuales"
 
 
-# cartel centrado sobre la tabla. Se acomoda solo cuando la tabla cambia de tamaño, así que ningún
-# módulo tiene que acordarse de moverlo a mano.
+#cartel centrado sobre la tabla. Se acomoda solo cuando la tabla cambia de tamaño, así que ningún
+#módulo tiene que acordarse de moverlo a mano.
 class EstadoVacioFiltro(QWidget):
 
     def __init__(self, tabla, icono="🔍", texto_filtra_primero=TEXTO_FILTRA_PRIMERO,
-                 texto_sin_resultados=TEXTO_SIN_RESULTADOS):
+                 texto_sin_resultados= TEXTO_SIN_RESULTADOS):
 
         super().__init__(tabla)
 

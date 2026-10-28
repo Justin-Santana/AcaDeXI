@@ -2,14 +2,14 @@
 
 Uso típico dentro de un módulo (ver materias.py, materiales.py, etc.):
 
-    # en __init__:
-    self.deshacer = GestorDeshacer(self, self.main_window, self.refrescar,
-                                   nombre="espacio físico")
-    # al construir la fila de botones (basta UNA línea: el widget trae los
-    # dos botones, Deshacer y Rehacer, y se oculta solo cuando no hay nada):
+    #en __init__:
+    self.deshacer= GestorDeshacer(self, self.main_window, self.refrescar,
+                                   nombre= "espacio físico")
+    #al construir la fila de botones (basta UNA línea: el widget trae los
+    #dos botones, Deshacer y Rehacer, y se oculta solo cuando no hay nada):
     fila_botones.addWidget(self.deshacer.boton)
 
-    # en el método que elimina o edita:
+    #en el método que elimina o edita:
     with self.deshacer.grabar("Eliminó el espacio 'Aula 3'"):
         ...los DELETE/UPDATE de siempre...
     self.refrescar()
@@ -34,7 +34,7 @@ MAX_NIVELES= 10
 
 class GestorDeshacer(QObject):
     def __init__(self, pagina, main_window, refrescar=None, nombre="registro",
-                 atajo=True, solo_no_docente=True, parent_boton=None):
+                 atajo= True, solo_no_docente=True, parent_boton=None):
         super().__init__(pagina)
         self._pagina= pagina
         self._main= main_window
@@ -78,13 +78,13 @@ class GestorDeshacer(QObject):
             existentes= {s for s, _ in getattr(self._pagina, "_atajos_registrados", [])}
             if "Ctrl+Z" not in existentes:
                 registrar_atajo(self._pagina, self._main, "Ctrl+Z", "Deshacer", self.deshacer,
-                                solo_no_docente=solo_no_docente)
+                                solo_no_docente= solo_no_docente)
             if "Ctrl+Y" not in existentes:
                 registrar_atajo(self._pagina, self._main, "Ctrl+Y", "Rehacer", self.rehacer,
-                                solo_no_docente=solo_no_docente)
+                                solo_no_docente= solo_no_docente)
                 #Variante habitual en otros editores; sin descripción = no se lista aparte.
                 registrar_atajo(self._pagina, self._main, "Ctrl+Shift+Z", "", self.rehacer,
-                                solo_no_docente=solo_no_docente)
+                                solo_no_docente= solo_no_docente)
         except Exception:
             pass
 
@@ -112,7 +112,7 @@ class GestorDeshacer(QObject):
         self._actualizar_botones()
         if aviso:
             mostrar_toast(self._pagina, g.etiqueta.rstrip(".") + ".", "exito",
-                          accion=self.deshacer, texto_accion="Deshacer")
+                          accion= self.deshacer, texto_accion="Deshacer")
         #Los tutoriales (Modo Detallado) esperan este evento para saber que la acción real ocurrió; antes lo emitía el
         #cuadro modal "Eliminado".
         try:
@@ -193,7 +193,7 @@ class GestorDeshacer(QObject):
         self._auditar(f"Deshizo: {etiqueta}")
         self._refrescar_pagina()
         mostrar_toast(self._pagina, f"Deshecho: {etiqueta.rstrip('.')}.", "info",
-                      accion=self.rehacer, texto_accion="Rehacer")
+                      accion= self.rehacer, texto_accion="Rehacer")
 
     def rehacer(self):
         if not self._pila_rehacer:
@@ -214,7 +214,7 @@ class GestorDeshacer(QObject):
         self._auditar(f"Rehizo: {etiqueta}")
         self._refrescar_pagina()
         mostrar_toast(self._pagina, f"Rehecho: {etiqueta.rstrip('.')}.", "exito",
-                      accion=self.deshacer, texto_accion="Deshacer")
+                      accion= self.deshacer, texto_accion="Deshacer")
 
 
 def _traducir_error(msg):

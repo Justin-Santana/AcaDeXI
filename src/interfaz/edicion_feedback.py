@@ -77,14 +77,12 @@ class BannerEdicion(QFrame):
         #banner por primera vez para un formulario-, así que si el usuario cambiaba de tema con el banner YA abierto
         #(formulario en edición mientras se togglea modo claro/oscuro), el color se quedaba congelado con el que tenía
         #al momento de aparecer, aunque el resto de la app sí se hubiera puesto al día.
-        #
-        #Cuando main_window cambia de tema, aplica un nuevo stylesheet sobre sí misma (ver main.py ▸
+        #        #Cuando main_window cambia de tema, aplica un nuevo stylesheet sobre sí misma (ver main.py ▸
         #_aplicar_estilos_globales_tema), y Qt propaga eso como un StyleChange también hacia los descendientes -aunque,
         #como este banner, tengan su propio stylesheet puesto-, para que puedan recalcular lo que dependa de reglas
         #heredadas. Enganchando ese evento, el banner se repinta solo, sin que main.py (ni cada módulo con un
         #formulario) tenga que acordarse de este widget en particular.
-        #
-        #Guard de reentrancia: _aplicar_estilo() llama a self.setStyleSheet(), que a su vez DISPARA otro StyleChange
+        #        #Guard de reentrancia: _aplicar_estilo() llama a self.setStyleSheet(), que a su vez DISPARA otro StyleChange
         #sobre sí mismo -sin este guard, quedaría llamándose a sí mismo sin parar.
         if event.type() in (QEvent.Type.StyleChange, QEvent.Type.PaletteChange):
             if not getattr(self, "_actualizando_estilo_por_tema", False):

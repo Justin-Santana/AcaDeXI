@@ -76,7 +76,7 @@ def _agregar_pagina(cvs_ref, ancho, alto, dibujar_fn, *args):
 
 
 def exportar_boletines_multiples_secciones_pdf(seccion_ids, ruta_pdf, institucion, incluir_tecnico=True,
-                                                metodo="Promedio Ponderado", progreso_cb=None):
+                                                metodo= "Promedio Ponderado", progreso_cb=None):
     """Igual que `exportar_boletin_seccion_pdf` pero para varias secciones
     en un solo archivo (p. ej. "todo 4to de Secundaria", que en AcaDeXI
     puede tener más de una sección A/B/C) -se usa la misma función interna
@@ -123,11 +123,11 @@ def exportar_boletines_multiples_secciones_pdf(seccion_ids, ruta_pdf, institucio
 
 
 def exportar_boletin_seccion_pdf(seccion_id, ruta_pdf, institucion, incluir_tecnico=True,
-                                  metodo="Promedio Ponderado", progreso_cb=None):
+                                  metodo= "Promedio Ponderado", progreso_cb=None):
     """Genera UN solo PDF con el boletín completo de cada estudiante activo
     de la sección (orden alfabético, el mismo "número de orden" que ya usa
     cada boletín individual). Es un caso particular de
     `exportar_boletines_multiples_secciones_pdf` con una sola sección."""
     return exportar_boletines_multiples_secciones_pdf([seccion_id], ruta_pdf, institucion,
-                                                        incluir_tecnico=incluir_tecnico, metodo=metodo,
-                                                        progreso_cb=progreso_cb)
+                                                        incluir_tecnico= incluir_tecnico, metodo=metodo,
+                                                        progreso_cb= progreso_cb)
