@@ -1,30 +1,29 @@
-"""Perfil Institucional Portátil (.acdx).
-
-El Director (o el propio usuario, para sí mismo) genera un archivo .acdx
-cifrado con la configuración de una cuenta (institución, rol, modo de
-trabajo y carpeta de sincronización). Quien lo importa en el login se
-autoconfigura sin captura manual.
-
-Opcionalmente, el .acdx puede incluir la contraseña de la cuenta protegida
-con un PIN que define quien genera el perfil. La contraseña se cifra con
-una clave derivada de ESE PIN (PBKDF2-HMAC-SHA256 + salt aleatoria única
-por archivo), NO con la clave fija de la app (_CLAVE_APP, que solo protege
-el resto del contenido del perfil contra ediciones/lecturas casuales).
-Quien genera el perfil debe comunicar el PIN a quien lo recibe por un
-canal aparte del archivo (verbalmente, por teléfono, etc.) — así, alguien
-que solo tenga el .acdx (sin el PIN) no puede recuperar la contraseña,
-aunque conozca la clave fija embebida de la app. La seguridad de la cuenta
-en la base de datos sigue dependiendo del hash Argon2id de la contraseña,
-que nunca se ve afectado por lo que contenga el .acdx.
-
-Además, el .acdx generado por el Director para un Docente/Personal puede
-incluir la "BD Base Institucional" (estructura + usuarios, SIN los datos
-personales del Director — ver bd.guardar_bd_base_desde_actual). Así, un
-Docente/Personal solo necesita: 1) instalar la app con el instalador para
-Docentes (AcaDeXI_Docentes_Setup.exe, sin ninguna BD dentro), y 2) importar
-su .acdx en el login. Ese único archivo trae su perfil, su contraseña
-(opcional, protegida por PIN) y la base de datos institucional inicial.
-"""
+#Perfil Institucional Portátil (.acdx).
+#
+#El Director (o el propio usuario, para sí mismo) genera un archivo .acdx
+#cifrado con la configuración de una cuenta (institución, rol, modo de
+#trabajo y carpeta de sincronización). Quien lo importa en el login se
+#autoconfigura sin captura manual.
+#
+#Opcionalmente, el .acdx puede incluir la contraseña de la cuenta protegida
+#con un PIN que define quien genera el perfil. La contraseña se cifra con
+#una clave derivada de ESE PIN (PBKDF2-HMAC-SHA256 + salt aleatoria única
+#por archivo), NO con la clave fija de la app (_CLAVE_APP, que solo protege
+#el resto del contenido del perfil contra ediciones/lecturas casuales).
+#Quien genera el perfil debe comunicar el PIN a quien lo recibe por un
+#canal aparte del archivo (verbalmente, por teléfono, etc.) — así, alguien
+#que solo tenga el .acdx (sin el PIN) no puede recuperar la contraseña,
+#aunque conozca la clave fija embebida de la app. La seguridad de la cuenta
+#en la base de datos sigue dependiendo del hash Argon2id de la contraseña,
+#que nunca se ve afectado por lo que contenga el .acdx.
+#
+#Además, el .acdx generado por el Director para un Docente/Personal puede
+#incluir la "BD Base Institucional" (estructura + usuarios, SIN los datos
+#personales del Director — ver bd.guardar_bd_base_desde_actual). Así, un
+#Docente/Personal solo necesita: 1) instalar la app con el instalador para
+#Docentes (AcaDeXI_Docentes_Setup.exe, sin ninguna BD dentro), y 2) importar
+#su .acdx en el login. Ese único archivo trae su perfil, su contraseña
+#(opcional, protegida por PIN) y la base de datos institucional inicial.
 import base64
 import json
 import os
@@ -46,29 +45,32 @@ _fernet= Fernet(base64.urlsafe_b64encode(_CLAVE_APP.ljust(32, b"0")[:32]))
 PIN_MINIMO= 4
 
 
+#Deriva una clave Fernet a partir de un PIN + salt aleatoria (única por
+#archivo). PBKDF2 con muchas iteraciones hace que adivinar el PIN por
+#fuerza bruta sea costoso incluso si alguien tiene el .acdx y sabe cómo
+#está construido — a diferencia de la clave fija _CLAVE_APP, que es la
+#misma para cualquier instalación de AcaDeXI.
 def _derivar_clave_pin(pin, salt):
-    """Deriva una clave Fernet a partir de un PIN + salt aleatoria (única por
-    archivo). PBKDF2 con muchas iteraciones hace que adivinar el PIN por
-    fuerza bruta sea costoso incluso si alguien tiene el .acdx y sabe cómo
-    está construido — a diferencia de la clave fija _CLAVE_APP, que es la
-    misma para cualquier instalación de AcaDeXI."""
+
     kdf= PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=390000)
     return base64.urlsafe_b64encode(kdf.derive(pin.encode("utf-8")))
 
 
 def _cifrar_password_con_pin(password_plana, pin):
+
     salt= os.urandom(16)
     clave= _derivar_clave_pin(pin, salt)
     token= Fernet(clave).encrypt(password_plana.encode("utf-8"))
     return base64.b64encode(salt).decode("ascii"), token.decode("ascii")
 
 
+#Descifra la contraseña incluida en un perfil .acdx protegida por PIN.
+#Lanza ValueError si el perfil no trae contraseña protegida, si no se
+#proveyó PIN, o si el PIN es incorrecto (no se puede distinguir cuál de
+#estas dos últimas causas fue, a propósito: no le decimos a quien
+#adivina que "casi" acierta).
 def descifrar_password_perfil(datos, pin):
-    """Descifra la contraseña incluida en un perfil .acdx protegida por PIN.
-    Lanza ValueError si el perfil no trae contraseña protegida, si no se
-    proveyó PIN, o si el PIN es incorrecto (no se puede distinguir cuál de
-    estas dos últimas causas fue, a propósito: no le decimos a quien
-    adivina que "casi" acierta)."""
+
     salt_b64= datos.get("password_salt")
     token= datos.get("password_cifrada")
     if not salt_b64 or not token:
@@ -76,6 +78,7 @@ def descifrar_password_perfil(datos, pin):
     if not pin:
         raise ValueError("Debes ingresar el PIN para descifrar la contraseña de este perfil.")
     try:
+
         salt= base64.b64decode(salt_b64)
         clave= _derivar_clave_pin(pin, salt)
         return Fernet(clave).decrypt(token.encode("ascii")).decode("utf-8")
@@ -99,8 +102,9 @@ TOOLTIPS_MODOS_TRABAJO= {
 }
 
 
+#Asigna a cada ítem del combo un tooltip que explica qué implica ese modo de trabajo.
 def _aplicar_tooltips_modos(combo):
-    """Asigna a cada ítem del combo un tooltip que explica qué implica ese modo de trabajo."""
+
     for i in range(combo.count()):
         texto= combo.itemText(i)
         tip= TOOLTIPS_MODOS_TRABAJO.get(texto)
@@ -109,6 +113,7 @@ def _aplicar_tooltips_modos(combo):
 
 
 def _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_plana=None, pin=None):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT username, nombre_completo, rol FROM usuarios WHERE id=?", (usuario_id,))
@@ -137,33 +142,34 @@ def _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_pla
         if not pin or len(pin) < PIN_MINIMO:
             raise ValueError(f"Para incluir la contraseña en el perfil, define un PIN de al menos "
                               f"{PIN_MINIMO} caracteres.")
-        salt_b64, token_b64 = _cifrar_password_con_pin(password_plana, pin)
+        salt_b64, token_b64= _cifrar_password_con_pin(password_plana, pin)
         datos["password_salt"]= salt_b64
         datos["password_cifrada"]= token_b64
     return datos
 
 
+#Genera y guarda el archivo .acdx cifrado. Devuelve el diccionario de datos.
+#
+#Si se pasa `password_plana`, también debe pasarse `pin`: la contraseña se
+#cifra con una clave derivada de ese PIN (ver _derivar_clave_pin) y queda
+#dentro del perfil como `password_cifrada` + `password_salt`. Quien
+#importe el perfil necesitará ese mismo PIN (comunicado por un canal
+#aparte) para que la contraseña se autocomplete; sin el PIN correcto, el
+#resto del perfil se aplica igual, pero la contraseña debe escribirse
+#manualmente.
+#
+#Si se pasa `ruta_bd_base`, el contenido de ese archivo SQLite se incrusta
+#(en base64) dentro del perfil como "BD Base Institucional", para que quien
+#lo importe reciba de una sola vez su perfil Y la estructura institucional
+#inicial, sin necesitar ningún otro archivo. Si esa BD Base tiene un
+#logotipo institucional configurado (configuracion.logo_path), el archivo
+#de imagen del logo también se incrusta (en base64) para que el Dashboard
+#de quien importe el perfil pueda mostrarlo igual: el `logo_path` guardado
+#en la BD es una ruta absoluta del equipo del Director, que no existe tal
+#cual en el equipo del Docente/Personal.
 def guardar_perfil_archivo(ruta, usuario_id, modo_trabajo="Local", carpeta_sincronizacion="",
                            password_plana= None, pin=None, ruta_bd_base=None):
-    """Genera y guarda el archivo .acdx cifrado. Devuelve el diccionario de datos.
 
-    Si se pasa `password_plana`, también debe pasarse `pin`: la contraseña se
-    cifra con una clave derivada de ese PIN (ver _derivar_clave_pin) y queda
-    dentro del perfil como `password_cifrada` + `password_salt`. Quien
-    importe el perfil necesitará ese mismo PIN (comunicado por un canal
-    aparte) para que la contraseña se autocomplete; sin el PIN correcto, el
-    resto del perfil se aplica igual, pero la contraseña debe escribirse
-    manualmente.
-
-    Si se pasa `ruta_bd_base`, el contenido de ese archivo SQLite se incrusta
-    (en base64) dentro del perfil como "BD Base Institucional", para que quien
-    lo importe reciba de una sola vez su perfil Y la estructura institucional
-    inicial, sin necesitar ningún otro archivo. Si esa BD Base tiene un
-    logotipo institucional configurado (configuracion.logo_path), el archivo
-    de imagen del logo también se incrusta (en base64) para que el Dashboard
-    de quien importe el perfil pueda mostrarlo igual: el `logo_path` guardado
-    en la BD es una ruta absoluta del equipo del Director, que no existe tal
-    cual en el equipo del Docente/Personal."""
     datos= _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_plana, pin)
     if ruta_bd_base:
         if not os.path.exists(ruta_bd_base):
@@ -177,13 +183,15 @@ def guardar_perfil_archivo(ruta, usuario_id, modo_trabajo="Local", carpeta_sincr
     return datos
 
 
+#Si la BD Base tiene un logotipo institucional configurado y el archivo
+#existe en este equipo (el del Director), lo incrusta en `datos` como
+#`logo_base64` + `logo_nombre_archivo`. No lanza error si algo falla: el
+#logo es un extra deseable, nunca debe impedir generar el perfil.
 def _incrustar_logo_de_bd_base(ruta_bd_base, datos):
-    """Si la BD Base tiene un logotipo institucional configurado y el archivo
-    existe en este equipo (el del Director), lo incrusta en `datos` como
-    `logo_base64` + `logo_nombre_archivo`. No lanza error si algo falla: el
-    logo es un extra deseable, nunca debe impedir generar el perfil."""
+
     import sqlite3
     try:
+
         conn_base= sqlite3.connect(ruta_bd_base)
         conn_base.row_factory= sqlite3.Row
         fila= conn_base.execute("SELECT logo_path FROM configuracion WHERE id=1").fetchone()
@@ -197,25 +205,28 @@ def _incrustar_logo_de_bd_base(ruta_bd_base, datos):
         pass
 
 
+#Lee y descifra un archivo .acdx. Lanza ValueError si es inválido.
 def leer_perfil_archivo(ruta):
-    """Lee y descifra un archivo .acdx. Lanza ValueError si es inválido."""
+
     with open(ruta, "rb") as f:
         token= f.read()
     try:
+
         return json.loads(_fernet.decrypt(token).decode("utf-8"))
     except (InvalidToken, ValueError, UnicodeDecodeError):
         raise ValueError("El archivo .acdx no es válido, está corrupto o fue alterado.")
 
 
+#Aplica el perfil importado a la configuración local (config.json) y
+#autocompleta el usuario recordado. Devuelve True si el usuario ya existe
+#en esta base de datos local.
+#
+#NOTA: si el perfil trae una BD Base incluida ("bd_base"), esa parte NO se
+#aplica aquí — debe resolverse antes con perfil_incluye_bd_base()/
+#aplicar_bd_base(), ya que requiere confirmación del usuario (reemplaza la
+#BD local). Ver login.py -> _importar_perfil().
 def aplicar_perfil(main_window, datos):
-    """Aplica el perfil importado a la configuración local (config.json) y
-    autocompleta el usuario recordado. Devuelve True si el usuario ya existe
-    en esta base de datos local.
 
-    NOTA: si el perfil trae una BD Base incluida ("bd_base"), esa parte NO se
-    aplica aquí — debe resolverse antes con perfil_incluye_bd_base()/
-    aplicar_bd_base(), ya que requiere confirmación del usuario (reemplaza la
-    BD local). Ver login.py -> _importar_perfil()."""
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT id FROM usuarios WHERE username=?", (datos.get("usuario", ""),))
@@ -230,16 +241,19 @@ def aplicar_perfil(main_window, datos):
     return existe
 
 
+#True si este perfil .acdx trae embebida una Base de Datos Institucional Base.
 def perfil_incluye_bd_base(datos):
-    """True si este perfil .acdx trae embebida una Base de Datos Institucional Base."""
+
     return bool(datos.get("bd_base"))
 
 
+#True si la BD local ya tiene al menos un usuario (instalación ya usada), en
+#cuyo caso reemplazarla por la BD Base del perfil es una operación destructiva
+#que debe confirmarse explícitamente antes de aplicarla.
 def local_ya_tiene_usuarios():
-    """True si la BD local ya tiene al menos un usuario (instalación ya usada), en
-    cuyo caso reemplazarla por la BD Base del perfil es una operación destructiva
-    que debe confirmarse explícitamente antes de aplicarla."""
+
     try:
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT COUNT(*) n FROM usuarios")
@@ -250,23 +264,25 @@ def local_ya_tiene_usuarios():
         return False
 
 
+#Escribe la BD Base incluida en el perfil sobre la BD local, reemplazándola
+#por completo. Si ya existía una BD local con contenido, primero crea un
+#respaldo (ver bd.crear_backup). Devuelve la ruta del respaldo, o None si no
+#había nada que respaldar.
+#
+#Si el perfil trae un logotipo institucional embebido (ver
+#_incrustar_logo_de_bd_base), también lo restaura en la carpeta de logos de
+#ESTE equipo y corrige `configuracion.logo_path` para que apunte ahí, en
+#vez de dejar la ruta absoluta del equipo del Director (que no existe en
+#este equipo). Así, el Dashboard de un Docente/Personal que importó su
+#perfil vía .acdx también ve el logotipo institucional.
 def aplicar_bd_base(datos):
-    """Escribe la BD Base incluida en el perfil sobre la BD local, reemplazándola
-    por completo. Si ya existía una BD local con contenido, primero crea un
-    respaldo (ver bd.crear_backup). Devuelve la ruta del respaldo, o None si no
-    había nada que respaldar.
 
-    Si el perfil trae un logotipo institucional embebido (ver
-    _incrustar_logo_de_bd_base), también lo restaura en la carpeta de logos de
-    ESTE equipo y corrige `configuracion.logo_path` para que apunte ahí, en
-    vez de dejar la ruta absoluta del equipo del Director (que no existe en
-    este equipo). Así, el Dashboard de un Docente/Personal que importó su
-    perfil vía .acdx también ve el logotipo institucional."""
     from src.nucleo.bd import crear_backup, get_app_data_dir
 
     ruta_backup= None
     if os.path.exists(DB_PATH) and os.path.getsize(DB_PATH) > 0:
         try:
+
             ruta_backup= crear_backup(tipo="Pre-importación de Perfil Institucional (.acdx)")
         except Exception:
             ruta_backup= None
@@ -280,6 +296,7 @@ def aplicar_bd_base(datos):
     nombre_logo= datos.get("logo_nombre_archivo")
     if logo_base64 and nombre_logo:
         try:
+
             carpeta_logos= os.path.join(get_app_data_dir(), "logos")
             os.makedirs(carpeta_logos, exist_ok=True)
             ruta_logo_local= os.path.join(carpeta_logos, nombre_logo)
@@ -305,13 +322,15 @@ from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_tex
 
 
 class DialogoGenerarPerfil(QDialog):
+
+    #Si `usuario_id` se pasa (flujo clásico desde la tabla de Usuarios,
+    #con una fila ya seleccionada), el diálogo genera el perfil de ese
+    #usuario directamente. Si se omite (flujo del botón "Generar Perfil
+    #(.acdx) para un Usuario" en Seguridad y Backups), el diálogo muestra
+    #primero un combo para elegir el usuario, sin depender de que haya
+    #algo seleccionado en ninguna tabla.
     def __init__(self, main_window, usuario_id=None, username=None):
-        """Si `usuario_id` se pasa (flujo clásico desde la tabla de Usuarios,
-        con una fila ya seleccionada), el diálogo genera el perfil de ese
-        usuario directamente. Si se omite (flujo del botón "Generar Perfil
-        (.acdx) para un Usuario" en Seguridad y Backups), el diálogo muestra
-        primero un combo para elegir el usuario, sin depender de que haya
-        algo seleccionado en ninguna tabla."""
+
         super().__init__(main_window)
         self.main_window= main_window
         self.usuario_id= usuario_id
@@ -415,6 +434,7 @@ class DialogoGenerarPerfil(QDialog):
         l.addLayout(fila_botones)
 
     def _cargar_usuarios_combo(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT id, username, nombre_completo, rol FROM usuarios
@@ -431,6 +451,7 @@ class DialogoGenerarPerfil(QDialog):
         conectar_tooltip_seleccion(self.combo_usuario, "Usuario para el que se genera el Perfil Institucional")
 
     def _usuario_combo_cambio(self):
+
         self.usuario_id= self.combo_usuario.currentData()
         conn= obtener_conexion()
         c= conn.cursor()
@@ -441,6 +462,7 @@ class DialogoGenerarPerfil(QDialog):
         self._actualizar_intro()
 
     def _actualizar_intro(self):
+
         if self.usuario_id is None:
             self.lbl_intro.setText("Elige un usuario arriba para continuar.")
             return
@@ -449,11 +471,13 @@ class DialogoGenerarPerfil(QDialog):
                                 "de este usuario para que la importe desde su equipo.")
 
     def _elegir_carpeta(self):
+
         carpeta= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
         if carpeta:
             self.in_carpeta.setText(carpeta)
 
     def _generar(self):
+
         from src.nucleo.iconos import mostrar_mensaje
         from src.nucleo.bd import verificar_contrasena, RUTA_BD_BASE
 
@@ -486,13 +510,14 @@ class DialogoGenerarPerfil(QDialog):
         incluir_bd_base= self.chk_bd_base.isChecked()
 
         nombre_sugerido= f"{self.username}{EXTENSION}" if self.username else f"perfil{EXTENSION}"
-        ruta, _ = QFileDialog.getSaveFileName(
+        ruta, _= QFileDialog.getSaveFileName(
             self, "Guardar Perfil Institucional", nombre_sugerido, f"Perfil AcaDeXI (*{EXTENSION})")
         if not ruta:
             return
         if not ruta.endswith(EXTENSION):
             ruta += EXTENSION
         try:
+
             guardar_perfil_archivo(ruta, self.usuario_id, self.combo_modo.currentText(),
                                    self.in_carpeta.text().strip(), password_plana=password_plana or None,
                                    pin= pin or None,
@@ -517,7 +542,9 @@ class DialogoGenerarPerfil(QDialog):
 #Diálogo: exportar mi propio perfil (.acdx) — autoservicio, desde Configuración → Mi Cuenta. Cualquier usuario
 #logueado puede generar ÚNICAMENTE su propio perfil, nunca el de otro usuario.
 class DialogoExportarPerfilPropio(QDialog):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.usuario_id= getattr(main_window, "id_usuario_actual", None)
@@ -590,11 +617,13 @@ class DialogoExportarPerfilPropio(QDialog):
         l.addLayout(fila_botones)
 
     def _elegir_carpeta(self):
+
         carpeta= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
         if carpeta:
             self.in_carpeta.setText(carpeta)
 
     def _generar(self):
+
         from src.nucleo.iconos import mostrar_mensaje
         from src.nucleo.bd import verificar_contrasena
 
@@ -623,7 +652,7 @@ class DialogoExportarPerfilPropio(QDialog):
             mostrar_mensaje("error", "Contraseña incorrecta", "La contraseña ingresada no es correcta.", self)
             return
 
-        ruta, _ = QFileDialog.getSaveFileName(
+        ruta, _= QFileDialog.getSaveFileName(
             self, "Guardar Mi Perfil Institucional", f"{self.username}{EXTENSION}",
             f"Perfil AcaDeXI (*{EXTENSION})")
         if not ruta:
@@ -631,6 +660,7 @@ class DialogoExportarPerfilPropio(QDialog):
         if not ruta.endswith(EXTENSION):
             ruta += EXTENSION
         try:
+
             guardar_perfil_archivo(ruta, self.usuario_id, self.combo_modo.currentText(),
                                    self.in_carpeta.text().strip(), password_plana=password, pin=pin)
         except Exception as e:

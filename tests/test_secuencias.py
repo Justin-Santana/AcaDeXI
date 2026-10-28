@@ -1,5 +1,5 @@
-"""Secuencias didácticas: datos, vínculos, validación, fechas y exportación Word.
-Corre en un subproceso con una base temporal para no tocar datos reales."""
+#Secuencias didácticas: datos, vínculos, validación, fechas y exportación Word.
+#Corre en un subproceso con una base temporal para no tocar datos reales.
 import subprocess, sys, textwrap
 from pathlib import Path
 
@@ -138,6 +138,7 @@ SCRIPT= textwrap.dedent("""
 
 
 def _correr(script, tmp_path):
+
     env= {"HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "APPDATA": str(tmp_path), "USERPROFILE": str(tmp_path), "QT_QPA_PLATFORM": "offscreen",
            "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "PATH": "/usr/bin:/bin:/usr/local/bin"}
     return subprocess.run([sys.executable, "-c", script], cwd=RAIZ, env=env,
@@ -145,11 +146,13 @@ def _correr(script, tmp_path):
 
 
 def test_secuencias_logica_y_exportacion(tmp_path):
+
     r= _correr(SCRIPT, tmp_path)
     assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-2500:]
 
 
 def test_competencias_fundamentales_coinciden_con_configuracion():
+
     from src.interfaz.configuracion import COMPETENCIAS_FUNDAMENTALES_RD
     from src.nucleo.secuencias import COMPETENCIAS_FUNDAMENTALES
     assert COMPETENCIAS_FUNDAMENTALES == COMPETENCIAS_FUNDAMENTALES_RD
@@ -236,6 +239,7 @@ SCRIPT_UI= textwrap.dedent("""
 
 
 def test_secuencias_interfaz(tmp_path):
+
     r= _correr(SCRIPT_UI, tmp_path)
     assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-3000:]
 
@@ -326,6 +330,7 @@ SCRIPT_ST= textwrap.dedent("""
 
 
 def test_secuencias_single_teacher(tmp_path):
+
     r= _correr(SCRIPT_ST, tmp_path)
     assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-3000:]
 
@@ -360,5 +365,6 @@ SCRIPT_TOUR= textwrap.dedent("""
 
 
 def test_tour_single_teacher_incluye_secuencias(tmp_path):
+
     r= _correr(SCRIPT_TOUR, tmp_path)
     assert r.returncode == 0 and "OK" in r.stdout, (r.stdout + r.stderr)[-3000:]

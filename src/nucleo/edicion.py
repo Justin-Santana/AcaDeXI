@@ -16,15 +16,18 @@ _edicion_guardada= None
 
 #Busca en el registro si existe la clave de desinstalación de alguna de las otras ediciones.
 def _leer_edicion_del_registro():
+
     if sys.platform != "win32":
         return "full"
     try:
+
         import winreg
     except Exception:
         return "full"
     for clave, edicion in CLAVES_POR_EDICION:
         ruta= rf"Software\Microsoft\Windows\CurrentVersion\Uninstall\{clave}"
         try:
+
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, ruta):
                 return edicion
         except OSError:
@@ -34,6 +37,7 @@ def _leer_edicion_del_registro():
 
 #La edición de esta copia instalada. Si no hay ninguna clave, es la edición completa.
 def edicion_actual():
+
     global _edicion_guardada
     if _edicion_guardada is None:
         _edicion_guardada= _leer_edicion_del_registro()
@@ -42,4 +46,5 @@ def edicion_actual():
 
 #Atajo que ya usa el resto del código: True solo en la edición de Docentes/Personal.
 def instalado_con_setup_docentes():
+
     return edicion_actual() == "docentes"

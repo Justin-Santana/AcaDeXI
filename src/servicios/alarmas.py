@@ -1,36 +1,35 @@
-"""Sistema de ALARMAS / ALERTAS de AcaDeXI.
-
-Objetivo: avisar al usuario, con sonido + un efecto visual llamativo (pero
-NO molesto), exactamente a la hora en que ocurre:
-
-    1) Un EVENTO del Calendario institucional (tabla `eventos` de acadexi.db)
-       que le corresponde ver a este usuario.
-    2) Una clase de "Mis Materias"/Horario (tabla `horarios` institucional,
-       o `horario_local` del Modo Docente -ver datos_locales_docente.py-)
-       que empieza en este momento, según el día de la semana.
-    3) Un RECORDATORIO manual que el propio usuario haya creado desde el
-       diálogo de configuración de este módulo (único/diario/semanal).
-
-Todo se implementa SOLO con PySide6 (QtCore/QtGui/QtWidgets/QtMultimedia).
-No se usa ninguna librería externa: los tonos predeterminados se generan en
-el primer uso con el módulo estándar `wave` (ondas simples: campanilla,
-suave, clásico, urgente) y los tonos personalizados del usuario (.mp3, .wav,
-.ogg, etc.) se reproducen con QMediaPlayer/QAudioOutput, que decodifican con
-los backends multimedia del sistema -sigue siendo 100% PySide6-.
-
-Persistencia: igual que `datos_locales_docente.py`, la configuración de
-alarmas y los recordatorios manuales son una preferencia LOCAL de este
-usuario en este equipo (no institucional), así que viven en un SQLite propio
-dentro de la carpeta de datos de la app y NUNCA tocan acadexi.db.
-
-Integración mínima en main.py (ver comentarios "INTEGRACIÓN" al final del
-archivo para el detalle exacto):
-
-    from alarmas import MotorAlarmas
-    ...
-    self.motor_alarmas= MotorAlarmas(self)
-    self.motor_alarmas.iniciar()
-"""
+#Sistema de ALARMAS / ALERTAS de AcaDeXI.
+#
+#Objetivo: avisar al usuario, con sonido + un efecto visual llamativo (pero
+#NO molesto), exactamente a la hora en que ocurre:
+#
+#1) Un EVENTO del Calendario institucional (tabla `eventos` de acadexi.db)
+#que le corresponde ver a este usuario.
+#2) Una clase de "Mis Materias"/Horario (tabla `horarios` institucional,
+#o `horario_local` del Modo Docente -ver datos_locales_docente.py-)
+#que empieza en este momento, según el día de la semana.
+#3) Un RECORDATORIO manual que el propio usuario haya creado desde el
+#diálogo de configuración de este módulo (único/diario/semanal).
+#
+#Todo se implementa SOLO con PySide6 (QtCore/QtGui/QtWidgets/QtMultimedia).
+#No se usa ninguna librería externa: los tonos predeterminados se generan en
+#el primer uso con el módulo estándar `wave` (ondas simples: campanilla,
+#suave, clásico, urgente) y los tonos personalizados del usuario (.mp3, .wav,
+#.ogg, etc.) se reproducen con QMediaPlayer/QAudioOutput, que decodifican con
+#los backends multimedia del sistema -sigue siendo 100% PySide6-.
+#
+#Persistencia: igual que `datos_locales_docente.py`, la configuración de
+#alarmas y los recordatorios manuales son una preferencia LOCAL de este
+#usuario en este equipo (no institucional), así que viven en un SQLite propio
+#dentro de la carpeta de datos de la app y NUNCA tocan acadexi.db.
+#
+#Integración mínima en main.py (ver comentarios "INTEGRACIÓN" al final del
+#archivo para el detalle exacto):
+#
+#from alarmas import MotorAlarmas
+#...
+#self.motor_alarmas= MotorAlarmas(self)
+#self.motor_alarmas.iniciar()
 import json
 import math
 import os
@@ -55,6 +54,7 @@ from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
 
 try:
+
     from src.nucleo.datos_locales_docente import _clave_docente as _clave_usuario_docente
 except Exception:
     _clave_usuario_docente= None
@@ -75,14 +75,16 @@ INTERVALO_REVISION_MS= 10_000      #cada cuánto se revisa si toca alguna alarma
 
 
 def _carpeta_tonos():
+
     ruta= os.path.join(get_app_data_dir(), "alarmas_tonos")
     os.makedirs(ruta, exist_ok=True)
     return ruta
 
 
+#Genera un .wav mono de 16 bits combinando una secuencia de tonos
+#simples (sin depender de numpy ni de ninguna librería externa).
 def _generar_tono_wav(ruta, frecuencias, duraciones, forma="sine", fade=True, sample_rate=44100):
-    """Genera un .wav mono de 16 bits combinando una secuencia de tonos
-    simples (sin depender de numpy ni de ninguna librería externa)."""
+
     with wave.open(ruta, "w") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(2)
@@ -108,9 +110,10 @@ def _generar_tono_wav(ruta, frecuencias, duraciones, forma="sine", fade=True, sa
         wav.writeframes(bytes(cuadros))
 
 
+#Crea (si no existen ya) los 4 tonos de fábrica. Se llama una sola vez
+#con costo real; luego siempre se reutilizan los archivos.
 def asegurar_tonos_predeterminados():
-    """Crea (si no existen ya) los 4 tonos de fábrica. Se llama una sola vez
-    con costo real; luego siempre se reutilizan los archivos."""
+
     carpeta= _carpeta_tonos()
     rutas= {}
     definiciones= {
@@ -124,6 +127,7 @@ def asegurar_tonos_predeterminados():
         rutas[archivo]= ruta
         if not os.path.exists(ruta):
             try:
+
                 #"0" en frecs = silencio breve (pausa entre notas del tono "clásico").
                 _generar_tono_wav(ruta, [f if f else 0.0001 for f in frecs], durs, forma=forma)
             except Exception:
@@ -133,8 +137,10 @@ def asegurar_tonos_predeterminados():
 
 #Almacén local (config + recordatorios manuales) — por usuario, por equipo
 def _clave_usuario(main_window):
+
     if _clave_usuario_docente is not None:
         try:
+
             return _clave_usuario_docente(main_window)
         except Exception:
             pass
@@ -146,12 +152,14 @@ def _clave_usuario(main_window):
 
 
 def _ruta_bd_local(main_window):
+
     carpeta= os.path.join(get_app_data_dir(), "alarmas_local")
     os.makedirs(carpeta, exist_ok=True)
     return os.path.join(carpeta, f"{_clave_usuario(main_window)}.db")
 
 
 def _conexion_local(main_window):
+
     conn= sqlite3.connect(_ruta_bd_local(main_window))
     conn.row_factory= sqlite3.Row
     conn.execute("""CREATE TABLE IF NOT EXISTS config (
@@ -185,6 +193,7 @@ def _conexion_local(main_window):
 
 
 def obtener_config(main_window):
+
     conn= _conexion_local(main_window)
     fila= conn.execute("SELECT * FROM config WHERE id=1").fetchone()
     if not fila:
@@ -196,6 +205,7 @@ def obtener_config(main_window):
 
 
 def guardar_config(main_window, **campos):
+
     conn= _conexion_local(main_window)
     obtener_config(main_window)  #asegura que exista la fila
     sets= ", ".join(f"{k}=?" for k in campos)
@@ -205,6 +215,7 @@ def guardar_config(main_window, **campos):
 
 
 def listar_recordatorios(main_window):
+
     conn= _conexion_local(main_window)
     filas= conn.execute("SELECT * FROM recordatorios ORDER BY fecha, hora").fetchall()
     conn.close()
@@ -212,6 +223,7 @@ def listar_recordatorios(main_window):
 
 
 def guardar_recordatorio(main_window, id_edicion, titulo, fecha, hora, repetir, tono, tono_ruta, activo=1):
+
     conn= _conexion_local(main_window)
     if id_edicion is None:
         conn.execute("""INSERT INTO recordatorios (titulo, fecha, hora, repetir, tono, tono_ruta, activo)
@@ -229,6 +241,7 @@ def guardar_recordatorio(main_window, id_edicion, titulo, fecha, hora, repetir, 
 
 
 def eliminar_recordatorio(main_window, id_recordatorio):
+
     conn= _conexion_local(main_window)
     conn.execute("DELETE FROM recordatorios WHERE id=?", (id_recordatorio,))
     #Su entrada en `disparadas` ya no tiene sentido: si se vuelve a crear un recordatorio con el mismo id (SQLite
@@ -238,13 +251,15 @@ def eliminar_recordatorio(main_window, id_recordatorio):
     conn.close()
 
 
+#Re-arma la alarma de un EVENTO del Calendario tras ser editado o
+#eliminado: borra sus marcas de `disparadas` (`evento_{id}_{fecha}`) en la
+#BD local de alarmas de TODOS los usuarios de este equipo, para que si se
+#cambió su fecha/hora vuelva a sonar en el nuevo momento (y no quede
+#silenciado por haber sonado antes con la hora vieja).
 def rearmar_alarmas_evento(id_evento):
-    """Re-arma la alarma de un EVENTO del Calendario tras ser editado o
-    eliminado: borra sus marcas de `disparadas` (`evento_{id}_{fecha}`) en la
-    BD local de alarmas de TODOS los usuarios de este equipo, para que si se
-    cambió su fecha/hora vuelva a sonar en el nuevo momento (y no quede
-    silenciado por haber sonado antes con la hora vieja)."""
+
     try:
+
         carpeta= os.path.join(get_app_data_dir(), "alarmas_local")
         patron= f"evento_{id_evento}_%"
         if not os.path.isdir(carpeta):
@@ -253,6 +268,7 @@ def rearmar_alarmas_evento(id_evento):
             if not archivo.endswith(".db"):
                 continue
             try:
+
                 conn= sqlite3.connect(os.path.join(carpeta, archivo))
                 conn.execute("DELETE FROM disparadas WHERE clave LIKE ?", (patron,))
                 conn.commit()
@@ -264,29 +280,33 @@ def rearmar_alarmas_evento(id_evento):
 
 
 def _ya_disparada(conn, clave):
+
     return conn.execute("SELECT 1 FROM disparadas WHERE clave=?", (clave,)).fetchone() is not None
 
 
 def _marcar_disparada(conn, clave):
+
     hoy= datetime.now().strftime("%Y-%m-%d")
     conn.execute("INSERT OR REPLACE INTO disparadas (clave, fecha) VALUES (?, ?)", (clave, hoy))
     conn.commit()
 
 
 def _limpiar_disparadas_viejas(conn):
+
     limite= (datetime.now() - timedelta(days=2)).strftime("%Y-%m-%d")
     conn.execute("DELETE FROM disparadas WHERE fecha < ?", (limite,))
     conn.commit()
 
 
 #MOTOR: revisa periódicamente si hay que disparar alguna alarma
+#Orquesta todo: revisión periódica, sonido, efecto visual y botón de
+#detener. Una sola instancia por MainWindow.
 class MotorAlarmas(QObject):
-    """Orquesta todo: revisión periódica, sonido, efecto visual y botón de
-    detener. Una sola instancia por MainWindow."""
 
     alarma_disparada= Signal(str, str)   #(titulo, subtitulo) — por si algún módulo quiere reaccionar
 
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         asegurar_tonos_predeterminados()
@@ -316,9 +336,11 @@ class MotorAlarmas(QObject):
         QApplication.instance().installEventFilter(self)
 
     def eventFilter(self, obj, event):
+
         if self._sonando and event.type() == event.Type.KeyPress and\
                 event.key() == Qt.Key.Key_Space:
             try:
+
                 self.detener_alarma_activa()
             except Exception:
                 pass
@@ -327,23 +349,27 @@ class MotorAlarmas(QObject):
 
     #---------------- ciclo de vida ----------------
     def iniciar(self):
+
         self._revisar()  #primera pasada inmediata
         self._timer.start()
 
     def detener_motor(self):
+
         self._timer.stop()
         self.detener_alarma_activa()
 
+    #Debe llamarse desde resizeEvent()/showEvent() del MainWindow.
     def reposicionar(self):
-        """Debe llamarse desde resizeEvent()/showEvent() del MainWindow."""
+
         self.overlay.reposicionar()
         self.boton_detener.reposicionar()
 
+    #Ventana emergente opcional con la configuración de alarmas. El
+    #lugar recomendado para que el usuario la edite es Configuración ▸
+    #Mi Cuenta ▸ Preferencias (ver PanelAlarmas más abajo), pero este
+    #método queda disponible por si algún módulo necesita abrirla aparte.
     def abrir_configuracion(self):
-        """Ventana emergente opcional con la configuración de alarmas. El
-        lugar recomendado para que el usuario la edite es Configuración ▸
-        Mi Cuenta ▸ Preferencias (ver PanelAlarmas más abajo), pero este
-        método queda disponible por si algún módulo necesita abrirla aparte."""
+
         if self._dialogo_config is None:
             self._dialogo_config= ConfigurarAlarmasDialog(self.main_window)
         self._dialogo_config.panel.cargar()
@@ -351,13 +377,16 @@ class MotorAlarmas(QObject):
 
     #---------------- revisión de disparos ----------------
     def _revisar(self):
+
         try:
+
             self._revisar_impl()
         except Exception:
             #Una alarma nunca debe poder tumbar la aplicación.
             pass
 
     def _revisar_impl(self):
+
         mw= self.main_window
         if getattr(mw, "id_usuario_actual", None) is None and getattr(mw, "usuario_actual", None) is None:
             return  #nadie ha iniciado sesión todavía
@@ -383,13 +412,16 @@ class MotorAlarmas(QObject):
         conn.close()
 
     def _dentro_de_tolerancia(self, ahora, fecha_str, hora_str):
+
         try:
+
             objetivo= datetime.strptime(f"{fecha_str} {hora_str[:5]}", "%Y-%m-%d %H:%M")
         except ValueError:
             return False
         return abs((ahora - objetivo).total_seconds()) <= TOLERANCIA_SEGUNDOS
 
     def _candidatos_recordatorios(self, conn, ahora):
+
         salida= []
         hoy_iso= ahora.strftime("%Y-%m-%d")
         dia_semana= ahora.strftime("%A")
@@ -402,6 +434,7 @@ class MotorAlarmas(QObject):
                 aplica_hoy= True
             elif r["repetir"] == "semanal":
                 try:
+
                     fecha_base= datetime.strptime(r["fecha"], "%Y-%m-%d")
                     aplica_hoy= fecha_base.weekday() == ahora.weekday()
                 except ValueError:
@@ -413,12 +446,14 @@ class MotorAlarmas(QObject):
                 salida.append((clave, r["titulo"], "Recordatorio", r.get("tono"), r.get("tono_ruta")))
         return salida
 
+    #Eventos institucionales del Calendario (tabla `eventos`) que le
+    #corresponden a este usuario: institucionales/públicos siempre, y los
+    #de su(s) materia(s)/sección si es el profesor asignado.
     def _candidatos_eventos(self, mw, ahora, cfg):
-        """Eventos institucionales del Calendario (tabla `eventos`) que le
-        corresponden a este usuario: institucionales/públicos siempre, y los
-        de su(s) materia(s)/sección si es el profesor asignado."""
+
         salida= []
         try:
+
             conn_inst= obtener_conexion()
             hoy_iso= ahora.strftime("%Y-%m-%d")
             filas= conn_inst.execute(
@@ -445,27 +480,30 @@ class MotorAlarmas(QObject):
             pass
         return salida
 
+    #Clases que empiezan ahora: horario institucional (si el usuario es
+    #el profesor asignado) + horario personal del Modo Docente.
+    #
+    #Para el horario institucional se usa EXACTAMENTE la misma regla de
+    #filtrado del módulo Horario en Modo Docente (horario.py ▸ _cargar_datos):
+    #`obtener_materias_permitidas`, que incluye tanto materias académicas
+    #como MÓDULOS TÉCNICOS que el docente imparte — sea titular directo
+    #(materias.profesor_id) o asignado vía materia_profesores (Titular,
+    #Auxiliar, etc., incluso cuando la asignación no indica sección). Así
+    #la alarma suena para todo lo que el docente ve en su horario, y NADA
+    #de lo que no le corresponde.
     def _candidatos_clases(self, mw, ahora, cfg):
-        """Clases que empiezan ahora: horario institucional (si el usuario es
-        el profesor asignado) + horario personal del Modo Docente.
 
-        Para el horario institucional se usa EXACTAMENTE la misma regla de
-        filtrado del módulo Horario en Modo Docente (horario.py ▸ _cargar_datos):
-        `obtener_materias_permitidas`, que incluye tanto materias académicas
-        como MÓDULOS TÉCNICOS que el docente imparte — sea titular directo
-        (materias.profesor_id) o asignado vía materia_profesores (Titular,
-        Auxiliar, etc., incluso cuando la asignación no indica sección). Así
-        la alarma suena para todo lo que el docente ve en su horario, y NADA
-        de lo que no le corresponde."""
         salida= []
         dias_map= {0: "Lunes", 1: "Martes", 2: "Miércoles", 3: "Jueves", 4: "Viernes", 5: "Sábado", 6: "Domingo"}
         dia_hoy= dias_map[ahora.weekday()]
         hoy_iso= ahora.strftime("%Y-%m-%d")
         try:
+
             conn_inst= obtener_conexion()
             filas= []
             materias_permitidas= None
             try:
+
                 from src.nucleo.permisos import obtener_materias_permitidas
                 materias_permitidas= obtener_materias_permitidas(mw)
             except Exception:
@@ -495,6 +533,7 @@ class MotorAlarmas(QObject):
         except Exception:
             pass
         try:
+
             from src.nucleo.datos_locales_docente import listar_horario_local
             for h in listar_horario_local(mw):
                 if h.get("dia") == dia_hoy and h.get("hora_inicio") and\
@@ -507,6 +546,7 @@ class MotorAlarmas(QObject):
         return salida
 
     def _profesor_id_actual(self, mw, conn_inst):
+
         id_usuario= getattr(mw, "id_usuario_actual", None)
         if id_usuario is None:
             return None
@@ -515,6 +555,7 @@ class MotorAlarmas(QObject):
 
     #---------------- disparo real: sonido + efecto + botón ----------------
     def _disparar(self, titulo, subtitulo, tono_nombre, tono_ruta, cfg):
+
         ruta= self._resolver_ruta_tono(tono_nombre, tono_ruta, cfg)
         if not self._asegurar_reproductor():
             return
@@ -530,6 +571,7 @@ class MotorAlarmas(QObject):
         #intenta mostrar el efecto: la alarma siempre hace acto de presencia.
         if cfg.get("efecto_visual", 1):
             try:
+
                 self.overlay.disparar()  #efecto continuo hasta detener la alarma
             except Exception:
                 pass
@@ -537,6 +579,7 @@ class MotorAlarmas(QObject):
         self.alarma_disparada.emit(titulo, subtitulo)
 
     def _resolver_ruta_tono(self, tono_nombre, tono_ruta, cfg):
+
         if tono_ruta and os.path.exists(tono_ruta):
             return tono_ruta
         nombre= tono_nombre or cfg.get("tono_defecto") or "Campanilla"
@@ -549,11 +592,13 @@ class MotorAlarmas(QObject):
             return ruta_defecto
         return os.path.join(_carpeta_tonos(), TONOS_PREDETERMINADOS["Campanilla"])
 
+    #Crea el reproductor de audio si aún no existe. Devuelve False si el sistema no tiene audio.
     def _asegurar_reproductor(self):
-        """Crea el reproductor de audio si aún no existe. Devuelve False si el sistema no tiene audio."""
+
         if self._reproductor is not None:
             return True
         try:
+
             self._reproductor= QMediaPlayer(self)
             self._salida_audio= QAudioOutput(self)
             self._reproductor.setAudioOutput(self._salida_audio)
@@ -565,11 +610,13 @@ class MotorAlarmas(QObject):
             return False
 
     def _al_cambiar_estado_media(self, estado):
+
         if estado == QMediaPlayer.MediaStatus.EndOfMedia and self._sonando and self._en_bucle:
             self._reproductor.setPosition(0)
             self._reproductor.play()
 
     def detener_alarma_activa(self):
+
         self._sonando= False
         if self._reproductor is not None:
             self._reproductor.stop()
@@ -578,14 +625,15 @@ class MotorAlarmas(QObject):
 
 
 #Efecto visual: "vibración" sutil + resplandor con el color del tema
+#Capa transparente sobre TODA la ventana (todos los módulos, sin
+#importar cuál esté abierto) que dibuja un resplandor pulsante en los
+#bordes, con el color de acento del tema activo. Además hace vibrar
+#suavemente el contenido central (unos pocos píxeles) para dar la
+#sensación de aviso sin llegar a ser molesto ni a tapar el contenido.
 class OverlayEfectoAlarma(QWidget):
-    """Capa transparente sobre TODA la ventana (todos los módulos, sin
-    importar cuál esté abierto) que dibuja un resplandor pulsante en los
-    bordes, con el color de acento del tema activo. Además hace vibrar
-    suavemente el contenido central (unos pocos píxeles) para dar la
-    sensación de aviso sin llegar a ser molesto ni a tapar el contenido."""
 
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
@@ -611,9 +659,11 @@ class OverlayEfectoAlarma(QWidget):
         self._grupo_vibracion= None
 
     def _leer_intensidad(self):
+
         return self._intensidad
 
     def _poner_intensidad(self, v):
+
         self._intensidad= v
         self.update()
 
@@ -621,7 +671,9 @@ class OverlayEfectoAlarma(QWidget):
     intensidad= Property(float, _leer_intensidad, _poner_intensidad)
 
     def _color_acento(self):
+
         try:
+
             mw= self.main_window
             paleta= mw.theme_palettes.get(mw.tema_actual, {})
             idx= 1 if getattr(mw, "modo_oscuro", False) else 0
@@ -631,6 +683,7 @@ class OverlayEfectoAlarma(QWidget):
             return QColor("#4F8EF7")
 
     def reposicionar(self):
+
         contenedor= self.main_window.centralWidget()
         if contenedor is not None:
             #Re-parentarlo al central widget garantiza que la capa quede SIEMPRE por encima del contenido y bien alineada,
@@ -640,10 +693,11 @@ class OverlayEfectoAlarma(QWidget):
             self.setGeometry(contenedor.rect())
         self.raise_()
 
+    #Activa el efecto de forma CONTINUA: sigue hasta que se llame a
+    #detener() (es decir, hasta que el usuario pare la alarma). El
+    #parámetro duracion_ms se mantiene por compatibilidad pero se ignora.
     def disparar(self, duracion_ms=None):
-        """Activa el efecto de forma CONTINUA: sigue hasta que se llame a
-        detener() (es decir, hasta que el usuario pare la alarma). El
-        parámetro duracion_ms se mantiene por compatibilidad pero se ignora."""
+
         self.reposicionar()
         self.show()
         self.raise_()
@@ -654,9 +708,10 @@ class OverlayEfectoAlarma(QWidget):
             self._vibrar_contenido()
             self._timer_vibracion.start()
 
+    #Micro-oscilación horizontal del panel central: un 'temblor' muy
+    #leve (pocos píxeles) que se nota pero no marea ni desordena la vista.
     def _vibrar_contenido(self):
-        """Micro-oscilación horizontal del panel central: un 'temblor' muy
-        leve (pocos píxeles) que se nota pero no marea ni desordena la vista."""
+
         contenedor= self.main_window.centralWidget()
         if contenedor is None:
             return
@@ -675,6 +730,7 @@ class OverlayEfectoAlarma(QWidget):
         grupo.start()
 
     def _apagar_pulso(self):
+
         self._activo= False
         self._anim_pulso.stop()
         self._intensidad= 0.0
@@ -682,10 +738,12 @@ class OverlayEfectoAlarma(QWidget):
         self.hide()
 
     def detener(self):
+
         self._timer_vibracion.stop()
         self._apagar_pulso()
 
     def paintEvent(self, event):
+
         if not self._activo and self._intensidad <= 0:
             return
         p= QPainter(self)
@@ -702,14 +760,16 @@ class OverlayEfectoAlarma(QWidget):
 
 
 #Botón flotante para detener la alarma
+#Botón circular semitransparente, flotante en la esquina inferior
+#derecha, que aparece con un fundido cuando suena una alarma y desaparece
+#igual al pararla. Incluye título/subtítulo de la alarma.
 class BotonDetenerAlarma(QWidget):
-    """Botón circular semitransparente, flotante en la esquina inferior
-    derecha, que aparece con un fundido cuando suena una alarma y desaparece
-    igual al pararla. Incluye título/subtítulo de la alarma."""
+
     from PySide6.QtCore import Signal as _Signal
     clicked= _Signal()
 
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
@@ -734,9 +794,11 @@ class BotonDetenerAlarma(QWidget):
         self._anim.finished.connect(self._al_terminar_fundido)
 
     def _leer_opacidad(self):
+
         return self._opacidad
 
     def _poner_opacidad(self, v):
+
         self._opacidad= v
         self.update()
 
@@ -744,6 +806,7 @@ class BotonDetenerAlarma(QWidget):
     opacidadWidget= _Property(float, _leer_opacidad, _poner_opacidad)
 
     def reposicionar(self):
+
         contenedor= self.main_window.centralWidget()
         if contenedor is None:
             return
@@ -754,7 +817,8 @@ class BotonDetenerAlarma(QWidget):
         self.raise_()
 
     def mostrar_para_alarma(self, titulo, subtitulo):
-        self._titulo, self._subtitulo = titulo, subtitulo
+
+        self._titulo, self._subtitulo= titulo, subtitulo
         self.reposicionar()
         self.show()
         self.raise_()
@@ -766,26 +830,31 @@ class BotonDetenerAlarma(QWidget):
         self.update()
 
     def ocultar_con_fundido(self):
+
         self._anim.stop()
         self._ocultando= True
         self._anim.setStartValue(self._opacidad)
         self._anim.setEndValue(0.0)
         self._anim.start()
 
+    #Único receptor de 'finished', conectado una sola vez desde el
+    #__init__. Solo oculta el widget si el fundido que acaba de terminar
+    #era el de salida (ocultar_con_fundido); si era el de entrada
+    #(mostrar_para_alarma) no hay que hacer nada más.
     def _al_terminar_fundido(self):
-        """Único receptor de 'finished', conectado una sola vez desde el
-        __init__. Solo oculta el widget si el fundido que acaba de terminar
-        era el de salida (ocultar_con_fundido); si era el de entrada
-        (mostrar_para_alarma) no hay que hacer nada más."""
+
         if self._ocultando:
             self.hide()
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
 
     def _color_acento(self):
+
         try:
+
             mw= self.main_window
             paleta= mw.theme_palettes.get(mw.tema_actual, {})
             idx= 1 if getattr(mw, "modo_oscuro", False) else 0
@@ -794,6 +863,7 @@ class BotonDetenerAlarma(QWidget):
             return QColor("#4F8EF7")
 
     def paintEvent(self, event):
+
         if self._opacidad <= 0.01:
             return
         p= QPainter(self)
@@ -848,20 +918,22 @@ class BotonDetenerAlarma(QWidget):
 
     @staticmethod
     def _elidir(texto, largo):
+
         texto= texto or ""
         return texto if len(texto) <= largo else texto[:largo - 1] + "…"
 
 
 #Diálogo de configuración
+#Widget EMBEBIBLE con toda la configuración de Alarmas y Recordatorios
+#(pestañas "General" y "Recordatorios"). Pensado para vivir dentro de
+#Configuración ▸ Mi Cuenta ▸ Preferencias (junto a las demás preferencias
+#del propio usuario/equipo), no en una ventana aparte -por eso no hereda
+#de QDialog-. `ConfigurarAlarmasDialog`, más abajo, es solo un envoltorio
+#por si algún módulo prefiere abrirlo como ventana emergente.
 class PanelAlarmas(QWidget):
-    """Widget EMBEBIBLE con toda la configuración de Alarmas y Recordatorios
-    (pestañas "General" y "Recordatorios"). Pensado para vivir dentro de
-    Configuración ▸ Mi Cuenta ▸ Preferencias (junto a las demás preferencias
-    del propio usuario/equipo), no en una ventana aparte -por eso no hereda
-    de QDialog-. `ConfigurarAlarmasDialog`, más abajo, es solo un envoltorio
-    por si algún módulo prefiere abrirlo como ventana emergente."""
 
     def __init__(self, main_window, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self._tono_prueba= None   #se crea al pulsar "probar" (ver _asegurar_tono_prueba)
@@ -880,6 +952,7 @@ class PanelAlarmas(QWidget):
 
     #---------------- pestaña General ----------------
     def _tab_general(self):
+
         w= QWidget()
         form= QFormLayout(w)
 
@@ -948,7 +1021,8 @@ class PanelAlarmas(QWidget):
         return w
 
     def _elegir_tono_personalizado(self):
-        ruta, _ = QFileDialog.getOpenFileName(
+
+        ruta, _= QFileDialog.getOpenFileName(
             self, "Elegir tono de alarma", "",
             "Audio (*.mp3 *.wav *.ogg *.m4a *.flac *.aac);;Todos los archivos (*.*)")
         if ruta:
@@ -957,11 +1031,13 @@ class PanelAlarmas(QWidget):
             self._guardar_general()
 
     def _quitar_tono_personalizado(self):
+
         self._ruta_personalizada= ""
         self.lbl_tono_personalizado.setText("(ninguno)")
         self._guardar_general()
 
     def _probar_tono(self):
+
         cfg= obtener_config(self.main_window)
         ruta_personalizada= getattr(self, "_ruta_personalizada", "") or cfg.get("tono_defecto_ruta") or ""
         if ruta_personalizada and os.path.exists(ruta_personalizada):
@@ -976,9 +1052,11 @@ class PanelAlarmas(QWidget):
         self._tono_prueba.play()
 
     def _asegurar_tono_prueba(self):
+
         if self._tono_prueba is not None:
             return True
         try:
+
             self._tono_prueba= QMediaPlayer(self)
             self._salida_prueba= QAudioOutput(self)
             self._tono_prueba.setAudioOutput(self._salida_prueba)
@@ -989,6 +1067,7 @@ class PanelAlarmas(QWidget):
             return False
 
     def _detener_alarma_activa(self):
+
         motor= getattr(self.main_window, "motor_alarmas", None)
         if motor is not None:
             motor.detener_alarma_activa()
@@ -996,6 +1075,7 @@ class PanelAlarmas(QWidget):
             self._tono_prueba.stop()
 
     def _guardar_general(self, *_args):
+
         guardar_config(
             self.main_window,
             tono_defecto= self.combo_tono.currentText(),
@@ -1010,6 +1090,7 @@ class PanelAlarmas(QWidget):
 
     #---------------- pestaña Recordatorios ----------------
     def _tab_recordatorios(self):
+
         w= QWidget()
         layout= QVBoxLayout(w)
 
@@ -1064,6 +1145,7 @@ class PanelAlarmas(QWidget):
         return w
 
     def _guardar_recordatorio(self):
+
         titulo= self.in_titulo_rec.text().strip()
         if not titulo:
             QMessageBox.warning(self, "Falta el título", "Escribe un título para el recordatorio.")
@@ -1076,12 +1158,14 @@ class PanelAlarmas(QWidget):
         self._recargar_tabla_recordatorios()
 
     def _cancelar_edicion(self):
+
         self._id_edicion= None
         self.in_titulo_rec.clear()
         self.btn_guardar_rec.setText("Agregar recordatorio")
         self.btn_cancelar_edicion.setVisible(False)
 
     def _recargar_tabla_recordatorios(self):
+
         recordatorios= listar_recordatorios(self.main_window)
         self.tabla_rec.setRowCount(len(recordatorios))
         etiquetas_repetir= {"unica": "Una vez", "diario": "Diario", "semanal": "Semanal"}
@@ -1111,16 +1195,17 @@ class PanelAlarmas(QWidget):
             self.tabla_rec.setCellWidget(fila, 4, celda_acciones)
 
     def _editar_recordatorio(self, id_recordatorio):
+
         recordatorios= {r["id"]: r for r in listar_recordatorios(self.main_window)}
         r= recordatorios.get(id_recordatorio)
         if not r:
             return
         self._id_edicion= id_recordatorio
         self.in_titulo_rec.setText(r["titulo"])
-        y, m, d = [int(x) for x in r["fecha"].split("-")]
+        y, m, d= [int(x) for x in r["fecha"].split("-")]
         from PySide6.QtCore import QDate, QTime
         self.date_rec.setDate(QDate(y, m, d))
-        hh, mm = [int(x) for x in r["hora"].split(":")[:2]]
+        hh, mm= [int(x) for x in r["hora"].split(":")[:2]]
         self.time_rec.setTime(QTime(hh, mm))
         idx= self.combo_repetir.findData(r["repetir"])
         if idx >= 0:
@@ -1129,6 +1214,7 @@ class PanelAlarmas(QWidget):
         self.btn_cancelar_edicion.setVisible(True)
 
     def _borrar_recordatorio(self, id_recordatorio):
+
         respuesta= QMessageBox.question(self, "Eliminar recordatorio",
                                           "¿Eliminar este recordatorio?")
         if respuesta == QMessageBox.StandardButton.Yes:
@@ -1137,6 +1223,7 @@ class PanelAlarmas(QWidget):
 
     #---------------- carga inicial al abrir el diálogo ----------------
     def cargar(self):
+
         cfg= obtener_config(self.main_window)
         self.combo_tono.blockSignals(True)
         idx= self.combo_tono.findText(cfg.get("tono_defecto", "Campanilla"))
@@ -1165,12 +1252,13 @@ class PanelAlarmas(QWidget):
         self._recargar_tabla_recordatorios()
 
 
+#Envoltorio de `PanelAlarmas` como ventana emergente. No se usa desde
+#el panel lateral (la configuración vive en Configuración ▸ Mi Cuenta ▸
+#Preferencias), pero se deja disponible por si se necesita en otro lugar.
 class ConfigurarAlarmasDialog(QDialog):
-    """Envoltorio de `PanelAlarmas` como ventana emergente. No se usa desde
-    el panel lateral (la configuración vive en Configuración ▸ Mi Cuenta ▸
-    Preferencias), pero se deja disponible por si se necesita en otro lugar."""
 
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.setWindowTitle("Alarmas y recordatorios")

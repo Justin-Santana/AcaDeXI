@@ -1,1 +1,2 @@
-"""AcaDeXI — Sistema de Gestión Escolar Integral."""
+#AcaDeXI — Sistema de Gestión Escolar Integral.
+pass

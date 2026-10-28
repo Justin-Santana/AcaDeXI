@@ -29,23 +29,26 @@ PALETA_SERIES= ["#6366F1", "#F97316", "#14B8A6", "#EC4899", "#8B5CF6",
 
 #Utilidades visuales — puramente estéticas, no tocan datos ni lógica.
 def _hex_a_rgba(color_hex, alpha):
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
 def _color_serie(indice):
+
     return PALETA_SERIES[indice % len(PALETA_SERIES)]
 
 
 _CACHE_PUNTOS= {}
 
 
+#Pequeño círculo sólido dibujado con QPainter (mismo color que la
+#porción de esa facultad en el anillo/leyenda), usado como icono en la
+#columna de color de la tabla de Facultades. Cacheado por (color, size)
+#-es un dibujo fijo, no hace falta rehacerlo en cada fila/recarga.
 def _pixmap_punto(color_hex, size=12):
-    """Pequeño círculo sólido dibujado con QPainter (mismo color que la
-    porción de esa facultad en el anillo/leyenda), usado como icono en la
-    columna de color de la tabla de Facultades. Cacheado por (color, size)
-    -es un dibujo fijo, no hace falta rehacerlo en cada fila/recarga."""
+
     clave= (color_hex, size)
     if clave in _CACHE_PUNTOS:
         return _CACHE_PUNTOS[clave]
@@ -61,10 +64,12 @@ def _pixmap_punto(color_hex, size=12):
     return pm
 
 
+#Lee la paleta/tema activo de la ventana principal para que los elementos
+#visuales de este módulo respeten el tema y el modo claro/oscuro elegido.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que los elementos
-    visuales de este módulo respeten el tema y el modo claro/oscuro elegido."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -80,13 +85,14 @@ def _colores_tema(main_window):
                 "txt_sec": "#64748B", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
+#por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
+#encima. Solo anima mientras el cursor está sobre el botón, así que no cuesta
+#rendimiento en reposo.
 class BotonAnimado(QPushButton):
-    """QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
-    por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
-    encima. Solo anima mientras el cursor está sobre el botón, así que no cuesta
-    rendimiento en reposo."""
 
     def __init__(self, texto="", parent=None):
+
         super().__init__(texto, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._sombra= QGraphicsDropShadowEffect(self)
@@ -99,27 +105,31 @@ class BotonAnimado(QPushButton):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _animar_sombra(self, hasta):
+
         self._anim.stop()
         self._anim.setStartValue(self._sombra.blurRadius())
         self._anim.setEndValue(hasta)
         self._anim.start()
 
     def enterEvent(self, event):
+
         if self.isEnabled():
             self._animar_sombra(16)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(0)
         super().leaveEvent(event)
 
 
+#Anillo (donut) animado que reemplaza a la típica 'tarjeta KPI': muestra
+#cuántas carreras tiene cada facultad como proporciones de un círculo,
+#dibujado a mano con QPainter y que se 'abre' con una animación al cargar.
 class AnilloFacultades(QWidget):
-    """Anillo (donut) animado que reemplaza a la típica 'tarjeta KPI': muestra
-    cuántas carreras tiene cada facultad como proporciones de un círculo,
-    dibujado a mano con QPainter y que se 'abre' con una animación al cargar."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setMinimumSize(150, 150)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
@@ -137,16 +147,19 @@ class AnilloFacultades(QWidget):
         self._anim.valueChanged.connect(self._on_anim)
 
     def _on_anim(self, v):
+
         self._progreso= float(v)
         self.update()
 
     def poner_colores(self, texto, sub, pista):
+
         self._color_texto= texto
         self._color_sub= sub
         self._color_pista= pista
         self.update()
 
     def establecer_datos(self, segmentos):
+
         self._segmentos= [s for s in segmentos if s["valor"] > 0]
         self._total= sum(s["valor"] for s in self._segmentos)
         self._anim.stop()
@@ -154,9 +167,11 @@ class AnilloFacultades(QWidget):
         self._anim.start()
 
     def sizeHint(self):
+
         return QSize(170, 170)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         lado= min(self.width(), self.height()) - 16
@@ -204,14 +219,15 @@ class AnilloFacultades(QWidget):
         painter.drawText(rect_sub, Qt.AlignmentFlag.AlignCenter, "carreras")
 
 
+#Barra tipo cápsula que reparte su ancho proporcionalmente entre categorías
+#(aquí, tipos de asignación docente). Crece con una animación suave al cargar
+#en vez de aparecer de golpe, como una tarjeta estática.
 class BarraSegmentada(QWidget):
-    """Barra tipo cápsula que reparte su ancho proporcionalmente entre categorías
-    (aquí, tipos de asignación docente). Crece con una animación suave al cargar
-    en vez de aparecer de golpe, como una tarjeta estática."""
 
     ALTURA= 30
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedHeight(self.ALTURA)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
@@ -226,20 +242,24 @@ class BarraSegmentada(QWidget):
         self._anim.valueChanged.connect(self._on_anim)
 
     def _on_anim(self, v):
+
         self._progreso= float(v)
         self.update()
 
     def poner_color_pista(self, color):
+
         self._color_pista= color
         self.update()
 
     def establecer_datos(self, segmentos):
+
         self._segmentos= [s for s in segmentos if s["valor"] > 0]
         self._anim.stop()
         self._progreso= 0.0
         self._anim.start()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         radio= self.ALTURA / 2
@@ -262,10 +282,10 @@ class BarraSegmentada(QWidget):
             x += ancho
 
 
+#Mapa curricular dibujado a mano: cada semestre es una columna y cada
+#materia una ficha; las curvas conectan cada materia con su prerrequisito.
+#Pasar el mouse sobre una ficha resalta su cadena de prerrequisito/dependientes.
 class MallaCurricular(QWidget):
-    """Mapa curricular dibujado a mano: cada semestre es una columna y cada
-    materia una ficha; las curvas conectan cada materia con su prerrequisito.
-    Pasar el mouse sobre una ficha resalta su cadena de prerrequisito/dependientes."""
 
     ANCHO_COLUMNA= 196
     ALTO_FICHA= 52
@@ -273,6 +293,7 @@ class MallaCurricular(QWidget):
     MARGEN= 18
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setMouseTracking(True)
         self._nodos= {}
@@ -289,10 +310,12 @@ class MallaCurricular(QWidget):
         self.setMinimumHeight(self.ALTO_FICHA + self.MARGEN * 2 + 34)
 
     def sizeHint(self):
+
         return self.minimumSize()
 
     def poner_colores(self, chip, chip_borde, texto, conector, acento,
                      electiva= None, electiva_borde=None):
+
         self._color_chip= chip
         self._color_chip_borde= chip_borde
         self._color_texto= texto
@@ -306,9 +329,10 @@ class MallaCurricular(QWidget):
         self._color_electiva_borde= electiva_borde or acento
         self.update()
 
+    #filas: lista de dicts con materia_id, materia_nombre, semestre,
+    #prerrequisito_id, electiva (ya filtrados por una sola carrera).
     def establecer_datos(self, filas):
-        """filas: lista de dicts con materia_id, materia_nombre, semestre,
-        prerrequisito_id, electiva (ya filtrados por una sola carrera)."""
+
         self._nodos= {}
         self._por_semestre= {}
         for f in filas:
@@ -337,6 +361,7 @@ class MallaCurricular(QWidget):
         self.update()
 
     def _recalcular_geometria(self):
+
         if not self._por_semestre:
             self.setMinimumSize(0, self.ALTO_FICHA + self.MARGEN * 2 + 34)
             self.updateGeometry()
@@ -354,6 +379,7 @@ class MallaCurricular(QWidget):
         self.updateGeometry()
 
     def mouseMoveEvent(self, event):
+
         punto= event.position()
         nuevo_hover= None
         for mid, nodo in self._nodos.items():
@@ -370,12 +396,14 @@ class MallaCurricular(QWidget):
             self.update()
 
     def leaveEvent(self, event):
+
         if self._hover_id is not None:
             self._hover_id= None
             self.update()
         super().leaveEvent(event)
 
     def _relacionado_con_hover(self, mid):
+
         if self._hover_id is None:
             return True
         if mid == self._hover_id:
@@ -388,6 +416,7 @@ class MallaCurricular(QWidget):
         return False
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -489,10 +518,11 @@ class MallaCurricular(QWidget):
                               Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, texto)
 
 
+#Módulo condicional activado cuando tipo_institucion = 'Universidad'.
 class ModuloUniversidad(QWidget):
-    """Módulo condicional activado cuando tipo_institucion = 'Universidad'."""
 
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion_facultad= None
@@ -511,6 +541,7 @@ class ModuloUniversidad(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         #Módulo institucional de Universidad (Facultades, Carreras, Pensum):
         #exclusivo de roles gerenciales.
         self._titulo_modulo_atajos= "Universidad"
@@ -523,6 +554,7 @@ class ModuloUniversidad(QWidget):
 
     #Construcción de la interfaz
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -563,6 +595,7 @@ class ModuloUniversidad(QWidget):
         self.actualizar_tema()
 
     def _construir_cabecera(self):
+
         self.frame_cabecera= QFrame()
         self.frame_cabecera.setObjectName("TarjetaCabeceraUniversidad")
         cab= QHBoxLayout(self.frame_cabecera)
@@ -597,10 +630,11 @@ class ModuloUniversidad(QWidget):
 
         return self.frame_cabecera
 
+    #Contenedor tipo 'tarjeta de cristal' (fondo + borde + sombra suave)
+    #reutilizado por todas las secciones del módulo, en vez del look plano
+    #de formularios sueltos sobre la pantalla.
     def _crear_tarjeta(self):
-        """Contenedor tipo 'tarjeta de cristal' (fondo + borde + sombra suave)
-        reutilizado por todas las secciones del módulo, en vez del look plano
-        de formularios sueltos sobre la pantalla."""
+
         frame= QFrame()
         frame.setObjectName("PanelUniversidad")
         layout= QVBoxLayout(frame)
@@ -613,11 +647,12 @@ class ModuloUniversidad(QWidget):
         frame.setGraphicsEffect(sombra)
         return frame, layout, sombra
 
+    #Barra de búsqueda con lupa dibujada a mano e insensible a mayúsculas/
+    #acentos — mismo diseño y comportamiento que en Configuración, para que
+    #todos los módulos del sistema busquen exactamente igual. `callback_filtro`
+    #se llama (con un pequeño debounce) cada vez que el texto cambia.
     def _crear_barra_busqueda(self, placeholder, callback_filtro):
-        """Barra de búsqueda con lupa dibujada a mano e insensible a mayúsculas/
-        acentos — mismo diseño y comportamiento que en Configuración, para que
-        todos los módulos del sistema busquen exactamente igual. `callback_filtro`
-        se llama (con un pequeño debounce) cada vez que el texto cambia."""
+
         marco= QFrame()
         marco.setStyleSheet("QFrame { background: rgba(127,127,127,0.10); border-radius: 16px; }")
         lay= QHBoxLayout(marco)
@@ -643,11 +678,12 @@ class ModuloUniversidad(QWidget):
 
     #Validación y robustez — helpers reutilizables por las distintas pestañas para evitar duplicados y para que un
     #error de BD (integridad, bloqueo, etc.) se muestre como aviso en vez de romper la ventana.
+    #True si ya existe otra fila de `tabla` con el mismo `nombre` (comparado
+    #sin distinguir mayúsculas/acentos, vía _normalizar). `filtro_extra`, si se
+    #pasa, es una tupla (condicion_sql, parametros) para acotar la comparación
+    #-por ejemplo, a la misma facultad- en vez de compararlo contra toda la tabla.
     def _nombre_duplicado(self, tabla, nombre, id_excluir=None, columna="nombre", filtro_extra=None):
-        """True si ya existe otra fila de `tabla` con el mismo `nombre` (comparado
-        sin distinguir mayúsculas/acentos, vía _normalizar). `filtro_extra`, si se
-        pasa, es una tupla (condicion_sql, parametros) para acotar la comparación
-        -por ejemplo, a la misma facultad- en vez de compararlo contra toda la tabla."""
+
         conn= obtener_conexion()
         c= conn.cursor()
         query= f"SELECT id, {columna} FROM {tabla}"
@@ -666,13 +702,15 @@ class ModuloUniversidad(QWidget):
                 return True
         return False
 
+    #Ejecuta `funcion` (que recibe conn, cursor y hace su propio INSERT/UPDATE/
+    #DELETE) dentro de un try/except: si algo falla (violación de integridad,
+    #BD bloqueada, etc.) se muestra un aviso claro en vez de dejar una excepción
+    #sin capturar. Devuelve True si se guardó y se hizo commit, False si falló.
     def _operacion_bd_segura(self, funcion, mensaje_error="No se pudo completar la operación"):
-        """Ejecuta `funcion` (que recibe conn, cursor y hace su propio INSERT/UPDATE/
-        DELETE) dentro de un try/except: si algo falla (violación de integridad,
-        BD bloqueada, etc.) se muestra un aviso claro en vez de dejar una excepción
-        sin capturar. Devuelve True si se guardó y se hizo commit, False si falló."""
+
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             funcion(conn, c)
             conn.commit()
@@ -686,9 +724,10 @@ class ModuloUniversidad(QWidget):
 
     #ANIMACIONES — capa puramente visual: no participan en la lógica de negocio, permisos, validación ni guardado
     #de datos.
+    #Resplandor breve de color en el borde de una tarjeta, a modo de
+    #confirmación visual (verde=éxito, rojo=aviso) tras guardar o eliminar.
     def _destello(self, sombra, color_hex="#22C55E"):
-        """Resplandor breve de color en el borde de una tarjeta, a modo de
-        confirmación visual (verde=éxito, rojo=aviso) tras guardar o eliminar."""
+
         if sombra is None:
             return
         grupo= QParallelAnimationGroup(self)
@@ -707,9 +746,10 @@ class ModuloUniversidad(QWidget):
         grupo.start()
         self._anim_destello= grupo
 
+    #Fundido breve al recargar una tabla, como confirmación visual de que
+    #los datos se actualizaron. El efecto se retira apenas termina.
     def _animar_fundido_tabla(self, tabla):
-        """Fundido breve al recargar una tabla, como confirmación visual de que
-        los datos se actualizaron. El efecto se retira apenas termina."""
+
         efecto= QGraphicsOpacityEffect(tabla)
         tabla.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", self)
@@ -721,9 +761,10 @@ class ModuloUniversidad(QWidget):
         anim.start()
         self._anim_tabla= anim
 
+    #Aparición suave (fade-in) para paneles que se reconstruyen del todo,
+    #como la malla curricular al cambiar de carrera.
     def _animar_entrada(self, widget):
-        """Aparición suave (fade-in) para paneles que se reconstruyen del todo,
-        como la malla curricular al cambiar de carrera."""
+
         efecto= QGraphicsOpacityEffect(widget)
         widget.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", self)
@@ -735,9 +776,10 @@ class ModuloUniversidad(QWidget):
         anim.start()
         self._anim_entrada= anim
 
+    #Anima el conteo mostrado en un chip de la cabecera (cuenta hacia
+    #arriba/abajo en vez de saltar directo al número nuevo).
     def _animar_valor_chip(self, chip, atributo, valor_final, formato):
-        """Anima el conteo mostrado en un chip de la cabecera (cuenta hacia
-        arriba/abajo en vez de saltar directo al número nuevo)."""
+
         valor_inicial= getattr(self, atributo, 0)
         setattr(self, atributo, valor_final)
         if valor_inicial == valor_final:
@@ -752,10 +794,11 @@ class ModuloUniversidad(QWidget):
         anim.start()
         setattr(self, f"_anim_{atributo}", anim)
 
+    #Pequeño círculo de color, cacheado, usado para etiquetar filas de
+    #la tabla de carreras según su facultad (evita crear un QPixmap nuevo
+    #en cada refresco).
     def _icono_punto(self, color_hex):
-        """Pequeño círculo de color, cacheado, usado para etiquetar filas de
-        la tabla de carreras según su facultad (evita crear un QPixmap nuevo
-        en cada refresco)."""
+
         if color_hex in self._cache_iconos_punto:
             return self._cache_iconos_punto[color_hex]
         pix= QPixmap(12, 12)
@@ -772,6 +815,7 @@ class ModuloUniversidad(QWidget):
 
     #Carga perezosa por pestaña
     def _cambio_pestana(self, index):
+
         if index in self._pestanas_cargadas:
             return
         self._pestanas_cargadas.add(index)
@@ -785,11 +829,12 @@ class ModuloUniversidad(QWidget):
 
     #---------------- FACULTADES ----------------
     def _tab_facultades(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
 
-        tarjeta_dist, layout_dist, _ = self._crear_tarjeta()
+        tarjeta_dist, layout_dist, _= self._crear_tarjeta()
         titulo_dist= QLabel("Distribución de carreras por facultad")
         titulo_dist.setObjectName("TituloTarjetaUniversidad")
         layout_dist.addWidget(titulo_dist)
@@ -805,12 +850,13 @@ class ModuloUniversidad(QWidget):
         layout_dist.addLayout(fila_dist)
         l.addWidget(tarjeta_dist)
 
-        self.tarjeta_form_facultad, layout_form, self.sombra_form_facultad = self._crear_tarjeta()
+        self.tarjeta_form_facultad, layout_form, self.sombra_form_facultad= self._crear_tarjeta()
         titulo_form= QLabel("Nueva facultad")
         titulo_form.setObjectName("TituloTarjetaUniversidad")
         layout_form.addWidget(titulo_form)
         fila= QHBoxLayout()
-        self.f_nombre= QLineEdit(); self.f_nombre.setPlaceholderText("Nombre de la Facultad")
+        self.f_nombre= QLineEdit()
+        self.f_nombre.setPlaceholderText("Nombre de la Facultad")
         limitar_campo_texto(self.f_nombre, 300)
         self.f_nombre.setToolTip("Nombre de la facultad (ej. Facultad de Ingeniería)")
         fila.addWidget(self.f_nombre)
@@ -821,8 +867,8 @@ class ModuloUniversidad(QWidget):
         layout_form.addLayout(fila)
         l.addWidget(self.tarjeta_form_facultad)
 
-        tarjeta_tabla, layout_tabla, _ = self._crear_tarjeta()
-        marco_busqueda_fac, self.in_buscar_facultades = self._crear_barra_busqueda(
+        tarjeta_tabla, layout_tabla, _= self._crear_tarjeta()
+        marco_busqueda_fac, self.in_buscar_facultades= self._crear_barra_busqueda(
             "Buscar facultad por nombre…", self._filtro_facultades_cambio)
         layout_tabla.addWidget(marco_busqueda_fac)
         self.tabla_facultades= QTableWidget(0, 4)
@@ -885,6 +931,7 @@ class ModuloUniversidad(QWidget):
         return w
 
     def _limpiar_facultad(self):
+
         self.id_edicion_facultad= None
         self.btn_guardar_facultad.setText("Agregar Facultad")
         self.f_nombre.clear()
@@ -892,6 +939,7 @@ class ModuloUniversidad(QWidget):
         desactivar_modo_edicion(self.f_nombre)
 
     def _cargar_facultad_seleccionada(self):
+
         fila= self.tabla_facultades.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una facultad de la tabla.", self)
@@ -910,6 +958,7 @@ class ModuloUniversidad(QWidget):
         activar_modo_edicion(self.f_nombre, f"Editando facultad: {f['nombre'] or ''}")
 
     def _guardar_facultad(self):
+
         nombre= self.f_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
@@ -921,6 +970,7 @@ class ModuloUniversidad(QWidget):
             return
 
         def _accion(conn, c):
+
             if self.id_edicion_facultad is None:
                 c.execute("INSERT INTO facultades (nombre) VALUES (?)", (nombre,))
             else:
@@ -938,6 +988,7 @@ class ModuloUniversidad(QWidget):
         self._destello(self.sombra_form_facultad, "#22C55E")
 
     def _eliminar_facultad(self):
+
         fila= self.tabla_facultades.currentRow()
         if fila < 0:
             return
@@ -951,6 +1002,7 @@ class ModuloUniversidad(QWidget):
             return
 
         def _accion(conn, c):
+
             c.execute("DELETE FROM facultades WHERE id=?", (id_fac,))
 
         exito= self._operacion_bd_segura(_accion, "No se pudo eliminar la facultad")
@@ -963,10 +1015,12 @@ class ModuloUniversidad(QWidget):
         self._cargar_datos_donut()
 
     def _filtro_facultades_cambio(self):
+
         self.paginacion_facultades.reiniciar()
         self._cargar_facultades()
 
     def _cargar_facultades(self):
+
         texto= _normalizar(self.in_buscar_facultades.text().strip()) if hasattr(self, "in_buscar_facultades") else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -981,7 +1035,7 @@ class ModuloUniversidad(QWidget):
         if texto:
             filas= [f for f in filas if texto in _normalizar(f["nombre"] or "")]
         self.paginacion_facultades.establecer_total(len(filas))
-        inicio, fin = self.paginacion_facultades.rango_actual()
+        inicio, fin= self.paginacion_facultades.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_facultades):
             self.tabla_facultades.setRowCount(len(pagina))
@@ -1003,6 +1057,7 @@ class ModuloUniversidad(QWidget):
         self._animar_fundido_tabla(self.tabla_facultades)
 
     def _cargar_datos_donut(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT facultades.id, facultades.nombre, COUNT(carreras.id) as total
@@ -1030,6 +1085,7 @@ class ModuloUniversidad(QWidget):
                                      lambda v: f"{html_icono_emoji('🎓', 14)} {v} carrera" + ("s" if v != 1 else ""))
 
     def _actualizar_leyenda_donut(self, segmentos):
+
         while self.layout_leyenda_donut.count():
             item= self.layout_leyenda_donut.takeAt(0)
             w= item.widget()
@@ -1058,16 +1114,18 @@ class ModuloUniversidad(QWidget):
 
     #---------------- CARRERAS ----------------
     def _tab_carreras(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
 
-        self.tarjeta_form_carrera, layout_form, self.sombra_form_carrera = self._crear_tarjeta()
+        self.tarjeta_form_carrera, layout_form, self.sombra_form_carrera= self._crear_tarjeta()
         titulo_form= QLabel("Nueva carrera")
         titulo_form.setObjectName("TituloTarjetaUniversidad")
         layout_form.addWidget(titulo_form)
         form= QGridLayout()
-        self.car_nombre= QLineEdit(); self.car_nombre.setPlaceholderText("Nombre de la Carrera")
+        self.car_nombre= QLineEdit()
+        self.car_nombre.setPlaceholderText("Nombre de la Carrera")
         limitar_campo_texto(self.car_nombre, 300)
         self.car_nombre.setToolTip("Nombre de la carrera (ej. Ingeniería en Sistemas)")
         self.car_facultad= QComboBox()
@@ -1081,8 +1139,8 @@ class ModuloUniversidad(QWidget):
         layout_form.addLayout(form)
         l.addWidget(self.tarjeta_form_carrera)
 
-        tarjeta_tabla, layout_tabla, _ = self._crear_tarjeta()
-        marco_busqueda_car, self.in_buscar_carreras = self._crear_barra_busqueda(
+        tarjeta_tabla, layout_tabla, _= self._crear_tarjeta()
+        marco_busqueda_car, self.in_buscar_carreras= self._crear_barra_busqueda(
             "Buscar carrera por nombre o facultad…", self._filtro_carreras_cambio)
         layout_tabla.addWidget(marco_busqueda_car)
         self.tabla_carreras= QTableWidget(0, 3)
@@ -1136,6 +1194,7 @@ class ModuloUniversidad(QWidget):
         return w
 
     def _limpiar_carrera(self):
+
         self.id_edicion_carrera= None
         self.btn_guardar_carrera.setText("Agregar Carrera")
         self.car_nombre.clear()
@@ -1144,6 +1203,7 @@ class ModuloUniversidad(QWidget):
         self.tabla_carreras.clearSelection()
 
     def _cargar_facultades_combo(self):
+
         seleccion_previa= self.car_facultad.currentData()
         self.car_facultad.blockSignals(True)
         self.car_facultad.clear()
@@ -1159,6 +1219,7 @@ class ModuloUniversidad(QWidget):
         self.car_facultad.blockSignals(False)
 
     def _cargar_carrera_seleccionada(self):
+
         fila= self.tabla_carreras.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una carrera de la tabla.", self)
@@ -1179,6 +1240,7 @@ class ModuloUniversidad(QWidget):
         activar_modo_edicion(self.car_nombre, f"Editando carrera: {f['nombre'] or ''}")
 
     def _guardar_carrera(self):
+
         nombre= self.car_nombre.text().strip()
         facultad_id= self.car_facultad.currentData()
         if not nombre or facultad_id is None:
@@ -1192,6 +1254,7 @@ class ModuloUniversidad(QWidget):
             return
 
         def _accion(conn, c):
+
             if self.id_edicion_carrera is None:
                 c.execute("INSERT INTO carreras (nombre, facultad_id) VALUES (?,?)", (nombre, facultad_id))
             else:
@@ -1211,6 +1274,7 @@ class ModuloUniversidad(QWidget):
         self._destello(self.sombra_form_carrera, "#22C55E")
 
     def _eliminar_carrera(self):
+
         fila= self.tabla_carreras.currentRow()
         if fila < 0:
             return
@@ -1224,6 +1288,7 @@ class ModuloUniversidad(QWidget):
             return
 
         def _accion(conn, c):
+
             c.execute("DELETE FROM carreras WHERE id=?", (id_car,))
 
         exito= self._operacion_bd_segura(_accion, "No se pudo eliminar la carrera")
@@ -1237,10 +1302,12 @@ class ModuloUniversidad(QWidget):
             self._cargar_combos_pensum()
 
     def _filtro_carreras_cambio(self):
+
         self.paginacion_carreras.reiniciar()
         self._cargar_carreras()
 
     def _cargar_carreras(self):
+
         texto= _normalizar(self.in_buscar_carreras.text().strip()) if hasattr(self, "in_buscar_carreras") else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1252,7 +1319,7 @@ class ModuloUniversidad(QWidget):
             filas= [f for f in filas if texto in _normalizar(
                 f"{f['nombre'] or ''} {f['facultad_nombre'] or ''}")]
         self.paginacion_carreras.establecer_total(len(filas))
-        inicio, fin = self.paginacion_carreras.rango_actual()
+        inicio, fin= self.paginacion_carreras.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_carreras):
             self.tabla_carreras.setRowCount(len(pagina))
@@ -1268,11 +1335,12 @@ class ModuloUniversidad(QWidget):
 
     #---------------- PENSUM / MALLA CURRICULAR ----------------
     def _tab_pensum(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
 
-        self.tarjeta_malla, layout_malla, _ = self._crear_tarjeta()
+        self.tarjeta_malla, layout_malla, _= self._crear_tarjeta()
         fila_malla_titulo= QHBoxLayout()
         titulo_malla= QLabel("Mapa curricular")
         titulo_malla.setObjectName("TituloTarjetaUniversidad")
@@ -1304,7 +1372,7 @@ class ModuloUniversidad(QWidget):
         layout_malla.addWidget(self.malla_scroll)
         l.addWidget(self.tarjeta_malla)
 
-        self.tarjeta_form_pensum, layout_form, self.sombra_form_pensum = self._crear_tarjeta()
+        self.tarjeta_form_pensum, layout_form, self.sombra_form_pensum= self._crear_tarjeta()
         titulo_form= QLabel("Agregar materia al pensum")
         titulo_form.setObjectName("TituloTarjetaUniversidad")
         layout_form.addWidget(titulo_form)
@@ -1315,7 +1383,8 @@ class ModuloUniversidad(QWidget):
         self.pen_materia= QComboBox()
         conectar_tooltip_seleccion(self.pen_materia, "Materia que se incluirá en el pensum de la carrera")
         self.pen_materia.currentIndexChanged.connect(self._actualizar_prerrequisitos_disponibles)
-        self.pen_semestre= QSpinBox(); self.pen_semestre.setRange(1, 20)
+        self.pen_semestre= QSpinBox()
+        self.pen_semestre.setRange(1, 20)
         self.pen_semestre.setToolTip("Semestre en el que se cursa esta materia (1-20)")
         self.pen_prerrequisito= QComboBox()
         conectar_tooltip_seleccion(self.pen_prerrequisito,
@@ -1335,8 +1404,8 @@ class ModuloUniversidad(QWidget):
         layout_form.addLayout(form)
         l.addWidget(self.tarjeta_form_pensum)
 
-        tarjeta_tabla, layout_tabla, _ = self._crear_tarjeta()
-        marco_busqueda_pensum, self.in_buscar_pensum = self._crear_barra_busqueda(
+        tarjeta_tabla, layout_tabla, _= self._crear_tarjeta()
+        marco_busqueda_pensum, self.in_buscar_pensum= self._crear_barra_busqueda(
             "Buscar por carrera o materia…", self._filtro_pensum_cambio)
         layout_tabla.addWidget(marco_busqueda_pensum)
         self.tabla_pensum= QTableWidget(0, 6)
@@ -1390,6 +1459,7 @@ class ModuloUniversidad(QWidget):
         return w
 
     def _limpiar_pensum(self):
+
         self.id_edicion_pensum= None
         self.btn_guardar_pensum.setText("Agregar al Pensum")
         self.pen_carrera.setCurrentIndex(0)
@@ -1401,6 +1471,7 @@ class ModuloUniversidad(QWidget):
         self.tabla_pensum.clearSelection()
 
     def _cargar_pensum_seleccionado(self):
+
         fila= self.tabla_pensum.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro del pensum en la tabla.", self)
@@ -1426,6 +1497,7 @@ class ModuloUniversidad(QWidget):
         activar_modo_edicion(self.pen_semestre, "Editando registro del pensum")
 
     def _cargar_combos_pensum(self):
+
         self.pen_carrera.blockSignals(True)
         self.pen_materia.blockSignals(True)
         self.pen_carrera.clear()
@@ -1456,13 +1528,14 @@ class ModuloUniversidad(QWidget):
         #_actualizar_prerrequisitos_disponibles), así que se repuebla al final.
         self._actualizar_prerrequisitos_disponibles()
 
+    #Repuebla `pen_prerrequisito` solo con materias que ya estén en el pensum
+    #de la carrera elegida en `pen_carrera` (y nunca con la propia materia que se
+    #está agregando/editando en `pen_materia`), para que sea imposible elegir en
+    #la interfaz un prerrequisito de otra carrera o que la materia sea prerrequisito
+    #de sí misma. La validación final (orden de semestre, ciclos) se hace igual al
+    #guardar, por si el valor ya estaba puesto antes de cambiar carrera/materia.
     def _actualizar_prerrequisitos_disponibles(self):
-        """Repuebla `pen_prerrequisito` solo con materias que ya estén en el pensum
-        de la carrera elegida en `pen_carrera` (y nunca con la propia materia que se
-        está agregando/editando en `pen_materia`), para que sea imposible elegir en
-        la interfaz un prerrequisito de otra carrera o que la materia sea prerrequisito
-        de sí misma. La validación final (orden de semestre, ciclos) se hace igual al
-        guardar, por si el valor ya estaba puesto antes de cambiar carrera/materia."""
+
         if not hasattr(self, "pen_prerrequisito"):
             return
         carrera_id= self.pen_carrera.currentData()
@@ -1487,6 +1560,7 @@ class ModuloUniversidad(QWidget):
         self.pen_prerrequisito.blockSignals(False)
 
     def _guardar_pensum(self):
+
         carrera_id= self.pen_carrera.currentData()
         materia_id= self.pen_materia.currentData()
         if carrera_id is None or materia_id is None:
@@ -1507,6 +1581,7 @@ class ModuloUniversidad(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             #1) La misma materia no puede repetirse en el pensum de una carrera.
             c.execute("SELECT id FROM pensum WHERE carrera_id=? AND materia_id=? AND id != ?",
                       (carrera_id, materia_id, id_actual or 0))
@@ -1545,9 +1620,10 @@ class ModuloUniversidad(QWidget):
                         grafo.setdefault(fila["materia_id"], set()).add(fila["prerrequisito_id"])
                 grafo.setdefault(materia_id, set()).add(prerrequisito_id)
 
-                visitado, en_pila = set(), set()
+                visitado, en_pila= set(), set()
 
                 def _tiene_ciclo(nodo):
+
                     visitado.add(nodo)
                     en_pila.add(nodo)
                     for vecino in grafo.get(nodo, ()):
@@ -1591,6 +1667,7 @@ class ModuloUniversidad(QWidget):
         self._destello(self.sombra_form_pensum, "#22C55E")
 
     def _eliminar_pensum(self):
+
         fila= self.tabla_pensum.currentRow()
         if fila < 0:
             return
@@ -1599,6 +1676,7 @@ class ModuloUniversidad(QWidget):
             return
 
         def _accion(conn, c):
+
             c.execute("DELETE FROM pensum WHERE id=?", (id_p,))
 
         exito= self._operacion_bd_segura(_accion, "No se pudo eliminar la materia del pensum")
@@ -1610,10 +1688,12 @@ class ModuloUniversidad(QWidget):
         self._reconstruir_malla()
 
     def _filtro_pensum_cambio(self):
+
         self.paginacion_pensum.reiniciar()
         self._cargar_pensum()
 
     def _cargar_pensum(self):
+
         texto= _normalizar(self.in_buscar_pensum.text().strip()) if hasattr(self, "in_buscar_pensum") else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1629,7 +1709,7 @@ class ModuloUniversidad(QWidget):
             filas= [f for f in filas if texto in _normalizar(
                 f"{f['carrera_nombre'] or ''} {f['materia_nombre'] or ''}")]
         self.paginacion_pensum.establecer_total(len(filas))
-        inicio, fin = self.paginacion_pensum.rango_actual()
+        inicio, fin= self.paginacion_pensum.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_pensum):
             self.tabla_pensum.setRowCount(len(pagina))
@@ -1644,6 +1724,7 @@ class ModuloUniversidad(QWidget):
         self._animar_fundido_tabla(self.tabla_pensum)
 
     def _reconstruir_malla(self):
+
         if not hasattr(self, "malla"):
             return
         carrera_id= self.malla_filtro_carrera.currentData()
@@ -1664,27 +1745,28 @@ class ModuloUniversidad(QWidget):
         self._animar_entrada(self.tarjeta_malla)
 
     #Refresco global y tema
+    #Refresca combos, indicadores visuales (anillo/barra/chips) y la
+    #pestaña que esté visible. El resto de pestañas se recargan solas la
+    #primera vez que el usuario las abre (ver _cambio_pestana): así entrar
+    #al módulo se siente instantáneo aunque haya mucha información.
     def refrescar(self):
-        """Refresca combos, indicadores visuales (anillo/barra/chips) y la
-        pestaña que esté visible. El resto de pestañas se recargan solas la
-        primera vez que el usuario las abre (ver _cambio_pestana): así entrar
-        al módulo se siente instantáneo aunque haya mucha información."""
+
         self._cargar_facultades_combo()
         self._cargar_combos_pensum()
         self._cargar_datos_donut()
         self._pestanas_cargadas= set()
         self._cambio_pestana(self.tabs.currentIndex())
 
+    #Sincroniza colores del módulo (cabecera, tarjetas, anillo, barra y
+    #malla curricular) con el tema/modo claro-oscuro actual de la app.
+    #
+    #Look propio de Universidad: tarjeta de cabecera con "lomo" de acento a
+    #la izquierda (en vez del bloque de degradado sólido de otros módulos),
+    #insignia circular de icono en color sólido, chips con contorno (no
+    #rellenos) y pestañas con el mismo estilo "píldora" que politecnico.py.
+    #Solo estética: no cambia objectNames, layout ni lógica.
     def actualizar_tema(self):
-        """Sincroniza colores del módulo (cabecera, tarjetas, anillo, barra y
-        malla curricular) con el tema/modo claro-oscuro actual de la app.
 
-        Look propio de Universidad: tarjeta de cabecera con "lomo" de acento a
-        la izquierda (en vez del bloque de degradado sólido de otros módulos),
-        insignia circular de icono en color sólido, chips con contorno (no
-        rellenos) y pestañas con el mismo estilo "píldora" que politecnico.py.
-        Solo estética: no cambia objectNames, layout ni lógica.
-        """
         colores= _colores_tema(self.main_window)
         modo_oscuro= getattr(self.main_window, "modo_oscuro", False)
         self.setStyleSheet(f"""
@@ -1754,9 +1836,9 @@ class ModuloUniversidad(QWidget):
             #normales (además del borde punteado). En claro usamos el tono pastel original; en oscuro usamos un violeta
             #oscuro para que el texto (claro) siga siendo legible sobre el fondo de la ficha.
             if modo_oscuro:
-                color_electiva, color_electiva_borde = "#3B0764", "#E879F9"
+                color_electiva, color_electiva_borde= "#3B0764", "#E879F9"
             else:
-                color_electiva, color_electiva_borde = "#FDF4FF", "#D946EF"
+                color_electiva, color_electiva_borde= "#FDF4FF", "#D946EF"
             self.malla.poner_colores(colores["bg_btn"], colores["accent"], colores["txt_prim"],
                                     colores["txt_sec"], colores["accent"],
                                     color_electiva, color_electiva_borde)

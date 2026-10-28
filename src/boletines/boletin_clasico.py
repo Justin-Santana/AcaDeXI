@@ -1,21 +1,20 @@
-"""Estilo Clásico de los boletines PDF.
-
-Este módulo es la implementación ORIGINAL de los tres formatos oficiales
-(Secundaria, Primaria y Técnico), preservada tal cual se veía antes del
-sistema de diseño nuevo (`boletin_estilo.py`, usado por el estilo
-"Moderno"). Vive aparte para que ambos estilos puedan mantenerse sin que
-uno dependa del otro: quien quiera seguir viendo el boletín "de toda la
-vida" lo tiene disponible exactamente como era, y quien prefiera el diseño
-renovado lo activa desde "Exportar Boletín" -> "Estilo del boletín" (ver
-`boletin_minerd.estilo_boletin` / `guardar_estilo_boletin`).
-
-No se duplica NADA de la capa de datos (cálculo de notas, cascada,
-asistencia, decisiones, ni los "mostrar_*_boletin" que leen la preferencia
-guardada): todo eso se importa sin cambios desde boletin_minerd.py /
-boletin_tecnico_minerd.py, que es donde vive de verdad. Lo único que hay
-aquí es DIBUJO -las mismas funciones, con el mismo aspecto, que ya existían
-antes del rediseño.
-"""
+#Estilo Clásico de los boletines PDF.
+#
+#Este módulo es la implementación ORIGINAL de los tres formatos oficiales
+#(Secundaria, Primaria y Técnico), preservada tal cual se veía antes del
+#sistema de diseño nuevo (`boletin_estilo.py`, usado por el estilo
+#"Moderno"). Vive aparte para que ambos estilos puedan mantenerse sin que
+#uno dependa del otro: quien quiera seguir viendo el boletín "de toda la
+#vida" lo tiene disponible exactamente como era, y quien prefiera el diseño
+#renovado lo activa desde "Exportar Boletín" -> "Estilo del boletín" (ver
+#`boletin_minerd.estilo_boletin` / `guardar_estilo_boletin`).
+#
+#No se duplica NADA de la capa de datos (cálculo de notas, cascada,
+#asistencia, decisiones, ni los "mostrar_*_boletin" que leen la preferencia
+#guardada): todo eso se importa sin cambios desde boletin_minerd.py /
+#boletin_tecnico_minerd.py, que es donde vive de verdad. Lo único que hay
+#aquí es DIBUJO -las mismas funciones, con el mismo aspecto, que ya existían
+#antes del rediseño.
 from datetime import datetime
 
 from src.nucleo.bd import obtener_conexion
@@ -28,27 +27,31 @@ from src.boletines.boletin_minerd import (colores_boletin, mostrar_resumen_asist
 
 
 def _hex_a_rgb01(hexcolor):
+
     hexcolor= (hexcolor or "#1F9E9E").lstrip("#")
     if len(hexcolor) != 6:
         hexcolor= "1F9E9E"
     return tuple(int(hexcolor[i:i + 2], 16) / 255 for i in (0, 2, 4))
 
 
+#Tono más claro del color de banda -se usa para resaltar la columna
+#'Calificación Final del Área' en el cuerpo de la grilla, igual que la
+#plantilla real la resalta en celeste sobre un encabezado turquesa. No
+#es un color nuevo que haya que configurar aparte: se deriva del mismo
+#color de banda que la institución ya eligió, así que cambiar un color
+#sigue moviendo el boletín completo de forma consistente.
 def _aclarar(rgb, factor=0.75):
-    """Tono más claro del color de banda -se usa para resaltar la columna
-    'Calificación Final del Área' en el cuerpo de la grilla, igual que la
-    plantilla real la resalta en celeste sobre un encabezado turquesa. No
-    es un color nuevo que haya que configurar aparte: se deriva del mismo
-    color de banda que la institución ya eligió, así que cambiar un color
-    sigue moviendo el boletín completo de forma consistente."""
+
     return tuple(c + (1 - c) * factor for c in rgb)
 
 
 def _fmt(valor, decimales=0):
+
     return f"{valor:.{decimales}f}" if valor is not None else ""
 
 
 def _dibujar_texto_ajustado(cvs, texto, x, y, ancho_max, centrado=True, tamano_inicial=6.5, negrita=True):
+
     fuente_base= "Helvetica-Bold" if negrita else "Helvetica"
     tam= tamano_inicial
     while tam > 4 and cvs.stringWidth(texto, fuente_base, tam) > ancho_max:
@@ -60,23 +63,24 @@ def _dibujar_texto_ajustado(cvs, texto, x, y, ancho_max, centrado=True, tamano_i
         cvs.drawString(x, y, texto)
 
 
+#Reparte `texto` en varias líneas (ajuste de palabras, no solo por
+#'/') hasta que quepa en ancho_max de ancho y alto_max de alto,
+#reduciendo el tamaño de fuente si hace falta. Los encabezados oficiales
+#(nombres de competencias fundamentales, "PROMEDIO GRUPO DE COMPETENCIAS
+#ESPECÍFICAS", etc.) son demasiado largos para una sola línea en una
+#columna angosta -por eso todo encabezado de la grilla pasa por aquí en
+#vez de por el ajuste de una sola línea que sí sirve para celdas de
+#datos.
+#
+#El ajuste deja un margen de seguridad del 10% en ancho y alto: los
+#anchos de letra que reportlab usa para decidir el tamaño de fuente son
+#las métricas estándar de Adobe para las fuentes base14, pero algunos
+#lectores de PDF (ej. el visor de Microsoft Edge) renderizan letras
+#mayúsculas acentuadas/negritas un poco más anchas que esas métricas -sin
+#este margen, un texto que "en el papel" (según el cálculo) cabe justo,
+#puede verse desbordado en esos visores.
 def _dibujar_texto_multilinea(cvs, texto, cx, y_centro, ancho_max, alto_max, tamano_inicial=6.5, negrita=True):
-    """Reparte `texto` en varias líneas (ajuste de palabras, no solo por
-    '/') hasta que quepa en ancho_max de ancho y alto_max de alto,
-    reduciendo el tamaño de fuente si hace falta. Los encabezados oficiales
-    (nombres de competencias fundamentales, "PROMEDIO GRUPO DE COMPETENCIAS
-    ESPECÍFICAS", etc.) son demasiado largos para una sola línea en una
-    columna angosta -por eso todo encabezado de la grilla pasa por aquí en
-    vez de por el ajuste de una sola línea que sí sirve para celdas de
-    datos.
 
-    El ajuste deja un margen de seguridad del 10% en ancho y alto: los
-    anchos de letra que reportlab usa para decidir el tamaño de fuente son
-    las métricas estándar de Adobe para las fuentes base14, pero algunos
-    lectores de PDF (ej. el visor de Microsoft Edge) renderizan letras
-    mayúsculas acentuadas/negritas un poco más anchas que esas métricas -sin
-    este margen, un texto que "en el papel" (según el cálculo) cabe justo,
-    puede verse desbordado en esos visores."""
     fuente= "Helvetica-Bold" if negrita else "Helvetica"
     tam= tamano_inicial
     palabras= texto.replace(" / ", " /").split(" ")
@@ -84,7 +88,7 @@ def _dibujar_texto_multilinea(cvs, texto, cx, y_centro, ancho_max, alto_max, tam
     alto_seguro= alto_max * 0.9
     while tam >= 4:
         interlineado= tam + 1.5
-        lineas, actual = [], ""
+        lineas, actual= [], ""
         for palabra in palabras:
             candidato= (actual + " " + palabra).strip()
             if cvs.stringWidth(candidato, fuente, tam) <= ancho_seguro or not actual:
@@ -107,19 +111,20 @@ def _dibujar_texto_multilinea(cvs, texto, cx, y_centro, ancho_max, alto_max, tam
         cvs.drawCentredString(cx, y_inicio - i * interlineado, linea.strip())
 
 
+#Como `_dibujar_texto_multilinea`, pero para una LISTA de nombres (las
+#competencias fundamentales que integran un mismo grupo de columnas):
+#cada una va en su propia línea con una viñeta "•" delante, en vez de
+#concatenarlas con " / " en un solo párrafo -así se ve la plantilla
+#oficial del MINERD en un boletín real.
+#
+#`espacio_entre_items` (en unidades de interlineado) abre un huequito
+#ENTRE una competencia y la siguiente -no entre las líneas en que se
+#partió una misma competencia larga- tal como en la foto del boletín
+#oficial: cada viñeta se lee como una entrada separada de la lista, no
+#todas pegadas unas a otras.
 def _dibujar_texto_multilinea_lista(cvs, items, cx, y_centro, ancho_max, alto_max, tamano_inicial=6.5,
                                     negrita= True, vineta="\u2022 ", espacio_entre_items=0.55):
-    """Como `_dibujar_texto_multilinea`, pero para una LISTA de nombres (las
-    competencias fundamentales que integran un mismo grupo de columnas):
-    cada una va en su propia línea con una viñeta "•" delante, en vez de
-    concatenarlas con " / " en un solo párrafo -así se ve la plantilla
-    oficial del MINERD en un boletín real.
 
-    `espacio_entre_items` (en unidades de interlineado) abre un huequito
-    ENTRE una competencia y la siguiente -no entre las líneas en que se
-    partió una misma competencia larga- tal como en la foto del boletín
-    oficial: cada viñeta se lee como una entrada separada de la lista, no
-    todas pegadas unas a otras."""
     items= [str(i) for i in (items or []) if i]
     if not items:
         return
@@ -134,7 +139,7 @@ def _dibujar_texto_multilinea_lista(cvs, items, cx, y_centro, ancho_max, alto_ma
         lineas= []
         for item in items:
             palabras= item.split(" ")
-            actual, primera = "", True
+            actual, primera= "", True
             for palabra in palabras:
                 candidato= (actual + " " + palabra).strip()
                 limite= (ancho_seguro - ancho_vineta) if primera else ancho_seguro
@@ -167,14 +172,15 @@ def _dibujar_texto_multilinea_lista(cvs, items, cx, y_centro, ancho_max, alto_ma
         y -= interlineado
 
 
+#Alto extra que hay que sumarle a la página cuando el encabezado va a
+#imprimir Distrito Educativo y/o Dirección debajo del nombre de la
+#institución (ver `_dibujar_datos_institucion` más abajo): 13pt por cada
+#renglón que en verdad se vaya a dibujar -si Configuración > Institución
+#no tiene cargado ese dato, ese boletín en particular no reserva espacio
+#para un renglón vacío, igual que ya hace el resto del boletín con
+#cualquier otro bloque opcional.
 def _alto_extra_datos_institucion(institucion):
-    """Alto extra que hay que sumarle a la página cuando el encabezado va a
-    imprimir Distrito Educativo y/o Dirección debajo del nombre de la
-    institución (ver `_dibujar_datos_institucion` más abajo): 13pt por cada
-    renglón que en verdad se vaya a dibujar -si Configuración > Institución
-    no tiene cargado ese dato, ese boletín en particular no reserva espacio
-    para un renglón vacío, igual que ya hace el resto del boletín con
-    cualquier otro bloque opcional."""
+
     institucion= institucion or {}
     extra= 0
     if institucion.get("distrito"):
@@ -184,20 +190,22 @@ def _alto_extra_datos_institucion(institucion):
     return extra
 
 
+#Dibuja, centrados, el nombre de la institución y -si están
+#cargados- el Distrito Educativo y la Dirección, cada uno con la
+#tipografía y el color que se hayan elegido en "Exportar Boletín" ->
+#"Encabezado institucional" (ver `estilo_encabezado_institucion`).
+#`y` es la posición del renglón del NOMBRE (el llamador ya dejó el
+#espacio para esa primera línea); Distrito/Dirección, cuando aplican,
+#corren `y` 13pt más abajo cada uno. Devuelve el `y` final, en la misma
+#posición que devolvía esta función antes de existir Distrito/Dirección
+#cuando ninguno de los dos está cargado -así ningún boletín existente
+#cambia de aspecto por el simple hecho de tener esta preferencia.
 def _dibujar_datos_institucion(cvs, ancho, y, institucion, tamano_nombre=9, tamano_extra=8):
-    """Dibuja, centrados, el nombre de la institución y -si están
-    cargados- el Distrito Educativo y la Dirección, cada uno con la
-    tipografía y el color que se hayan elegido en "Exportar Boletín" ->
-    "Encabezado institucional" (ver `estilo_encabezado_institucion`).
-    `y` es la posición del renglón del NOMBRE (el llamador ya dejó el
-    espacio para esa primera línea); Distrito/Dirección, cuando aplican,
-    corren `y` 13pt más abajo cada uno. Devuelve el `y` final, en la misma
-    posición que devolvía esta función antes de existir Distrito/Dirección
-    cuando ninguno de los dos está cargado -así ningún boletín existente
-    cambia de aspecto por el simple hecho de tener esta preferencia."""
+
     estilo= institucion.get("estilo_encabezado") or {}
 
     def _renglon(texto, clave, tamano):
+
         cfg= estilo.get(clave) or {}
         fuente= cfg.get("fuente") or "Helvetica"
         if fuente not in _FUENTES_BOLETIN_VALIDAS:
@@ -218,11 +226,13 @@ def _dibujar_datos_institucion(cvs, ancho, y, institucion, tamano_nombre=9, tama
 
 
 def _encabezado_institucional(cvs, ancho, y, institucion, titulo, subtitulo, rgb_banda, rgb_texto_banda, margen):
+
     from reportlab.lib.utils import ImageReader
     if institucion.get("logo"):
         try:
+
             img= ImageReader(institucion["logo"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 36
             cvs.drawImage(img, margen, y - 28, width=alto_img * (iw / ih), height=alto_img,
                           preserveAspectRatio= True, mask='auto')
@@ -251,21 +261,22 @@ def _encabezado_institucional(cvs, ancho, y, institucion, titulo, subtitulo, rgb
     return y - 28
 
 
+#Grilla de 2 filas x 3 columnas con los datos del estudiante (borde
+#por celda, etiqueta pequeña arriba y valor debajo), en vez de una sola
+#línea de texto corrido separando cada dato con espacios fijos -eso se
+#desalinea apenas un nombre o un año escolar es más largo que otro (ver
+#boletín ya diligenciado: "Nombre(s)...Grado:...Sección:" corrido sin
+#columnas reales). Comparten esta misma caja Secundaria, Primaria y
+#Técnico -son los mismos 6 datos en los tres formatos-.
+#
+#Si `est["area_tecnica"]` viene con valor (institución Politécnico o
+#Personalizado+Politécnico, y el estudiante tiene un Área Técnica/
+#especialidad asignada -ver datos_estudiante_boletin), se agrega una
+#tercera fila de ancho completo con ese dato. En cualquier otro caso
+#(Escuela normal, o Politécnico pero el estudiante aún sin especialidad
+#asignada) la caja se ve exactamente igual que antes.
 def _caja_datos_estudiante(cvs, x0, y, ancho, est, alto_fila=23):
-    """Grilla de 2 filas x 3 columnas con los datos del estudiante (borde
-    por celda, etiqueta pequeña arriba y valor debajo), en vez de una sola
-    línea de texto corrido separando cada dato con espacios fijos -eso se
-    desalinea apenas un nombre o un año escolar es más largo que otro (ver
-    boletín ya diligenciado: "Nombre(s)...Grado:...Sección:" corrido sin
-    columnas reales). Comparten esta misma caja Secundaria, Primaria y
-    Técnico -son los mismos 6 datos en los tres formatos-.
 
-    Si `est["area_tecnica"]` viene con valor (institución Politécnico o
-    Personalizado+Politécnico, y el estudiante tiene un Área Técnica/
-    especialidad asignada -ver datos_estudiante_boletin), se agrega una
-    tercera fila de ancho completo con ese dato. En cualquier otro caso
-    (Escuela normal, o Politécnico pero el estudiante aún sin especialidad
-    asignada) la caja se ve exactamente igual que antes."""
     filas= [
         [("Nombre(s) y apellido(s)", f"{est['nombre']} {est['apellidos']}".strip()),
          ("Grado", est['grado_nombre'] or "—"),
@@ -300,40 +311,42 @@ def _caja_datos_estudiante(cvs, x0, y, ancho, est, alto_fila=23):
     return y - 8
 
 
+#Cuánto más alta debe ser la página cuando `_caja_datos_estudiante`
+#va a dibujar la fila extra de Área Técnica -para que las funciones de
+#dimensiones (_dimensiones_pagina_secundaria/primaria) reserven el
+#mismo espacio exacto que va a usar el dibujante real, sin recortar ni
+#dejar sobrante.
 def _alto_extra_area_tecnica(est, alto_fila=20):
-    """Cuánto más alta debe ser la página cuando `_caja_datos_estudiante`
-    va a dibujar la fila extra de Área Técnica -para que las funciones de
-    dimensiones (_dimensiones_pagina_secundaria/primaria) reserven el
-    mismo espacio exacto que va a usar el dibujante real, sin recortar ni
-    dejar sobrante."""
+
     return alto_fila if est.get("area_tecnica") else 0
 
 
+#`centrar_izq=True` centra la firma de la izquierda (en vez de
+#pegarla al margen) -se usa cuando arriba, en la misma columna
+#izquierda, ya se dibujó el "Sello" de la sección de Firma de Padres
+#(ver `_dibujar_seccion_firma_padres`): dos elementos distintos pegados
+#al mismo margen izquierdo, uno encima del otro, se ven amontonados: al
+#separar la firma hacia el centro de la página queda un reparto más
+#equilibrado (Sello a la izquierda, esta firma al centro, la otra
+#firma a la derecha) en vez de dos columnas vacías a la derecha.
+#
+#`con_sello=True` dibuja el Sello en ESTA misma fila, en la columna
+#izquierda, con la misma línea y el mismo ancho que las dos firmas.
+#
+#Antes el Sello se dibujaba en su propia franja, 50pt por ENCIMA de esta
+#fila, así que quedaba desalineado: tres elementos pensados como una fila
+#(Sello · Maestro(a) · Director(a)) con uno de ellos flotando más arriba y
+#con una línea de menos de la mitad de largo. Con `con_sello=True` el ancho
+#útil se reparte en TRES columnas iguales en vez de anclar las firmas a los
+#márgenes: así los tres bloques quedan alineados y con el mismo ancho sin
+#depender de que sobre sitio a la izquierda. Es el mismo criterio que ya usa
+#`boletin_estilo.dibujar_firmas` para repartir N bloques.
+#
+#La franja que el Sello ocupaba antes NO se pierde: `_dibujar_seccion_firma_padres`
+#la sigue reservando, porque es un timbre físico y necesita su espacio.
 def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der, centrar_izq=False,
             con_sello= False):
-    """`centrar_izq=True` centra la firma de la izquierda (en vez de
-    pegarla al margen) -se usa cuando arriba, en la misma columna
-    izquierda, ya se dibujó el "Sello" de la sección de Firma de Padres
-    (ver `_dibujar_seccion_firma_padres`): dos elementos distintos pegados
-    al mismo margen izquierdo, uno encima del otro, se ven amontonados: al
-    separar la firma hacia el centro de la página queda un reparto más
-    equilibrado (Sello a la izquierda, esta firma al centro, la otra
-    firma a la derecha) en vez de dos columnas vacías a la derecha.
 
-    `con_sello=True` dibuja el Sello en ESTA misma fila, en la columna
-    izquierda, con la misma línea y el mismo ancho que las dos firmas.
-
-    Antes el Sello se dibujaba en su propia franja, 50pt por ENCIMA de esta
-    fila, así que quedaba desalineado: tres elementos pensados como una fila
-    (Sello · Maestro(a) · Director(a)) con uno de ellos flotando más arriba y
-    con una línea de menos de la mitad de largo. Con `con_sello=True` el ancho
-    útil se reparte en TRES columnas iguales en vez de anclar las firmas a los
-    márgenes: así los tres bloques quedan alineados y con el mismo ancho sin
-    depender de que sobre sitio a la izquierda. Es el mismo criterio que ya usa
-    `boletin_estilo.dibujar_firmas` para repartir N bloques.
-
-    La franja que el Sello ocupaba antes NO se pierde: `_dibujar_seccion_firma_padres`
-    la sigue reservando, porque es un timbre físico y necesita su espacio."""
     from reportlab.lib.utils import ImageReader
     ancho_firma= 170
     x_sello= None
@@ -354,8 +367,9 @@ def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der,
                 x_izq= x_centrada
     if institucion.get("firma"):
         try:
+
             img= ImageReader(institucion["firma"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 26
             cvs.drawImage(img, x_der + ancho_firma / 2 - (alto_img * (iw / ih)) / 2, y_base + 4,
                           width= alto_img * (iw / ih), height=alto_img, preserveAspectRatio=True, mask='auto')
@@ -375,16 +389,17 @@ def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der,
 
 
 
+#Alto adicional que hay que reservar en la página para el/los
+#bloque(s) opcionales de Firma de Padres y/o Situación Final +
+#Observaciones -son dos preferencias independientes (ver
+#`mostrar_firma_padres_boletin`/`mostrar_situacion_final_boletin`) que
+#pueden estar activas por separado o juntas; el alto necesario es el
+#mismo en los tres casos con al menos una activa (una fila por período +
+#una fila fija de "Fin de Año Escolar" + el espacio del Sello/caja de
+#Observaciones), igual que ya hace `_alto_extra_area_tecnica`/
+#`_alto_extra_logos_adicionales` con sus propios bloques opcionales.
 def _alto_extra_firma_padres(periodos, mostrar_firma_padres=None, mostrar_situacion_final=None):
-    """Alto adicional que hay que reservar en la página para el/los
-    bloque(s) opcionales de Firma de Padres y/o Situación Final +
-    Observaciones -son dos preferencias independientes (ver
-    `mostrar_firma_padres_boletin`/`mostrar_situacion_final_boletin`) que
-    pueden estar activas por separado o juntas; el alto necesario es el
-    mismo en los tres casos con al menos una activa (una fila por período +
-    una fila fija de "Fin de Año Escolar" + el espacio del Sello/caja de
-    Observaciones), igual que ya hace `_alto_extra_area_tecnica`/
-    `_alto_extra_logos_adicionales` con sus propios bloques opcionales."""
+
     if mostrar_firma_padres is None:
         mostrar_firma_padres= mostrar_firma_padres_boletin()
     if mostrar_situacion_final is None:
@@ -395,26 +410,28 @@ def _alto_extra_firma_padres(periodos, mostrar_firma_padres=None, mostrar_situac
     return 16 + n_filas * 15 + 68  #encabezado + filas + espacio del Sello/caja de Observaciones
 
 
+#Dibuja el/los bloque(s) opcional(es) -ver `mostrar_firma_padres_boletin`
+#y `mostrar_situacion_final_boletin`, ahora preferencias INDEPENDIENTES
+#entre sí: tabla de firma de padres/madres por período + franja del Sello (columna
+#izquierda) y Situación Final del Estudiante (círculos Promovido/
+#Reprobado) + Observaciones (columna derecha) -mismo formato en papel de
+#la plantilla de referencia. Cada columna solo se dibuja si su flag
+#correspondiente es True; si solo una de las dos está activa, esa única
+#columna se estira al ancho completo disponible en vez de dejar la mitad
+#de la página en blanco. Usa la MISMA banda de color del boletín
+#(`rgb_banda`/`rgb_texto_banda`) en los encabezados, para que se vea
+#integrado y no como un bloque aparte con estilo propio. Devuelve la "y"
+#final (la más baja de las columnas dibujadas) para que el llamador
+#coloque las firmas de Maestro(a)/Director(a) debajo sin solaparse.
 def _dibujar_seccion_firma_padres(cvs, margen, ancho, y_inicio, periodos, rgb_banda, rgb_texto_banda,
                                    mostrar_firma_padres= True, mostrar_situacion_final=True):
-    """Dibuja el/los bloque(s) opcional(es) -ver `mostrar_firma_padres_boletin`
-    y `mostrar_situacion_final_boletin`, ahora preferencias INDEPENDIENTES
-    entre sí: tabla de firma de padres/madres por período + franja del Sello (columna
-    izquierda) y Situación Final del Estudiante (círculos Promovido/
-    Reprobado) + Observaciones (columna derecha) -mismo formato en papel de
-    la plantilla de referencia. Cada columna solo se dibuja si su flag
-    correspondiente es True; si solo una de las dos está activa, esa única
-    columna se estira al ancho completo disponible en vez de dejar la mitad
-    de la página en blanco. Usa la MISMA banda de color del boletín
-    (`rgb_banda`/`rgb_texto_banda`) en los encabezados, para que se vea
-    integrado y no como un bloque aparte con estilo propio. Devuelve la "y"
-    final (la más baja de las columnas dibujadas) para que el llamador
-    coloque las firmas de Maestro(a)/Director(a) debajo sin solaparse."""
+
     alto_header= 16
     alto_fila= 15
     ancho_disponible= ancho - 2 * margen
 
     def rect_banda(x, y_top, w, h, rgb=rgb_banda):
+
         cvs.setFillColorRGB(*rgb)
         cvs.rect(x, y_top - h, w, h, fill=1, stroke=1)
         cvs.setFillColorRGB(*rgb_texto_banda)
@@ -523,6 +540,7 @@ SEC_COL_AR= 20
 
 
 def _ancho_pagina_secundaria(n_grupos, n_periodos, mostrar_situacion_automatica=True):
+
     margen= 32
     ancho_grupos= n_grupos * n_periodos * SEC_COL_PERIODO
     ancho_pc= n_periodos * SEC_COL_PERIODO
@@ -531,19 +549,20 @@ def _ancho_pagina_secundaria(n_grupos, n_periodos, mostrar_situacion_automatica=
     return 2 * margen + SEC_COL_LABEL + ancho_datos, margen
 
 
+#`mostrar_resumen_asistencia`/`mostrar_situacion_automatica`/
+#`mostrar_leyenda`/`mostrar_firma_padres`/`mostrar_situacion_final`:
+#None usa la preferencia guardada en Configuración
+#(`mostrar_resumen_asistencia_boletin`/`mostrar_situacion_automatica_boletin`/
+#`mostrar_leyenda_boletin`/`mostrar_firma_padres_boletin`/
+#`mostrar_situacion_final_boletin`); True/False la fuerza explícitamente
+#(usado por el diálogo "Exportar Boletín" para que la exportación
+#puntual respete lo elegido ahí mismo sin tener que guardarlo antes en
+#Configuración). `mostrar_firma_padres` y `mostrar_situacion_final` son
+#preferencias INDEPENDIENTES entre sí -ver `_dibujar_seccion_firma_padres`.
 def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, mostrar_resumen_asistencia=None,
                                         mostrar_situacion_automatica= None, mostrar_leyenda=None,
                                         mostrar_firma_padres= None, mostrar_situacion_final=None):
-    """`mostrar_resumen_asistencia`/`mostrar_situacion_automatica`/
-    `mostrar_leyenda`/`mostrar_firma_padres`/`mostrar_situacion_final`:
-    None usa la preferencia guardada en Configuración
-    (`mostrar_resumen_asistencia_boletin`/`mostrar_situacion_automatica_boletin`/
-    `mostrar_leyenda_boletin`/`mostrar_firma_padres_boletin`/
-    `mostrar_situacion_final_boletin`); True/False la fuerza explícitamente
-    (usado por el diálogo "Exportar Boletín" para que la exportación
-    puntual respete lo elegido ahí mismo sin tener que guardarlo antes en
-    Configuración). `mostrar_firma_padres` y `mostrar_situacion_final` son
-    preferencias INDEPENDIENTES entre sí -ver `_dibujar_seccion_firma_padres`."""
+
     colores= colores or colores_boletin(boletin["estudiante"]["nivel_educativo"])
     rgb_banda= _hex_a_rgb01(colores["banda"])
     rgb_texto_banda= _hex_a_rgb01(colores["texto_banda"])
@@ -560,7 +579,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
     mostrar_situacion_final_final= (mostrar_situacion_final if mostrar_situacion_final is not None
                                      else mostrar_situacion_final_boletin())
 
-    ancho, margen = _ancho_pagina_secundaria(len(grupos_display), n_periodos, mostrar_ar_automatico)
+    ancho, margen= _ancho_pagina_secundaria(len(grupos_display), n_periodos, mostrar_ar_automatico)
     alto_fila= 16
     n_filas_cuerpo= max(len(areas), 1)
     alto= (226 + n_filas_cuerpo * alto_fila + 248 + _alto_extra_area_tecnica(est)
@@ -584,6 +603,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
     alto_doble= 46
 
     def rect_relleno(x, y_top, w, h):
+
         cvs.setFillColorRGB(*rgb_banda)
         cvs.rect(x, y_top - h, w, h, fill=1, stroke=1)
         cvs.setFillColorRGB(*rgb_texto_banda)
@@ -639,6 +659,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
     x += SEC_COL_CF
 
     def bloque_cascada(titulo, subcols):
+
         nonlocal x
         ancho_bloque= len(subcols) * SEC_COL_CASCADA
         rect_relleno(x, fila1_y, ancho_bloque, alto_doble - 14)
@@ -717,7 +738,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
             cvs.drawCentredString(cx + w / 2, y - 9, h)
             cx += w
         y -= 12
-        total_asist, total_ausen = 0, 0
+        total_asist, total_ausen= 0, 0
         hay_datos_asistencia= any(v.get("asistencia") is not None for v in boletin["asistencia"].values())
         for periodo in periodos:
             datos_p= boletin["asistencia"].get(periodo["id"], {})
@@ -820,24 +841,25 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
     return ancho, alto
 
 
+#`institucion` es opcional (por compatibilidad con quien todavía
+#llame a esta función sin ese argumento): sin ella no se reserva espacio
+#extra para logos adicionales envueltos en más de una fila, exactamente
+#el mismo comportamiento que tenía esta función antes de que existiera
+#esa característica. Pasarla es lo que le permite a la página crecer por
+#adelantado si los logos configurados necesitan más de una fila -ver
+#`_alto_extra_logos_adicionales`. `mostrar_situacion_automatica` sigue el
+#mismo patrón None=preferencia guardada que ya usan las demás opciones
+#de boletín -afecta el ANCHO (2 columnas A/R menos si está apagada, ver
+#`_ancho_pagina_secundaria`). `mostrar_firma_padres`/`mostrar_situacion_final`
+#(independientes entre sí) afectan el ALTO -ver `_alto_extra_firma_padres`.
 def _dimensiones_pagina_secundaria(boletin, institucion=None, mostrar_situacion_automatica=None,
                                     mostrar_firma_padres= None, mostrar_situacion_final=None):
-    """`institucion` es opcional (por compatibilidad con quien todavía
-    llame a esta función sin ese argumento): sin ella no se reserva espacio
-    extra para logos adicionales envueltos en más de una fila, exactamente
-    el mismo comportamiento que tenía esta función antes de que existiera
-    esa característica. Pasarla es lo que le permite a la página crecer por
-    adelantado si los logos configurados necesitan más de una fila -ver
-    `_alto_extra_logos_adicionales`. `mostrar_situacion_automatica` sigue el
-    mismo patrón None=preferencia guardada que ya usan las demás opciones
-    de boletín -afecta el ANCHO (2 columnas A/R menos si está apagada, ver
-    `_ancho_pagina_secundaria`). `mostrar_firma_padres`/`mostrar_situacion_final`
-    (independientes entre sí) afectan el ALTO -ver `_alto_extra_firma_padres`."""
+
     mostrar_ar_automatico= (mostrar_situacion_automatica if mostrar_situacion_automatica is not None
                              else mostrar_situacion_automatica_boletin())
     n_grupos= len(boletin["grupos_display"])
     n_periodos= max(len(boletin["periodos"]), 1)
-    ancho, _ = _ancho_pagina_secundaria(n_grupos, n_periodos, mostrar_ar_automatico)
+    ancho, _= _ancho_pagina_secundaria(n_grupos, n_periodos, mostrar_ar_automatico)
     alto= (226 + max(len(boletin["areas"]), 1) * 16 + 248 + _alto_extra_area_tecnica(boletin["estudiante"])
             + _alto_extra_logos_adicionales(institucion)
             + _alto_extra_datos_institucion(institucion)
@@ -857,6 +879,7 @@ PRI_COL_FINAL= 38
 
 
 def _observaciones_por_periodo(estudiante_id, periodos):
+
     conn= obtener_conexion()
     c= conn.cursor()
     resultado= {}
@@ -872,13 +895,14 @@ def _observaciones_por_periodo(estudiante_id, periodos):
     return resultado
 
 
+#Reutiliza las mismas tablas de la cascada de Secundaria
+#(`evaluacion_completiva` / `evaluacion_especial`): no son específicas de
+#nivel, solo registran "una nota de recuperación de fin de año" para una
+#materia -el nombre de columna que se les da en el PDF es lo que cambia
+#según el documento (Secundaria las llama C.E.C./C.E.; Primaria las
+#llama "Calificación recuperación final/especial").
 def _recuperacion_final_area(estudiante_id, materia_id, anio_academico):
-    """Reutiliza las mismas tablas de la cascada de Secundaria
-    (`evaluacion_completiva` / `evaluacion_especial`): no son específicas de
-    nivel, solo registran "una nota de recuperación de fin de año" para una
-    materia -el nombre de columna que se les da en el PDF es lo que cambia
-    según el documento (Secundaria las llama C.E.C./C.E.; Primaria las
-    llama "Calificación recuperación final/especial")."""
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT nota_completiva FROM evaluacion_completiva WHERE estudiante_id=? AND materia_id=? AND anio_academico=?",
@@ -892,14 +916,15 @@ def _recuperacion_final_area(estudiante_id, materia_id, anio_academico):
             "recuperacion_especial": especial["nota_especial"] if especial else None}
 
 
+#`institucion` es opcional (compatibilidad con llamadores previos a
+#esta característica): sin ella no se reserva espacio extra para logos
+#adicionales envueltos en más de una fila -ver
+#`_alto_extra_logos_adicionales` en boletin_minerd.py. `mostrar_firma_
+#padres`/`mostrar_situacion_final` son preferencias independientes -ver
+#`_alto_extra_firma_padres`.
 def _dimensiones_pagina_primaria(boletin, institucion=None, mostrar_firma_padres=None,
                                   mostrar_situacion_final= None):
-    """`institucion` es opcional (compatibilidad con llamadores previos a
-    esta característica): sin ella no se reserva espacio extra para logos
-    adicionales envueltos en más de una fila -ver
-    `_alto_extra_logos_adicionales` en boletin_minerd.py. `mostrar_firma_
-    padres`/`mostrar_situacion_final` son preferencias independientes -ver
-    `_alto_extra_firma_padres`."""
+
     mostrar_rp= any(a.get("tiene_rp") for a in boletin["areas"])
     n_periodos= max(len(boletin["periodos"]), 1)
     subcols= 2 if mostrar_rp else 1
@@ -913,30 +938,31 @@ def _dimensiones_pagina_primaria(boletin, institucion=None, mostrar_firma_padres
     return ancho, alto
 
 
+#`mostrar_leyenda`: None usa la preferencia guardada en Configuración
+#(`mostrar_leyenda_boletin`); True/False la fuerza explícitamente (mismo
+#patrón que `mostrar_resumen_asistencia`/`mostrar_situacion_automatica`
+#en el Boletín de Secundaria). Aquí la "leyenda" es la caja "ESCALA
+#DESCRIPTIVA" (rangos Destacado/Logrado/En Proceso/Insuficiente).
+#
+#`mostrar_situacion_automatica`: mismo patrón -None usa la preferencia
+#guardada (`mostrar_situacion_automatica_boletin`); el bloque "SITUACIÓN
+#DEL/DE LA ESTUDIANTE" + "CONDICIÓN FINAL" siempre se dibuja (Dirección
+#necesita el espacio en el PDF para firmarlo a mano), pero con la opción
+#desactivada las casillas quedan sin marcar y la condición final se deja
+#como una línea en blanco para llenar con lapicero, en vez de imprimir
+#marcas automáticas que no reflejan una decisión manual todavía.
+#
+#`mostrar_firma_padres`/`mostrar_situacion_final`: mismo patrón -None
+#usa la preferencia guardada (`mostrar_firma_padres_boletin`/
+#`mostrar_situacion_final_boletin`); son preferencias INDEPENDIENTES
+#entre sí. La primera activa la tabla de Firma del Padre/Madre/Tutor por
+#período + Sello; la segunda activa el bloque "SITUACIÓN FINAL DEL
+#ESTUDIANTE" (Promovido/Reprobado) + Observaciones -ver
+#`_dibujar_seccion_firma_padres` en boletin_minerd.py.
 def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mostrar_leyenda=None,
                                       mostrar_situacion_automatica= None, mostrar_firma_padres=None,
                                       mostrar_situacion_final= None):
-    """`mostrar_leyenda`: None usa la preferencia guardada en Configuración
-    (`mostrar_leyenda_boletin`); True/False la fuerza explícitamente (mismo
-    patrón que `mostrar_resumen_asistencia`/`mostrar_situacion_automatica`
-    en el Boletín de Secundaria). Aquí la "leyenda" es la caja "ESCALA
-    DESCRIPTIVA" (rangos Destacado/Logrado/En Proceso/Insuficiente).
 
-    `mostrar_situacion_automatica`: mismo patrón -None usa la preferencia
-    guardada (`mostrar_situacion_automatica_boletin`); el bloque "SITUACIÓN
-    DEL/DE LA ESTUDIANTE" + "CONDICIÓN FINAL" siempre se dibuja (Dirección
-    necesita el espacio en el PDF para firmarlo a mano), pero con la opción
-    desactivada las casillas quedan sin marcar y la condición final se deja
-    como una línea en blanco para llenar con lapicero, en vez de imprimir
-    marcas automáticas que no reflejan una decisión manual todavía.
-
-    `mostrar_firma_padres`/`mostrar_situacion_final`: mismo patrón -None
-    usa la preferencia guardada (`mostrar_firma_padres_boletin`/
-    `mostrar_situacion_final_boletin`); son preferencias INDEPENDIENTES
-    entre sí. La primera activa la tabla de Firma del Padre/Madre/Tutor por
-    período + Sello; la segunda activa el bloque "SITUACIÓN FINAL DEL
-    ESTUDIANTE" (Promovido/Reprobado) + Observaciones -ver
-    `_dibujar_seccion_firma_padres` en boletin_minerd.py."""
     colores= colores or colores_boletin(boletin["estudiante"]["nivel_educativo"])
     rgb_banda= _hex_a_rgb01(colores["banda"])
     rgb_texto_banda= _hex_a_rgb01(colores["texto_banda"])
@@ -987,6 +1013,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
     alto_doble= 46
 
     def rect_relleno(x, y_top, w, h):
+
         cvs.setFillColorRGB(*rgb_banda)
         cvs.rect(x, y_top - h, w, h, fill=1, stroke=1)
         cvs.setFillColorRGB(*rgb_texto_banda)
@@ -1011,7 +1038,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
             cvs.rect(cx, fila2_y - 14, PRI_COL_PERIODO, 14, stroke=1, fill=0)
             _dibujar_texto_ajustado(cvs, periodo["nombre"], cx + PRI_COL_PERIODO / 2, fila2_y - 10,
                                     PRI_COL_PERIODO - 2, tamano_inicial=6)
-            et_local, idx_local = etiqueta, i
+            et_local, idx_local= etiqueta, i
             columnas.append((cx, PRI_COL_PERIODO,
                               lambda a, et=et_local, ix=idx_local: _fmt(a["grilla"]["grupos"].get(et, [None] * n_periodos)[ix])))
             if mostrar_rp:
@@ -1045,6 +1072,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
     cvs.setFillColorRGB(0, 0, 0)
 
     def _texto_recuperacion(area):
+
         rec= recuperaciones.get(area["materia_id"], {})
         partes= []
         if rec.get("recuperacion_final") is not None:
@@ -1155,25 +1183,26 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
 
 #PDF — grilla oficial técnica (apaisado): filas = módulos, columnas = RA1%...RAn% (contribución) + C.F., más el
 #bloque de Situación/Condición Final del/de la estudiante.
+#`mostrar_situacion_automatica`: mismo patrón que en boletin_minerd.py
+#/ boletin_primaria_minerd.py -None usa la preferencia guardada
+#(`mostrar_situacion_automatica_boletin`). El bloque "Situación del/de
+#la Estudiante" + "Condición Final" siempre se dibuja; con la opción
+#desactivada las casillas quedan sin marcar y "Condición Final" se deja
+#como una línea en blanco para llenar a mano, en vez de imprimir marcas
+#automáticas basadas en una decisión que Dirección todavía no tomó.
+#
+#`mostrar_firma_padres`: mismo patrón -None usa la preferencia guardada
+#(`mostrar_firma_padres_boletin`); activa el mismo bloque opcional de
+#Firma del Padre/Madre/Tutor por período + Sello, y Situación Final del
+#Estudiante con Observaciones que ya tienen Secundaria y Primaria (ver
+#`_dibujar_seccion_firma_padres` en boletin_minerd.py). El Politécnico
+#no maneja "períodos" propios en su boletín RA -se reutilizan los
+#períodos del año académico del boletín general (`periodos_del_anio`)
+#para que las filas de la tabla coincidan con las del boletín de
+#Competencias del mismo estudiante.
 def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colores=None,
                                      mostrar_situacion_automatica= None, mostrar_firma_padres=None):
-    """`mostrar_situacion_automatica`: mismo patrón que en boletin_minerd.py
-    / boletin_primaria_minerd.py -None usa la preferencia guardada
-    (`mostrar_situacion_automatica_boletin`). El bloque "Situación del/de
-    la Estudiante" + "Condición Final" siempre se dibuja; con la opción
-    desactivada las casillas quedan sin marcar y "Condición Final" se deja
-    como una línea en blanco para llenar a mano, en vez de imprimir marcas
-    automáticas basadas en una decisión que Dirección todavía no tomó.
 
-    `mostrar_firma_padres`: mismo patrón -None usa la preferencia guardada
-    (`mostrar_firma_padres_boletin`); activa el mismo bloque opcional de
-    Firma del Padre/Madre/Tutor por período + Sello, y Situación Final del
-    Estudiante con Observaciones que ya tienen Secundaria y Primaria (ver
-    `_dibujar_seccion_firma_padres` en boletin_minerd.py). El Politécnico
-    no maneja "períodos" propios en su boletín RA -se reutilizan los
-    períodos del año académico del boletín general (`periodos_del_anio`)
-    para que las filas de la tabla coincidan con las del boletín de
-    Competencias del mismo estudiante."""
     from reportlab.lib.utils import ImageReader
     #OJO: estas son las funciones CLÁSICAS definidas más arriba en este mismo módulo (_hex_a_rgb01,
     #_dibujar_texto_ajustado, _dibujar_datos_ institucion, _dibujar_seccion_firma_padres) -NO las del estilo
@@ -1198,8 +1227,9 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
     y= alto - 38
     if institucion.get("logo"):
         try:
+
             img= ImageReader(institucion["logo"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 40
             cvs.drawImage(img, margen, y - 30, width=alto_img * (iw / ih), height=alto_img,
                           preserveAspectRatio= True, mask='auto')
@@ -1316,8 +1346,9 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
         cvs.drawCentredString(x_sello + ancho_bloque / 2, y_linea - 10, "Sello")
     if institucion.get("firma"):
         try:
+
             img= ImageReader(institucion["firma"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 30
             x_firma= ancho - margen - 150
             cvs.drawImage(img, x_firma, y, width=alto_img * (iw / ih), height=alto_img,
@@ -1332,21 +1363,22 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
     cvs.drawString(margen, 20, f"Fecha de emisión: {datetime.now().strftime('%Y-%m-%d')}")
 
 
+#`institucion` es opcional (compatibilidad con llamadores previos):
+#el boletín técnico ya usa carta apaisada, con margen de sobra para una
+#fila de logos adicionales -pero si alguno de los dos lados necesita más
+#de una fila (varios logos cargados), se agrega esa altura extra en vez
+#de dejar que se superponga con la grilla de abajo. Igual con
+#`mostrar_firma_padres` -ver `_alto_extra_firma_padres` en
+#boletin_minerd.py.
 def _dimensiones_pagina_tecnico(boletin, institucion=None, mostrar_firma_padres=None):
-    """`institucion` es opcional (compatibilidad con llamadores previos):
-    el boletín técnico ya usa carta apaisada, con margen de sobra para una
-    fila de logos adicionales -pero si alguno de los dos lados necesita más
-    de una fila (varios logos cargados), se agrega esa altura extra en vez
-    de dejar que se superponga con la grilla de abajo. Igual con
-    `mostrar_firma_padres` -ver `_alto_extra_firma_padres` en
-    boletin_minerd.py."""
+
     #`_alto_extra_logos_adicionales`, `_alto_extra_firma_padres` y `_alto_extra_datos_institucion` son las mismas
     #fórmulas en ambos
     #estilos (no cambiaron con el rediseño) -las de logos y período ya
     #están importadas en la cabecera del módulo; `_alto_extra_datos_ institucion` es la clásica definida arriba en
     #este mismo módulo.
     from reportlab.lib.pagesizes import letter, landscape
-    ancho, alto = landscape(letter)
+    ancho, alto= landscape(letter)
     periodos_tec= periodos_del_anio(boletin["anio_academico"]) if boletin else None
     return ancho, (alto + _alto_extra_logos_adicionales(institucion)
                    + _alto_extra_datos_institucion(institucion)

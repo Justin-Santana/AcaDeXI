@@ -1,39 +1,38 @@
-"""Módulo Materiales de AcaDeXI.
-
-Inventario configurable de recursos de la institución: libros, equipos de
-laboratorio, herramientas de talleres técnicos, instrumentos musicales,
-uniformes deportivos... el catálogo de CATEGORÍAS es abierto y lo define
-cada institución (ver categorias_material en bd.py) -no viene una lista
-fija de "tipos de material" precargada por el sistema, porque lo que hace
-único a este módulo es precisamente que no asume de antemano qué necesita
-gestionar cada escuela.
-
-El ÍCONO de cada categoría se elige de un set curado de íconos vectoriales
-(ver iconos_categorias.py ▸ sección 3 "MATERIALES", `pixmap_categoria_material`)
-en vez de escribir un emoji de fuente a mano -por eso el campo `icono` de
-`categorias_material` puede tener una clave curada ("laboratorio", "taller"...)
-o, para categorías creadas antes de que existiera el selector, un emoji
-suelto: `pixmap_categoria_material` entiende ambos casos (ver esa función).
-
-RBAC granular POR USUARIO Y CATEGORÍA (no por rol fijo, ver permisos.py:
-categorias_material_permitidas / puede_editar_categoria_material):
-  - Un rol gerencial (Administrador/Director/Coordinador) ve y administra
-    SIEMPRE todas las categorías.
-  - Cualquier otro usuario con el módulo "Materiales" otorgado (Profesor,
-    Administrativo, o un cargo personalizado de Side Stepper) solo ve las
-    categorías que se le asignaron explícitamente, y dentro de esas, solo
-    puede editar las que se le marcaron con permiso de edición -las demás
-    las ve en modo solo-consulta.
-  - Ejemplo real: dos Administrativos comparten el mismo rol, pero uno
-    tiene acceso de edición solo a "Libros" (bibliotecario) y otro solo a
-    "Equipos de Laboratorio" (encargado de laboratorio); ninguno ve ni
-    toca la categoría del otro, sin que haga falta inventar un rol nuevo
-    por cada especialidad de inventario que tenga la institución.
-
-La asignación de qué categorías puede tocar cada usuario se hace desde
-este mismo módulo, en el botón "Permisos de acceso" (solo visible para
-roles gerenciales) -ver DialogoPermisosMateriales.
-"""
+#Módulo Materiales de AcaDeXI.
+#
+#Inventario configurable de recursos de la institución: libros, equipos de
+#laboratorio, herramientas de talleres técnicos, instrumentos musicales,
+#uniformes deportivos... el catálogo de CATEGORÍAS es abierto y lo define
+#cada institución (ver categorias_material en bd.py) -no viene una lista
+#fija de "tipos de material" precargada por el sistema, porque lo que hace
+#único a este módulo es precisamente que no asume de antemano qué necesita
+#gestionar cada escuela.
+#
+#El ÍCONO de cada categoría se elige de un set curado de íconos vectoriales
+#(ver iconos_categorias.py ▸ sección 3 "MATERIALES", `pixmap_categoria_material`)
+#en vez de escribir un emoji de fuente a mano -por eso el campo `icono` de
+#`categorias_material` puede tener una clave curada ("laboratorio", "taller"...)
+#o, para categorías creadas antes de que existiera el selector, un emoji
+#suelto: `pixmap_categoria_material` entiende ambos casos (ver esa función).
+#
+#RBAC granular POR USUARIO Y CATEGORÍA (no por rol fijo, ver permisos.py:
+#categorias_material_permitidas / puede_editar_categoria_material):
+#- Un rol gerencial (Administrador/Director/Coordinador) ve y administra
+#SIEMPRE todas las categorías.
+#- Cualquier otro usuario con el módulo "Materiales" otorgado (Profesor,
+#Administrativo, o un cargo personalizado de Side Stepper) solo ve las
+#categorías que se le asignaron explícitamente, y dentro de esas, solo
+#puede editar las que se le marcaron con permiso de edición -las demás
+#las ve en modo solo-consulta.
+#- Ejemplo real: dos Administrativos comparten el mismo rol, pero uno
+#tiene acceso de edición solo a "Libros" (bibliotecario) y otro solo a
+#"Equipos de Laboratorio" (encargado de laboratorio); ninguno ve ni
+#toca la categoría del otro, sin que haga falta inventar un rol nuevo
+#por cada especialidad de inventario que tenga la institución.
+#
+#La asignación de qué categorías puede tocar cada usuario se hace desde
+#este mismo módulo, en el botón "Permisos de acceso" (solo visible para
+#roles gerenciales) -ver DialogoPermisosMateriales.
 from datetime import datetime, date
 
 from PySide6.QtWidgets import (
@@ -67,25 +66,26 @@ ESTADOS_MATERIAL= ["Disponible", "Agotado", "En mantenimiento", "De baja"]
 TIPOS_MOVIMIENTO= ["Préstamo", "Devolución", "Baja", "Ingreso de inventario"]
 
 
+#Base de los diálogos de este módulo: garantiza que la ventana se
+#abra CENTRADA sobre la ventana principal de la app (igual que las
+#ventanas de los demás módulos, ver iconos.centrar_y_al_frente).
+#
+#centrar_y_al_frente() en el __init__ no siempre basta: si el diálogo
+#se construye antes de que su padre esté visible/mapeado, la posición
+#se calcula contra la pantalla en vez de contra la ventana principal.
+#Re-centrar en el PRIMER showEvent (solo la primera vez, para no pelear
+#con el usuario si decide arrastrar la ventana) lo resuelve siempre.
+#
+#Además aplica el estilo de tooltip de AcaDeXI (panel del tema activo,
+#texto primario, borde redondeado): los diálogos son ventanas de nivel
+#superior APARTE, así que NO heredan el QToolTip global del módulo/ventana
+#principal -sin esto, sus tooltips caían al estilo nativo gris de Qt,
+#inconsistente con el resto de la app (mismo problema que ya resolvió
+#banco_tareas.py/calendario.py repitiendo el bloque QToolTip adentro).
 class _DialogoCentrado(QDialog):
-    """Base de los diálogos de este módulo: garantiza que la ventana se
-    abra CENTRADA sobre la ventana principal de la app (igual que las
-    ventanas de los demás módulos, ver iconos.centrar_y_al_frente).
-
-    centrar_y_al_frente() en el __init__ no siempre basta: si el diálogo
-    se construye antes de que su padre esté visible/mapeado, la posición
-    se calcula contra la pantalla en vez de contra la ventana principal.
-    Re-centrar en el PRIMER showEvent (solo la primera vez, para no pelear
-    con el usuario si decide arrastrar la ventana) lo resuelve siempre.
-
-    Además aplica el estilo de tooltip de AcaDeXI (panel del tema activo,
-    texto primario, borde redondeado): los diálogos son ventanas de nivel
-    superior APARTE, así que NO heredan el QToolTip global del módulo/ventana
-    principal -sin esto, sus tooltips caían al estilo nativo gris de Qt,
-    inconsistente con el resto de la app (mismo problema que ya resolvió
-    banco_tareas.py/calendario.py repitiendo el bloque QToolTip adentro)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._centrado_inicial= False
         #Resolver la ventana principal desde el PADRE (no self.window():
@@ -104,17 +104,19 @@ class _DialogoCentrado(QDialog):
             self.setStyleSheet(qss)
 
     def showEvent(self, event):
+
         super().showEvent(event)
         if not self._centrado_inicial:
             self._centrado_inicial= True
             centrar_y_al_frente(self, self.parent())
 
 
+#QSS del bloque QToolTip con la paleta del tema/modo activo de la
+#app (mismos colores que usa el módulo en actualizar_tema). Devuelve ""
+#si no hay paleta disponible (p. ej. pruebas sin main_window): en ese
+#caso el diálogo conserva el estilo nativo, sin romper nada.
 def _qss_tooltip_tema(main_window):
-    """QSS del bloque QToolTip con la paleta del tema/modo activo de la
-    app (mismos colores que usa el módulo en actualizar_tema). Devuelve ""
-    si no hay paleta disponible (p. ej. pruebas sin main_window): en ese
-    caso el diálogo conserva el estilo nativo, sin romper nada."""
+
     mw= main_window
     paletas= getattr(mw, "theme_palettes", None) if mw is not None else None
     if not paletas:
@@ -139,7 +141,9 @@ def _qss_tooltip_tema(main_window):
 
 
 class ModuloMateriales(QWidget):
+
     def __init__(self, main_window=None, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.material_en_edicion= None
@@ -387,7 +391,8 @@ class ModuloMateriales(QWidget):
         self.in_codigo_form= QLineEdit()
         self.in_codigo_form.setPlaceholderText("Código / ISBN / etiqueta interna (opcional)")
         limitar_campo_texto(self.in_codigo_form, 100)
-        fila1.addWidget(QLabel("Categoría:")); fila1.addWidget(self.combo_categoria_form, 1)
+        fila1.addWidget(QLabel("Categoría:"))
+        fila1.addWidget(self.combo_categoria_form, 1)
         self.combo_categoria_form.setToolTip("Categoría a la que pertenece el material. Define quién puede verlo y editarlo.")
         form.addLayout(fila1)
 
@@ -426,11 +431,14 @@ class ModuloMateriales(QWidget):
         self.combo_estado_form= QComboBox()
         for estado in ESTADOS_MATERIAL:
             self.combo_estado_form.addItem(estado, estado)
-        fila2.addWidget(QLabel("Cantidad total:")); fila2.addWidget(self.spin_total_form)
+        fila2.addWidget(QLabel("Cantidad total:"))
+        fila2.addWidget(self.spin_total_form)
         self.spin_total_form.setToolTip("Número total de unidades de este material en el inventario.")
-        fila2.addWidget(QLabel("Disponible:")); fila2.addWidget(self.spin_disponible_form)
+        fila2.addWidget(QLabel("Disponible:"))
+        fila2.addWidget(self.spin_disponible_form)
         self.spin_disponible_form.setToolTip("Unidades disponibles ahora mismo (no prestadas ni dadas de baja).")
-        fila2.addWidget(QLabel("Estado:")); fila2.addWidget(self.combo_estado_form)
+        fila2.addWidget(QLabel("Estado:"))
+        fila2.addWidget(self.combo_estado_form)
         self.combo_estado_form.setToolTip("Situación general del material en el inventario.")
         conectar_tooltip_seleccion(self.combo_estado_form,
                                    "Situación general del material en el inventario")
@@ -469,6 +477,7 @@ class ModuloMateriales(QWidget):
 
     #Atajos de teclado (ver atajos.py)
     def _configurar_atajos(self):
+
         #A diferencia de otros módulos (estudiantes.py, horario.py...), Materiales no reparte sus permisos por rol fijo
         #sino por categoría/usuario (ver RBAC en el docstring del módulo y _categorias_visibles): un Profesor puede
         #tener acceso de edición legítimo a una categoría entera. Por eso ningún atajo de acá se
@@ -488,10 +497,11 @@ class ModuloMateriales(QWidget):
         registrar_atajo(self, self.main_window, "Delete", "Eliminar seleccionado",
                          lambda: self.btn_eliminar.click() if self.btn_eliminar.isEnabled() else None)
 
+    #Despliega (si hace falta) el panel colapsable de alta y le pone
+    #el foco al primer campo -mismo destino que ya usa el propio
+    #encabezado del panel al hacer clic, ver PanelDesplegable-.
     def _abrir_panel_nuevo_material(self):
-        """Despliega (si hace falta) el panel colapsable de alta y le pone
-        el foco al primer campo -mismo destino que ya usa el propio
-        encabezado del panel al hacer clic, ver PanelDesplegable-."""
+
         if not self.panel_form_material.btn_cabecera.isEnabled():
             return
         if not self.panel_form_material._expandido:
@@ -499,17 +509,18 @@ class ModuloMateriales(QWidget):
         self.combo_categoria_form.setFocus()
 
     #Categorías permitidas (núcleo del RBAC configurable de este módulo)
+    #Lista [(id, nombre, icono)] de las categorías que el usuario
+    #actual puede ver. Un rol gerencial ve TODAS; el resto, solo las que
+    #se le asignaron en permisos_materiales_usuario (puede ser una lista
+    #vacía: en ese caso el módulo se ve, pero sin ningún material).
+    #
+    #Cacheada en `self._cache_categorias` (ver el comentario en
+    #`__init__`): pasar `forzar=True` descarta esa caché y vuelve a
+    #consultar la base de datos -usarlo solo cuando de verdad pudo haber
+    #cambiado el catálogo de categorías (arranque del módulo, tras
+    #cerrar "Gestionar categorías").
     def _categorias_visibles(self, forzar=False):
-        """Lista [(id, nombre, icono)] de las categorías que el usuario
-        actual puede ver. Un rol gerencial ve TODAS; el resto, solo las que
-        se le asignaron en permisos_materiales_usuario (puede ser una lista
-        vacía: en ese caso el módulo se ve, pero sin ningún material).
 
-        Cacheada en `self._cache_categorias` (ver el comentario en
-        `__init__`): pasar `forzar=True` descarta esa caché y vuelve a
-        consultar la base de datos -usarlo solo cuando de verdad pudo haber
-        cambiado el catálogo de categorías (arranque del módulo, tras
-        cerrar "Gestionar categorías")."""
         if not forzar and self._cache_categorias is not None:
             return self._cache_categorias
         conn= obtener_conexion()
@@ -527,6 +538,7 @@ class ModuloMateriales(QWidget):
         return resultado
 
     def _poblar_combos_categoria(self):
+
         categorias= self._categorias_visibles(forzar=True)
         self.combo_categoria_filtro.blockSignals(True)
         self.combo_categoria_filtro.clear()
@@ -556,6 +568,7 @@ class ModuloMateriales(QWidget):
 
     #TABLA
     def _condiciones_filtro(self):
+
         condiciones= []
         parametros= []
         categorias= self._categorias_visibles()
@@ -581,11 +594,13 @@ class ModuloMateriales(QWidget):
         return condiciones, parametros
 
     def _refrescar(self):
+
         self.pagina.reiniciar()
         self._cargar_tabla()
 
     def _cargar_tabla(self):
-        condiciones, parametros = self._condiciones_filtro()
+
+        condiciones, parametros= self._condiciones_filtro()
         if condiciones is None:
             self.tabla.setRowCount(0)
             self.pagina.establecer_total(0)
@@ -612,7 +627,7 @@ class ModuloMateriales(QWidget):
         self.kpi_disponibles.actualizar(resumen["disp"])
         self.kpi_prestamo.actualizar(max(0, resumen["total_unidades"] - resumen["disp"]))
 
-        inicio, _fin = self.pagina.rango_actual()
+        inicio, _fin= self.pagina.rango_actual()
         tam= self.pagina.tamano_pagina() or total or 1
         c.execute(f"""SELECT materiales.*, categorias_material.nombre as categoria_nombre,
                       categorias_material.icono as categoria_icono
@@ -643,6 +658,7 @@ class ModuloMateriales(QWidget):
         self._actualizar_botones_accion()
 
     def _fila_seleccionada(self):
+
         if not self.tabla.selectedItems():
             return None, None
         item= self.tabla.item(self.tabla.currentRow(), 0)
@@ -651,7 +667,8 @@ class ModuloMateriales(QWidget):
         return item.data(Qt.ItemDataRole.UserRole), item.data(Qt.ItemDataRole.UserRole + 1)
 
     def _actualizar_botones_accion(self):
-        material_id, categoria_id = self._fila_seleccionada()
+
+        material_id, categoria_id= self._fila_seleccionada()
         hay_seleccion= material_id is not None
         puede_editar= hay_seleccion and (self.main_window is None
                                            or puede_editar_categoria_material(self.main_window, categoria_id))
@@ -660,15 +677,17 @@ class ModuloMateriales(QWidget):
         self.btn_movimiento.setEnabled(hay_seleccion)
 
     def _sincronizar_disponible_maximo(self, nuevo_total):
+
         self.spin_disponible_form.setMaximum(max(0, nuevo_total))
         if self.spin_disponible_form.value() > nuevo_total:
             self.spin_disponible_form.setValue(nuevo_total)
 
     #FORMULARIO
+    #Conectado al clic del propio encabezado del panel (ver __init__):
+    #se ejecuta DESPUÉS de que PanelDesplegable ya actualizó su estado
+    #interno, así que `_expandido` refleja el estado nuevo.
     def _al_alternar_panel_formulario(self):
-        """Conectado al clic del propio encabezado del panel (ver __init__):
-        se ejecuta DESPUÉS de que PanelDesplegable ya actualizó su estado
-        interno, así que `_expandido` refleja el estado nuevo."""
+
         if self.panel_form_material._expandido:
             self._hacer_visible_formulario()
         else:
@@ -676,11 +695,12 @@ class ModuloMateriales(QWidget):
             #edición a medias esperando la próxima vez que abran el panel.
             self._limpiar_formulario()
 
+    #Con la página dentro del QScrollArea, el panel desplegado puede
+    #quedar por debajo del pliegue: desplaza el scroll hasta él (deferido
+    #con QTimer para que el layout/la animación de apertura ya se hayan
+    #asentado).
     def _hacer_visible_formulario(self):
-        """Con la página dentro del QScrollArea, el panel desplegado puede
-        quedar por debajo del pliegue: desplaza el scroll hasta él (deferido
-        con QTimer para que el layout/la animación de apertura ya se hayan
-        asentado)."""
+
         p= self.panel_form_material.parentWidget()
         while p is not None and not isinstance(p, QScrollArea):
             p= p.parentWidget()
@@ -688,7 +708,8 @@ class ModuloMateriales(QWidget):
             QTimer.singleShot(0, lambda: p.ensureWidgetVisible(self.panel_form_material, 0, 30))
 
     def _cargar_seleccionado_en_formulario(self):
-        material_id, categoria_id = self._fila_seleccionada()
+
+        material_id, categoria_id= self._fila_seleccionada()
         if material_id is None:
             return
         if self.main_window is not None and not puede_editar_categoria_material(self.main_window, categoria_id):
@@ -726,12 +747,13 @@ class ModuloMateriales(QWidget):
         #estudiantes/materias/observaciones (ver edicion_feedback.py), del que este módulo carecía hasta ahora.
         activar_modo_edicion(self.in_nombre_form, f"Editando material: {f['nombre'] or ''}")
 
+    #Deja el formulario listo para una captura nueva: mismo papel que
+    #el botón 'Limpiar' de banco_tareas.py/observaciones.py. NO colapsa
+    #el panel -para eso está su propio encabezado- así que sirve tanto
+    #para "ya guardé, quiero cargar otro material" como para "cancelar
+    #esta edición sin perder de vista el formulario".
     def _limpiar_formulario(self):
-        """Deja el formulario listo para una captura nueva: mismo papel que
-        el botón 'Limpiar' de banco_tareas.py/observaciones.py. NO colapsa
-        el panel -para eso está su propio encabezado- así que sirve tanto
-        para "ya guardé, quiero cargar otro material" como para "cancelar
-        esta edición sin perder de vista el formulario"."""
+
         self.material_en_edicion= None
         if self.combo_categoria_form.count():
             self.combo_categoria_form.setCurrentIndex(0)
@@ -745,6 +767,7 @@ class ModuloMateriales(QWidget):
         desactivar_modo_edicion(self.in_nombre_form)
 
     def _guardar(self):
+
         categoria_id= self.combo_categoria_form.currentData()
         nombre= self.in_nombre_form.text().strip()
         if categoria_id is None or not nombre:
@@ -783,7 +806,8 @@ class ModuloMateriales(QWidget):
         mostrar_mensaje("exito", "Guardado", "El material se guardó correctamente.", self)
 
     def _eliminar_seleccionado(self):
-        material_id, categoria_id = self._fila_seleccionada()
+
+        material_id, categoria_id= self._fila_seleccionada()
         if material_id is None:
             return
         if self.main_window is not None and not puede_editar_categoria_material(self.main_window, categoria_id):
@@ -805,7 +829,8 @@ class ModuloMateriales(QWidget):
 
     #PRÉSTAMOS / MOVIMIENTOS
     def _abrir_movimiento(self):
-        material_id, _categoria_id = self._fila_seleccionada()
+
+        material_id, _categoria_id= self._fila_seleccionada()
         if material_id is None:
             return
         #parent = self.window(): centrar_y_al_frente centra sobre la ventana
@@ -816,12 +841,14 @@ class ModuloMateriales(QWidget):
 
     #Gestión de categorías (solo roles gerenciales)
     def _abrir_gestion_categorias(self):
+
         dialogo= DialogoGestionCategorias(self.window())
         dialogo.exec()
         self._poblar_combos_categoria()
         self._refrescar()
 
     def _abrir_permisos_usuarios(self):
+
         dialogo= DialogoPermisosMateriales(self.window())
         dialogo.exec()
 
@@ -829,6 +856,7 @@ class ModuloMateriales(QWidget):
     #estilo propio (cabecera degradada, tarjetas KPI); ver el docstring de asistencia.py/materias.py para el mismo
     #patrón.
     def actualizar_tema(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None) if mw is not None else None
         if not paletas:
@@ -915,14 +943,15 @@ class ModuloMateriales(QWidget):
 
 
 #Diálogo: selector de ícono de categoría
+#Grilla de íconos vectoriales (ver iconos_categorias.py ▸ sección
+#MATERIALES) para elegir el ícono de una categoría con un clic, en vez de
+#escribir un emoji a mano -en muchos equipos Windows/Linux no hay un
+#teclado de emojis a la vista, y el resultado antes dependía de qué
+#fuente tuviera instalada el sistema operativo.
 class _DialogoSelectorIconoMaterial(_DialogoCentrado):
-    """Grilla de íconos vectoriales (ver iconos_categorias.py ▸ sección
-    MATERIALES) para elegir el ícono de una categoría con un clic, en vez de
-    escribir un emoji a mano -en muchos equipos Windows/Linux no hay un
-    teclado de emojis a la vista, y el resultado antes dependía de qué
-    fuente tuviera instalada el sistema operativo."""
 
     def __init__(self, valor_actual=None, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Elegir ícono de categoría")
         aplicar_icono_ventana(self)
@@ -990,13 +1019,16 @@ class _DialogoSelectorIconoMaterial(_DialogoCentrado):
         centrar_y_al_frente(self, parent)
 
     def _elegir(self, clave):
+
         self.clave_elegida= clave
         self.accept()
 
 
 #Diálogo: gestión de categorías
 class DialogoGestionCategorias(_DialogoCentrado):
+
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Categorías de Materiales")
         aplicar_icono_ventana(self)
@@ -1103,14 +1135,17 @@ class DialogoGestionCategorias(_DialogoCentrado):
         self._cargar()
 
     def _previsualizar_icono(self, texto):
+
         self.lbl_preview_icono.setPixmap(pixmap_categoria_material(texto.strip() or "otro", 26))
 
     def _abrir_selector_icono(self):
+
         dialogo= _DialogoSelectorIconoMaterial(self.in_icono.text().strip(), self)
         if dialogo.exec() == QDialog.DialogCode.Accepted and dialogo.clave_elegida:
             self.in_icono.setText(dialogo.clave_elegida)
 
     def _cargar(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM categorias_material ORDER BY nombre")
@@ -1150,10 +1185,11 @@ class DialogoGestionCategorias(_DialogoCentrado):
         self._cargando= False
         ajustar_anchos_columnas(self.tabla)
 
+    #Guarda en la BD la edición in-place del Nombre o la Descripción
+    #de una categoría. Se ignora mientras la tabla se está llenando
+    #(self._cargando) y si la celda editada es el ícono (no editable).
     def _celda_editada(self, item):
-        """Guarda en la BD la edición in-place del Nombre o la Descripción
-        de una categoría. Se ignora mientras la tabla se está llenando
-        (self._cargando) y si la celda editada es el ícono (no editable)."""
+
         if self._cargando or item is None:
             return
         columna= item.column()
@@ -1171,6 +1207,7 @@ class DialogoGestionCategorias(_DialogoCentrado):
             conn= obtener_conexion()
             c= conn.cursor()
             try:
+
                 c.execute("UPDATE categorias_material SET nombre=? WHERE id=?", (texto, categoria_id))
                 conn.commit()
             except Exception:
@@ -1196,6 +1233,7 @@ class DialogoGestionCategorias(_DialogoCentrado):
             item.setForeground(self.palette().text())
 
     def _agregar(self):
+
         nombre= self.in_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Falta el nombre", "Escribe el nombre de la nueva categoría.", self)
@@ -1204,6 +1242,7 @@ class DialogoGestionCategorias(_DialogoCentrado):
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             c.execute("INSERT INTO categorias_material (nombre, icono) VALUES (?,?)", (nombre, icono))
             conn.commit()
         except Exception:
@@ -1216,6 +1255,7 @@ class DialogoGestionCategorias(_DialogoCentrado):
         self._cargar()
 
     def _eliminar(self):
+
         if not self.tabla.selectedItems():
             return
         item= self.tabla.item(self.tabla.currentRow(), 0)
@@ -1233,12 +1273,13 @@ class DialogoGestionCategorias(_DialogoCentrado):
 
 
 #Diálogo: permisos de acceso por usuario
+#Permite a un rol gerencial elegir un usuario y marcar, categoría por
+#categoría, si la ve (checkbox) y si además puede editarla (segundo
+#checkbox, solo habilitado si la primera está marcada).
 class DialogoPermisosMateriales(_DialogoCentrado):
-    """Permite a un rol gerencial elegir un usuario y marcar, categoría por
-    categoría, si la ve (checkbox) y si además puede editarla (segundo
-    checkbox, solo habilitado si la primera está marcada)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Permisos de acceso a Materiales")
         aplicar_icono_ventana(self)
@@ -1328,9 +1369,10 @@ class DialogoPermisosMateriales(_DialogoCentrado):
         if self._usuarios:
             self._cargar_permisos_usuario()
 
+    #Llena la tabla con una fila por categoría: nombre con su ícono
+    #vectorial y dos checkboxes centrados (Ver / Editar).
     def _pintar_categorias(self):
-        """Llena la tabla con una fila por categoría: nombre con su ícono
-        vectorial y dos checkboxes centrados (Ver / Editar)."""
+
         self._llenando= True
         with tabla_pausada(self.tabla):
             for i, cat in enumerate(self._categorias):
@@ -1355,9 +1397,10 @@ class DialogoPermisosMateriales(_DialogoCentrado):
                 self.tabla.setItem(i, 2, item_editar)
         self._llenando= False
 
+    #Al marcar/desmarcar “Ver”, habilita o deshabilita el
+    #checkbox “Editar” de la misma fila (editar implica ver).
     def _check_cambiado(self, item):
-        """Al marcar/desmarcar \u201cVer\u201d, habilita o deshabilita el
-        checkbox \u201cEditar\u201d de la misma fila (editar implica ver)."""
+
         if self._llenando or item.column() != 1:
             return
         item_editar= self.tabla.item(item.row(), 2)
@@ -1372,6 +1415,7 @@ class DialogoPermisosMateriales(_DialogoCentrado):
             item_editar.setCheckState(Qt.CheckState.Unchecked)
 
     def _cargar_permisos_usuario(self):
+
         usuario_id= self.combo_usuario.currentData()
         permisos= obtener_permisos_materiales_usuario(usuario_id) if usuario_id else {}
         self._llenando= True
@@ -1392,6 +1436,7 @@ class DialogoPermisosMateriales(_DialogoCentrado):
         self._llenando= False
 
     def _guardar(self):
+
         usuario_id= self.combo_usuario.currentData()
         if usuario_id is None:
             self.reject()
@@ -1408,7 +1453,9 @@ class DialogoPermisosMateriales(_DialogoCentrado):
 
 #Diálogo: préstamo / DEVOLUCIÓN
 class DialogoMovimientoMaterial(_DialogoCentrado):
+
     def __init__(self, main_window, material_id, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.material_id= material_id
@@ -1467,6 +1514,7 @@ class DialogoMovimientoMaterial(_DialogoCentrado):
         centrar_y_al_frente(self, parent)
 
     def _guardar(self):
+
         tipo= self.combo_tipo.currentData()
         cantidad= self.spin_cantidad.value()
         disponible= self.material["cantidad_disponible"]

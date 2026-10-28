@@ -31,17 +31,20 @@ CARGOS_SUGERIDOS= ["Director", "Subdirector", "Coordinador Académico", "Coordin
 
 #Utilidades visuales — puramente estéticas, no tocan datos ni lógica. (mismo lenguaje visual que
 #estudiantes.py/profesores.py, para que todos los módulos se sientan parte de la misma aplicación)
+#Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada.
 def _hex_a_rgba(color_hex, alpha):
-    """Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada."""
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Lee la paleta/tema activo de la ventana principal para que las tarjetas de
+#este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que las tarjetas de
-    este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -57,10 +60,11 @@ def _colores_tema(main_window):
                 "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#Devuelve una copia circular (estilo avatar) de `pixmap`. Es solo otra forma
+#de DIBUJAR la misma foto ya guardada: no altera el archivo ni el dato 'foto'
+#que se guarda en la base de datos.
 def _redondear_pixmap(pixmap, tamano):
-    """Devuelve una copia circular (estilo avatar) de `pixmap`. Es solo otra forma
-    de DIBUJAR la misma foto ya guardada: no altera el archivo ni el dato 'foto'
-    que se guarda en la base de datos."""
+
     if pixmap is None or pixmap.isNull():
         return pixmap
     fuente= pixmap.scaled(tamano, tamano, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
@@ -79,9 +83,10 @@ def _redondear_pixmap(pixmap, tamano):
     return resultado
 
 
+#Quita mayúsculas y acentos para que el buscador no sea estricto:
+#'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que el buscador no sea estricto:
-    'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)"""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -89,20 +94,23 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que horario.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-    (mismo diseño que horario.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -113,13 +121,14 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
+#por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
+#encima. Solo anima mientras el cursor está sobre el botón —nunca en segundo
+#plano—, así que no cuesta rendimiento en reposo.
 class BotonAnimado(QPushButton):
-    """QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
-    por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
-    encima. Solo anima mientras el cursor está sobre el botón —nunca en segundo
-    plano—, así que no cuesta rendimiento en reposo."""
 
     def __init__(self, texto="", parent=None):
+
         super().__init__(texto, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._sombra= QGraphicsDropShadowEffect(self)
@@ -132,30 +141,34 @@ class BotonAnimado(QPushButton):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _animar_sombra(self, hasta):
+
         self._anim.stop()
         self._anim.setStartValue(self._sombra.blurRadius())
         self._anim.setEndValue(hasta)
         self._anim.start()
 
     def enterEvent(self, event):
+
         if self.isEnabled():
             self._animar_sombra(18)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(0)
         super().leaveEvent(event)
 
 
+#Anillo (donut) dibujado a mano con QPainter que compara el personal
+#'Activo' contra 'Inactivo'. Reemplaza a una tarjeta KPI clásica: en vez de
+#un número dentro de un rectángulo, el dato se lee en la proporción del
+#propio anillo. Se 'dibuja' con un barrido animado cada vez que llegan
+#datos nuevos, pero no corre ninguna animación en segundo plano cuando
+#está en reposo (más liviano para el rendimiento del módulo).
 class AnilloEstado(QWidget):
-    """Anillo (donut) dibujado a mano con QPainter que compara el personal
-    'Activo' contra 'Inactivo'. Reemplaza a una tarjeta KPI clásica: en vez de
-    un número dentro de un rectángulo, el dato se lee en la proporción del
-    propio anillo. Se 'dibuja' con un barrido animado cada vez que llegan
-    datos nuevos, pero no corre ninguna animación en segundo plano cuando
-    está en reposo (más liviano para el rendimiento del módulo)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(84, 84)
         self._activos= 0
@@ -173,11 +186,13 @@ class AnilloEstado(QWidget):
         self._anim.valueChanged.connect(self._on_progreso)
 
     def establecer_colores_tema(self, color_pista, color_texto):
+
         self._color_pista= QColor(color_pista)
         self._color_texto= QColor(color_texto)
         self.update()
 
     def establecer_datos(self, activos, inactivos, animar=True):
+
         self._activos= max(0, int(activos))
         self._inactivos= max(0, int(inactivos))
         if animar:
@@ -189,10 +204,12 @@ class AnilloEstado(QWidget):
             self.update()
 
     def _on_progreso(self, valor):
+
         self._progreso= valor
         self.update()
 
     def paintEvent(self, event):
+
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect= self.rect().adjusted(7, 7, -7, -7)
@@ -221,14 +238,15 @@ class AnilloEstado(QWidget):
         pintor.end()
 
 
+#Mini gráfico de barras horizontales, dibujado con QPainter, que muestra
+#los cargos con más personas registradas. Cada barra 'crece' con una
+#animación suave cuando llegan datos nuevos. Es otra alternativa a la
+#tarjeta KPI: aquí el dato relevante (qué cargos predominan en la planta
+#administrativa) se ve de un vistazo, en vez de solo un número suelto.
 class BarrasDistribucion(QWidget):
-    """Mini gráfico de barras horizontales, dibujado con QPainter, que muestra
-    los cargos con más personas registradas. Cada barra 'crece' con una
-    animación suave cuando llegan datos nuevos. Es otra alternativa a la
-    tarjeta KPI: aquí el dato relevante (qué cargos predominan en la planta
-    administrativa) se ve de un vistazo, en vez de solo un número suelto."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setMinimumHeight(120)
         self.setMouseTracking(True)
@@ -247,6 +265,7 @@ class BarrasDistribucion(QWidget):
         self._anim.valueChanged.connect(self._on_progreso)
 
     def establecer_colores_tema(self, color_barra, color_texto, color_texto_sec, color_pista):
+
         self._color_barra= QColor(color_barra)
         self._color_texto= QColor(color_texto)
         self._color_texto_sec= QColor(color_texto_sec)
@@ -254,6 +273,7 @@ class BarrasDistribucion(QWidget):
         self.update()
 
     def establecer_datos(self, pares, animar=True):
+
         self._datos= list(pares)[:5]
         if animar:
             self._anim.stop()
@@ -264,10 +284,12 @@ class BarrasDistribucion(QWidget):
             self.update()
 
     def _on_progreso(self, valor):
+
         self._progreso= valor
         self.update()
 
     def paintEvent(self, event):
+
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -321,6 +343,7 @@ class BarrasDistribucion(QWidget):
         pintor.end()
 
     def mouseMoveEvent(self, event):
+
         pos= event.position() if hasattr(event, "position") else event.pos()
         for rect_fila, etiqueta in self._filas_rect:
             if rect_fila.contains(pos):
@@ -331,20 +354,22 @@ class BarrasDistribucion(QWidget):
         super().mouseMoveEvent(event)
 
     def leaveEvent(self, event):
+
         QToolTip.hideText()
         super().leaveEvent(event)
 
 
+#Fila de miniaturas circulares superpuestas ('team avatars') que muestra
+#de un vistazo las fotos del personal más reciente. Es una capa puramente
+#visual, compuesta en un único widget para que sea barata de repintar: no
+#afecta la lista real de personal ni sus datos.
 class PilaAvatares(QWidget):
-    """Fila de miniaturas circulares superpuestas ('team avatars') que muestra
-    de un vistazo las fotos del personal más reciente. Es una capa puramente
-    visual, compuesta en un único widget para que sea barata de repintar: no
-    afecta la lista real de personal ni sus datos."""
 
     TAMANO= 34
     SOLAPE= 14
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._pixmaps= []
         self._extra= 0
@@ -353,6 +378,7 @@ class PilaAvatares(QWidget):
         self.setFixedWidth(self.TAMANO)
 
     def establecer_avatares(self, pixmaps, extra=0):
+
         self._pixmaps= list(pixmaps)[:5]
         self._extra= max(0, int(extra))
         paso= self.TAMANO - self.SOLAPE
@@ -363,6 +389,7 @@ class PilaAvatares(QWidget):
         self.update()
 
     def paintEvent(self, event):
+
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         paso= self.TAMANO - self.SOLAPE
@@ -387,7 +414,9 @@ class PilaAvatares(QWidget):
 
 
 class ModuloPersonal(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion= None
@@ -398,6 +427,7 @@ class ModuloPersonal(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         #Módulo de personal administrativo: exclusivo de roles gerenciales, un Profesor no accede a esta pantalla.
         self._titulo_modulo_atajos= "Personal"
         registrar_atajo(self, self.main_window, "Ctrl+G", "Guardar", self._guardar)
@@ -406,6 +436,7 @@ class ModuloPersonal(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+Del", "Eliminar", self._eliminar)
 
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -751,6 +782,7 @@ class ModuloPersonal(QWidget):
     #FOTO — mismo flujo/patrón que profesores.py: elegir y recortar, ver ampliada, quitar. Solo cambia el prefijo
     #del archivo guardado.
     def _elegir_foto(self):
+
         destino_dir= os.path.join(get_app_data_dir(), "fotos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="pers")
         if not destino:
@@ -759,12 +791,14 @@ class ModuloPersonal(QWidget):
         self.lbl_foto.setPixmap(_redondear_pixmap(QPixmap(destino), 64))
 
     def _ver_foto_ampliada(self):
+
         if not self.foto_path or not os.path.exists(self.foto_path):
             mostrar_mensaje("advertencia", "Sin foto", "Esta persona no tiene una fotografía cargada.", self)
             return
         VisorFotoDialog(self.foto_path, self, titulo="Fotografía del Personal Administrativo").exec()
 
     def _quitar_foto(self):
+
         if not self.foto_path:
             mostrar_mensaje("advertencia", "Sin foto", "Esta persona no tiene una fotografía cargada.", self)
             return
@@ -775,6 +809,7 @@ class ModuloPersonal(QWidget):
         self.lbl_foto.setPixmap(QPixmap())
 
     def _cargar_combo_usuarios(self):
+
         self.combo_usuario.clear()
         self.combo_usuario.addItem("Sin cuenta vinculada", None)
         conn= obtener_conexion()
@@ -791,6 +826,7 @@ class ModuloPersonal(QWidget):
         conn.close()
 
     def _guardar(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para editar personal administrativo.", self)
             return
@@ -805,6 +841,7 @@ class ModuloPersonal(QWidget):
                  self.in_direccion.text().strip(), self.date_ingreso.date().toString("yyyy-MM-dd"),
                  self.combo_estado.currentText(), self.foto_path, usuario_id)
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             if self.id_edicion is None:
@@ -830,6 +867,7 @@ class ModuloPersonal(QWidget):
         self._cargar_tabla()
 
     def _limpiar(self):
+
         self.id_edicion= None
         self.foto_path= ""
         self.lbl_foto.setText("Sin\nfoto")
@@ -844,6 +882,7 @@ class ModuloPersonal(QWidget):
         desactivar_modo_edicion(self.in_nombre)
 
     def _cargar_seleccionado(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro de la tabla.", self)
@@ -880,6 +919,7 @@ class ModuloPersonal(QWidget):
                              f"Editando personal: {f['nombre'] or ''} {f['apellidos'] or ''}".strip())
 
     def _eliminar(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para eliminar registros.", self)
             return
@@ -900,10 +940,12 @@ class ModuloPersonal(QWidget):
         self._cargar_tabla()
 
     def _filtro_cambio(self, texto=""):
+
         self.paginacion.reiniciar()
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         texto= _normalizar(self.in_buscar.text().strip())
         filtro_cargo= self.combo_filtro_cargo.currentData()
         filtro_estado= self.combo_filtro_estado.currentData()
@@ -921,7 +963,7 @@ class ModuloPersonal(QWidget):
         if filtro_estado is not None:
             filtradas= [f for f in filtradas if (f["estado"] or "Activo") == filtro_estado]
         self.paginacion.establecer_total(len(filtradas))
-        inicio, fin = self.paginacion.rango_actual()
+        inicio, fin= self.paginacion.rango_actual()
         pagina= filtradas[inicio:fin]
         self.lbl_vacio.setVisible(len(filtradas) == 0)
         with tabla_pausada(self.tabla):
@@ -958,10 +1000,11 @@ class ModuloPersonal(QWidget):
         self._animar_fundido_tabla()
         self._actualizar_panorama(filas)
 
+    #Recalcula el anillo Activo/Inactivo, las barras de cargos y la pila
+    #de avatares recientes a partir del listado COMPLETO (sin filtro de
+    #búsqueda), para que el panorama siempre refleje toda la planta.
     def _actualizar_panorama(self, filas, animar=True):
-        """Recalcula el anillo Activo/Inactivo, las barras de cargos y la pila
-        de avatares recientes a partir del listado COMPLETO (sin filtro de
-        búsqueda), para que el panorama siempre refleje toda la planta."""
+
         activos= sum(1 for f in filas if (f["estado"] or "Activo") == "Activo")
         inactivos= len(filas) - activos
         self.anillo_estado.establecer_datos(activos, inactivos, animar=animar)
@@ -989,14 +1032,16 @@ class ModuloPersonal(QWidget):
             self.pila_avatares.setVisible(False)
 
     def refrescar(self):
+
         self._cargar_combo_usuarios()
         self._cargar_combo_filtro_cargo()
         self._cargar_tabla()
 
+    #Puebla el filtro de Cargo con los cargos que YA tiene asignados
+    #el personal cargado (no la lista sugerida del formulario), para que
+    #el filtro siempre refleje datos reales.
     def _cargar_combo_filtro_cargo(self):
-        """Puebla el filtro de Cargo con los cargos que YA tiene asignados
-        el personal cargado (no la lista sugerida del formulario), para que
-        el filtro siempre refleje datos reales."""
+
         seleccion_previa= self.combo_filtro_cargo.currentData()
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1013,10 +1058,11 @@ class ModuloPersonal(QWidget):
         self.combo_filtro_cargo.setCurrentIndex(idx if idx >= 0 else 0)
         self.combo_filtro_cargo.blockSignals(False)
 
+    #Ventanita (no modal) con los filtros del listado de Personal:
+    #Cargo y Estado, ambos opcionales -mismo patrón que
+    #profesores.py/banco_tareas.py.
     def _construir_dialogo_filtros(self):
-        """Ventanita (no modal) con los filtros del listado de Personal:
-        Cargo y Estado, ambos opcionales -mismo patrón que
-        profesores.py/banco_tareas.py."""
+
         self.dialogo_filtros= QDialog(self)
         self.dialogo_filtros.setObjectName("DialogoFiltros")
         self.dialogo_filtros.setWindowTitle("Filtros de Personal")
@@ -1077,6 +1123,7 @@ class ModuloPersonal(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros.parent() is not _fc:
@@ -1086,6 +1133,7 @@ class ModuloPersonal(QWidget):
         self.dialogo_filtros.activateWindow()
 
     def _limpiar_filtros(self):
+
         for combo in (self.combo_filtro_cargo, self.combo_filtro_estado):
             combo.blockSignals(True)
             combo.setCurrentIndex(0)
@@ -1093,11 +1141,12 @@ class ModuloPersonal(QWidget):
         self.paginacion.reiniciar()
         self._cargar_tabla()
 
+    #Sincroniza los colores de las tarjetas, el anillo y las barras de
+    #este módulo con el tema/modo claro-oscuro actual de la app. Se llama al
+    #construir la pantalla y cada vez que el usuario cambia de tema (ver
+    #main.py).
     def actualizar_tema(self):
-        """Sincroniza los colores de las tarjetas, el anillo y las barras de
-        este módulo con el tema/modo claro-oscuro actual de la app. Se llama al
-        construir la pantalla y cada vez que el usuario cambia de tema (ver
-        main.py)."""
+
         colores= _colores_tema(self.main_window)
         self.setStyleSheet(f"""
             QToolTip {{
@@ -1289,11 +1338,12 @@ class ModuloPersonal(QWidget):
 
     #ANIMACIONES — capa puramente visual: no participan en la lógica de negocio, permisos, validación ni guardado
     #de datos.
+    #Actualiza el chip '🗂 N personas' de la cabecera con una pequeña
+    #animación de conteo, en vez de un cambio brusco de texto.
     def _animar_contador(self, valor_final):
-        """Actualiza el chip '🗂 N personas' de la cabecera con una pequeña
- animación de conteo, en vez de un cambio brusco de texto."""
 
         def texto(v):
+
             return f"{html_icono_emoji('🗂', 15)} {v} persona" + ("s" if v != 1 else "")
 
         valor_inicial= self._contador_valor_actual
@@ -1310,11 +1360,12 @@ class ModuloPersonal(QWidget):
         anim.start()
         self._anim_contador= anim  #referencia viva mientras corre la animación
 
+    #Fundido breve al recargar la tabla, como confirmación visual de que
+    #los datos se actualizaron. El efecto se retira apenas termina para no
+    #afectar el rendimiento del scroll normal de la tabla el resto del
+    #tiempo.
     def _animar_fundido_tabla(self):
-        """Fundido breve al recargar la tabla, como confirmación visual de que
-        los datos se actualizaron. El efecto se retira apenas termina para no
-        afectar el rendimiento del scroll normal de la tabla el resto del
-        tiempo."""
+
         efecto= QGraphicsOpacityEffect(self.tabla)
         self.tabla.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", self)
@@ -1326,10 +1377,11 @@ class ModuloPersonal(QWidget):
         anim.start()
         self._anim_tabla= anim  #referencia viva mientras corre la animación
 
+    #Resplandor breve de color en el borde de la tarjeta del formulario,
+    #a modo de confirmación visual (verde=éxito, rojo=aviso). Solo anima la
+    #sombra ya existente de la tarjeta: no toca ningún dato ni campo.
     def _destello(self, color_hex="#22C55E"):
-        """Resplandor breve de color en el borde de la tarjeta del formulario,
-        a modo de confirmación visual (verde=éxito, rojo=aviso). Solo anima la
-        sombra ya existente de la tarjeta: no toca ningún dato ni campo."""
+
         if not hasattr(self, "_sombra_formulario"):
             return
         grupo= QParallelAnimationGroup(self)

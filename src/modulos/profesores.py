@@ -26,17 +26,20 @@ ESTADOS= ["Activo", "Inactivo"]
 
 #Utilidades visuales — puramente estéticas, no tocan datos ni lógica. (mismo lenguaje visual que
 #estudiantes.py, para que ambos módulos se sientan parte de la misma aplicación)
+#Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada.
 def _hex_a_rgba(color_hex, alpha):
-    """Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada."""
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Lee la paleta/tema activo de la ventana principal para que las tarjetas de
+#este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que las tarjetas de
-    este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -52,10 +55,11 @@ def _colores_tema(main_window):
                 "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#Devuelve una copia circular (estilo avatar) de `pixmap`. Es solo otra forma
+#de DIBUJAR la misma foto ya guardada: no altera el archivo ni el dato 'foto'
+#que se guarda en la base de datos.
 def _redondear_pixmap(pixmap, tamano):
-    """Devuelve una copia circular (estilo avatar) de `pixmap`. Es solo otra forma
-    de DIBUJAR la misma foto ya guardada: no altera el archivo ni el dato 'foto'
-    que se guarda en la base de datos."""
+
     if pixmap is None or pixmap.isNull():
         return pixmap
     fuente= pixmap.scaled(tamano, tamano, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
@@ -74,9 +78,10 @@ def _redondear_pixmap(pixmap, tamano):
     return resultado
 
 
+#Quita mayúsculas y acentos para que el buscador no sea estricto:
+#'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que el buscador no sea estricto:
-    'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)"""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -84,20 +89,23 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que horario.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-    (mismo diseño que horario.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -108,13 +116,14 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
+#por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
+#encima. Solo anima mientras el cursor está sobre el botón —nunca en segundo
+#plano—, así que no cuesta rendimiento en reposo.
 class BotonAnimado(QPushButton):
-    """QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
-    por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
-    encima. Solo anima mientras el cursor está sobre el botón —nunca en segundo
-    plano—, así que no cuesta rendimiento en reposo."""
 
     def __init__(self, texto="", parent=None):
+
         super().__init__(texto, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._sombra= QGraphicsDropShadowEffect(self)
@@ -127,23 +136,28 @@ class BotonAnimado(QPushButton):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _animar_sombra(self, hasta):
+
         self._anim.stop()
         self._anim.setStartValue(self._sombra.blurRadius())
         self._anim.setEndValue(hasta)
         self._anim.start()
 
     def enterEvent(self, event):
+
         if self.isEnabled():
             self._animar_sombra(18)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(0)
         super().leaveEvent(event)
 
 
 class ModuloProfesores(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion= None
@@ -158,6 +172,7 @@ class ModuloProfesores(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Profesores"
         #Ver comentario de self.acceso_restringido más arriba: un Profesor no debe gestionar el listado de profesores.
         #Todos los atajos mutables se omiten por completo en Modo Docente.
@@ -173,6 +188,7 @@ class ModuloProfesores(QWidget):
                          self._deshacer_eliminacion, solo_no_docente=True)
 
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -520,6 +536,7 @@ class ModuloProfesores(QWidget):
         self.actualizar_tema()
 
     def _elegir_foto(self):
+
         destino_dir= os.path.join(get_app_data_dir(), "fotos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="prof")
         if not destino:
@@ -528,12 +545,14 @@ class ModuloProfesores(QWidget):
         self.lbl_foto.setPixmap(_redondear_pixmap(QPixmap(destino), 64))
 
     def _ver_foto_ampliada(self):
+
         if not self.foto_path or not os.path.exists(self.foto_path):
             mostrar_mensaje("advertencia", "Sin foto", "Este profesor no tiene una fotografía cargada.", self)
             return
         VisorFotoDialog(self.foto_path, self, titulo="Fotografía del Profesor").exec()
 
     def _quitar_foto(self):
+
         if not self.foto_path:
             mostrar_mensaje("advertencia", "Sin foto", "Este profesor no tiene una fotografía cargada.", self)
             return
@@ -544,6 +563,7 @@ class ModuloProfesores(QWidget):
         self.lbl_foto.setPixmap(QPixmap())
 
     def _cargar_combo_usuarios(self):
+
         self.combo_usuario.clear()
         self.combo_usuario.addItem("Sin cuenta vinculada", None)
         conn= obtener_conexion()
@@ -558,17 +578,20 @@ class ModuloProfesores(QWidget):
             self.combo_usuario.addItem(f"{etiqueta} ({f['username']})", f["id"])
         conn.close()
 
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo) — solo entonces tiene sentido preguntar si un
+    #profesor imparte módulos técnicos y en qué área.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo) — solo entonces tiene sentido preguntar si un
-        profesor imparte módulos técnicos y en qué área."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
     def _cargar_combo_especialidad_tecnica(self):
+
         combo= self.combo_especialidad_tecnica
         seleccion_previa= combo.currentData()
         combo.blockSignals(True)
@@ -585,15 +608,17 @@ class ModuloProfesores(QWidget):
         combo.blockSignals(False)
 
     def _imparte_tecnico_cambio(self, marcado):
+
         self.combo_especialidad_tecnica.setEnabled(marcado)
         if not marcado:
             self.combo_especialidad_tecnica.setCurrentIndex(0)
 
+    #Muestra/oculta todo lo relacionado a módulos técnicos: solo tiene
+    #sentido en una institución con el módulo Politécnico activo. Si se oculta,
+    #los filtros también se resetean a "Todos" para que no se queden aplicando
+    #(invisibles) un filtro que ya no debería tener efecto.
     def _actualizar_visibilidad_tecnico(self):
-        """Muestra/oculta todo lo relacionado a módulos técnicos: solo tiene
-        sentido en una institución con el módulo Politécnico activo. Si se oculta,
-        los filtros también se resetean a "Todos" para que no se queden aplicando
-        (invisibles) un filtro que ya no debería tener efecto."""
+
         visible= self._es_politecnico()
         self.chk_imparte_tecnico.setVisible(visible)
         self.combo_especialidad_tecnica.setVisible(visible)
@@ -610,6 +635,7 @@ class ModuloProfesores(QWidget):
             self.combo_filtro_area_tecnica.setCurrentIndex(0)
 
     def _cargar_combo_filtro_area_tecnica(self):
+
         combo= self.combo_filtro_area_tecnica
         seleccion_previa= combo.currentData()
         combo.blockSignals(True)
@@ -625,11 +651,12 @@ class ModuloProfesores(QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
+    #Ventanita (no modal) con los filtros del listado de Profesores:
+    #Estado, "Imparte técnico" y Área Técnica (los dos últimos solo
+    #visibles/aplicables con el módulo Politécnico activo). Mismo patrón
+    #que banco_tareas.py/calendario.py/horario.py.
     def _construir_dialogo_filtros(self):
-        """Ventanita (no modal) con los filtros del listado de Profesores:
-        Estado, "Imparte técnico" y Área Técnica (los dos últimos solo
-        visibles/aplicables con el módulo Politécnico activo). Mismo patrón
-        que banco_tareas.py/calendario.py/horario.py."""
+
         self.dialogo_filtros= QDialog(self)
         self.dialogo_filtros.setObjectName("DialogoFiltros")
         self.dialogo_filtros.setWindowTitle("Filtros de Profesores")
@@ -694,6 +721,7 @@ class ModuloProfesores(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros.parent() is not _fc:
@@ -703,6 +731,7 @@ class ModuloProfesores(QWidget):
         self.dialogo_filtros.activateWindow()
 
     def _limpiar_filtros(self):
+
         for combo in (self.combo_filtro_estado, self.combo_filtro_imparte_tecnico, self.combo_filtro_area_tecnica):
             combo.blockSignals(True)
             combo.setCurrentIndex(0)
@@ -711,6 +740,7 @@ class ModuloProfesores(QWidget):
         self._cargar_tabla()
 
     def _guardar(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para editar profesores.", self)
             return
@@ -727,6 +757,7 @@ class ModuloProfesores(QWidget):
                  self.combo_estado.currentText(), self.foto_path, usuario_id,
                  imparte_tecnico, especialidad_tecnica_id)
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             if self.id_edicion is None:
@@ -753,6 +784,7 @@ class ModuloProfesores(QWidget):
         self.refrescar()
 
     def _limpiar(self):
+
         self.id_edicion= None
         self.foto_path= ""
         self.lbl_foto.setText("Sin\nfoto")
@@ -767,6 +799,7 @@ class ModuloProfesores(QWidget):
         desactivar_modo_edicion(self.in_nombre)
 
     def _cargar_seleccionado(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un profesor de la tabla.", self)
@@ -806,6 +839,7 @@ class ModuloProfesores(QWidget):
                              f"Editando profesor: {f['nombre'] or ''} {f['apellidos'] or ''}".strip())
 
     def _eliminar(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para eliminar profesores.", self)
             return
@@ -837,15 +871,17 @@ class ModuloProfesores(QWidget):
 
         self.refrescar()
 
+    #Restaura el último profesor eliminado desde esta pantalla, tal cual
+    #estaba (mismo id y mismos datos). Solo funciona una vez por eliminación.
     def _deshacer_eliminacion(self):
-        """Restaura el último profesor eliminado desde esta pantalla, tal cual
-        estaba (mismo id y mismos datos). Solo funciona una vez por eliminación."""
+
         if not self._ultima_eliminacion:
             return
         datos= self._ultima_eliminacion
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             c.execute("""INSERT INTO profesores
                          (id, nombre, apellidos, especialidad, correo, telefono,
                           horario_laboral, estado, foto, usuario_id, imparte_tecnico, especialidad_tecnica_id)
@@ -871,10 +907,12 @@ class ModuloProfesores(QWidget):
         self.refrescar()
 
     def _filtro_cambio(self, texto=""):
+
         self.paginacion.reiniciar()
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         texto= _normalizar(self.in_buscar.text().strip())
         filtro_imparte= self.combo_filtro_imparte_tecnico.currentData()\
             if self.combo_filtro_imparte_tecnico.isVisible() else None
@@ -903,7 +941,7 @@ class ModuloProfesores(QWidget):
                 continue
             filtradas.append(f)
         self.paginacion.establecer_total(len(filtradas))
-        inicio, fin = self.paginacion.rango_actual()
+        inicio, fin= self.paginacion.rango_actual()
         pagina= filtradas[inicio:fin]
         self.lbl_vacio.setVisible(len(filtradas) == 0)
         with tabla_pausada(self.tabla):
@@ -946,6 +984,7 @@ class ModuloProfesores(QWidget):
         self._animar_fundido_tabla()
 
     def refrescar(self):
+
         if self.acceso_restringido:
             return
         self._cargar_combo_usuarios()
@@ -954,10 +993,11 @@ class ModuloProfesores(QWidget):
         self._actualizar_visibilidad_tecnico()
         self._cargar_tabla()
 
+    #Sincroniza los colores de las tarjetas y acentos de este módulo con el
+    #tema/modo claro-oscuro actual de la app. Se llama al construir la pantalla
+    #y cada vez que el usuario cambia de tema (ver main.py).
     def actualizar_tema(self):
-        """Sincroniza los colores de las tarjetas y acentos de este módulo con el
-        tema/modo claro-oscuro actual de la app. Se llama al construir la pantalla
-        y cada vez que el usuario cambia de tema (ver main.py)."""
+
         colores= _colores_tema(self.main_window)
         self.setStyleSheet(f"""
             QToolTip {{
@@ -1139,13 +1179,15 @@ class ModuloProfesores(QWidget):
 
     #ANIMACIONES — capa puramente visual: no participan en la lógica de negocio, permisos, validación ni guardado
     #de datos.
+    #Actualiza el chip '👨🏫 N profesores' de la cabecera con una pequeña
+    #animación de conteo, en vez de un cambio brusco de texto.
     def _animar_contador(self, valor_final):
-        """Actualiza el chip '👨🏫 N profesores' de la cabecera con una pequeña
- animación de conteo, en vez de un cambio brusco de texto."""
+
         if not hasattr(self, "chip_contador"):
             return
 
         def texto(v):
+
             return f"{html_icono_emoji(EMOJI_PROFESOR, 15)} {v} profesor" + ("es" if v != 1 else "")
         valor_inicial= self._contador_valor_actual
         self._contador_valor_actual= valor_final
@@ -1161,10 +1203,11 @@ class ModuloProfesores(QWidget):
         anim.start()
         self._anim_contador= anim  #referencia viva mientras corre la animación
 
+    #Fundido breve al recargar la tabla, como confirmación visual de que los
+    #datos se actualizaron. El efecto se retira apenas termina para no afectar
+    #el rendimiento del scroll normal de la tabla el resto del tiempo.
     def _animar_fundido_tabla(self):
-        """Fundido breve al recargar la tabla, como confirmación visual de que los
-        datos se actualizaron. El efecto se retira apenas termina para no afectar
-        el rendimiento del scroll normal de la tabla el resto del tiempo."""
+
         efecto= QGraphicsOpacityEffect(self.tabla)
         self.tabla.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", self)
@@ -1176,10 +1219,11 @@ class ModuloProfesores(QWidget):
         anim.start()
         self._anim_tabla= anim  #referencia viva mientras corre la animación
 
+    #Resplandor breve de color en el borde de la tarjeta del formulario, a
+    #modo de confirmación visual (verde=éxito, rojo=aviso). Solo anima la
+    #sombra ya existente de la tarjeta: no toca ningún dato ni campo.
     def _destello(self, color_hex="#22C55E"):
-        """Resplandor breve de color en el borde de la tarjeta del formulario, a
-        modo de confirmación visual (verde=éxito, rojo=aviso). Solo anima la
-        sombra ya existente de la tarjeta: no toca ningún dato ni campo."""
+
         if not hasattr(self, "_sombra_formulario"):
             return
         grupo= QParallelAnimationGroup(self)

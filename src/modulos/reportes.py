@@ -45,15 +45,18 @@ TAM_PAGINA_REPORTES= 25
 
 #Utilidades visuales — puramente estéticas, no tocan datos ni lógica.
 def _hex_a_rgba(color_hex, alpha):
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Lee la paleta/tema activo de la ventana principal para que las tarjetas
+#de este módulo respeten el tema y el modo claro/oscuro elegidos.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que las tarjetas
-    de este módulo respeten el tema y el modo claro/oscuro elegidos."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -69,8 +72,9 @@ def _colores_tema(main_window):
                 "txt_sec": "#64748B", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#Quita mayúsculas y acentos para que la búsqueda no sea estricta.
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que la búsqueda no sea estricta."""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -78,12 +82,13 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#Icono de la pestaña 'Estudiantes en Riesgo': un busto de persona (cabeza
+#+ hombros) dibujado a mano en un solo tono gris neutro, sin ningún otro
+#color -a diferencia del emoji EMOJI_ESTUDIANTE_RIESGO (colorido) que usan
+#Dashboard y el resto de la app-, para que en la barra de pestañas se vea
+#como un icono plano y sobrio en vez de un emoji llamativo.
 def _icono_estudiante_gris(tamano=16, color="#94A3B8"):
-    """Icono de la pestaña 'Estudiantes en Riesgo': un busto de persona (cabeza
-    + hombros) dibujado a mano en un solo tono gris neutro, sin ningún otro
-    color -a diferencia del emoji EMOJI_ESTUDIANTE_RIESGO (colorido) que usan
-    Dashboard y el resto de la app-, para que en la barra de pestañas se vea
-    como un icono plano y sobrio en vez de un emoji llamativo."""
+
     pix= QPixmap(tamano, tamano)
     pix.fill(Qt.GlobalColor.transparent)
     p= QPainter(pix)
@@ -105,30 +110,34 @@ def _icono_estudiante_gris(tamano=16, color="#94A3B8"):
     return QIcon(pix)
 
 
+#Fija el tamaño de página de un ControlPaginacion de forma defensiva
+#(se prueba con varios nombres de atributo posibles) para que Reportes
+#liste 25 resultados por página en cada tabla, tal como en el resto de
+#módulos que ya personalizan este valor (ver calendario.py).
 def _forzar_tam_pagina(control, valor=TAM_PAGINA_REPORTES):
-    """Fija el tamaño de página de un ControlPaginacion de forma defensiva
-    (se prueba con varios nombres de atributo posibles) para que Reportes
-    liste 25 resultados por página en cada tabla, tal como en el resto de
-    módulos que ya personalizan este valor (ver calendario.py)."""
+
     for atributo in ("tam_pagina", "por_pagina", "page_size", "_tam_pagina"):
         if hasattr(control, atributo):
             setattr(control, atributo, valor)
             break
 
 
+#Icono de lupa dibujado a mano con QPainter para las barras de búsqueda.
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter para las barras de búsqueda."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -139,11 +148,12 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#QPushButton normal que además "respira" con una sombra suave al pasar
+#el mouse por encima. Solo anima mientras el cursor está sobre el botón.
 class BotonAnimado(QPushButton):
-    """QPushButton normal que además "respira" con una sombra suave al pasar
-    el mouse por encima. Solo anima mientras el cursor está sobre el botón."""
 
     def __init__(self, texto="", parent=None):
+
         super().__init__(texto, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._sombra= QGraphicsDropShadowEffect(self)
@@ -156,27 +166,31 @@ class BotonAnimado(QPushButton):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _animar_sombra(self, hasta):
+
         self._anim.stop()
         self._anim.setStartValue(self._sombra.blurRadius())
         self._anim.setEndValue(hasta)
         self._anim.start()
 
     def enterEvent(self, event):
+
         if self.isEnabled():
             self._animar_sombra(18)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(0)
         super().leaveEvent(event)
 
 
+#Indicador circular de porcentaje dibujado con QPainter, con animación
+#de barrido del arco al cambiar de valor (sin temporizadores en reposo:
+#solo repinta mientras la animación está corriendo).
 class AnilloProgreso(QWidget):
-    """Indicador circular de porcentaje dibujado con QPainter, con animación
-    de barrido del arco al cambiar de valor (sin temporizadores en reposo:
-    solo repinta mientras la animación está corriendo)."""
 
     def __init__(self, color="#2563EB", grosor=9, parent=None):
+
         super().__init__(parent)
         self._valor= 0.0
         self._color= QColor(color)
@@ -187,23 +201,28 @@ class AnilloProgreso(QWidget):
         self._anim= None
 
     def _leer_valor(self):
+
         return self._valor
 
     def _poner_valor(self, v):
+
         self._valor= max(0.0, min(100.0, v))
         self.update()
 
     valor= Property(float, _leer_valor, _poner_valor)
 
     def establecer_color(self, color_hex):
+
         self._color= QColor(color_hex)
         self.update()
 
     def establecer_color_texto(self, color_hex):
+
         self._color_texto= QColor(color_hex)
         self.update()
 
     def animar_a(self, nuevo_valor, duracion=700):
+
         nuevo_valor= max(0.0, min(100.0, nuevo_valor or 0.0))
         anim= QPropertyAnimation(self, b"valor", self)
         anim.setStartValue(self._valor)
@@ -214,6 +233,7 @@ class AnilloProgreso(QWidget):
         self._anim= anim
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         lado= min(self.width(), self.height()) - self._grosor
@@ -237,11 +257,12 @@ class AnilloProgreso(QWidget):
         painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, f"{self._valor:.0f}%")
 
 
+#Mini gráfico de barras dibujado a mano, sin dependencias externas,
+#con una pequeña animación de "crecimiento" al cargar los datos.
 class MiniBarras(QWidget):
-    """Mini gráfico de barras dibujado a mano, sin dependencias externas,
-    con una pequeña animación de "crecimiento" al cargar los datos."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._categorias= []
         self._valores= []
@@ -261,23 +282,28 @@ class MiniBarras(QWidget):
         self.setMouseTracking(True)
 
     def _leer_progreso(self):
+
         return self._progreso
 
     def _poner_progreso(self, v):
+
         self._progreso= v
         self.update()
 
     progreso= Property(float, _leer_progreso, _poner_progreso)
 
     def establecer_color(self, color_hex):
+
         self._color= QColor(color_hex)
         self.update()
 
     def establecer_color_texto(self, color_hex):
+
         self._color_texto= QColor(color_hex)
         self.update()
 
     def establecer_datos(self, categorias, valores, maximo=None):
+
         self._categorias= list(categorias)
         self._valores= list(valores)
         self._maximo= maximo or (max(valores) if valores else 1) or 1
@@ -292,6 +318,7 @@ class MiniBarras(QWidget):
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if not self._valores:
@@ -342,6 +369,7 @@ class MiniBarras(QWidget):
             self._zonas_barras.append((rect_etiqueta, cat))
 
     def mouseMoveEvent(self, event):
+
         pos= event.position() if hasattr(event, "position") else event.pos()
         for rect, cat in self._zonas_barras:
             if rect.contains(pos):
@@ -352,15 +380,17 @@ class MiniBarras(QWidget):
         super().mouseMoveEvent(event)
 
     def leaveEvent(self, event):
+
         QToolTip.hideText()
         super().leaveEvent(event)
 
 
+#Tarjeta con icono + valor grande animado (conteo), con una pequeña
+#elevación de sombra al pasar el mouse por encima.
 class TarjetaKPI(QFrame):
-    """Tarjeta con icono + valor grande animado (conteo), con una pequeña
-    elevación de sombra al pasar el mouse por encima."""
 
     def __init__(self, icono, titulo, color_acento="#2563EB", parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaKPI")
         self._color_acento= color_acento
@@ -397,6 +427,7 @@ class TarjetaKPI(QFrame):
         layout.addWidget(self.lbl_titulo)
 
     def establecer_valor_animado(self, valor_final, sufijo=""):
+
         valor_inicial= self._valor_actual
         self._valor_actual= valor_final
         if valor_inicial == valor_final:
@@ -412,6 +443,7 @@ class TarjetaKPI(QFrame):
         self._anim_valor= anim
 
     def enterEvent(self, event):
+
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(26)
@@ -419,6 +451,7 @@ class TarjetaKPI(QFrame):
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(14)
@@ -426,11 +459,12 @@ class TarjetaKPI(QFrame):
         super().leaveEvent(event)
 
 
+#Variante de tarjeta KPI para métricas porcentuales: icono + título a
+#la izquierda, anillo de progreso animado a la derecha.
 class TarjetaKPIAnillo(QFrame):
-    """Variante de tarjeta KPI para métricas porcentuales: icono + título a
-    la izquierda, anillo de progreso animado a la derecha."""
 
     def __init__(self, icono, titulo, color="#22C55E", parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaKPI")
 
@@ -466,9 +500,11 @@ class TarjetaKPIAnillo(QFrame):
         layout.addLayout(bloque, 1)
 
     def establecer_porcentaje(self, valor):
+
         self.anillo.animar_a(valor)
 
     def enterEvent(self, event):
+
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(26)
@@ -476,6 +512,7 @@ class TarjetaKPIAnillo(QFrame):
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(14)
@@ -485,7 +522,9 @@ class TarjetaKPIAnillo(QFrame):
 
 #Módulo principal
 class ModuloReportes(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self._paneles= {}
@@ -504,6 +543,7 @@ class ModuloReportes(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Reportes"
         registrar_atajo(self, self.main_window, "F5", "Actualizar todos los reportes", self.refrescar)
         registrar_atajo(self, self.main_window, "Ctrl+Shift+X", "Exportar reporte institucional (CSV)",
@@ -512,6 +552,7 @@ class ModuloReportes(QWidget):
     #Navegación desde otros módulos (p. ej. la tarjeta KPI "Estudiantes en Riesgo" del Dashboard, tanto el
     #institucional como el de Docentes)
     def showEvent(self, event):
+
         super().showEvent(event)
         pendiente= getattr(self.main_window, "_pestana_pendiente_dashboard", None)
         if pendiente:
@@ -522,6 +563,7 @@ class ModuloReportes(QWidget):
 
     #Construcción de la interfaz
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -611,45 +653,55 @@ class ModuloReportes(QWidget):
         layout_raiz.addWidget(scroll, 1)
 
     def _es_politecnico(self):
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
     def _es_universidad(self):
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
     def _es_personalizado(self):
+
         try:
-            tipo, _personalizados = self.main_window._tipo_institucion()
+
+            tipo, _personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Personalizado"
 
     def _ambos_modulos_tecnicos_activos(self):
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Personalizado" and "Politécnico" in personalizados and "Universidad" in personalizados
 
     def _es_docente(self):
+
         #OJO: el rol se guarda/compara en toda la app como "Profesor" (ver configuracion.py: `rol in ("Profesor",
         #"Administrativo")`), no como "Docente". Con el valor equivocado esta función nunca daba True y el profesor
         #terminaba viendo TODAS las pestañas institucionales.
         return getattr(self.main_window, "rol_actual", None) == "Profesor"
 
+    #IDs de las materias que imparte el docente logueado -como titular o
+    #como co-docente (materia_profesores)-. Se cachea en la instancia
+    #porque este módulo la consulta varias veces (riesgo, asistencia,
+    #exportaciones) y las materias de alguien no cambian mientras tiene la
+    #sesión abierta.
     def _materias_docente(self):
-        """IDs de las materias que imparte el docente logueado -como titular o
-        como co-docente (materia_profesores)-. Se cachea en la instancia
-        porque este módulo la consulta varias veces (riesgo, asistencia,
-        exportaciones) y las materias de alguien no cambian mientras tiene la
-        sesión abierta."""
+
         if not self._es_docente():
             return None  #None = "sin restricción" (no es docente)
         if self._cache_materias_docente is not None:
@@ -668,12 +720,13 @@ class ModuloReportes(QWidget):
         conn.close()
         return self._cache_materias_docente
 
+    #Devuelve (fragmento_sql, parametros) para añadir a un WHERE/AND y
+    #restringir `columna_materia_id` a las materias del docente logueado.
+    #Si no es docente (o no tiene materias), devuelve ("", []) -sin
+    #restricción- para no tocar el comportamiento de Administrador/
+    #Director/Coordinador.
     def _filtro_sql_materias_docente(self, columna_materia_id):
-        """Devuelve (fragmento_sql, parametros) para añadir a un WHERE/AND y
-        restringir `columna_materia_id` a las materias del docente logueado.
-        Si no es docente (o no tiene materias), devuelve ("", []) -sin
-        restricción- para no tocar el comportamiento de Administrador/
-        Director/Coordinador."""
+
         materias= self._materias_docente()
         if materias is None:
             return "", []
@@ -683,6 +736,7 @@ class ModuloReportes(QWidget):
         return f" AND {columna_materia_id} IN ({placeholders})", list(materias)
 
     def _animar_cambio_tab(self, indice):
+
         widget= self.tabs.widget(indice)
         if widget is None:
             return
@@ -698,11 +752,13 @@ class ModuloReportes(QWidget):
         self._anim_tab= anim
 
     def _animar_chip(self, chip, valor, singular, plural=None):
+
         plural= plural or (singular + "s")
         texto= f"🔎 {valor} " + (singular if valor == 1 else plural)
         chip.setText(texto)
 
     def _animar_fundido_tabla(self, tabla):
+
         efecto= QGraphicsOpacityEffect(tabla)
         tabla.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", self)
@@ -715,17 +771,18 @@ class ModuloReportes(QWidget):
         tabla._anim_fundido= anim  #referencia viva mientras corre la animación
 
     #Barra de filtros reutilizable (búsqueda + curso + sección / búsqueda + especialidad, según la tabla)
+    #Crea la barra de filtros compartida por las pestañas de listado
+    #(Riesgo, Excelencia, Asistencia, Rendimiento Técnico): una sola fila
+    #SIEMPRE VISIBLE con buscador + "✖ Limpiar" + contador de resultados,
+    #y un botón "☰ Filtros" que abre una ventanita (no modal) con Nivel
+    #Educativo, Área Técnica/Carrera y Curso/Sección (o Especialidad, en
+    #la variante con_especialidad) — mismo patrón que
+    #calendario.py/banco_tareas.py/observaciones.py. Los widgets viven
+    #exactamente igual que antes (mismos objetos, mismas señales); lo
+    #único que cambia es dónde se dibujan.
     def _crear_barra_filtros(self, placeholder_busqueda, con_curso_seccion=True, con_especialidad=False,
                               titulo_filtros= "Filtros"):
-        """Crea la barra de filtros compartida por las pestañas de listado
-        (Riesgo, Excelencia, Asistencia, Rendimiento Técnico): una sola fila
-        SIEMPRE VISIBLE con buscador + "✖ Limpiar" + contador de resultados,
-        y un botón "☰ Filtros" que abre una ventanita (no modal) con Nivel
-        Educativo, Área Técnica/Carrera y Curso/Sección (o Especialidad, en
-        la variante con_especialidad) — mismo patrón que
-        calendario.py/banco_tareas.py/observaciones.py. Los widgets viven
-        exactamente igual que antes (mismos objetos, mismas señales); lo
-        único que cambia es dónde se dibujan."""
+
         frame= QFrame()
         frame.setObjectName("TarjetaFiltros")
         lay_frame= QVBoxLayout(frame)
@@ -881,6 +938,7 @@ class ModuloReportes(QWidget):
             lay_dialogo.addLayout(fila_botones)
 
             def _abrir_dialogo(_checked=False, d=dialogo_filtros):
+
                 d.show()
                 d.raise_()
                 d.activateWindow()
@@ -901,11 +959,13 @@ class ModuloReportes(QWidget):
         }
 
     def _conectar_filtros(self, panel, recargar_fn):
+
         debounce= QTimer(self)
         debounce.setSingleShot(True)
         debounce.setInterval(180)
 
         def _al_disparar_debounce():
+
             panel["paginacion"].reiniciar()
             recargar_fn()
 
@@ -915,6 +975,7 @@ class ModuloReportes(QWidget):
 
         if panel.get("combo_nivel") is not None:
             def _en_cambio_nivel():
+
                 self._cargar_combo_cursos(panel["combo_curso"], panel.get("combo_nivel"))
                 if panel.get("combo_seccion") is not None:
                     self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"], panel.get("combo_nivel"))
@@ -924,6 +985,7 @@ class ModuloReportes(QWidget):
 
         if panel.get("combo_curso") is not None:
             def _en_cambio_curso():
+
                 grado_id= panel["combo_curso"].currentData()
                 if panel.get("combo_seccion") is not None:
                     self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"], panel.get("combo_nivel"))
@@ -933,18 +995,21 @@ class ModuloReportes(QWidget):
 
         if panel.get("combo_seccion") is not None:
             def _en_cambio_seccion():
+
                 panel["paginacion"].reiniciar()
                 recargar_fn()
             panel["combo_seccion"].currentIndexChanged.connect(lambda _i: _en_cambio_seccion())
 
         if panel.get("combo_especialidad") is not None:
             def _en_cambio_especialidad():
+
                 panel["paginacion"].reiniciar()
                 recargar_fn()
             panel["combo_especialidad"].currentIndexChanged.connect(lambda _i: _en_cambio_especialidad())
 
         if panel.get("combo_filtro_especialidad_rep") is not None:
             def _en_cambio_filtro_tecnico_rep():
+
                 panel["paginacion"].reiniciar()
                 recargar_fn()
             panel["combo_filtro_especialidad_rep"].currentIndexChanged.connect(
@@ -953,6 +1018,7 @@ class ModuloReportes(QWidget):
                 lambda _i: _en_cambio_filtro_tecnico_rep())
 
         def _limpiar():
+
             panel["buscar"].blockSignals(True)
             panel["buscar"].clear()
             panel["buscar"].blockSignals(False)
@@ -988,14 +1054,16 @@ class ModuloReportes(QWidget):
         panel["btn_limpiar"].clicked.connect(_limpiar)
 
     def _cargar_combo_cursos(self, combo, combo_nivel=None):
+
         if combo_nivel is not None:
             poblar_combo_nivel_educativo(combo_nivel)
         nivel= combo_nivel.currentData() if combo_nivel is not None else None
         poblar_combo_curso(combo, incluir_todos=False, secciones_permitidas=secciones_del_nivel_educativo(nivel))
 
+    #Repuebla combo_seccion en cascada según combo_curso (o "Todas las
+    #secciones" mezcladas si no se pasa combo_curso / está en "Todos").
     def _cargar_combo_secciones(self, combo_seccion, combo_curso=None, combo_nivel=None):
-        """Repuebla combo_seccion en cascada según combo_curso (o "Todas las
-        secciones" mezcladas si no se pasa combo_curso / está en "Todos")."""
+
         if combo_curso is None:
             combo_curso= QComboBox()
             combo_curso.addItem("Todos los cursos", None)
@@ -1003,6 +1071,7 @@ class ModuloReportes(QWidget):
         cascada_seccion_por_curso(combo_curso, combo_seccion, secciones_permitidas=secciones_del_nivel_educativo(nivel))
 
     def _cargar_combo_especialidades(self, combo):
+
         combo.blockSignals(True)
         seleccion_previa= combo.currentData()
         combo.clear()
@@ -1010,6 +1079,7 @@ class ModuloReportes(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
             filas= c.fetchall()
         except Exception:
@@ -1021,12 +1091,13 @@ class ModuloReportes(QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
+    #Puebla los combos de Área Técnica/Carrera del panel compartido de
+    #filtros de reportes (ver _crear_barra_filtros). Igual que en el resto
+    #de la app: solo se muestran si la institución tiene ese módulo
+    #activo, y en modo Personalizado se agrega la opción "No Área
+    #Técnica"/"No Carrera" (dato=0, distinto de None='Todas').
     def _cargar_combo_especialidad_carrera_rep(self, panel):
-        """Puebla los combos de Área Técnica/Carrera del panel compartido de
-        filtros de reportes (ver _crear_barra_filtros). Igual que en el resto
-        de la app: solo se muestran si la institución tiene ese módulo
-        activo, y en modo Personalizado se agrega la opción "No Área
-        Técnica"/"No Carrera" (dato=0, distinto de None='Todas')."""
+
         combo_esp= panel.get("combo_filtro_especialidad_rep")
         combo_car= panel.get("combo_filtro_carrera_rep")
         if combo_esp is None:
@@ -1071,10 +1142,11 @@ class ModuloReportes(QWidget):
             combo_car.setCurrentIndex(idx if idx >= 0 else 0)
             combo_car.blockSignals(False)
 
+    #Filtra en Python una lista de sqlite3.Row de estudiantes según la
+    #búsqueda de texto y los combos de curso/sección/área técnica/carrera
+    #del panel dado.
     def _aplicar_filtros_estudiante(self, filas, panel):
-        """Filtra en Python una lista de sqlite3.Row de estudiantes según la
-        búsqueda de texto y los combos de curso/sección/área técnica/carrera
-        del panel dado."""
+
         texto= _normalizar(panel["buscar"].text().strip())
         grado_id= panel["combo_curso"].currentData() if panel.get("combo_curso") else None
         seccion_id= panel["combo_seccion"].currentData() if panel.get("combo_seccion") else None
@@ -1113,6 +1185,7 @@ class ModuloReportes(QWidget):
 
     #---------------- INSTITUCIONAL ----------------
     def _tab_institucional(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(16)
@@ -1155,6 +1228,7 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_institucional(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT COUNT(*) n FROM estudiantes WHERE estado='Activo'")
@@ -1224,7 +1298,8 @@ class ModuloReportes(QWidget):
             self.mini_barras_materias.establecer_datos([], [])
 
     def _exportar_institucional_csv(self):
-        ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Reporte", "reporte_institucional.csv", "CSV (*.csv)")
+
+        ruta, _= QFileDialog.getSaveFileName(self, "Exportar Reporte", "reporte_institucional.csv", "CSV (*.csv)")
         if not ruta:
             return
         with open(ruta, "w", newline="", encoding="utf-8") as f:
@@ -1244,6 +1319,7 @@ class ModuloReportes(QWidget):
 
     #---------------- RIESGO ----------------
     def _tab_riesgo(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         if self._es_docente():
@@ -1306,6 +1382,7 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_riesgo(self):
+
         panel= self._paneles["riesgo"]
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1319,7 +1396,7 @@ class ModuloReportes(QWidget):
         nota_min_general= resolver_nota_minima(cfg, nivel_educativo=None)
         #Si es un docente, el promedio "de riesgo" se calcula SOLO con las calificaciones de las materias que él
         #imparte -no con el promedio general del estudiante en todas sus materias, que no le compete.
-        filtro_materia, params_materia = self._filtro_sql_materias_docente("calificaciones.materia_id")
+        filtro_materia, params_materia= self._filtro_sql_materias_docente("calificaciones.materia_id")
         c.execute(f"""SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellidos, estudiantes.matricula,
                      secciones.id as seccion_id, secciones.grado_id,
                      estudiantes.especialidad_id, estudiantes.carrera_id,
@@ -1342,7 +1419,7 @@ class ModuloReportes(QWidget):
 
         filas_filtradas= self._aplicar_filtros_estudiante(filas, panel)
         panel["paginacion"].establecer_total(len(filas_filtradas))
-        inicio, fin = panel["paginacion"].rango_actual()
+        inicio, fin= panel["paginacion"].rango_actual()
         pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_riesgo):
@@ -1358,6 +1435,7 @@ class ModuloReportes(QWidget):
 
     #---------------- EXCELENCIA ----------------
     def _tab_excelencia(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         if self._es_docente():
@@ -1421,6 +1499,7 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_excelencia(self):
+
         panel= self._paneles["excelencia"]
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1428,7 +1507,7 @@ class ModuloReportes(QWidget):
         #truncarse a los primeros 20 lugares como antes. Si es un docente, igual que en "Estudiantes en Riesgo", el
         #promedio se calcula SOLO con las calificaciones de las materias que él imparte -no con el promedio general del
         #estudiante en todas sus materias, que no le compete.
-        filtro_materia, params_materia = self._filtro_sql_materias_docente("calificaciones.materia_id")
+        filtro_materia, params_materia= self._filtro_sql_materias_docente("calificaciones.materia_id")
         c.execute(f"""SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellidos, estudiantes.matricula,
                      secciones.id as seccion_id, secciones.grado_id,
                      estudiantes.especialidad_id, estudiantes.carrera_id,
@@ -1450,7 +1529,7 @@ class ModuloReportes(QWidget):
 
         filas_filtradas= self._aplicar_filtros_estudiante(filas, panel)
         panel["paginacion"].establecer_total(len(filas_filtradas))
-        inicio, fin = panel["paginacion"].rango_actual()
+        inicio, fin= panel["paginacion"].rango_actual()
         pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_excelencia):
@@ -1471,6 +1550,7 @@ class ModuloReportes(QWidget):
 
     #---------------- ASISTENCIA ----------------
     def _tab_asistencia(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         if self._es_docente():
@@ -1534,13 +1614,14 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_asistencia(self):
+
         panel= self._paneles["asistencia"]
         conn= obtener_conexion()
         c= conn.cursor()
         #Si es un docente, el consolidado solo debe contar la asistencia tomada en SUS materias -cada registro de
         #asistencia ya está atado a una materia y una fecha concretas, así que filtrar por materia_id ya deja fuera,
         #automáticamente, cualquier día/clase que no sea suya.
-        filtro_materia, params_materia = self._filtro_sql_materias_docente("asistencia.materia_id")
+        filtro_materia, params_materia= self._filtro_sql_materias_docente("asistencia.materia_id")
         #Una sola consulta agregada en vez de 2 SELECT por estudiante: con cientos de estudiantes esto evita cientos de
         #idas y vueltas a la base de datos y mantiene la tabla fluida al filtrar/paginar.
         c.execute(f"""SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellidos, estudiantes.matricula,
@@ -1559,7 +1640,7 @@ class ModuloReportes(QWidget):
 
         filas_filtradas= self._aplicar_filtros_estudiante(filas, panel)
         panel["paginacion"].establecer_total(len(filas_filtradas))
-        inicio, fin = panel["paginacion"].rango_actual()
+        inicio, fin= panel["paginacion"].rango_actual()
         pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_asistencia):
@@ -1579,6 +1660,7 @@ class ModuloReportes(QWidget):
 
     #---------------- RENDIMIENTO TÉCNICO (Politécnico) ----------------
     def _tab_rendimiento_tecnico(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         info= QLabel("Rendimiento académico desglosado por materia técnica y especialidad, "
@@ -1625,6 +1707,7 @@ class ModuloReportes(QWidget):
         self._paneles["rendimiento_tecnico"]= panel
 
         def _recargar():
+
             panel["paginacion"].reiniciar()
             self._cargar_rendimiento_tecnico()
 
@@ -1637,6 +1720,7 @@ class ModuloReportes(QWidget):
         panel["combo_especialidad"].currentIndexChanged.connect(lambda _i: _recargar())
 
         def _limpiar():
+
             panel["buscar"].blockSignals(True)
             panel["buscar"].clear()
             panel["buscar"].blockSignals(False)
@@ -1667,6 +1751,7 @@ class ModuloReportes(QWidget):
         return w
 
     def _obtener_rendimiento_tecnico(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT nota_minima FROM configuracion WHERE id=1")
@@ -1736,6 +1821,7 @@ class ModuloReportes(QWidget):
         return resultado
 
     def _filtrar_rendimiento_tecnico(self, filas, panel):
+
         texto= _normalizar(panel["buscar"].text().strip())
         especialidad_id= panel["combo_especialidad"].currentData() if panel.get("combo_especialidad") else None
         resultado= []
@@ -1750,6 +1836,7 @@ class ModuloReportes(QWidget):
         return resultado
 
     def _cargar_rendimiento_tecnico(self):
+
         if not hasattr(self, "tabla_rendimiento_tecnico"):
             return
         panel= self._paneles.get("rendimiento_tecnico")
@@ -1757,7 +1844,7 @@ class ModuloReportes(QWidget):
         filas_filtradas= self._filtrar_rendimiento_tecnico(filas, panel) if panel else filas
 
         panel["paginacion"].establecer_total(len(filas_filtradas))
-        inicio, fin = panel["paginacion"].rango_actual()
+        inicio, fin= panel["paginacion"].rango_actual()
         pagina= filas_filtradas[inicio:fin]
 
         with tabla_pausada(self.tabla_rendimiento_tecnico):
@@ -1774,23 +1861,24 @@ class ModuloReportes(QWidget):
         self._animar_fundido_tabla(self.tabla_rendimiento_tecnico)
 
     def _exportar_rendimiento_tecnico_pdf(self):
+
         recursos= self._cargar_reportlab_graphics()
         if recursos is None:
             return
-        letter, canvas, Drawing, String, VerticalBarChart, Pie, colors = recursos
+        letter, canvas, Drawing, String, VerticalBarChart, Pie, colors= recursos
         filas= self._obtener_rendimiento_tecnico()
         if not filas:
             mostrar_mensaje("advertencia", "Sin datos",
                            "No hay calificaciones registradas en materias técnicas para generar el reporte.", self)
             return
-        ruta, _ = QFileDialog.getSaveFileName(self, "Guardar Reporte de Rendimiento Técnico",
+        ruta, _= QFileDialog.getSaveFileName(self, "Guardar Reporte de Rendimiento Técnico",
                                                "reporte_rendimiento_tecnico.pdf", "PDF (*.pdf)")
         if not ruta:
             return
         total_aprobados= sum(f["aprobados"] for f in filas)
         total_reprobados= sum(f["reprobados"] for f in filas)
         institucion= _datos_institucion()
-        ancho, alto = letter
+        ancho, alto= letter
         cvs= canvas.Canvas(ruta, pagesize=letter)
         y= _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte de Rendimiento por Materia Técnica")
         cvs.setFont("Helvetica", 9)
@@ -1839,6 +1927,7 @@ class ModuloReportes(QWidget):
 
     #---------------- REPORTES PDF CON GRÁFICOS ----------------
     def _tab_pdf_graficos(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         info= QLabel("Genera reportes PDF con el logotipo institucional y gráficos de barras/pastel "
@@ -1859,7 +1948,9 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_reportlab_graphics(self):
+
         try:
+
             from reportlab.lib.pagesizes import letter
             from reportlab.pdfgen import canvas
             from reportlab.graphics.shapes import Drawing, String
@@ -1873,6 +1964,7 @@ class ModuloReportes(QWidget):
             return None
 
     def _dibujar_pie(self, cvs, Drawing, Pie, colors, x, y, ancho, alto, titulo, etiquetas, valores, paleta_colores):
+
         from reportlab.graphics.shapes import String
         dibujo= Drawing(ancho, alto)
         pie= Pie()
@@ -1893,6 +1985,7 @@ class ModuloReportes(QWidget):
 
     def _dibujar_barras(self, cvs, Drawing, VerticalBarChart, colors, x, y, ancho, alto, titulo,
                         categorias, valores, color_barra):
+
         from reportlab.graphics.shapes import String
         dibujo= Drawing(ancho, alto)
         grafico= VerticalBarChart()
@@ -1914,10 +2007,11 @@ class ModuloReportes(QWidget):
         dibujo.drawOn(cvs, x, y)
 
     def _exportar_rendimiento_pdf(self):
+
         recursos= self._cargar_reportlab_graphics()
         if recursos is None:
             return
-        letter, canvas, Drawing, String, VerticalBarChart, Pie, colors = recursos
+        letter, canvas, Drawing, String, VerticalBarChart, Pie, colors= recursos
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT nota_minima, nota_minima_primaria, nota_minima_secundaria,
@@ -1944,7 +2038,7 @@ class ModuloReportes(QWidget):
         if not promedios:
             mostrar_mensaje("advertencia", "Sin datos", "No hay calificaciones registradas para generar el reporte.", self)
             return
-        ruta, _ = QFileDialog.getSaveFileName(self, "Guardar Reporte de Rendimiento",
+        ruta, _= QFileDialog.getSaveFileName(self, "Guardar Reporte de Rendimiento",
                                                "reporte_rendimiento.pdf", "PDF (*.pdf)")
         if not ruta:
             return
@@ -1960,7 +2054,7 @@ class ModuloReportes(QWidget):
         else:
             texto_nota_minima= str(resolver_nota_minima(cfg, nivel_educativo=None))
         institucion= _datos_institucion()
-        ancho, alto = letter
+        ancho, alto= letter
         cvs= canvas.Canvas(ruta, pagesize=letter)
         y= _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte de Rendimiento Académico")
         cvs.setFont("Helvetica", 9)
@@ -1995,10 +2089,11 @@ class ModuloReportes(QWidget):
         self._registrar_archivo_reciente(ruta)
 
     def _exportar_asistencia_pdf(self):
+
         recursos= self._cargar_reportlab_graphics()
         if recursos is None:
             return
-        letter, canvas, Drawing, String, VerticalBarChart, Pie, colors = recursos
+        letter, canvas, Drawing, String, VerticalBarChart, Pie, colors= recursos
         conn= obtener_conexion()
         c= conn.cursor()
         estados= ["Presente", "Ausente", "Tardanza", "Excusado"]
@@ -2019,12 +2114,12 @@ class ModuloReportes(QWidget):
         if sum(conteos) == 0:
             mostrar_mensaje("advertencia", "Sin datos", "No hay registros de asistencia para generar el reporte.", self)
             return
-        ruta, _ = QFileDialog.getSaveFileName(self, "Guardar Reporte de Asistencia",
+        ruta, _= QFileDialog.getSaveFileName(self, "Guardar Reporte de Asistencia",
                                                "reporte_asistencia.pdf", "PDF (*.pdf)")
         if not ruta:
             return
         institucion= _datos_institucion()
-        ancho, alto = letter
+        ancho, alto= letter
         cvs= canvas.Canvas(ruta, pagesize=letter)
         y= _dibujar_encabezado(cvs, ancho, alto, institucion, "Reporte General de Asistencia")
         cvs.setFont("Helvetica", 9)
@@ -2052,6 +2147,7 @@ class ModuloReportes(QWidget):
 
     #---------------- EXPORTACIÓN MASIVA (XLSX) ----------------
     def _tab_exportacion_masiva(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         if self._es_docente():
@@ -2082,7 +2178,9 @@ class ModuloReportes(QWidget):
         return w
 
     def _cargar_openpyxl(self):
+
         try:
+
             import openpyxl
             from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
             return openpyxl
@@ -2092,6 +2190,7 @@ class ModuloReportes(QWidget):
             return None
 
     def _hoja_con_estilos(self, wb, titulo_hoja, encabezados, filas, anchos=None):
+
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         ws= wb.active
         ws.title= titulo_hoja
@@ -2118,6 +2217,7 @@ class ModuloReportes(QWidget):
         return ws
 
     def _exportar_estudiantes_xlsx(self):
+
         if self._cargar_openpyxl() is None:
             return
         import openpyxl
@@ -2133,7 +2233,7 @@ class ModuloReportes(QWidget):
                      ORDER BY estudiantes.apellidos, estudiantes.nombre""")
         filas= [tuple(f) for f in c.fetchall()]
         conn.close()
-        ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Estudiantes", "estudiantes.xlsx", "Excel (*.xlsx)")
+        ruta, _= QFileDialog.getSaveFileName(self, "Exportar Estudiantes", "estudiantes.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
         wb= openpyxl.Workbook()
@@ -2147,6 +2247,7 @@ class ModuloReportes(QWidget):
         self._registrar_archivo_reciente(ruta)
 
     def _exportar_notas_xlsx(self):
+
         if self._cargar_openpyxl() is None:
             return
         import openpyxl
@@ -2154,7 +2255,7 @@ class ModuloReportes(QWidget):
         c= conn.cursor()
         #Igual que en la pestaña de Vista/Riesgo: si quien exporta es un docente, el Excel de calificaciones solo debe
         #traer SUS materias.
-        filtro_materia, params_materia = self._filtro_sql_materias_docente("calificaciones.materia_id")
+        filtro_materia, params_materia= self._filtro_sql_materias_docente("calificaciones.materia_id")
         c.execute(f"""SELECT (estudiantes.nombre || ' ' || IFNULL(estudiantes.apellidos,'')) as estudiante,
                      materias.nombre as materia, periodos.nombre as periodo, calificaciones.categoria,
                      calificaciones.descripcion, calificaciones.valor, calificaciones.peso
@@ -2166,7 +2267,7 @@ class ModuloReportes(QWidget):
                      ORDER BY estudiantes.apellidos, periodos.orden""", params_materia)
         filas= [tuple(f) for f in c.fetchall()]
         conn.close()
-        ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Notas", "calificaciones.xlsx", "Excel (*.xlsx)")
+        ruta, _= QFileDialog.getSaveFileName(self, "Exportar Notas", "calificaciones.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
         wb= openpyxl.Workbook()
@@ -2179,6 +2280,7 @@ class ModuloReportes(QWidget):
         self._registrar_archivo_reciente(ruta)
 
     def _exportar_asistencia_xlsx(self):
+
         if self._cargar_openpyxl() is None:
             return
         import openpyxl
@@ -2187,7 +2289,7 @@ class ModuloReportes(QWidget):
         #Mismo criterio que en el consolidado en pantalla: si es un docente, solo su/s materia/s (lo que
         #automáticamente limita esto a los días que él impartió esa clase, porque cada registro de asistencia ya está
         #atado a una materia y una fecha concretas).
-        filtro_materia, params_materia = self._filtro_sql_materias_docente("asistencia.materia_id")
+        filtro_materia, params_materia= self._filtro_sql_materias_docente("asistencia.materia_id")
         #Igual que en la tabla en pantalla: una sola consulta agregada en vez de 4 SELECT por estudiante.
         c.execute(f"""SELECT estudiantes.nombre, estudiantes.apellidos,
                      (grados.nombre || ' - ' || secciones.nombre) as seccion_nombre,
@@ -2214,7 +2316,7 @@ class ModuloReportes(QWidget):
             porcentaje= round((presentes / total) * 100, 1) if total else 0
             filas.append((f"{est['nombre']} {est['apellidos'] or ''}", est["seccion_nombre"] or "",
                           presentes, ausentes, tardanzas, excusados, f"{porcentaje}%"))
-        ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Asistencia", "consolidado_asistencia.xlsx", "Excel (*.xlsx)")
+        ruta, _= QFileDialog.getSaveFileName(self, "Exportar Asistencia", "consolidado_asistencia.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
         wb= openpyxl.Workbook()
@@ -2227,20 +2329,21 @@ class ModuloReportes(QWidget):
         self._registrar_archivo_reciente(ruta)
 
     #---------------- VISTA PREVIA Y EDICIÓN ----------------
+    #OJO -causa real del "congelamiento"/ventana fantasma al entrar a
+    #Reportes-: antes VisorEditorReportes (un widget pesado, con CUATRO
+    #páginas completas -hoja de cálculo, PDF, Word- y decenas de
+    #QToolButton con su propio QSS) se construía aquí mismo, de forma
+    #síncrona, en el momento en que se arma TODO el módulo -aunque el
+    #usuario nunca hubiera abierto esta pestaña-. Eso bloqueaba el hilo
+    #principal casi un segundo, y Windows muestra su overlay "fantasma"
+    #(blanco/atenuado) de ventana no responde durante ese bloqueo -lo que
+    #se percibía como una ventana que "aparece y tarda en desaparecer".
+    #Ahora esta pestaña solo pone un marcador de posición ligero, y el
+    #editor pesado real se construye la PRIMERA vez que el usuario
+    #realmente entra a esta pestaña (ver _construir_visor_editor_diferido,
+    #conectado a tabs.currentChanged).
     def _tab_vista_previa(self):
-        """OJO -causa real del "congelamiento"/ventana fantasma al entrar a
-        Reportes-: antes VisorEditorReportes (un widget pesado, con CUATRO
-        páginas completas -hoja de cálculo, PDF, Word- y decenas de
-        QToolButton con su propio QSS) se construía aquí mismo, de forma
-        síncrona, en el momento en que se arma TODO el módulo -aunque el
-        usuario nunca hubiera abierto esta pestaña-. Eso bloqueaba el hilo
-        principal casi un segundo, y Windows muestra su overlay "fantasma"
-        (blanco/atenuado) de ventana no responde durante ese bloqueo -lo que
-        se percibía como una ventana que "aparece y tarda en desaparecer".
-        Ahora esta pestaña solo pone un marcador de posición ligero, y el
-        editor pesado real se construye la PRIMERA vez que el usuario
-        realmente entra a esta pestaña (ver _construir_visor_editor_diferido,
-        conectado a tabs.currentChanged)."""
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
@@ -2259,19 +2362,20 @@ class ModuloReportes(QWidget):
         self._indice_pestana_vista_previa= self.tabs.count() if hasattr(self, "tabs") else None
         return w
 
+    #Conectado a tabs.currentChanged: al entrar por primera vez a la
+    #pestaña "Vista Previa y Edición" solo pone un marcador de posición
+    #LIVIANO (botón "Abrir archivo" + recientes de esta sesión, si hay) -
+    #instantáneo, sin construir nada pesado todavía. El editor pesado de
+    #verdad (VisorEditorReportes, con sus 4 páginas y toda su cinta de
+    #opciones) recién se construye cuando el usuario elige un archivo de
+    #verdad -ver _placeholder_elegir_archivo/_terminar_de_abrir_editor-,
+    #que es el único momento en el que hay trabajo pesado real que hacer
+    #de todas formas. Así, entrar a la pestaña es instantáneo, y la
+    #"ventana fantasma" (el bloqueo real de CPU al construir el editor)
+    #solo puede llegar a notarse DESPUÉS de elegir un archivo -nunca
+    #antes-.
     def _construir_visor_editor_diferido(self, indice):
-        """Conectado a tabs.currentChanged: al entrar por primera vez a la
-        pestaña "Vista Previa y Edición" solo pone un marcador de posición
-        LIVIANO (botón "Abrir archivo" + recientes de esta sesión, si hay) -
-        instantáneo, sin construir nada pesado todavía. El editor pesado de
-        verdad (VisorEditorReportes, con sus 4 páginas y toda su cinta de
-        opciones) recién se construye cuando el usuario elige un archivo de
-        verdad -ver _placeholder_elegir_archivo/_terminar_de_abrir_editor-,
-        que es el único momento en el que hay trabajo pesado real que hacer
-        de todas formas. Así, entrar a la pestaña es instantáneo, y la
-        "ventana fantasma" (el bloqueo real de CPU al construir el editor)
-        solo puede llegar a notarse DESPUÉS de elegir un archivo -nunca
-        antes-."""
+
         if self.visor_editor is not None or getattr(self, "_placeholder_visor_construido", False):
             return
         if indice != getattr(self, "_indice_pestana_vista_previa", None):
@@ -2279,14 +2383,15 @@ class ModuloReportes(QWidget):
         self._placeholder_visor_construido= True
         self._mostrar_placeholder_visor_editor()
 
+    #Construye el marcador de posición liviano (botón "Abrir
+    #archivo…" + recientes de esta sesión) y lo agrega al contenedor.
+    #Factorizado aparte de _construir_visor_editor_diferido porque
+    #también hace falta volver a mostrarlo cuando el usuario presiona
+    #"Terminar de editar" y se destruye el editor pesado -ver
+    #_terminar_editor_reportes()-, no solo la primera vez que se entra
+    #a la pestaña.
     def _mostrar_placeholder_visor_editor(self):
-        """Construye el marcador de posición liviano (botón "Abrir
-        archivo…" + recientes de esta sesión) y lo agrega al contenedor.
-        Factorizado aparte de _construir_visor_editor_diferido porque
-        también hace falta volver a mostrarlo cuando el usuario presiona
-        "Terminar de editar" y se destruye el editor pesado -ver
-        _terminar_editor_reportes()-, no solo la primera vez que se entra
-        a la pestaña."""
+
         contenedor= QWidget()
         cl= QVBoxLayout(contenedor)
         cl.addStretch()
@@ -2326,23 +2431,25 @@ class ModuloReportes(QWidget):
         self._contenedor_visor_editor.layout().addWidget(contenedor)
         self._placeholder_visor_editor= contenedor
 
+    #Botón "Abrir archivo" del marcador de posición liviano: el
+    #diálogo de selección es nativo del sistema operativo (no lo
+    #construye Qt "pesado", así que no bloquea nada) y, recién DESPUÉS
+    #de que el usuario elija de verdad un archivo, se construye el
+    #editor real -que es cuando corresponde ver cualquier indicador de
+    #carga, no antes.
     def _placeholder_elegir_archivo(self):
-        """Botón "Abrir archivo" del marcador de posición liviano: el
-        diálogo de selección es nativo del sistema operativo (no lo
-        construye Qt "pesado", así que no bloquea nada) y, recién DESPUÉS
-        de que el usuario elija de verdad un archivo, se construye el
-        editor real -que es cuando corresponde ver cualquier indicador de
-        carga, no antes."""
+
         from src.modulos.reportes_editor import FILTRO_ABRIR
-        ruta, _ = QFileDialog.getOpenFileName(self, "Abrir reporte", "", FILTRO_ABRIR)
+        ruta, _= QFileDialog.getOpenFileName(self, "Abrir reporte", "", FILTRO_ABRIR)
         if ruta:
             self._terminar_de_abrir_editor(ruta)
 
+    #Ya con un archivo elegido de verdad: AHORA sí se muestra un
+    #"Cargando…" y se construye el editor pesado -en dos pasos, igual
+    #que antes, para que el mensaje llegue a pintarse antes del bloqueo
+    #real de CPU-.
     def _terminar_de_abrir_editor(self, ruta):
-        """Ya con un archivo elegido de verdad: AHORA sí se muestra un
-        "Cargando…" y se construye el editor pesado -en dos pasos, igual
-        que antes, para que el mensaje llegue a pintarse antes del bloqueo
-        real de CPU-."""
+
         if self.visor_editor is not None:
             self.visor_editor.abrir_archivo(ruta)
             return
@@ -2358,6 +2465,7 @@ class ModuloReportes(QWidget):
         QApplication.processEvents()
 
         def _construir_de_verdad():
+
             self.visor_editor= VisorEditorReportes(self.main_window)
             self.visor_editor.solicitud_terminar_edicion.connect(self._terminar_editor_reportes)
             layout.removeWidget(etiqueta_carga)
@@ -2373,17 +2481,18 @@ class ModuloReportes(QWidget):
 
         QTimer.singleShot(0, _construir_de_verdad)
 
+    #Conectado a la señal VisorEditorReportes.solicitud_terminar_edicion,
+    #que se emite al presionar "Terminar de editar" en el panel de
+    #bienvenida del editor. A diferencia de solo salir de pantalla
+    #completa (donde el archivo -workbook de Excel, PDF abierto,
+    #contenido de Word- sigue vivo en memoria por si el usuario quiere
+    #"Continuar editando"), esto destruye la instancia entera de
+    #VisorEditorReportes -el widget pesado con sus 4 páginas y toda su
+    #cinta de opciones- y deja la pestaña otra vez en el mismo estado
+    #liviano (marcador de posición) que tiene la primera vez que se
+    #entra a ella, para no seguir gastando memoria/CPU sin necesidad.
     def _terminar_editor_reportes(self):
-        """Conectado a la señal VisorEditorReportes.solicitud_terminar_edicion,
-        que se emite al presionar "Terminar de editar" en el panel de
-        bienvenida del editor. A diferencia de solo salir de pantalla
-        completa (donde el archivo -workbook de Excel, PDF abierto,
-        contenido de Word- sigue vivo en memoria por si el usuario quiere
-        "Continuar editando"), esto destruye la instancia entera de
-        VisorEditorReportes -el widget pesado con sus 4 páginas y toda su
-        cinta de opciones- y deja la pestaña otra vez en el mismo estado
-        liviano (marcador de posición) que tiene la primera vez que se
-        entra a ella, para no seguir gastando memoria/CPU sin necesidad."""
+
         if getattr(self, "visor_editor", None) is None:
             return
         layout= self._contenedor_visor_editor.layout()
@@ -2392,15 +2501,16 @@ class ModuloReportes(QWidget):
         self.visor_editor= None
         self._mostrar_placeholder_visor_editor()
 
+    #Avisa al visor de la nueva pestaña que se acaba de generar un
+    #archivo, para que aparezca de inmediato en «Archivos recientes».
+    #Se guarda además en self._rutas_recientes_reportes -que vive en
+    #ESTE módulo, no en el editor- para que quede disponible incluso si
+    #el editor pesado todavía no se construyó (el usuario nunca entró a
+    #esa pestaña, o entró pero no eligió ningún archivo todavía): al
+    #construirlo se le pasan todas de una vez (ver
+    #_terminar_de_abrir_editor).
     def _registrar_archivo_reciente(self, ruta):
-        """Avisa al visor de la nueva pestaña que se acaba de generar un
-        archivo, para que aparezca de inmediato en «Archivos recientes».
-        Se guarda además en self._rutas_recientes_reportes -que vive en
-        ESTE módulo, no en el editor- para que quede disponible incluso si
-        el editor pesado todavía no se construyó (el usuario nunca entró a
-        esa pestaña, o entró pero no eligió ningún archivo todavía): al
-        construirlo se le pasan todas de una vez (ver
-        _terminar_de_abrir_editor)."""
+
         if not ruta:
             return
         self._rutas_recientes_reportes= getattr(self, "_rutas_recientes_reportes", [])
@@ -2412,6 +2522,7 @@ class ModuloReportes(QWidget):
 
     #------------------------------------------------------------
     def refrescar(self):
+
         #Para un docente, varias de estas pestañas ni siquiera se
         #construyeron (ver _build_ui): solo refrescamos lo que exista.
         #OJO: antes se comprobaba `hasattr(self, "tabla_institucional")`, pero esa pestaña nunca crea ninguna tabla con
@@ -2433,6 +2544,7 @@ class ModuloReportes(QWidget):
             f"{formatear_hora(datetime.now().strftime('%H:%M'), self.main_window)}")
 
     def actualizar_tema(self):
+
         colores= _colores_tema(self.main_window)
         #Barra de pestañas: mismo diseño "píldora" con degradado que en Configuración y Asistencia (se estiliza aparte,
         #solo sobre self.tabs, para no forzar un repintado de todo el módulo).

@@ -10,11 +10,13 @@ from PySide6.QtCore import QThread, Signal
 
 
 class WorkerHilo(QThread):
+
     terminado= Signal(object)   #trae lo que devolvió la tarea
     error= Signal(str)          #trae el mensaje de la excepción si la tarea falló
     progreso= Signal(int, int)  #avance opcional: actual, total
 
     def __init__(self, tarea, *args, **kwargs):
+
         super().__init__()
         self.tarea= tarea
         self.args= args
@@ -25,7 +27,9 @@ class WorkerHilo(QThread):
 
     #Corre la tarea en el hilo secundario. No se llama a mano: se usa start().
     def run(self):
+
         try:
+
             self.terminado.emit(self.tarea(*self.args, **self.kwargs))
         except Exception as error:
             import traceback
@@ -33,4 +37,5 @@ class WorkerHilo(QThread):
 
     #Para que la tarea pueda avisar el avance sin tener que conocer el worker entero.
     def emitir_progreso(self, actual, total):
+
         self.progreso.emit(actual, total)

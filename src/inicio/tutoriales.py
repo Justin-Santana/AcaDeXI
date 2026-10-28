@@ -1,33 +1,32 @@
-"""Sistema de tutoriales de primer uso de AcaDeXI.
-
-Un solo módulo (a propósito: así lo pidió el diseño) con:
-  - Persistencia de "ya vio este tutorial" (ver más abajo, es por tipo).
-  - Pantalla de elección (2 tarjetas: Rápido / Detallado).
-  - Modo Rápido: diálogo tipo carrusel de pasos, solo lectura.
-  - Modo Detallado: recorrido guiado real por la app con spotlight.
-  - Orquestador `ofrecer_tutorial(main_window, tipo)`, llamado desde
-    `mostrar_login()` en main.py, y reutilizable desde Configuración ▸ Mi
-    Cuenta (botón "Ver tutorial de nuevo").
-
-Hay DOS pares independientes ("general" y "docente"), cada uno con su propio
-estado de "visto" — completar uno no marca el otro:
-
-  - "general" (Admin/Director/Coordinador/Administrativo): el flag vive en
-    la tabla institucional `usuarios` (columna `tutorial_general_visto`,
-    migrada en bd.py) porque es una preferencia de LA CUENTA, no del equipo:
-    si el mismo usuario entra desde otra PC, no debería repetírsele.
-
-  - "docente" (rol Profesor): el flag vive en la base SQLite LOCAL por
-    equipo que ya usa datos_locales_docente.py para el resto del Modo
-    Docente (fotos, horario personal, overrides de Mis Estudiantes). Se
-    reutiliza ese mecanismo a propósito: todo lo del Modo Docente ya sigue
-    ese patrón "local a este equipo", y el tutorial encaja ahí mejor que en
-    la BD institucional.
-
-Ninguno de los dos flujos bloquea el arranque: siempre hay un botón
-"Saltar tutoriales por ahora" visible desde el primer instante, y ambos
-pueden relanzarse manualmente desde Configuración ▸ Mi Cuenta.
-"""
+#Sistema de tutoriales de primer uso de AcaDeXI.
+#
+#Un solo módulo (a propósito: así lo pidió el diseño) con:
+#- Persistencia de "ya vio este tutorial" (ver más abajo, es por tipo).
+#- Pantalla de elección (2 tarjetas: Rápido / Detallado).
+#- Modo Rápido: diálogo tipo carrusel de pasos, solo lectura.
+#- Modo Detallado: recorrido guiado real por la app con spotlight.
+#- Orquestador `ofrecer_tutorial(main_window, tipo)`, llamado desde
+#`mostrar_login()` en main.py, y reutilizable desde Configuración ▸ Mi
+#Cuenta (botón "Ver tutorial de nuevo").
+#
+#Hay DOS pares independientes ("general" y "docente"), cada uno con su propio
+#estado de "visto" — completar uno no marca el otro:
+#
+#- "general" (Admin/Director/Coordinador/Administrativo): el flag vive en
+#la tabla institucional `usuarios` (columna `tutorial_general_visto`,
+#migrada en bd.py) porque es una preferencia de LA CUENTA, no del equipo:
+#si el mismo usuario entra desde otra PC, no debería repetírsele.
+#
+#- "docente" (rol Profesor): el flag vive en la base SQLite LOCAL por
+#equipo que ya usa datos_locales_docente.py para el resto del Modo
+#Docente (fotos, horario personal, overrides de Mis Estudiantes). Se
+#reutiliza ese mecanismo a propósito: todo lo del Modo Docente ya sigue
+#ese patrón "local a este equipo", y el tutorial encaja ahí mejor que en
+#la BD institucional.
+#
+#Ninguno de los dos flujos bloquea el arranque: siempre hay un botón
+#"Saltar tutoriales por ahora" visible desde el primer instante, y ambos
+#pueden relanzarse manualmente desde Configuración ▸ Mi Cuenta.
 import os
 import json
 import shutil
@@ -55,10 +54,11 @@ from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_tex
 _DB_PATH_REAL= bd.DB_PATH
 
 
+#Motor de base de datos según `tipo` de tutorial: "single_teacher"
+#vive sobre bd_single_teacher.py (archivo aparte); todos los demás
+#("general", "docente", "side_stepper") viven sobre bd.py.
 def _motor_para_tipo(tipo):
-    """Motor de base de datos según `tipo` de tutorial: "single_teacher"
-    vive sobre bd_single_teacher.py (archivo aparte); todos los demás
-    ("general", "docente", "side_stepper") viven sobre bd.py."""
+
     if tipo == "single_teacher":
         from src.nucleo import bd_single_teacher
         return bd_single_teacher
@@ -66,6 +66,7 @@ def _motor_para_tipo(tipo):
 
 
 def _db_path_real_para_tipo(tipo):
+
     if tipo == "single_teacher":
         return _motor_para_tipo(tipo).DB_PATH
     return _DB_PATH_REAL
@@ -73,6 +74,7 @@ def _db_path_real_para_tipo(tipo):
 
 #PERSISTENCIA
 def tutorial_general_visto(main_window):
+
     id_usuario= getattr(main_window, "id_usuario_actual", None)
     if id_usuario is None:
         return True  #sin sesión identificable -> no insistir
@@ -85,6 +87,7 @@ def tutorial_general_visto(main_window):
 
 
 def marcar_tutorial_general_visto(main_window, visto=True):
+
     id_usuario= getattr(main_window, "id_usuario_actual", None)
     if id_usuario is None:
         return
@@ -96,35 +99,43 @@ def marcar_tutorial_general_visto(main_window, visto=True):
 
 
 def tutorial_docente_visto(main_window):
+
     from src.nucleo.datos_locales_docente import tutorial_docente_visto as _visto
     try:
+
         return _visto(main_window)
     except Exception:
         return True
 
 
 def marcar_tutorial_docente_visto(main_window, visto=True):
+
     from src.nucleo.datos_locales_docente import marcar_tutorial_docente_visto as _marcar
     try:
+
         _marcar(main_window, visto)
     except Exception:
         pass
 
 
 #PERSISTENCIA — Single Teacher y Side Stepper (Pieza 5 del prompt de arquitectura de las 4 ediciones)
+#Un solo docente, un solo archivo (bd_single_teacher.py): el flag vive
+#ahí, no en `usuarios` de bd.py -que esta edición ni siquiera usa.
 def tutorial_single_teacher_visto(main_window):
-    """Un solo docente, un solo archivo (bd_single_teacher.py): el flag vive
-    ahí, no en `usuarios` de bd.py -que esta edición ni siquiera usa."""
+
     from src.nucleo import bd_single_teacher
     try:
+
         return bd_single_teacher.tutorial_visto(main_window)
     except Exception:
         return True
 
 
 def marcar_tutorial_single_teacher_visto(main_window, visto=True):
+
     from src.nucleo import bd_single_teacher
     try:
+
         bd_single_teacher.marcar_tutorial_visto(main_window, visto)
     except Exception:
         pass
@@ -149,54 +160,63 @@ marcar_tutorial_side_stepper_visto= marcar_tutorial_general_visto
 #un no-op a propósito. (La BD sandbox en sí, con el estudiante de prueba etc., sí puede seguir existiendo hasta
 #completar el tour o reiniciarlo, pero eso es independiente de recordar en qué paso iba.)
 def _carpeta_sandbox():
+
     ruta= os.path.join(get_app_data_dir(), "tutorial_sandbox")
     os.makedirs(ruta, exist_ok=True)
     return ruta
 
 
 def _clave_sandbox(main_window, tipo):
+
     id_usuario= getattr(main_window, "id_usuario_actual", None) or "anonimo"
     return f"{tipo}_{id_usuario}"
 
 
 def _ruta_sandbox_db(main_window, tipo):
+
     return os.path.join(_carpeta_sandbox(), f"{_clave_sandbox(main_window, tipo)}.db")
 
 
 def _ruta_sandbox_progreso(main_window, tipo):
+
     return os.path.join(_carpeta_sandbox(), f"{_clave_sandbox(main_window, tipo)}.json")
 
 
+#El Tutorial Detallado JAMÁS retoma un progreso guardado: cada vez que
+#se abre, empieza desde el paso 0. Si quedara un .json de progreso de una
+#versión anterior de la app, se ignora (y se limpia) en vez de usarse.
 def _leer_progreso_sandbox(main_window, tipo):
-    """El Tutorial Detallado JAMÁS retoma un progreso guardado: cada vez que
-    se abre, empieza desde el paso 0. Si quedara un .json de progreso de una
-    versión anterior de la app, se ignora (y se limpia) en vez de usarse."""
+
     ruta_progreso= _ruta_sandbox_progreso(main_window, tipo)
     if os.path.exists(ruta_progreso):
         try:
+
             os.remove(ruta_progreso)
         except Exception:
             pass
     return 0
 
 
+#No-op a propósito: el progreso del Tutorial Detallado nunca se
+#persiste. Si el usuario sale a medias, la próxima vez empieza de nuevo
+#desde el paso 0 (ver _leer_progreso_sandbox).
 def _guardar_progreso_sandbox(main_window, tipo, indice):
-    """No-op a propósito: el progreso del Tutorial Detallado nunca se
-    persiste. Si el usuario sale a medias, la próxima vez empieza de nuevo
-    desde el paso 0 (ver _leer_progreso_sandbox)."""
+
     pass
 
 
+#Clona la BD real en una copia de práctica (o reutiliza la que ya
+#hubiera de una sesión pausada anterior) y redirige DB_PATH ahí -en el
+#módulo que corresponda según `tipo` (ver _motor_para_tipo). Devuelve
+#True si el sandbox quedó activo; False si algo falló y hay que seguir
+#el tour sin sandbox (mejor eso que bloquear el tutorial).
 def _activar_sandbox(main_window, tipo):
-    """Clona la BD real en una copia de práctica (o reutiliza la que ya
-    hubiera de una sesión pausada anterior) y redirige DB_PATH ahí -en el
-    módulo que corresponda según `tipo` (ver _motor_para_tipo). Devuelve
-    True si el sandbox quedó activo; False si algo falló y hay que seguir
-    el tour sin sandbox (mejor eso que bloquear el tutorial)."""
+
     motor= _motor_para_tipo(tipo)
     ruta_real= _db_path_real_para_tipo(tipo)
     ruta_sandbox= _ruta_sandbox_db(main_window, tipo)
     try:
+
         if not os.path.exists(ruta_sandbox):
             conn= motor.obtener_conexion(main_window) if tipo == "single_teacher" else obtener_conexion()
             conn.execute("PRAGMA wal_checkpoint(FULL)")
@@ -212,33 +232,38 @@ def _activar_sandbox(main_window, tipo):
         return False
 
 
+#SIEMPRE debe llamarse al cerrar el asistente (completado o no):
+#devuelve DB_PATH del módulo correspondiente a la base real. Si `tipo`
+#es None (limpieza genérica sin tour en curso), restaura siempre bd.py
+#por compatibilidad.
 def _restaurar_bd_real(borrar_sandbox, main_window=None, tipo=None):
-    """SIEMPRE debe llamarse al cerrar el asistente (completado o no):
-    devuelve DB_PATH del módulo correspondiente a la base real. Si `tipo`
-    es None (limpieza genérica sin tour en curso), restaura siempre bd.py
-    por compatibilidad."""
+
     motor= _motor_para_tipo(tipo) if tipo else bd
     motor.DB_PATH= _db_path_real_para_tipo(tipo) if tipo else _DB_PATH_REAL
     motor.SANDBOX_TUTORIAL_ACTIVO= False
     if borrar_sandbox and main_window is not None and tipo is not None:
         for ruta in (_ruta_sandbox_db(main_window, tipo), _ruta_sandbox_progreso(main_window, tipo)):
             try:
+
                 if os.path.exists(ruta):
                     os.remove(ruta)
             except OSError:
                 pass
 
 
+#Red de seguridad: si la app se cerró de golpe a mitad de un tour
+#(o quedó un sandbox de una versión anterior), no se acumulan archivos
+#temporales para siempre. Se llama una vez al ofrecer tutoriales.
 def _limpiar_sandboxes_huerfanos(dias=2):
-    """Red de seguridad: si la app se cerró de golpe a mitad de un tour
-    (o quedó un sandbox de una versión anterior), no se acumulan archivos
-    temporales para siempre. Se llama una vez al ofrecer tutoriales."""
+
     carpeta= _carpeta_sandbox()
     limite= time.time() - dias * 86400
     try:
+
         for nombre in os.listdir(carpeta):
             ruta= os.path.join(carpeta, nombre)
             try:
+
                 if os.path.getmtime(ruta) < limite:
                     os.remove(ruta)
             except OSError:
@@ -322,14 +347,15 @@ CONTENIDO_ESTUDIANTE= [
 #`main_window` que señalar cuando el elemento vive FIJO en la barra lateral -no dentro de ningún módulo del
 #menú- como el buscador global, la tarjeta de perfil o el interruptor de tema. En estos pasos `nombre_modulo`
 #va en None (no se navega a ningún módulo: se señala el elemento tal cual esté la pantalla en ese momento).
+#Pasos compartidos por TODOS los roles -se insertan tal cual, justo
+#después de la introducción, en cada PASOS_* que los necesite (ver más
+#abajo). Viven en una función y no en una constante para que cada rol
+#reciba su propia lista de tuplas (los pasos se mutan indirectamente al
+#recorrer el tour -guardar progreso, etc.- así que compartir la MISMA
+#lista de Python entre PASOS_GENERAL/PASOS_DOCENTE/PASOS_ESTUDIANTE sería
+#frágil; una tupla nueva por cada llamada es más seguro y no cuesta nada).
 def _pasos_interfaz_general():
-    """Pasos compartidos por TODOS los roles -se insertan tal cual, justo
-    después de la introducción, en cada PASOS_* que los necesite (ver más
-    abajo). Viven en una función y no en una constante para que cada rol
-    reciba su propia lista de tuplas (los pasos se mutan indirectamente al
-    recorrer el tour -guardar progreso, etc.- así que compartir la MISMA
-    lista de Python entre PASOS_GENERAL/PASOS_DOCENTE/PASOS_ESTUDIANTE sería
-    frágil; una tupla nueva por cada llamada es más seguro y no cuesta nada)."""
+
     return [
         ("", None, "Busca cualquier cosa desde aquí",
          "Escribe un nombre, matrícula, materia, evento o incluso el nombre de un módulo "
@@ -694,9 +720,11 @@ PASOS_SINGLE_TEACHER= [
 
 #Tarjeta de elección (Rápido / Detallado)
 class _TarjetaModo(QFrame):
+
     elegida= Signal()
 
     def __init__(self, icono, titulo, descripcion, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaModoTutorial")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -724,15 +752,18 @@ class _TarjetaModo(QFrame):
         lay.addStretch()
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.elegida.emit()
         super().mousePressEvent(event)
 
 
+#Extrae (bg, texto, accent, accent_hv) de la paleta activa, con
+#respaldo fijo si `main_window` no trae theme_palettes (p. ej. en tests).
 def _colores_tema(main_window):
-    """Extrae (bg, texto, accent, accent_hv) de la paleta activa, con
-    respaldo fijo si `main_window` no trae theme_palettes (p. ej. en tests)."""
+
     try:
+
         paleta= main_window.theme_palettes.get(main_window.tema_actual, {})
         idx= 1 if getattr(main_window, "modo_oscuro", True) else 0
         bg= paleta.get("display_bg", ("#FFFFFF", "#1E293B"))[idx]
@@ -744,14 +775,15 @@ def _colores_tema(main_window):
         return "#FFFFFF", "#0F172A", "#6366F1", "#4F46E5"
 
 
+#2 tarjetas: Modo Rápido / Modo Detallado, + "Saltar por ahora".
 class PantallaEleccionTutorial(QDialog):
-    """2 tarjetas: Modo Rápido / Modo Detallado, + "Saltar por ahora"."""
 
     RAPIDO= "rapido"
     DETALLADO= "detallado"
     SALTAR= None
 
     def __init__(self, main_window, titulo, subtitulo, parent=None, mostrar_detallado=True):
+
         super().__init__(parent or main_window)
         self.main_window= main_window
         self.resultado= self.SALTAR
@@ -795,7 +827,7 @@ class PantallaEleccionTutorial(QDialog):
         btn_saltar.clicked.connect(lambda: self._elegir(self.SALTAR))
         lay.addWidget(btn_saltar, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        bg, txt, accent, accent_hv = _colores_tema(main_window)
+        bg, txt, accent, accent_hv= _colores_tema(main_window)
         self.setStyleSheet(f"""
             QDialog {{ background-color: {bg}; }}
             QLabel {{ color: {txt}; background: transparent; }}
@@ -813,6 +845,7 @@ class PantallaEleccionTutorial(QDialog):
         """)
 
     def _elegir(self, resultado):
+
         self.resultado= resultado
         self.accept()
 
@@ -826,22 +859,24 @@ class PantallaEleccionTutorial(QDialog):
 ICONOS_INTERFAZ_GENERAL= ("@buscador", "@perfil", "@tema")
 
 
+#Icono vectorial de 72x72 dibujado a mano con QPainter, para los
+#pasos de interfaz general del carrusel de Modo Rápido (ver
+#ICONOS_INTERFAZ_GENERAL). Sustituye al emoji: se ve igual en cualquier
+#sistema operativo y sigue una misma línea visual -un "badge" circular
+#de fondo, un aro sutil de borde y el glifo centrado- para que los tres
+#iconos (buscador, perfil, tema) luzcan como un mismo set y no como
+#dibujos sueltos.
 class _IconoInterfazGeneral(QWidget):
-    """Icono vectorial de 72x72 dibujado a mano con QPainter, para los
-    pasos de interfaz general del carrusel de Modo Rápido (ver
-    ICONOS_INTERFAZ_GENERAL). Sustituye al emoji: se ve igual en cualquier
-    sistema operativo y sigue una misma línea visual -un "badge" circular
-    de fondo, un aro sutil de borde y el glifo centrado- para que los tres
-    iconos (buscador, perfil, tema) luzcan como un mismo set y no como
-    dibujos sueltos."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.tipo= None
         self.color= QColor("#4a90d9")
         self.setFixedSize(72, 72)
 
     def establecer(self, tipo, color_hex):
+
         #tipo llega con el "@" incluido (p. ej. "@buscador"); se quita aquí para quedarnos solo con la clave
         #("buscador").
         self.tipo= tipo.lstrip("@") if tipo else None
@@ -849,12 +884,13 @@ class _IconoInterfazGeneral(QWidget):
         self.update()
 
     def paintEvent(self, event):
+
         if not self.tipo:
             return
         p= QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        w, h = self.width(), self.height()
-        cx, cy = w / 2.0, h / 2.0
+        w, h= self.width(), self.height()
+        cx, cy= w / 2.0, h / 2.0
 
         #"Badge" circular de fondo, compartido por los tres iconos, para que se sientan como un mismo set (como los
         #íconos redondos de apps móviles) y no como dibujos sueltos flotando en el aire.
@@ -974,6 +1010,7 @@ class _IconoInterfazGeneral(QWidget):
 
     @staticmethod
     def _circulo(rect):
+
         path= QPainterPath()
         path.addEllipse(rect)
         return path
@@ -981,7 +1018,9 @@ class _IconoInterfazGeneral(QWidget):
 
 #Modo rápido — carrusel de solo lectura (patrón "step_card")
 class TutorialRapidoDialog(QDialog):
+
     def __init__(self, main_window, pasos, titulo, parent=None):
+
         super().__init__(parent or main_window)
         self.main_window= main_window
         self.pasos= pasos
@@ -1014,7 +1053,7 @@ class TutorialRapidoDialog(QDialog):
         self.lbl_icono.setStyleSheet("font-size: 46px; background: transparent;")
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         fila_icono.addWidget(self.lbl_icono)
-        _, _, self._accent_tutorial, _ = _colores_tema(main_window)
+        _, _, self._accent_tutorial, _= _colores_tema(main_window)
         self.icono_vectorial= _IconoInterfazGeneral()
         fila_icono.addWidget(self.icono_vectorial)
         fila_icono.addStretch()
@@ -1049,7 +1088,7 @@ class TutorialRapidoDialog(QDialog):
         fila_botones.addWidget(self.btn_siguiente)
         lay.addLayout(fila_botones)
 
-        bg, txt, accent, accent_hv = _colores_tema(main_window)
+        bg, txt, accent, accent_hv= _colores_tema(main_window)
         self.setStyleSheet(f"""
             QDialog {{ background-color: {bg}; }}
             QLabel {{ color: {txt}; background: transparent; }}
@@ -1068,7 +1107,8 @@ class TutorialRapidoDialog(QDialog):
         self._mostrar_paso()
 
     def _mostrar_paso(self):
-        icono, nombre, texto = self.pasos[self.indice]
+
+        icono, nombre, texto= self.pasos[self.indice]
         self.lbl_progreso.setText(f"{self.indice + 1} de {len(self.pasos)}")
         self.barra_progreso.setValue(self.indice + 1)
 
@@ -1091,6 +1131,7 @@ class TutorialRapidoDialog(QDialog):
         self.btn_siguiente.setText("Terminar " if self.indice == len(self.pasos) - 1 else "Siguiente ")
 
     def _siguiente(self):
+
         if self.indice == len(self.pasos) - 1:
             self.accept()
             return
@@ -1098,11 +1139,13 @@ class TutorialRapidoDialog(QDialog):
         self._mostrar_paso()
 
     def _atras(self):
+
         if self.indice > 0:
             self.indice -= 1
             self._mostrar_paso()
 
     def keyPressEvent(self, event):
+
         #Navegación cómoda sin soltar el teclado: flechas para moverse, Enter/Espacio para avanzar (o terminar en el
         #último paso). Escape ya cierra el diálogo por comportamiento estándar de QDialog.
         if event.key() in (Qt.Key.Key_Right, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space):
@@ -1114,53 +1157,54 @@ class TutorialRapidoDialog(QDialog):
 
 
 #Modo detallado — recorrido guiado real con spotlight
+#Capa semitransparente sobre TODA la ventana principal, con un
+#recorte iluminado alrededor de `rect_agujero` (coordenadas locales de
+#este overlay). Si `rect_agujero` es None, no recorta nada (paso
+#informativo, solo se atenúa el fondo).
+#
+#IMPORTANTE: el agujero interactivo (`rect_agujero`, lo que de verdad se
+#puede tocar) y el marco de resaltado visual (`rect_resaltado`, el borde
+#que señala "toca aquí") son DOS rects distintos a propósito. Al
+#principio eran el mismo -el rect exacto del botón "Guardar", por
+#ejemplo- y eso rompía cualquier paso que pidiera "llena el formulario y
+#presiona Guardar": el agujero solo dejaba tocar el botón, así que el
+#usuario podía pulsar Guardar pero NUNCA escribir en los campos del
+#formulario que se suponía debía llenar antes -el propio Guardar
+#entonces solo devolvía errores de validación, sin ninguna forma de
+#corregirlos. Ahora `rect_agujero` puede ser mucho más grande (p. ej.
+#toda la tarjeta/página del formulario -ver AsistenteSpotlight.
+#_colocar_spotlight), mientras que `rect_resaltado` sigue siendo el
+#marco pequeño y pulsante alrededor del botón, solo para guiar la
+#vista hacia la acción final.
+#
+#El recorte NO es solo visual: también se aplica como `setMask()` -una
+#máscara real de forma/clic construida con un QBitmap- para que el
+#agujero sea de verdad interactivo. Antes esto se intentaba solo
+#ignorando el clic en `mousePressEvent` cuando caía dentro del área
+#iluminada, con la idea de "dejarlo pasar" al botón real de abajo, pero
+#eso NO funciona en Qt para widgets superpuestos dentro de la misma
+#ventana: ignorar un evento de mouse lo propaga hacia el widget PADRE
+#(este mismo overlay, dentro de AsistenteSpotlight), nunca hacia otro
+#widget que esté simplemente dibujado más abajo en el z-order. El
+#resultado era que el overlay se quedaba con el clic y el botón
+#resaltado (p. ej. "Guardar") nunca llegaba a recibirlo -de ahí que el
+#Tutorial Detallado no dejara interactuar con los botones.
+#`setMask()` sí resuelve esto de raíz: en la zona enmascarada como
+#"agujero", Qt directamente considera que este overlay no existe ahí, y
+#entrega el clic al widget real que hay debajo.
+#
+#`mascara_actualizada` avisa a quien envuelve este overlay (ver
+#AsistenteSpotlight._actualizar_mascara_propia) cada vez que la
+#máscara cambia, porque ESTE overlay no es el único widget superpuesto:
+#también lo envuelve AsistenteSpotlight, y ese contenedor necesita
+#quedar en sintonía -si no, el clic se topa con él antes de llegar
+#siquiera al overlay.
 class _OverlaySpotlight(QWidget):
-    """Capa semitransparente sobre TODA la ventana principal, con un
-    recorte iluminado alrededor de `rect_agujero` (coordenadas locales de
-    este overlay). Si `rect_agujero` es None, no recorta nada (paso
-    informativo, solo se atenúa el fondo).
-
-    IMPORTANTE: el agujero interactivo (`rect_agujero`, lo que de verdad se
-    puede tocar) y el marco de resaltado visual (`rect_resaltado`, el borde
-    que señala "toca aquí") son DOS rects distintos a propósito. Al
-    principio eran el mismo -el rect exacto del botón "Guardar", por
-    ejemplo- y eso rompía cualquier paso que pidiera "llena el formulario y
-    presiona Guardar": el agujero solo dejaba tocar el botón, así que el
-    usuario podía pulsar Guardar pero NUNCA escribir en los campos del
-    formulario que se suponía debía llenar antes -el propio Guardar
-    entonces solo devolvía errores de validación, sin ninguna forma de
-    corregirlos. Ahora `rect_agujero` puede ser mucho más grande (p. ej.
-    toda la tarjeta/página del formulario -ver AsistenteSpotlight.
-    _colocar_spotlight), mientras que `rect_resaltado` sigue siendo el
-    marco pequeño y pulsante alrededor del botón, solo para guiar la
-    vista hacia la acción final.
-
-    El recorte NO es solo visual: también se aplica como `setMask()` -una
-    máscara real de forma/clic construida con un QBitmap- para que el
-    agujero sea de verdad interactivo. Antes esto se intentaba solo
-    ignorando el clic en `mousePressEvent` cuando caía dentro del área
-    iluminada, con la idea de "dejarlo pasar" al botón real de abajo, pero
-    eso NO funciona en Qt para widgets superpuestos dentro de la misma
-    ventana: ignorar un evento de mouse lo propaga hacia el widget PADRE
-    (este mismo overlay, dentro de AsistenteSpotlight), nunca hacia otro
-    widget que esté simplemente dibujado más abajo en el z-order. El
-    resultado era que el overlay se quedaba con el clic y el botón
-    resaltado (p. ej. "Guardar") nunca llegaba a recibirlo -de ahí que el
-    Tutorial Detallado no dejara interactuar con los botones.
-    `setMask()` sí resuelve esto de raíz: en la zona enmascarada como
-    "agujero", Qt directamente considera que este overlay no existe ahí, y
-    entrega el clic al widget real que hay debajo.
-
-    `mascara_actualizada` avisa a quien envuelve este overlay (ver
-    AsistenteSpotlight._actualizar_mascara_propia) cada vez que la
-    máscara cambia, porque ESTE overlay no es el único widget superpuesto:
-    también lo envuelve AsistenteSpotlight, y ese contenedor necesita
-    quedar en sintonía -si no, el clic se topa con él antes de llegar
-    siquiera al overlay."""
 
     mascara_actualizada= Signal()
 
     def __init__(self, parent):
+
         super().__init__(parent)
         self.rect_agujero= None
         self.rect_resaltado= None
@@ -1176,34 +1220,38 @@ class _OverlaySpotlight(QWidget):
         self.tiene_agujero_real= False
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
 
+    #`rect_agujero`: lo que queda realmente clicable/editable (puede
+    #ser grande, p. ej. todo el formulario). `rect_resaltado`: el marco
+    #visual que señala la acción final (p. ej. el botón "Guardar"); si
+    #se omite, se usa el mismo `rect_agujero` (caso simple, un solo
+    #botón, sin formulario que llenar).
     def establecer_objetivo(self, rect_agujero, rect_resaltado=None):
-        """`rect_agujero`: lo que queda realmente clicable/editable (puede
-        ser grande, p. ej. todo el formulario). `rect_resaltado`: el marco
-        visual que señala la acción final (p. ej. el botón "Guardar"); si
-        se omite, se usa el mismo `rect_agujero` (caso simple, un solo
-        botón, sin formulario que llenar)."""
+
         self.rect_agujero= rect_agujero
         self.rect_resaltado= rect_resaltado if rect_resaltado is not None else rect_agujero
         self._actualizar_mascara()
         self.update()
 
     def establecer_bloqueante(self, bloqueante):
+
         self.bloqueante= bloqueante
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, not bloqueante)
         self._actualizar_mascara()
         self.update()
 
     def resizeEvent(self, event):
+
         #El bitmap de la máscara se construye del tamaño actual del overlay:
         #si la ventana cambia de tamaño, hay que reconstruirlo con el nuevo.
         self._actualizar_mascara()
         super().resizeEvent(event)
 
+    #Reconstruye la máscara de forma/clic del overlay a partir de
+    #`rect_agujero`. Sin agujero real que abrir (no bloqueante, o
+    #bloqueante pero todavía sin objetivo localizado) se usa el widget
+    #completo tal cual, sin máscara.
     def _actualizar_mascara(self):
-        """Reconstruye la máscara de forma/clic del overlay a partir de
-        `rect_agujero`. Sin agujero real que abrir (no bloqueante, o
-        bloqueante pero todavía sin objetivo localizado) se usa el widget
-        completo tal cual, sin máscara."""
+
         if not self.bloqueante or self.rect_agujero is None or self.rect_agujero.isEmpty()\
                 or self.size().isEmpty():
             self.clearMask()
@@ -1223,6 +1271,7 @@ class _OverlaySpotlight(QWidget):
         self.mascara_actualizada.emit()
 
     def paintEvent(self, event):
+
         if not self.bloqueante:
             return  #sin oscurecer: el usuario ve la app normal, con el panel flotando encima
         painter= QPainter(self)
@@ -1245,22 +1294,24 @@ class _OverlaySpotlight(QWidget):
             painter.drawRoundedRect(QRectF(self.rect_resaltado.adjusted(-6, -6, 6, 6)), 10, 10)
 
     def mousePressEvent(self, event):
+
         #Con la máscara activa, este método solo llega a dispararse para clics en la zona oscurecida (bloqueante): al
         #agujero, Qt ya lo entrega directamente al widget real de abajo, sin pasar por aquí. Basta con aceptar el
         #evento para que no se propague más allá.
         event.accept()
 
 
+#Franja fija en la parte superior de la ventana, visible durante TODO
+#el Tutorial Detallado, recordando que nada de lo que se guarde aquí
+#toca la base de datos real -el mismo principio que el borde de color
+#de un entorno aislado: tiene que ser imposible no verlo, para que
+#nadie confunda al "estudiante de prueba" con uno real.
 class _BannerSandbox(QFrame):
-    """Franja fija en la parte superior de la ventana, visible durante TODO
-    el Tutorial Detallado, recordando que nada de lo que se guarde aquí
-    toca la base de datos real -el mismo principio que el borde de color
-    de un entorno aislado: tiene que ser imposible no verlo, para que
-    nadie confunda al "estudiante de prueba" con uno real."""
 
     ALTURA= 34
 
     def __init__(self, parent, main_window):
+
         super().__init__(parent)
         self.setFixedHeight(self.ALTURA)
         lay= QHBoxLayout(self)
@@ -1272,16 +1323,18 @@ class _BannerSandbox(QFrame):
         self.setStyleSheet("background-color: #D97706; border: none;")  #ámbar: ni error ni éxito, "atención"
 
     def acomodar(self, ancho):
+
         self.setGeometry(0, 0, ancho, self.height())
 
 
+#Tarjeta flotante con el texto del paso y los botones de control,
+#hija del overlay (para quedar siempre por encima). Se puede arrastrar
+#libremente agarrando la manija superior (ver _manija/eventFilter):
+#quien la mueve deja de estar a merced del posicionamiento automático
+#-ver AsistenteSpotlight._posicionar_panel-, que respeta esa posición
+#manual mientras dure el paso actual.
 class _PanelInstruccion(QFrame):
-    """Tarjeta flotante con el texto del paso y los botones de control,
-    hija del overlay (para quedar siempre por encima). Se puede arrastrar
-    libremente agarrando la manija superior (ver _manija/eventFilter):
-    quien la mueve deja de estar a merced del posicionamiento automático
-    -ver AsistenteSpotlight._posicionar_panel-, que respeta esa posición
-    manual mientras dure el paso actual."""
+
     siguiente= Signal()
     saltar_paso= Signal()
     salir= Signal()
@@ -1289,6 +1342,7 @@ class _PanelInstruccion(QFrame):
     arrastrado= Signal()  #el usuario está moviendo el panel a mano
 
     def __init__(self, parent, main_window):
+
         super().__init__(parent)
         self.main_window= main_window
         self.setObjectName("PanelInstruccionTutorial")
@@ -1376,6 +1430,7 @@ class _PanelInstruccion(QFrame):
         lay.addLayout(fila_accion)
 
     def eventFilter(self, obj, event):
+
         #Arrastre manual: solo desde la manija (ver __init__), nunca desde el resto del panel -así un clic sobre el
         #texto o cerca de un botón nunca se confunde con "empezar a arrastrar".
         if obj is self._manija:
@@ -1393,10 +1448,11 @@ class _PanelInstruccion(QFrame):
         return super().eventFilter(obj, event)
 
     def mostrar_ayuda(self, texto):
+
         self.lbl_ayuda.setText(texto)
         self.lbl_ayuda.setVisible(bool(texto))
 
-        bg, txt, accent, accent_hv = _colores_tema(self.main_window)
+        bg, txt, accent, accent_hv= _colores_tema(self.main_window)
         self.setStyleSheet(f"""
             QFrame#PanelInstruccionTutorial {{
                 background-color: {bg}; border-radius: 12px; border: 1px solid {accent};
@@ -1424,25 +1480,27 @@ class _PanelInstruccion(QFrame):
         self.tamano_cambiado.emit()
 
 
+#Lluvia de confeti breve para celebrar que se completó CORRECTAMENTE
+#una parte del Tutorial Detallado (acción real validada, o paso
+#informativo leído hasta el final con "Continuar") -nunca al "Saltar
+#este paso", que es justo lo contrario de "terminarla bien".
+#
+#Puramente decorativo y efímero: vive encima de todo (hijo de
+#AsistenteSpotlight, `raise_()` al crearse) pero es transparente a los
+#clics -WA_TransparentForMouseEvents- para no robarle ni un solo
+#milisegundo de interacción al usuario ni interferir con la máscara de
+#agujero del paso (ver AsistenteSpotlight._actualizar_mascara_propia).
+#Se autodestruye sola (`deleteLater`) al terminar su propia animación,
+#así que quien la lanza no tiene que acordarse de limpiarla.
 class _ConfettiOverlay(QWidget):
-    """Lluvia de confeti breve para celebrar que se completó CORRECTAMENTE
-    una parte del Tutorial Detallado (acción real validada, o paso
-    informativo leído hasta el final con "Continuar") -nunca al "Saltar
-    este paso", que es justo lo contrario de "terminarla bien".
 
-    Puramente decorativo y efímero: vive encima de todo (hijo de
-    AsistenteSpotlight, `raise_()` al crearse) pero es transparente a los
-    clics -WA_TransparentForMouseEvents- para no robarle ni un solo
-    milisegundo de interacción al usuario ni interferir con la máscara de
-    agujero del paso (ver AsistenteSpotlight._actualizar_mascara_propia).
-    Se autodestruye sola (`deleteLater`) al terminar su propia animación,
-    así que quien la lanza no tiene que acordarse de limpiarla."""
     _COLORES= ("#22C55E", "#F59E0B", "#3B82F6", "#EF4444", "#A855F7", "#EC4899", "#14B8A6")
     _DURACION_MS= 1400
     _INTERVALO_MS= 16
     _N_PARTICULAS= 90
 
     def __init__(self, parent):
+
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -1474,6 +1532,7 @@ class _ConfettiOverlay(QWidget):
         self._timer.start(self._INTERVALO_MS)
 
     def _avanzar(self):
+
         self._transcurrido_ms += self._INTERVALO_MS
         for p in self._particulas:
             p["y"] += p["vy"] * self._INTERVALO_MS
@@ -1488,6 +1547,7 @@ class _ConfettiOverlay(QWidget):
             self.deleteLater()
 
     def paintEvent(self, event):
+
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         #Se apaga (fade out) en el último tercio de la animación, en vez de desaparecer de golpe cuando el timer
@@ -1507,13 +1567,13 @@ class _ConfettiOverlay(QWidget):
         pintor.end()
 
 
+#Recorrido interactivo real: navega el `nav_list`/`stacked_widget` de
+#`main_window` módulo por módulo y espera una acción concreta (clic en
+#el botón de guardar/agregar de esa pantalla) o el salto manual del
+#paso. No usa una ventana ni proceso aparte: es un overlay hijo directo
+#de la ventana principal, así que respeta la instancia única y el
+#ciclo de vida normal de `MainWindow`.
 class AsistenteSpotlight(QWidget):
-    """Recorrido interactivo real: navega el `nav_list`/`stacked_widget` de
-    `main_window` módulo por módulo y espera una acción concreta (clic en
-    el botón de guardar/agregar de esa pantalla) o el salto manual del
-    paso. No usa una ventana ni proceso aparte: es un overlay hijo directo
-    de la ventana principal, así que respeta la instancia única y el
-    ciclo de vida normal de `MainWindow`."""
 
     finalizado= Signal()
 
@@ -1522,6 +1582,7 @@ class AsistenteSpotlight(QWidget):
     _INTENTOS_ANTES_DE_AYUDAR= 5
 
     def __init__(self, main_window, pasos, tipo):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.pasos= pasos
@@ -1652,17 +1713,18 @@ class AsistenteSpotlight(QWidget):
         QTimer.singleShot(0, self._mostrar_paso_actual)
 
     #-------- ciclo de vida / reposicionamiento --------
+    #Máscara de ESTE contenedor (AsistenteSpotlight) -independiente
+    #de la del overlay, aunque coherente con ella. Un hijo colocado
+    #dentro de una zona "agujero" de la máscara de su padre TAMPOCO
+    #recibe clics NI SE PINTA (se comprobó: el enmascarado excluye a
+    #todo el subárbol ahí, igual que WA_TransparentForMouseEvents) -por
+    #eso no basta con copiar la máscara del overlay tal cual: hay que
+    #garantizar que panel y banner, hijos de este widget, queden SIEMPRE
+    #dentro de la parte "sólida" (visible/clicable) de esta máscara, sin
+    #importar el estado bloqueante ni si su posición actual cae dentro
+    #del agujero de la página (pasos de formulario -ver más abajo).
     def _actualizar_mascara_propia(self):
-        """Máscara de ESTE contenedor (AsistenteSpotlight) -independiente
-        de la del overlay, aunque coherente con ella. Un hijo colocado
-        dentro de una zona "agujero" de la máscara de su padre TAMPOCO
-        recibe clics NI SE PINTA (se comprobó: el enmascarado excluye a
-        todo el subárbol ahí, igual que WA_TransparentForMouseEvents) -por
-        eso no basta con copiar la máscara del overlay tal cual: hay que
-        garantizar que panel y banner, hijos de este widget, queden SIEMPRE
-        dentro de la parte "sólida" (visible/clicable) de esta máscara, sin
-        importar el estado bloqueante ni si su posición actual cae dentro
-        del agujero de la página (pasos de formulario -ver más abajo)."""
+
         if self.size().isEmpty():
             return
         if self.overlay.bloqueante:
@@ -1719,16 +1781,19 @@ class AsistenteSpotlight(QWidget):
         self.setMask(QRegion(bitmap))
 
     def eventFilter(self, obj, event):
+
         if self._listo and event.type() in (event.Type.Resize, event.Type.Move):
             self._reposicionar()
         return False
 
     def resizeEvent(self, event):
+
         if self._listo:
             self._reposicionar()
         super().resizeEvent(event)
 
     def _reposicionar(self):
+
         self.setGeometry(self.main_window.rect())
         self.overlay.setGeometry(self.rect())
         self.banner.acomodar(self.width())
@@ -1737,6 +1802,7 @@ class AsistenteSpotlight(QWidget):
 
     #-------- navegación real por los módulos --------
     def _mostrar_paso_actual(self):
+
         self._boton_objetivo_actual= None
         #Deja cada pantalla EXACTAMENTE como estaba: si el paso anterior abrió a la fuerza un formulario colapsado para
         #encontrar su botón, se vuelve a cerrar antes de pasar al siguiente paso.
@@ -1752,7 +1818,7 @@ class AsistenteSpotlight(QWidget):
         #(`objetivo_fijo`) es opcional y solo lo usan los pasos nuevos que señalan un elemento FIJO de la barra lateral
         #(buscador, perfil, tema...) en vez de un botón dentro de un módulo -ver _rect_objetivo_fijo.
         paso= self.pasos[self.indice]
-        icono, nombre_modulo, titulo, texto, texto_boton_objetivo, pestaña = paso[:6]
+        icono, nombre_modulo, titulo, texto, texto_boton_objetivo, pestaña= paso[:6]
         objetivo_fijo= paso[6] if len(paso) > 6 else None
         self._objetivo_fijo_actual= objetivo_fijo
         self._accion_real_pendiente= texto_boton_objetivo is not None
@@ -1799,6 +1865,7 @@ class AsistenteSpotlight(QWidget):
         QTimer.singleShot(150, lambda: self._preparar_pestana_y_boton(pestaña, texto_boton_objetivo))
 
     def _preparar_pestana_y_boton(self, pestaña, texto_boton_objetivo):
+
         pagina= self.main_window.stacked_widget.currentWidget()
         if pagina is None:
             return
@@ -1817,32 +1884,34 @@ class AsistenteSpotlight(QWidget):
         else:
             self._enganchar_boton(texto_boton_objetivo)
 
+    #Si el botón objetivo de este paso vive dentro de un formulario
+    #colapsable (PanelDesplegable de calendario.py/horario.py -"Nueva
+    #tarea" de Banco de Tareas, "Agregar una clase local"
+    #de Horario, "Nuevo Módulo Técnico" de Politécnico, etc.-), hay que
+    #desplegarlo ANTES de buscar el botón: un panel colapsado oculta de
+    #verdad su contenido (ver PanelDesplegable.expandir), así que sin
+    #este paso el botón nunca aparecería visible y el tutorial se
+    #quedaría atascado ofreciendo "Saltar este paso" sin necesidad.
+    #
+    #Se detecta por duck-typing (tener a la vez `expandir` y
+    #`cuerpo_layout`) en vez de importar la clase concreta, porque hay
+    #más de una implementación de PanelDesplegable en el proyecto -misma
+    #interfaz, sin relación de herencia entre ellas- y así este motor de
+    #tutoriales no necesita conocerlas todas por nombre.
+    #
+    #Devuelve la lista de paneles que estaban CERRADOS y este método
+    #abrió, para que el asistente pueda devolverlos a su estado original
+    #al cambiar de paso (ver _restaurar_paneles_desplegables): el tour
+    #no debe dejar ninguna pantalla con proporciones distintas a las
+    #originales.
     @staticmethod
     def _expandir_paneles_desplegables(pagina):
-        """Si el botón objetivo de este paso vive dentro de un formulario
-        colapsable (PanelDesplegable de calendario.py/horario.py -"Nueva
-        tarea" de Banco de Tareas, "Agregar una clase local"
-        de Horario, "Nuevo Módulo Técnico" de Politécnico, etc.-), hay que
-        desplegarlo ANTES de buscar el botón: un panel colapsado oculta de
-        verdad su contenido (ver PanelDesplegable.expandir), así que sin
-        este paso el botón nunca aparecería visible y el tutorial se
-        quedaría atascado ofreciendo "Saltar este paso" sin necesidad.
 
-        Se detecta por duck-typing (tener a la vez `expandir` y
-        `cuerpo_layout`) en vez de importar la clase concreta, porque hay
-        más de una implementación de PanelDesplegable en el proyecto -misma
-        interfaz, sin relación de herencia entre ellas- y así este motor de
-        tutoriales no necesita conocerlas todas por nombre.
-
-        Devuelve la lista de paneles que estaban CERRADOS y este método
-        abrió, para que el asistente pueda devolverlos a su estado original
-        al cambiar de paso (ver _restaurar_paneles_desplegables): el tour
-        no debe dejar ninguna pantalla con proporciones distintas a las
-        originales."""
         abiertos_por_el_tutorial= []
         for panel in pagina.findChildren(QWidget):
             if hasattr(panel, "expandir") and hasattr(panel, "cuerpo_layout"):
                 try:
+
                     if getattr(panel, "_expandido", True) is False:
                         abiertos_por_el_tutorial.append(panel)
                     panel.expandir(True, animar=False)
@@ -1850,27 +1919,30 @@ class AsistenteSpotlight(QWidget):
                     pass
         return abiertos_por_el_tutorial
 
+    #Vuelve a CERRAR los paneles que el tutorial abrió a la fuerza:
+    #cada pestaña de cada módulo debe quedar exactamente igual a como
+    #estaba antes de que el recorrido pasara por ella.
     @staticmethod
     def _restaurar_paneles_desplegables(paneles):
-        """Vuelve a CERRAR los paneles que el tutorial abrió a la fuerza:
-        cada pestaña de cada módulo debe quedar exactamente igual a como
-        estaba antes de que el recorrido pasara por ella."""
+
         for panel in paneles or []:
             try:
+
                 panel.expandir(False, animar=False)
             except Exception:
                 pass
 
+    #Busca, entre todos los QPushButton descendientes de `pagina` que
+    #estén VISIBLES ahora mismo, el primero cuyo texto contenga
+    #`fragmento` (sin distinguir mayúsculas). Se busca por texto y no por
+    #objectName porque varios botones "Guardar" del proyecto no tienen
+    #objectName asignado -el texto visible es lo único confiable en
+    #todos los módulos por igual. Al estar filtrando por isVisible(), en
+    #un QTabWidget esto automáticamente descarta los botones de
+    #pestañas que no son la actual (Qt las oculta).
     @staticmethod
     def _buscar_boton_por_texto(pagina, fragmento):
-        """Busca, entre todos los QPushButton descendientes de `pagina` que
-        estén VISIBLES ahora mismo, el primero cuyo texto contenga
-        `fragmento` (sin distinguir mayúsculas). Se busca por texto y no por
-        objectName porque varios botones "Guardar" del proyecto no tienen
-        objectName asignado -el texto visible es lo único confiable en
-        todos los módulos por igual. Al estar filtrando por isVisible(), en
-        un QTabWidget esto automáticamente descarta los botones de
-        pestañas que no son la actual (Qt las oculta)."""
+
         fragmento_norm= fragmento.strip().lower()
         for boton in pagina.findChildren(QPushButton):
             if not boton.isVisible():
@@ -1879,13 +1951,14 @@ class AsistenteSpotlight(QWidget):
                 return boton
         return None
 
+    #Solo ubica y resalta el botón -ya NO se conecta a su `clicked`.
+    #`clicked` dispara aunque el módulo rechace el formulario (campos
+    #vacíos, matrícula duplicada...); la única confirmación válida de
+    #que la acción se completó de verdad es el aviso de éxito real que
+    #el propio módulo ya muestra tras guardar en la base de datos (ver
+    #_on_exito_reportado / iconos.eventos_ui).
     def _enganchar_boton(self, texto_boton_objetivo):
-        """Solo ubica y resalta el botón -ya NO se conecta a su `clicked`.
-        `clicked` dispara aunque el módulo rechace el formulario (campos
-        vacíos, matrícula duplicada...); la única confirmación válida de
-        que la acción se completó de verdad es el aviso de éxito real que
-        el propio módulo ya muestra tras guardar en la base de datos (ver
-        _on_exito_reportado / iconos.eventos_ui)."""
+
         if not texto_boton_objetivo:
             self._colocar_spotlight()
             return
@@ -1917,6 +1990,7 @@ class AsistenteSpotlight(QWidget):
 
     @staticmethod
     def _es_descendiente(widget, ancestro):
+
         actual= widget
         vistos= 0
         while actual is not None and vistos < 50:
@@ -1926,12 +2000,13 @@ class AsistenteSpotlight(QWidget):
             vistos += 1
         return False
 
+    #Único disparador real de avance en un paso con acción pendiente:
+    #un aviso de ÉXITO que el propio módulo mostró, y que ocurrió DENTRO
+    #de la página que el tutorial tiene resaltada ahora mismo (así un
+    #guardado exitoso en otra pantalla, si el usuario se saliera del
+    #recorrido, no hace avanzar un paso que no tiene nada que ver).
     def _on_exito_reportado(self, parent, titulo, texto):
-        """Único disparador real de avance en un paso con acción pendiente:
-        un aviso de ÉXITO que el propio módulo mostró, y que ocurrió DENTRO
-        de la página que el tutorial tiene resaltada ahora mismo (así un
-        guardado exitoso en otra pantalla, si el usuario se saliera del
-        recorrido, no hace avanzar un paso que no tiene nada que ver)."""
+
         if not getattr(self, "_accion_real_pendiente", False):
             return
         pagina= getattr(self, "_pagina_actual", None)
@@ -1943,15 +2018,16 @@ class AsistenteSpotlight(QWidget):
         self._celebrar_paso_completado()
         QTimer.singleShot(650, self._avanzar_manual)
 
+    #Para pasos con `objetivo_fijo` (nombre de un atributo de
+    #main_window): localiza ese widget FIJO de la barra lateral -el
+    #buscador global, la tarjeta de perfil, el interruptor de tema...-
+    #que no vive dentro de ninguna página del stacked_widget, así que no
+    #tiene sentido buscarlo por texto de botón ni recortar "la página
+    #actual" para él. Devuelve None si el paso actual no usa este modo,
+    #o si el widget no existe/no está visible ahora mismo (p. ej. antes
+    #de iniciar sesión).
     def _rect_objetivo_fijo(self):
-        """Para pasos con `objetivo_fijo` (nombre de un atributo de
-        main_window): localiza ese widget FIJO de la barra lateral -el
-        buscador global, la tarjeta de perfil, el interruptor de tema...-
-        que no vive dentro de ninguna página del stacked_widget, así que no
-        tiene sentido buscarlo por texto de botón ni recortar "la página
-        actual" para él. Devuelve None si el paso actual no usa este modo,
-        o si el widget no existe/no está visible ahora mismo (p. ej. antes
-        de iniciar sesión)."""
+
         nombre= self._objetivo_fijo_actual
         if not nombre:
             return None
@@ -1959,12 +2035,14 @@ class AsistenteSpotlight(QWidget):
         if widget is None or not widget.isVisible():
             return None
         try:
+
             punto= widget.mapTo(self.main_window, widget.rect().topLeft())
             return QRect(punto, widget.size())
         except RuntimeError:
             return None
 
     def _colocar_spotlight(self):
+
         rect_fijo= self._rect_objetivo_fijo()
         if rect_fijo is not None:
             #Aquí el agujero y el marco de resaltado son el MISMO rect: no hay ningún formulario que llenar alrededor, solo
@@ -1978,6 +2056,7 @@ class AsistenteSpotlight(QWidget):
         rect_boton= None
         if objetivo is not None and objetivo.isVisible():
             try:
+
                 punto= objetivo.mapTo(self.main_window, objetivo.rect().topLeft())
                 rect_boton= QRect(punto, objetivo.size())
             except RuntimeError:
@@ -1996,6 +2075,7 @@ class AsistenteSpotlight(QWidget):
         pagina_actual= self.main_window.stacked_widget.currentWidget()
         if pagina_actual is not None:
             try:
+
                 punto_pagina= pagina_actual.mapTo(self.main_window, pagina_actual.rect().topLeft())
                 rect_agujero= QRect(punto_pagina, pagina_actual.size())
             except RuntimeError:
@@ -2004,21 +2084,22 @@ class AsistenteSpotlight(QWidget):
         self.overlay.establecer_objetivo(rect_agujero, rect_boton)
         self._posicionar_panel(rect_boton)
 
+    #Coloca el panel de instrucción evitando taparse con el spotlight:
+    #a la derecha del objetivo si hay espacio, si no a la izquierda, y
+    #si tampoco cabe ahí (o no hay ningún objetivo que señalar, p. ej.
+    #mientras se busca el botón), en la esquina inferior derecha -NUNCA
+    #centrado sobre el contenido: un paso con acción pendiente suele
+    #agujerear la página ENTERA (ver _colocar_spotlight), así que
+    #"centrado abajo" terminaba tapando justo la tabla/lista que el
+    #usuario necesita ver para completar la acción (bug reportado).
+    #
+    #`rect_referencia` puede ser el botón resaltado, el widget fijo
+    #resaltado, o None (paso informativo, o acción cuyo botón aún no se
+    #localiza). Si el usuario ya arrastró el panel a mano en este mismo
+    #paso, se respeta esa posición -solo se recorta para que no quede
+    #fuera de la ventana si esta cambió de tamaño mientras tanto.
     def _posicionar_panel(self, rect_referencia):
-        """Coloca el panel de instrucción evitando taparse con el spotlight:
-        a la derecha del objetivo si hay espacio, si no a la izquierda, y
-        si tampoco cabe ahí (o no hay ningún objetivo que señalar, p. ej.
-        mientras se busca el botón), en la esquina inferior derecha -NUNCA
-        centrado sobre el contenido: un paso con acción pendiente suele
-        agujerear la página ENTERA (ver _colocar_spotlight), así que
-        "centrado abajo" terminaba tapando justo la tabla/lista que el
-        usuario necesita ver para completar la acción (bug reportado).
 
-        `rect_referencia` puede ser el botón resaltado, el widget fijo
-        resaltado, o None (paso informativo, o acción cuyo botón aún no se
-        localiza). Si el usuario ya arrastró el panel a mano en este mismo
-        paso, se respeta esa posición -solo se recorta para que no quede
-        fuera de la ventana si esta cambió de tamaño mientras tanto."""
         ancho_ventana= self.main_window.width()
         alto_ventana= self.main_window.height()
         ancho_panel= self.panel.width()
@@ -2051,26 +2132,27 @@ class AsistenteSpotlight(QWidget):
             self.banner.raise_()
             self._actualizar_mascara_propia()  #el panel ya está en su posición final
 
+    #Entrada en cascada al arrancar el Tutorial Detallado: primero se
+    #oscurece el overlay, después la franja naranja se desliza desde
+    #arriba, y por último el panel de instrucciones se desliza desde un
+    #poco más abajo -cada pieza con su propio fundido de opacidad al
+    #mismo tiempo. Solo ocurre una vez por tour (ver el flag en
+    #__init__), nunca al cambiar de paso.
+    #
+    #Se usa QEasingCurve.OutQuint (desaceleración larga y pareja, sin
+    #ningún rebote/overshoot) para que se sienta suave y elegante, no
+    #"juguetón" -a diferencia de un OutBack, que llegaría a pasarse del
+    #destino antes de asentarse.
+    #
+    #Importante: como panel y banner SÍ cambian de posición durante
+    #este efecto (a diferencia del resto de la app, donde su geometría
+    #es fija entre reposicionamientos), la máscara de este contenedor
+    #-que depende de su `geometry()` real, ver _actualizar_mascara_propia-
+    #se recalcula en CADA cuadro de la animación (conectado a
+    #`valueChanged`), no solo al final; si no, se verían recortados
+    #visualmente a mitad de camino.
     def _reproducir_animacion_entrada(self, x_panel, y_panel):
-        """Entrada en cascada al arrancar el Tutorial Detallado: primero se
-        oscurece el overlay, después la franja naranja se desliza desde
-        arriba, y por último el panel de instrucciones se desliza desde un
-        poco más abajo -cada pieza con su propio fundido de opacidad al
-        mismo tiempo. Solo ocurre una vez por tour (ver el flag en
-        __init__), nunca al cambiar de paso.
 
-        Se usa QEasingCurve.OutQuint (desaceleración larga y pareja, sin
-        ningún rebote/overshoot) para que se sienta suave y elegante, no
-        "juguetón" -a diferencia de un OutBack, que llegaría a pasarse del
-        destino antes de asentarse.
-
-        Importante: como panel y banner SÍ cambian de posición durante
-        este efecto (a diferencia del resto de la app, donde su geometría
-        es fija entre reposicionamientos), la máscara de este contenedor
-        -que depende de su `geometry()` real, ver _actualizar_mascara_propia-
-        se recalcula en CADA cuadro de la animación (conectado a
-        `valueChanged`), no solo al final; si no, se verían recortados
-        visualmente a mitad de camino."""
         duracion_overlay= 380
         duracion_pieza= 460
         curva_fundido= QEasingCurve.Type.OutCubic
@@ -2124,15 +2206,16 @@ class AsistenteSpotlight(QWidget):
         QTimer.singleShot(200, self._anim_entrada_panel_pos.start)
         QTimer.singleShot(200, self._anim_entrada_panel_fade.start)
 
+    #Ctrl+H: oculta la ventanita de instrucciones (y la trae de vuelta
+    #con la misma tecla). El estado se mantiene entre pasos del tour: si
+    #el usuario la ocultó, sigue oculta hasta que él mismo la vuelva a
+    #mostrar — así puede completar tranquilo una acción de varios campos
+    #sin que el panel reaparezca a mitad de camino. Nada más depende de
+    #la visibilidad del panel: el overlay, el banner y el progreso del
+    #paso siguen funcionando igual (ver _actualizar_mascara_propia, que
+    #ya trata al panel invisible como "sin área sólida extra").
     def _alternar_panel(self):
-        """Ctrl+H: oculta la ventanita de instrucciones (y la trae de vuelta
-        con la misma tecla). El estado se mantiene entre pasos del tour: si
-        el usuario la ocultó, sigue oculta hasta que él mismo la vuelva a
-        mostrar — así puede completar tranquilo una acción de varios campos
-        sin que el panel reaparezca a mitad de camino. Nada más depende de
-        la visibilidad del panel: el overlay, el banner y el progreso del
-        paso siguen funcionando igual (ver _actualizar_mascara_propia, que
-        ya trata al panel invisible como "sin área sólida extra")."""
+
         self._panel_oculto= not self._panel_oculto
         if self._panel_oculto:
             self.panel.hide()
@@ -2143,23 +2226,23 @@ class AsistenteSpotlight(QWidget):
             self._colocar_spotlight()
         self._actualizar_mascara_propia()
 
+    #Se dispara cada vez que una parte del Tutorial Detallado se
+    #completa CORRECTAMENTE -acción real validada por
+    #`_on_exito_reportado`, o paso informativo confirmado con
+    #"Continuar" (ver _avanzar_por_paso_completado)-, nunca al usar
+    #"Saltar este paso". Dos cosas:
+    #
+    #1) Si el usuario había ocultado la ventanita de instrucciones con
+    #Ctrl+H (ver _alternar_panel), se vuelve a mostrar sin esperar a
+    #que él mismo la reactive: ya se acabó el motivo por el que la
+    #ocultó (tapar un campo mientras llenaba el formulario de ESTE
+    #paso), y así no se pierde el "¡Bien hecho!" ni el progreso
+    #actualizado, y el próximo paso arranca con la ventanita visible
+    #en vez de dejarla oculta "para siempre" por inercia.
+    #2) Lanza una animación breve de confeti (ver _ConfettiOverlay) a
+    #modo de celebración visual.
     def _celebrar_paso_completado(self):
-        """Se dispara cada vez que una parte del Tutorial Detallado se
-        completa CORRECTAMENTE -acción real validada por
-        `_on_exito_reportado`, o paso informativo confirmado con
-        "Continuar" (ver _avanzar_por_paso_completado)-, nunca al usar
-        "Saltar este paso". Dos cosas:
 
-        1) Si el usuario había ocultado la ventanita de instrucciones con
-           Ctrl+H (ver _alternar_panel), se vuelve a mostrar sin esperar a
-           que él mismo la reactive: ya se acabó el motivo por el que la
-           ocultó (tapar un campo mientras llenaba el formulario de ESTE
-           paso), y así no se pierde el "¡Bien hecho!" ni el progreso
-           actualizado, y el próximo paso arranca con la ventanita visible
-           en vez de dejarla oculta "para siempre" por inercia.
-        2) Lanza una animación breve de confeti (ver _ConfettiOverlay) a
-           modo de celebración visual.
-        """
         if self._panel_oculto:
             self._panel_oculto= False
             self.panel.show()
@@ -2169,34 +2252,39 @@ class AsistenteSpotlight(QWidget):
             self._actualizar_mascara_propia()
         _ConfettiOverlay(self)
 
+    #Puente para la señal `siguiente` del panel (botón "Continuar",
+    #solo en pasos informativos): a diferencia de "Saltar este paso",
+    #SÍ cuenta como terminar la parte correctamente.
     def _avanzar_por_paso_completado(self):
-        """Puente para la señal `siguiente` del panel (botón "Continuar",
-        solo en pasos informativos): a diferencia de "Saltar este paso",
-        SÍ cuenta como terminar la parte correctamente."""
+
         self._celebrar_paso_completado()
         self._avanzar_manual()
 
+    #El usuario está moviendo el panel a mano: deja de recolocarse
+    #solo (ver _posicionar_panel) y su nueva posición debe seguir
+    #siendo visible/clicable de inmediato -por eso se refresca la
+    #máscara en cada tick del arrastre, no solo al soltar.
     def _on_panel_arrastrado(self):
-        """El usuario está moviendo el panel a mano: deja de recolocarse
-        solo (ver _posicionar_panel) y su nueva posición debe seguir
-        siendo visible/clicable de inmediato -por eso se refresca la
-        máscara en cada tick del arrastre, no solo al soltar."""
+
         self._panel_movido_manualmente= True
         self.panel.raise_()
         self._actualizar_mascara_propia()
 
     #-------- avance / salida --------
     def _avanzar_manual(self):
+
         self.indice += 1
         self._mostrar_paso_actual()
 
     def _salir(self):
+
         #Salir a medias no rompe nada ni pierde datos ya guardados por el usuario en los pasos reales que sí completó:
         #el sandbox (con ese trabajo ya hecho) y el paso alcanzado se conservan en disco, para retomar justo ahí la
         #próxima vez -no se marca el tutorial como "visto", así que se le seguirá ofreciendo.
         self._cerrar(borrar_sandbox=False)
 
     def _terminar(self):
+
         if self.tipo == "general":
             marcar_tutorial_general_visto(self.main_window, True)
         else:
@@ -2204,15 +2292,18 @@ class AsistenteSpotlight(QWidget):
         self._cerrar(borrar_sandbox=True, volver_a_dashboard=True)
 
     def _cerrar(self, borrar_sandbox, volver_a_dashboard=False):
+
         #Al salir del tour (completo o a medias), ninguna pantalla debe quedar con proporciones distintas a las
         #originales: se cierran los paneles que el tutorial abrió a la fuerza en el paso actual.
         self._restaurar_paneles_desplegables(getattr(self, "_paneles_expandidos_tutorial", None))
         self._paneles_expandidos_tutorial= None
         try:
+
             eventos_ui.exito_reportado.disconnect(self._on_exito_reportado)
         except (TypeError, RuntimeError):
             pass
         try:
+
             self.main_window.removeEventFilter(self)
         except Exception:
             pass
@@ -2244,32 +2335,33 @@ class AsistenteSpotlight(QWidget):
 
 #ORQUESTADOR — llamado desde main.py (mostrar_login) y desde Configuración ▸ Mi Cuenta ("Ver tutorial de
 #nuevo")
+#Fuente de verdad REAL de qué módulos ve este usuario ahora mismo.
+#
+#Antes se repetía aquí la regla de permisos.modulo_visible(rol, nombre),
+#que solo mira la tabla PERMISOS_TECHO por rol -y por eso se quedaba
+#corta en varios casos reales: no sabe si "Politécnico"/"Universidad"
+#existen para el tipo de institución configurado (main_window solo
+#agrega esos módulos a self.modulos si corresponde -ver
+#main._construir_modulos_info), no sabe si un Profesor activó su
+#preferencia personal de "Calificaciones Técnicas", y no sabe si
+#"Copias de Seguridad" está encendido para roles gerenciales (un
+#interruptor aparte, ver mostrar_backups_gerenciales()). Como resultado,
+#el tour podía anunciar un paso de "Politécnico" en una institución que
+#ni siquiera tiene ese módulo -y quedarse sin poder navegar a ningún
+#lado, muy confuso.
+#
+#Preguntarle directamente al menú lateral YA CONSTRUIDO (main_window.
+#nav_list, ya actualizado por _aplicar_permisos_por_rol() antes de
+#ofrecer cualquier tutorial -ver mostrar_login() en main.py) es la única
+#forma de que el tutorial nunca se desincronice de esas reglas, estén
+#donde estén definidas: si el usuario no lo ve en el menú, el tutorial
+#tampoco se lo ofrece; si lo ve, se lo ofrece.
+#
+#`nombre=None` identifica los pasos "de interfaz general" (buscador,
+#perfil, tema...) y el paso de cierre: no pertenecen a ningún módulo
+#del menú, así que son visibles para todos siempre.
 def _modulo_visible_ahora(main_window, nombre):
-    """Fuente de verdad REAL de qué módulos ve este usuario ahora mismo.
 
-    Antes se repetía aquí la regla de permisos.modulo_visible(rol, nombre),
-    que solo mira la tabla PERMISOS_TECHO por rol -y por eso se quedaba
-    corta en varios casos reales: no sabe si "Politécnico"/"Universidad"
-    existen para el tipo de institución configurado (main_window solo
-    agrega esos módulos a self.modulos si corresponde -ver
-    main._construir_modulos_info), no sabe si un Profesor activó su
-    preferencia personal de "Calificaciones Técnicas", y no sabe si
-    "Copias de Seguridad" está encendido para roles gerenciales (un
-    interruptor aparte, ver mostrar_backups_gerenciales()). Como resultado,
-    el tour podía anunciar un paso de "Politécnico" en una institución que
-    ni siquiera tiene ese módulo -y quedarse sin poder navegar a ningún
-    lado, muy confuso.
-
-    Preguntarle directamente al menú lateral YA CONSTRUIDO (main_window.
-    nav_list, ya actualizado por _aplicar_permisos_por_rol() antes de
-    ofrecer cualquier tutorial -ver mostrar_login() en main.py) es la única
-    forma de que el tutorial nunca se desincronice de esas reglas, estén
-    donde estén definidas: si el usuario no lo ve en el menú, el tutorial
-    tampoco se lo ofrece; si lo ve, se lo ofrece.
-
-    `nombre=None` identifica los pasos "de interfaz general" (buscador,
-    perfil, tema...) y el paso de cierre: no pertenecen a ningún módulo
-    del menú, así que son visibles para todos siempre."""
     if nombre is None:
         return True
     modulos= getattr(main_window, "modulos", None)
@@ -2285,14 +2377,17 @@ def _modulo_visible_ahora(main_window, nombre):
 
 
 def _filtrar_contenido(main_window, lista):
+
     return [t for t in lista if _modulo_visible_ahora(main_window, t[1])]
 
 
 def _filtrar_pasos(main_window, lista):
+
     return [p for p in lista if _modulo_visible_ahora(main_window, p[1])]
 
 
 def _lanzar(main_window, tipo, titulo_carrusel, contenido_rapido, pasos_detallado, marcar_visto):
+
     #El rol Estudiante no tiene el módulo "Configuración" en su menú (ver permisos.PERMISOS_TECHO), así que no
     #puede relanzarlo manualmente; por eso el texto de la pantalla de elección varía según el rol. En cualquier
     #caso, la oferta SOLO se hace una vez por usuario: el flag se marca al completar, al saltar o incluso al salir
@@ -2341,24 +2436,25 @@ def _lanzar(main_window, tipo, titulo_carrusel, contenido_rapido, pasos_detallad
         marcar_visto(main_window, True)
 
 
+#tipo: "general", "docente", "single_teacher" o "side_stepper". Si
+#`forzar=True` (botón "Ver tutorial de nuevo" en Configuración), se
+#muestra sin importar el flag de "visto".
+#
+#El rol Estudiante usa tipo="general" también (mismo flag de "visto" por
+#cuenta, mismo mecanismo de sandbox/elección) pero con SU PROPIO
+#contenido -CONTENIDO_ESTUDIANTE/PASOS_ESTUDIANTE-, ya que es de solo
+#lectura: no tendría sentido pedirle "agrega un estudiante de prueba" a
+#quien no puede escribir nada en el sistema (ver permisos.puede_editar).
 def ofrecer_tutorial(main_window, tipo, forzar=False):
-    """tipo: "general", "docente", "single_teacher" o "side_stepper". Si
-    `forzar=True` (botón "Ver tutorial de nuevo" en Configuración), se
-    muestra sin importar el flag de "visto".
 
-    El rol Estudiante usa tipo="general" también (mismo flag de "visto" por
-    cuenta, mismo mecanismo de sandbox/elección) pero con SU PROPIO
-    contenido -CONTENIDO_ESTUDIANTE/PASOS_ESTUDIANTE-, ya que es de solo
-    lectura: no tendría sentido pedirle "agrega un estudiante de prueba" a
-    quien no puede escribir nada en el sistema (ver permisos.puede_editar)."""
     if tipo == "general":
         if not forzar and tutorial_general_visto(main_window):
             return
         rol= getattr(main_window, "rol_actual", None)
         if rol == "Estudiante":
-            contenido_base, pasos_base = CONTENIDO_ESTUDIANTE, PASOS_ESTUDIANTE
+            contenido_base, pasos_base= CONTENIDO_ESTUDIANTE, PASOS_ESTUDIANTE
         else:
-            contenido_base, pasos_base = CONTENIDO_GENERAL, PASOS_GENERAL
+            contenido_base, pasos_base= CONTENIDO_GENERAL, PASOS_GENERAL
         contenido= _filtrar_contenido(main_window, contenido_base)
         pasos= _filtrar_pasos(main_window, pasos_base)
         _lanzar(main_window, "general", "Tutorial General de AcaDeXI", contenido, pasos,
@@ -2390,16 +2486,18 @@ def ofrecer_tutorial(main_window, tipo, forzar=False):
                 marcar_tutorial_side_stepper_visto)
 
 
+#Punto de enganche único desde mostrar_login(): decide cuál(es) par(es)
+#ofrecer según el rol Y la edición, respetando que son independientes
+#entre sí. Single Teacher y Side Stepper se resuelven por EDICIÓN, antes
+#que por rol: un Side Stepper con un rol personalizado (ver permisos.py)
+#no necesariamente coincide con ROLES_GERENCIALES/"Administrativo", así
+#que decidir por edición primero es lo único que no se queda corto con
+#un rol nuevo que la app no anticipó.
 def ofrecer_tutoriales_tras_login(main_window):
-    """Punto de enganche único desde mostrar_login(): decide cuál(es) par(es)
-    ofrecer según el rol Y la edición, respetando que son independientes
-    entre sí. Single Teacher y Side Stepper se resuelven por EDICIÓN, antes
-    que por rol: un Side Stepper con un rol personalizado (ver permisos.py)
-    no necesariamente coincide con ROLES_GERENCIALES/"Administrativo", así
-    que decidir por edición primero es lo único que no se queda corto con
-    un rol nuevo que la app no anticipó."""
+
     _limpiar_sandboxes_huerfanos()
     try:
+
         from src.nucleo.edicion import edicion_actual
         edicion= edicion_actual()
     except Exception:

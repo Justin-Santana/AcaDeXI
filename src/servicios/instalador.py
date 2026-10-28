@@ -1,27 +1,26 @@
-"""Instalador de AcaDeXI - Exportación de paquete de instalación pre-configurado
-y del instalador (.exe) para Docentes/Personal.
-
-Dos mecanismos de distribución conviven aquí:
-
-1. ZIP con la BD + config.json + README (exportar_paquete / 
-   exportar_paquete_con_credenciales) — método histórico, sigue funcionando.
-
-2. Instalador para Docentes/Personal (AcaDeXI_Docentes_Setup.exe), compilado
-   UNA SOLA VEZ por el Administrador con Inno Setup a partir de
-   AcaDeXI_Docentes.iss, y colocado junto al ejecutable de la app. Ese
-   instalador NO trae ninguna base de datos dentro (a diferencia del de
-   Admin/Director): la persona instala la app vacía y luego importa su
-   .acdx, el cual —si el Director lo generó con la "BD Base Institucional"
-   incluida (ver perfil.DialogoGenerarPerfil / bd.guardar_bd_base_desde_actual)—
-   trae tanto su perfil como la estructura institucional inicial. Así, el
-   Docente/Personal solo necesita DOS archivos: el instalador (uno para
-   todos) y su propio .acdx (uno por persona) — ver exportar_instalador_docentes().
-
-Ambos métodos usan, cuando existe, la "BD Base Institucional" (bd.RUTA_BD_BASE)
-en vez de la BD en uso actualmente por el Director, para NO distribuir sus
-datos personales. Si todavía no se ha guardado una BD Base, se puede optar
-por usar la BD actual (con advertencia explícita para quien lo solicita).
-"""
+#Instalador de AcaDeXI - Exportación de paquete de instalación pre-configurado
+#y del instalador (.exe) para Docentes/Personal.
+#
+#Dos mecanismos de distribución conviven aquí:
+#
+#1. ZIP con la BD + config.json + README (exportar_paquete /
+#exportar_paquete_con_credenciales) — método histórico, sigue funcionando.
+#
+#2. Instalador para Docentes/Personal (AcaDeXI_Docentes_Setup.exe), compilado
+#UNA SOLA VEZ por el Administrador con Inno Setup a partir de
+#AcaDeXI_Docentes.iss, y colocado junto al ejecutable de la app. Ese
+#instalador NO trae ninguna base de datos dentro (a diferencia del de
+#Admin/Director): la persona instala la app vacía y luego importa su
+#.acdx, el cual —si el Director lo generó con la "BD Base Institucional"
+#incluida (ver perfil.DialogoGenerarPerfil / bd.guardar_bd_base_desde_actual)—
+#trae tanto su perfil como la estructura institucional inicial. Así, el
+#Docente/Personal solo necesita DOS archivos: el instalador (uno para
+#todos) y su propio .acdx (uno por persona) — ver exportar_instalador_docentes().
+#
+#Ambos métodos usan, cuando existe, la "BD Base Institucional" (bd.RUTA_BD_BASE)
+#en vez de la BD en uso actualmente por el Director, para NO distribuir sus
+#datos personales. Si todavía no se ha guardado una BD Base, se puede optar
+#por usar la BD actual (con advertencia explícita para quien lo solicita).
 import os
 import shutil
 import time
@@ -36,18 +35,20 @@ from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
 
 
+#Se lanza cuando se pide empaquetar 'la BD Base' y todavía no se ha
+#guardado ninguna (ver bd.guardar_bd_base_desde_actual), y no se autorizó
+#explícitamente usar la BD actual como reemplazo.
 class BDBaseNoDisponible(Exception):
-    """Se lanza cuando se pide empaquetar 'la BD Base' y todavía no se ha
-    guardado ninguna (ver bd.guardar_bd_base_desde_actual), y no se autorizó
-    explícitamente usar la BD actual como reemplazo."""
+
     pass
 
 
+#Devuelve la ruta de la BD a incluir en un paquete/perfil: preferentemente
+#la BD Base curada por el Director (sin sus datos personales). Si no existe
+#y no se autorizó `forzar_bd_actual`, lanza BDBaseNoDisponible para que la UI
+#pueda preguntar antes de distribuir la BD en uso actualmente.
 def _ruta_bd_para_paquete(forzar_bd_actual=False):
-    """Devuelve la ruta de la BD a incluir en un paquete/perfil: preferentemente
-    la BD Base curada por el Director (sin sus datos personales). Si no existe
-    y no se autorizó `forzar_bd_actual`, lanza BDBaseNoDisponible para que la UI
-    pueda preguntar antes de distribuir la BD en uso actualmente."""
+
     if existe_bd_base():
         return RUTA_BD_BASE
     if forzar_bd_actual:
@@ -58,18 +59,18 @@ def _ruta_bd_para_paquete(forzar_bd_actual=False):
         "continuar usando la base de datos actual (incluirá tus datos personales).")
 
 
+#Crea un ZIP con la BD configurada, config.json y README.
+#
+#Args:
+#ruta_destino: Carpeta donde se guardará el ZIP
+#main_window: Referencia a la ventana principal (para obtener versión, etc.)
+#forzar_bd_actual: si no hay BD Base guardada, usar la BD en uso actualmente
+#en vez de lanzar BDBaseNoDisponible (la UI debe confirmarlo con el Admin)
+#
+#Returns:
+#str: Ruta completa del archivo ZIP generado
 def exportar_paquete(ruta_destino, main_window=None, forzar_bd_actual=False):
-    """Crea un ZIP con la BD configurada, config.json y README.
-    
-    Args:
-        ruta_destino: Carpeta donde se guardará el ZIP
-        main_window: Referencia a la ventana principal (para obtener versión, etc.)
-        forzar_bd_actual: si no hay BD Base guardada, usar la BD en uso actualmente
-            en vez de lanzar BDBaseNoDisponible (la UI debe confirmarlo con el Admin)
-    
-    Returns:
-        str: Ruta completa del archivo ZIP generado
-    """
+
     ruta_bd= _ruta_bd_para_paquete(forzar_bd_actual)
 
     fecha= datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -159,22 +160,22 @@ Listo. No verás el asistente de configuración.
     return ruta_zip
 
 
+#Exporta paquete incluyendo un perfil .acdx para un usuario específico.
+#
+#Args:
+#ruta_destino: Carpeta donde se guardará el ZIP
+#main_window: Referencia a la ventana principal
+#usuario_id: ID del usuario para generar el perfil .acdx
+#password_plana: si se provee, se incluye en texto plano dentro del .acdx
+#(cifrado) para que el usuario no tenga que escribirla al importar el perfil
+#forzar_bd_actual: si no hay BD Base guardada, usar la BD en uso actualmente
+#en vez de lanzar BDBaseNoDisponible (la UI debe confirmarlo con el Admin)
+#
+#Returns:
+#str: Ruta completa del archivo ZIP generado
 def exportar_paquete_con_credenciales(ruta_destino, main_window=None, usuario_id=None,
                                        password_plana=None, forzar_bd_actual=False):
-    """Exporta paquete incluyendo un perfil .acdx para un usuario específico.
-    
-    Args:
-        ruta_destino: Carpeta donde se guardará el ZIP
-        main_window: Referencia a la ventana principal
-        usuario_id: ID del usuario para generar el perfil .acdx
-        password_plana: si se provee, se incluye en texto plano dentro del .acdx
-            (cifrado) para que el usuario no tenga que escribirla al importar el perfil
-        forzar_bd_actual: si no hay BD Base guardada, usar la BD en uso actualmente
-            en vez de lanzar BDBaseNoDisponible (la UI debe confirmarlo con el Admin)
-    
-    Returns:
-        str: Ruta completa del archivo ZIP generado
-    """
+
     ruta_bd= _ruta_bd_para_paquete(forzar_bd_actual)
 
     fecha= datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -204,6 +205,7 @@ def exportar_paquete_con_credenciales(ruta_destino, main_window=None, usuario_id
                 tmp_path= tmp.name
             
             try:
+
                 guardar_perfil_archivo(tmp_path, usuario_id, modo, carpeta, password_plana=password_plana)
                 
                 #Obtener nombre de usuario para nombrar el archivo
@@ -295,22 +297,24 @@ Listo. No verás el asistente de configuración.
 NOMBRE_SETUP_DOCENTES= "AcaDeXI_Docentes_Setup.exe"
 
 
+#Ruta esperada del instalador para Docentes/Personal ya compilado,
+#junto al ejecutable/código de la aplicación.
 def ruta_instalador_docentes():
-    """Ruta esperada del instalador para Docentes/Personal ya compilado,
-    junto al ejecutable/código de la aplicación."""
+
     return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_DOCENTES)
 
 
 def existe_instalador_docentes():
+
     return os.path.exists(ruta_instalador_docentes())
 
 
+#Copia AcaDeXI_Docentes_Setup.exe (ya compilado) a `ruta_destino`, listo
+#para distribuir. Es el MISMO instalador para todos los Docentes/Personal;
+#lo que cambia por persona es únicamente su archivo .acdx (ver
+#perfil.DialogoGenerarPerfil). Devuelve la ruta final del archivo copiado.
 def exportar_instalador_docentes(ruta_destino):
-    """Copia AcaDeXI_Docentes_Setup.exe (ya compilado) a `ruta_destino`, listo
-    para distribuir. Es el MISMO instalador para todos los Docentes/Personal;
-    lo que cambia por persona es únicamente su archivo .acdx (ver
-    perfil.DialogoGenerarPerfil). Devuelve la ruta final del archivo copiado.
-    """
+
     origen= ruta_instalador_docentes()
     if not os.path.exists(origen):
         raise FileNotFoundError(
@@ -338,6 +342,7 @@ def exportar_instalador_docentes(ruta_destino):
     ultimo_error= None
     for intento in range(3):
         try:
+
             shutil.copy2(origen, destino)
             return destino
         except shutil.SameFileError:
@@ -363,11 +368,12 @@ def exportar_instalador_docentes(ruta_destino):
     ) from ultimo_error
 
 
+#Misma lógica de copia/reintento que exportar_instalador_docentes()
+#(comparación por ruta normalizada + reintentos ante bloqueo temporal de
+#antivirus), factorizada para no repetirla en Single Teacher/Side
+#Stepper.
 def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
-    """Misma lógica de copia/reintento que exportar_instalador_docentes()
-    (comparación por ruta normalizada + reintentos ante bloqueo temporal de
-    antivirus), factorizada para no repetirla en Single Teacher/Side
-    Stepper."""
+
     if not os.path.exists(origen):
         raise FileNotFoundError(
             f"No se encontró '{nombre_archivo}' junto a la aplicación:\n"
@@ -385,6 +391,7 @@ def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
     ultimo_error= None
     for intento in range(3):
         try:
+
             shutil.copy2(origen, destino)
             return destino
         except shutil.SameFileError:
@@ -413,17 +420,20 @@ NOMBRE_SETUP_SINGLE_TEACHER= "AcaDeXI_SingleTeacher_Setup.exe"
 
 
 def ruta_instalador_single_teacher():
+
     return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_SINGLE_TEACHER)
 
 
 def existe_instalador_single_teacher():
+
     return os.path.exists(ruta_instalador_single_teacher())
 
 
+#Copia AcaDeXI_SingleTeacher_Setup.exe a `ruta_destino`. A diferencia
+#de Docentes, Single Teacher no depende de ningún .acdx -arranca desde
+#cero con su propio wizard (ver main.py, edicion_actual()).
 def exportar_instalador_single_teacher(ruta_destino):
-    """Copia AcaDeXI_SingleTeacher_Setup.exe a `ruta_destino`. A diferencia
-    de Docentes, Single Teacher no depende de ningún .acdx -arranca desde
-    cero con su propio wizard (ver main.py, edicion_actual())."""
+
     return _copiar_instalador_generico(ruta_instalador_single_teacher(), NOMBRE_SETUP_SINGLE_TEACHER, ruta_destino)
 
 
@@ -433,27 +443,31 @@ NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER= "permisos_side_stepper.json"
 
 
 def ruta_instalador_side_stepper():
+
     return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_SIDE_STEPPER)
 
 
 def existe_instalador_side_stepper():
+
     return os.path.exists(ruta_instalador_side_stepper())
 
 
+#Copia AcaDeXI_SideStepper_Setup.exe a `ruta_destino`. Mismo .exe para
+#las dos variantes de origen (exportado vs standalone): lo que cambia es
+#si se acompaña o no del paquete de permisos generado abajo.
 def exportar_instalador_side_stepper(ruta_destino):
-    """Copia AcaDeXI_SideStepper_Setup.exe a `ruta_destino`. Mismo .exe para
-    las dos variantes de origen (exportado vs standalone): lo que cambia es
-    si se acompaña o no del paquete de permisos generado abajo."""
+
     return _copiar_instalador_generico(ruta_instalador_side_stepper(), NOMBRE_SETUP_SIDE_STEPPER, ruta_destino)
 
 
+#Escribe, junto al instalador, un JSON con los roles ya configurados
+#en side_stepper_config.PanelPermisosSideStepper (ver
+#permisos.listar_roles_side_stepper_configurados). Quien reciba este
+#paquete lo importa en su primer arranque (WizardSideStepper) para
+#quedar configurado con el rol/módulos que el Director decidió, sin
+#pasar por el paso de "elige tu rol". Devuelve la ruta final.
 def exportar_paquete_permisos_side_stepper(ruta_destino):
-    """Escribe, junto al instalador, un JSON con los roles ya configurados
-    en side_stepper_config.PanelPermisosSideStepper (ver
-    permisos.listar_roles_side_stepper_configurados). Quien reciba este
-    paquete lo importa en su primer arranque (WizardSideStepper) para
-    quedar configurado con el rol/módulos que el Director decidió, sin
-    pasar por el paso de "elige tu rol". Devuelve la ruta final."""
+
     import json
     from src.nucleo import permisos
     os.makedirs(ruta_destino, exist_ok=True)

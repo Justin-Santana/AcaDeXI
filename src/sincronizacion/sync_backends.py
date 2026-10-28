@@ -1,20 +1,19 @@
-"""Sincronización Directa (Fase B) de AcaDeXI — métodos secundarios/avanzados.
-
-Alternativas a la "carpeta compartida" (Fase A, en sincronizacion.py):
-- Google Drive       (OAuth vía google-auth-oauthlib)
-- Dropbox            (OAuth vía dropbox SDK, flujo "sin redirect")
-- OneDrive           (OAuth vía msal, flujo "código de dispositivo")
-- Servidor institucional propio (API REST, ver servidor_institucional.py)
-
-Cada backend requiere que la institución/usuario aporte SUS PROPIAS
-credenciales (client_id/secret de una app OAuth registrada por ellos, o la
-URL+token de su propio servidor). AcaDeXI no incluye ni gestiona credenciales
-propias — no hay "iniciar sesión con Google" genérico de la app.
-
-Las credenciales y tokens se guardan cifrados localmente en
-`sync_credenciales.enc` (junto a la base de datos), nunca en la BD compartida
-ni en texto plano.
-"""
+#Sincronización Directa (Fase B) de AcaDeXI — métodos secundarios/avanzados.
+#
+#Alternativas a la "carpeta compartida" (Fase A, en sincronizacion.py):
+#- Google Drive       (OAuth vía google-auth-oauthlib)
+#- Dropbox            (OAuth vía dropbox SDK, flujo "sin redirect")
+#- OneDrive           (OAuth vía msal, flujo "código de dispositivo")
+#- Servidor institucional propio (API REST, ver servidor_institucional.py)
+#
+#Cada backend requiere que la institución/usuario aporte SUS PROPIAS
+#credenciales (client_id/secret de una app OAuth registrada por ellos, o la
+#URL+token de su propio servidor). AcaDeXI no incluye ni gestiona credenciales
+#propias — no hay "iniciar sesión con Google" genérico de la app.
+#
+#Las credenciales y tokens se guardan cifrados localmente en
+#`sync_credenciales.enc` (junto a la base de datos), nunca en la BD compartida
+#ni en texto plano.
 import os
 import json
 import base64
@@ -42,9 +41,11 @@ METODOS= {
 
 #Almacén cifrado de credenciales/tokens locales (por equipo)
 def _cargar_almacen():
+
     if not os.path.exists(RUTA_CREDENCIALES):
         return {}
     try:
+
         with open(RUTA_CREDENCIALES, "rb") as f:
             token= f.read()
         return json.loads(_fernet.decrypt(token).decode("utf-8"))
@@ -53,51 +54,58 @@ def _cargar_almacen():
 
 
 def _guardar_almacen(datos):
+
     token= _fernet.encrypt(json.dumps(datos, ensure_ascii=False).encode("utf-8"))
     with open(RUTA_CREDENCIALES, "wb") as f:
         f.write(token)
 
 
 def guardar_credenciales(backend, datos):
+
     almacen= _cargar_almacen()
     almacen[backend]= datos
     _guardar_almacen(almacen)
 
 
 def obtener_credenciales(backend):
+
     return _cargar_almacen().get(backend)
 
 
 def eliminar_credenciales(backend):
+
     almacen= _cargar_almacen()
     almacen.pop(backend, None)
     _guardar_almacen(almacen)
 
 
 def conectado(backend):
+
     return obtener_credenciales(backend) is not None
 
 
+#Rompe la conexión con `backend`: borra las credenciales/tokens
+#guardados localmente para ese servicio, dejándolo como si nunca se
+#hubiera conectado en este equipo.
+#
+#Es la vía de recuperación cuando algo quedó mal (token vencido o
+#corrupto, credenciales equivocadas, cuenta que ya no corresponde, etc.):
+#al desvincular, "Sincronización" vuelve a mostrar ese backend como "no
+#conectado" y el usuario puede volver a conectarlo desde cero con
+#_conectar (sin arrastrar el estado anterior).
+#
+#No borra NADA remoto: ni el archivo ya subido a la nube/servidor, ni la
+#app OAuth ni el token en el servidor institucional (para revocar eso,
+#hay que hacerlo del lado de Google/Dropbox/Microsoft/servidor). Solo
+#quita la referencia local guardada por AcaDeXI.
 def desvincular(backend):
-    """Rompe la conexión con `backend`: borra las credenciales/tokens
-    guardados localmente para ese servicio, dejándolo como si nunca se
-    hubiera conectado en este equipo.
 
-    Es la vía de recuperación cuando algo quedó mal (token vencido o
-    corrupto, credenciales equivocadas, cuenta que ya no corresponde, etc.):
-    al desvincular, "Sincronización" vuelve a mostrar ese backend como "no
-    conectado" y el usuario puede volver a conectarlo desde cero con
-    _conectar (sin arrastrar el estado anterior).
-
-    No borra NADA remoto: ni el archivo ya subido a la nube/servidor, ni la
-    app OAuth ni el token en el servidor institucional (para revocar eso,
-    hay que hacerlo del lado de Google/Dropbox/Microsoft/servidor). Solo
-    quita la referencia local guardada por AcaDeXI."""
     eliminar_credenciales(backend)
     return True
 
 
 def _hash_archivo(ruta):
+
     if not ruta or not os.path.exists(ruta):
         return None
     h= hashlib.sha256()
@@ -108,10 +116,11 @@ def _hash_archivo(ruta):
 
 
 #Google Drive
+#Ejecuta el flujo OAuth (abre el navegador y levanta un servidor local
+#temporal para recibir la respuesta). Requiere que el administrador haya
+#creado su propia app OAuth tipo 'Desktop' en Google Cloud Console.
 def google_drive_conectar(client_id, client_secret):
-    """Ejecuta el flujo OAuth (abre el navegador y levanta un servidor local
-    temporal para recibir la respuesta). Requiere que el administrador haya
-    creado su propia app OAuth tipo 'Desktop' en Google Cloud Console."""
+
     from google_auth_oauthlib.flow import InstalledAppFlow
 
     config_cliente= {
@@ -136,6 +145,7 @@ def google_drive_conectar(client_id, client_secret):
 
 
 def _google_drive_servicio():
+
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
     from googleapiclient.discovery import build
@@ -156,6 +166,7 @@ def _google_drive_servicio():
 
 
 def _google_drive_buscar_archivo(servicio):
+
     resp= servicio.files().list(
         q= f"name='{NOMBRE_ARCHIVO_SYNC}' and trashed=false",
         spaces= "drive", fields="files(id, modifiedTime)").execute()
@@ -164,6 +175,7 @@ def _google_drive_buscar_archivo(servicio):
 
 
 def google_drive_subir():
+
     from googleapiclient.http import MediaFileUpload
     servicio= _google_drive_servicio()
     existente= _google_drive_buscar_archivo(servicio)
@@ -176,6 +188,7 @@ def google_drive_subir():
 
 
 def google_drive_descargar():
+
     import io
     from googleapiclient.http import MediaIoBaseDownload
     servicio= _google_drive_servicio()
@@ -188,18 +201,19 @@ def google_drive_descargar():
     descargador= MediaIoBaseDownload(buffer, solicitud)
     listo= False
     while not listo:
-        _, listo = descargador.next_chunk()
+        _, listo= descargador.next_chunk()
     with open(DB_PATH, "wb") as f:
         f.write(buffer.getvalue())
     return ruta_respaldo
 
 
 #Dropbox
+#Inicia el flujo OAuth2 'sin redirect' de Dropbox: devuelve el objeto
+#de flujo y la URL de autorización. El llamador (UI) debe abrir esa URL,
+#pedir al usuario el código que Dropbox le muestra, y luego llamar a
+#dropbox_finalizar_conexion() con ese código.
 def dropbox_conectar(app_key, app_secret):
-    """Inicia el flujo OAuth2 'sin redirect' de Dropbox: devuelve el objeto
-    de flujo y la URL de autorización. El llamador (UI) debe abrir esa URL,
-    pedir al usuario el código que Dropbox le muestra, y luego llamar a
-    dropbox_finalizar_conexion() con ese código."""
+
     from dropbox import DropboxOAuth2FlowNoRedirect
 
     flow= DropboxOAuth2FlowNoRedirect(app_key, app_secret, token_access_type="offline")
@@ -208,6 +222,7 @@ def dropbox_conectar(app_key, app_secret):
 
 
 def dropbox_finalizar_conexion(flow, codigo, app_key, app_secret):
+
     resultado= flow.finish(codigo.strip())
     guardar_credenciales("dropbox", {
         "app_key": app_key, "app_secret": app_secret,
@@ -217,6 +232,7 @@ def dropbox_finalizar_conexion(flow, codigo, app_key, app_secret):
 
 
 def _dropbox_cliente():
+
     import dropbox
     datos= obtener_credenciales("dropbox")
     if not datos:
@@ -227,6 +243,7 @@ def _dropbox_cliente():
 
 
 def dropbox_subir():
+
     import dropbox
     dbx= _dropbox_cliente()
     with open(DB_PATH, "rb") as f:
@@ -235,20 +252,22 @@ def dropbox_subir():
 
 
 def dropbox_descargar():
+
     dbx= _dropbox_cliente()
     ruta_respaldo= crear_backup(tipo="Pre-sincronización (Dropbox)")
-    _, respuesta = dbx.files_download(f"/{NOMBRE_ARCHIVO_SYNC}")
+    _, respuesta= dbx.files_download(f"/{NOMBRE_ARCHIVO_SYNC}")
     with open(DB_PATH, "wb") as f:
         f.write(respuesta.content)
     return ruta_respaldo
 
 
 #OneDrive (Microsoft Graph vía MSAL — flujo de código de dispositivo)
+#Inicia el flujo de código de dispositivo: devuelve la app MSAL y el
+#diccionario del flujo (incluye flujo['message'] con instrucciones y el
+#código que el usuario debe ingresar en https://microsoft.com/devicelogin).
+#Tras completarlo en el navegador, llamar a onedrive_finalizar_conexion().
 def onedrive_conectar(client_id, tenant="consumers"):
-    """Inicia el flujo de código de dispositivo: devuelve la app MSAL y el
-    diccionario del flujo (incluye flujo['message'] con instrucciones y el
-    código que el usuario debe ingresar en https://microsoft.com/devicelogin).
-    Tras completarlo en el navegador, llamar a onedrive_finalizar_conexion()."""
+
     import msal
 
     app= msal.PublicClientApplication(
@@ -260,6 +279,7 @@ def onedrive_conectar(client_id, tenant="consumers"):
 
 
 def onedrive_finalizar_conexion(app, flujo, client_id, tenant="consumers"):
+
     resultado= app.acquire_token_by_device_flow(flujo)
     if "access_token" not in resultado:
         raise RuntimeError(resultado.get("error_description", "No se pudo completar el inicio de sesión."))
@@ -272,6 +292,7 @@ def onedrive_finalizar_conexion(app, flujo, client_id, tenant="consumers"):
 
 
 def _onedrive_token():
+
     import msal
     datos= obtener_credenciales("onedrive")
     if not datos:
@@ -288,6 +309,7 @@ def _onedrive_token():
 
 
 def onedrive_subir():
+
     import requests
     token= _onedrive_token()
     with open(DB_PATH, "rb") as f:
@@ -300,6 +322,7 @@ def onedrive_subir():
 
 
 def onedrive_descargar():
+
     import requests
     token= _onedrive_token()
     ruta_respaldo= crear_backup(tipo="Pre-sincronización (OneDrive)")
@@ -316,6 +339,7 @@ def onedrive_descargar():
 
 #Servidor institucional propio (ver servidor_institucional.py)
 def servidor_conectar(url_base, token):
+
     import requests
     url_base= url_base.rstrip("/")
     resp= requests.get(f"{url_base}/estado", headers={"Authorization": f"Bearer {token}"}, timeout=15)
@@ -325,6 +349,7 @@ def servidor_conectar(url_base, token):
 
 
 def _servidor_datos():
+
     datos= obtener_credenciales("servidor")
     if not datos:
         raise RuntimeError("El servidor institucional no está conectado. Configúralo en Sincronización.")
@@ -332,6 +357,7 @@ def _servidor_datos():
 
 
 def servidor_estado_remoto():
+
     import requests
     datos= _servidor_datos()
     resp= requests.get(f"{datos['url']}/estado", headers={"Authorization": f"Bearer {datos['token']}"}, timeout=15)
@@ -340,6 +366,7 @@ def servidor_estado_remoto():
 
 
 def servidor_subir():
+
     import requests
     datos= _servidor_datos()
     with open(DB_PATH, "rb") as f:
@@ -351,6 +378,7 @@ def servidor_subir():
 
 
 def servidor_descargar():
+
     import requests
     datos= _servidor_datos()
     ruta_respaldo= crear_backup(tipo="Pre-sincronización (Servidor institucional)")
@@ -380,6 +408,7 @@ _DESCARGAR= {
 
 
 def _verificar_sandbox_inactivo():
+
     from src.nucleo import bd
     if bd.SANDBOX_TUTORIAL_ACTIVO:
         raise RuntimeError(
@@ -388,10 +417,12 @@ def _verificar_sandbox_inactivo():
 
 
 def subir(metodo):
+
     _verificar_sandbox_inactivo()
     return _SUBIR[metodo]()
 
 
 def descargar(metodo):
+
     _verificar_sandbox_inactivo()
     return _DESCARGAR[metodo]()

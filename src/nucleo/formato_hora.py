@@ -71,6 +71,7 @@ def formatear_hora(texto_hora, main_window=None):
         return ""
 
     try:
+
         hora= datetime.strptime(str(texto_hora).strip()[:5], "%H:%M")
 
     except ValueError:
@@ -98,6 +99,7 @@ def formatear_fecha(texto_fecha, main_window=None):
         return ""
 
     try:
+
         fecha= datetime.strptime(str(texto_fecha).strip()[:10], "%Y-%m-%d")
 
     except ValueError:
@@ -159,6 +161,7 @@ def qdate_display_format(main_window=None):
 def aplicar_formato_widget_hora(in_hora, main_window=None):
 
     try:
+
         in_hora.setDisplayFormat(qtime_display_format(main_window))
 
     except Exception:
@@ -168,6 +171,7 @@ def aplicar_formato_widget_hora(in_hora, main_window=None):
 def aplicar_formato_widget_fecha(in_fecha, main_window=None):
 
     try:
+
         in_fecha.setDisplayFormat(qdate_display_format(main_window))
 
     except Exception:

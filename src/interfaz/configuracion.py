@@ -42,45 +42,48 @@ from src.nucleo.rutas import obtener_carpeta_raiz
 
 
 #Utilidades visuales (solo estética/animación — no tocan datos ni lógica)
+#Convierte '#RRGGBB' a 'rgba(r, g, b, a)' para usar en hojas de estilo.
 def _hex_a_rgba(hex_color, alpha):
-    """Convierte '#RRGGBB' a 'rgba(r, g, b, a)' para usar en hojas de estilo."""
+
     hex_color= (hex_color or "#000000").lstrip("#")
     if len(hex_color) < 6:
         hex_color= "000000"
-    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Toma un color 'rgba(r, g, b, a)' (semitransparente) y lo funde sobre un
+#color de fondo '#RRGGBB' sólido, devolviendo el resultado como un
+#'#RRGGBB' SÓLIDO equivalente (misma composición visual, sin canal alfa).
+#
+#Se usa para el hover de las flechitas de scroll de las pestañas
+#(`estilo_flechas_navegacion_tabs`): esos botones se repintan en cada clic
+#y, al estar dentro de ventanas con fondo translúcido (WA_TranslucentBackground),
+#Qt no siempre limpia el área antes de repintar un color con alfa, así que
+#el semitransparente se va acumulando sobre sí mismo con cada uso hasta
+#volverse opaco y tapar la flecha. Aplanar el color de antemano a un
+#sólido con el MISMO resultado visual (matemáticamente: alpha*color +
+#(1-alpha)*fondo) evita ese acumulado por completo, sin cambiar cómo se ve.
 def _aplanar_color_sobre(color_rgba, hex_fondo):
-    """Toma un color 'rgba(r, g, b, a)' (semitransparente) y lo funde sobre un
-    color de fondo '#RRGGBB' sólido, devolviendo el resultado como un
-    '#RRGGBB' SÓLIDO equivalente (misma composición visual, sin canal alfa).
 
-    Se usa para el hover de las flechitas de scroll de las pestañas
-    (`estilo_flechas_navegacion_tabs`): esos botones se repintan en cada clic
-    y, al estar dentro de ventanas con fondo translúcido (WA_TranslucentBackground),
-    Qt no siempre limpia el área antes de repintar un color con alfa, así que
-    el semitransparente se va acumulando sobre sí mismo con cada uso hasta
-    volverse opaco y tapar la flecha. Aplanar el color de antemano a un
-    sólido con el MISMO resultado visual (matemáticamente: alpha*color +
-    (1-alpha)*fondo) evita ese acumulado por completo, sin cambiar cómo se ve."""
     m= re.match(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)", color_rgba or "")
     if not m:
         return color_rgba
-    r, g, b, a = int(m.group(1)), int(m.group(2)), int(m.group(3)), float(m.group(4))
+    r, g, b, a= int(m.group(1)), int(m.group(2)), int(m.group(3)), float(m.group(4))
     hex_fondo= (hex_fondo or "#000000").lstrip("#")
     if len(hex_fondo) < 6:
         hex_fondo= "000000"
-    fr, fg, fb = int(hex_fondo[0:2], 16), int(hex_fondo[2:4], 16), int(hex_fondo[4:6], 16)
+    fr, fg, fb= int(hex_fondo[0:2], 16), int(hex_fondo[2:4], 16), int(hex_fondo[4:6], 16)
     rr= round(a * r + (1 - a) * fr)
     rg= round(a * g + (1 - a) * fg)
     rb= round(a * b + (1 - a) * fb)
     return f"#{rr:02X}{rg:02X}{rb:02X}"
 
 
+#Quita mayúsculas y acentos para que el buscador no sea estricto:
+#'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que el buscador no sea estricto:
-    'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)"""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -88,20 +91,23 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que horario.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-    (mismo diseño que horario.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -112,18 +118,20 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#Filtro de eventos reutilizable: al pasar el mouse sobre un botón o tarjeta,
+#'eleva' suavemente su sombra (más difusa y con más separación) y la vuelve a
+#bajar al salir. Es puramente decorativo — no intercepta ni modifica clics.
 class _RealceHover(QObject):
-    """Filtro de eventos reutilizable: al pasar el mouse sobre un botón o tarjeta,
-    'eleva' suavemente su sombra (más difusa y con más separación) y la vuelve a
-    bajar al salir. Es puramente decorativo — no intercepta ni modifica clics."""
 
     def __init__(self, blur_normal=0, blur_hover=22, offset_hover=6, parent=None):
+
         super().__init__(parent)
         self._blur_normal= blur_normal
         self._blur_hover= blur_hover
         self._offset_hover= offset_hover
 
     def eventFilter(self, obj, event):
+
         tipo= event.type()
         if tipo == QEvent.Type.Enter and obj.isEnabled():
             self._animar(obj, self._blur_hover)
@@ -132,6 +140,7 @@ class _RealceHover(QObject):
         return False
 
     def _animar(self, widget, destino_blur):
+
         efecto= widget.graphicsEffect()
         if not isinstance(efecto, QGraphicsDropShadowEffect):
             efecto= QGraphicsDropShadowEffect(widget)
@@ -153,10 +162,11 @@ class _RealceHover(QObject):
         offset_anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
 
+#Aplica un fundido de entrada (opacidad 0→1) a `widget`. Se usa al cambiar
+#de pestaña o de paso del asistente, para que la transición se sienta fluida
+#en vez de un salto brusco.
 def _fundido_entrada(widget, duracion=260):
-    """Aplica un fundido de entrada (opacidad 0→1) a `widget`. Se usa al cambiar
-    de pestaña o de paso del asistente, para que la transición se sienta fluida
-    en vez de un salto brusco."""
+
     efecto= QGraphicsOpacityEffect(widget)
     widget.setGraphicsEffect(efecto)
     anim= QPropertyAnimation(efecto, b"opacity", widget)
@@ -168,57 +178,61 @@ def _fundido_entrada(widget, duracion=260):
     widget._anim_fundido= anim
 
     def _limpiar():
+
         widget.setGraphicsEffect(None)
     anim.finished.connect(_limpiar)
     anim.start()
 
 
+#Evita que uno o más QComboBox se inflen más allá de lo razonable por
+#culpa de un ítem largo (placeholder tipo "Selecciona primero un
+#curso/grado...", nombre completo de estudiante, título de tarea, etc.).
+#
+#Por defecto un QComboBox pide como ancho mínimo el necesario para
+#mostrar su ítem MÁS LARGO sin recortar. Eso ignora los stretch
+#factors de layouts (QGridLayout/QHBoxLayout) que lo contienen y puede
+#empujar toda una fila, tarjeta o incluso la ventana completa más
+#ancha que la pantalla — descuadrando el resto de los campos. El texto
+#largo se sigue mostrando completo al desplegar la lista; solo el
+#propio combo deja de inflarse para "adelantarse" a acomodarlo.
+#Úsalo justo después de crear el/los combo(s), antes o después de
+#poblarlos (aplica igual en ambos casos).
 def ajustar_combo_ancho_seguro(*combos, min_len=16):
-    """Evita que uno o más QComboBox se inflen más allá de lo razonable por
-    culpa de un ítem largo (placeholder tipo "Selecciona primero un
-    curso/grado...", nombre completo de estudiante, título de tarea, etc.).
 
-    Por defecto un QComboBox pide como ancho mínimo el necesario para
-    mostrar su ítem MÁS LARGO sin recortar. Eso ignora los stretch
-    factors de layouts (QGridLayout/QHBoxLayout) que lo contienen y puede
-    empujar toda una fila, tarjeta o incluso la ventana completa más
-    ancha que la pantalla — descuadrando el resto de los campos. El texto
-    largo se sigue mostrando completo al desplegar la lista; solo el
-    propio combo deja de inflarse para "adelantarse" a acomodarlo.
-    Úsalo justo después de crear el/los combo(s), antes o después de
-    poblarlos (aplica igual en ambos casos)."""
     for combo in combos:
         combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         combo.setMinimumContentsLength(min_len)
 
 
+#Deja siempre visible, en tooltip, el NOMBRE COMPLETO de un combo de
+#Área Técnica/Carrera (u otro combo angosto parecido), tanto CERRADO
+#como con la lista DESPLEGADA:
+#
+#- Cerrado: el tooltip del propio combo muestra el ítem seleccionado
+#(encima de su descripción/ayuda de siempre, si se pasa `texto_base`),
+#útil cuando el texto queda truncado con "..." por lo angosto del
+#combo.
+#- Desplegado: cada fila de la lista lleva su propio tooltip con su
+#texto completo (vía Qt.ToolTipRole), así que pasar el mouse por
+#CUALQUIER opción -esté o no seleccionada, se vea o no truncada- la
+#muestra completa, sin tener que elegirla primero.
+#
+#Se conecta tanto a currentIndexChanged (para el tooltip del combo
+#cerrado) como a las inserciones de filas del modelo (para el tooltip de
+#cada ítem de la lista), así que ambos se mantienen al día solos con
+#cada cambio de selección o repoblado del combo.
+#
+#SEGURA de llamar más de una vez sobre el MISMO combo (por ejemplo, un
+#combo de Curso/Sección que se repuebla en cada cambio de filtro, como
+#los de filtros_curso_seccion.py): la primera vez conecta las señales;
+#las siguientes solo actualizan `texto_base` y refrescan el tooltip ya
+#con la selección actual -no vuelve a apilar conexiones duplicadas.
 def conectar_tooltip_seleccion(combo, texto_base=""):
-    """Deja siempre visible, en tooltip, el NOMBRE COMPLETO de un combo de
-    Área Técnica/Carrera (u otro combo angosto parecido), tanto CERRADO
-    como con la lista DESPLEGADA:
 
-    - Cerrado: el tooltip del propio combo muestra el ítem seleccionado
-      (encima de su descripción/ayuda de siempre, si se pasa `texto_base`),
-      útil cuando el texto queda truncado con "..." por lo angosto del
-      combo.
-    - Desplegado: cada fila de la lista lleva su propio tooltip con su
-      texto completo (vía Qt.ToolTipRole), así que pasar el mouse por
-      CUALQUIER opción -esté o no seleccionada, se vea o no truncada- la
-      muestra completa, sin tener que elegirla primero.
-
-    Se conecta tanto a currentIndexChanged (para el tooltip del combo
-    cerrado) como a las inserciones de filas del modelo (para el tooltip de
-    cada ítem de la lista), así que ambos se mantienen al día solos con
-    cada cambio de selección o repoblado del combo.
-
-    SEGURA de llamar más de una vez sobre el MISMO combo (por ejemplo, un
-    combo de Curso/Sección que se repuebla en cada cambio de filtro, como
-    los de filtros_curso_seccion.py): la primera vez conecta las señales;
-    las siguientes solo actualizan `texto_base` y refrescan el tooltip ya
-    con la selección actual -no vuelve a apilar conexiones duplicadas."""
     combo._tooltip_seleccion_texto_base= texto_base
 
     def _refrescar_tooltip_combo(_indice=None):
+
         seleccionado= combo.currentText().strip()
         base= getattr(combo, "_tooltip_seleccion_texto_base", "")
         if seleccionado and base:
@@ -233,8 +247,9 @@ def conectar_tooltip_seleccion(combo, texto_base=""):
         return
 
     def _refrescar_tooltips_items(_padre=None, primero=None, ultimo=None):
+
         if primero is None:
-            primero, ultimo = 0, combo.count() - 1
+            primero, ultimo= 0, combo.count() - 1
         for i in range(primero, ultimo + 1):
             texto= combo.itemText(i)
             if texto:
@@ -247,23 +262,24 @@ def conectar_tooltip_seleccion(combo, texto_base=""):
     _refrescar_tooltips_items()
 
 
+#QTabWidget que garantiza la navegación entre pestañas con las flechas
+#izquierda/derecha del teclado.
+#
+#QTabBar ya trae esto "de fábrica", pero solo funciona si la barra de
+#pestañas tiene el foco de teclado en ese momento — y en la práctica eso
+#no siempre pasa (por ejemplo si el foco quedó en otro control de la
+#pestaña, o si algo más arriba en la jerarquía de widgets no lo deja
+#llegar). Esta clase lo resuelve de dos formas: 1) le da foco explícito a
+#la barra apenas se hace clic en una pestaña, para que las flechas
+#funcionen de inmediato después; y 2) maneja Left/Right ella misma como
+#respaldo — Qt propaga los eventos de teclado no consumidos hacia el
+#widget padre, así que aunque el foco esté en cualquier otro punto sin
+#uso propio de las flechas (un botón, una etiqueta, el área en blanco de
+#la pestaña...), el evento termina llegando aquí de todos modos.
 class TabWidgetNavegable(QTabWidget):
-    """QTabWidget que garantiza la navegación entre pestañas con las flechas
-    izquierda/derecha del teclado.
-
-    QTabBar ya trae esto "de fábrica", pero solo funciona si la barra de
-    pestañas tiene el foco de teclado en ese momento — y en la práctica eso
-    no siempre pasa (por ejemplo si el foco quedó en otro control de la
-    pestaña, o si algo más arriba en la jerarquía de widgets no lo deja
-    llegar). Esta clase lo resuelve de dos formas: 1) le da foco explícito a
-    la barra apenas se hace clic en una pestaña, para que las flechas
-    funcionen de inmediato después; y 2) maneja Left/Right ella misma como
-    respaldo — Qt propaga los eventos de teclado no consumidos hacia el
-    widget padre, así que aunque el foco esté en cualquier otro punto sin
-    uso propio de las flechas (un botón, una etiqueta, el área en blanco de
-    la pestaña...), el evento termina llegando aquí de todos modos."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.tabBar().setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.tabBarClicked.connect(lambda _i: self.tabBar().setFocus())
@@ -280,30 +296,32 @@ class TabWidgetNavegable(QTabWidget):
         self.tabBar().installEventFilter(self)
 
     def eventFilter(self, obj, event):
+
         if obj is self.tabBar() and event.type() == QEvent.Type.ChildPolished:
             self._enganchar_botones_scroll()
         return super().eventFilter(obj, event)
 
+    #Qt crea sus propias flechitas de scroll (QToolButton) como hijas
+    #del QTabBar SOLO cuando las pestañas no caben todas y hacen falta -
+    #no existen desde el principio, aparecen sobre la marcha. Se
+    #"enganchan" apenas aparecen para forzar un repintado COMPLETO y
+    #limpio de la barra cada vez que se usan.
+    #
+    #Por qué hace falta: estas ventanas son translúcidas
+    #(WA_TranslucentBackground) para el efecto de fondo difuminado. En
+    #esa configuración Qt a veces optimiza el repintado dibujando solo
+    #el rectángulo "dañado" (el botón) sin limpiar antes ese pedazo del
+    #backing store -así que los píxeles semitransparentes del borde
+    #redondeado (antialiasing) se van componiendo unos sobre otros con
+    #cada clic. Con el uso repetido (mantener presionado también cuenta:
+    #el autorepeat dispara 'clicked' varias veces por segundo) ese
+    #residuo se acumula hasta volverse un bloque sólido que tapa la
+    #flecha -exactamente el bug reportado. Forzar un repaint() síncrono
+    #de TODA la barra en cada clic impide que el residuo llegue a
+    #acumularse: cada uso deja la barra perfectamente limpia otra vez,
+    #sin cambiar en nada cómo se ve.
     def _enganchar_botones_scroll(self):
-        """Qt crea sus propias flechitas de scroll (QToolButton) como hijas
-        del QTabBar SOLO cuando las pestañas no caben todas y hacen falta -
-        no existen desde el principio, aparecen sobre la marcha. Se
-        "enganchan" apenas aparecen para forzar un repintado COMPLETO y
-        limpio de la barra cada vez que se usan.
 
-        Por qué hace falta: estas ventanas son translúcidas
-        (WA_TranslucentBackground) para el efecto de fondo difuminado. En
-        esa configuración Qt a veces optimiza el repintado dibujando solo
-        el rectángulo "dañado" (el botón) sin limpiar antes ese pedazo del
-        backing store -así que los píxeles semitransparentes del borde
-        redondeado (antialiasing) se van componiendo unos sobre otros con
-        cada clic. Con el uso repetido (mantener presionado también cuenta:
-        el autorepeat dispara 'clicked' varias veces por segundo) ese
-        residuo se acumula hasta volverse un bloque sólido que tapa la
-        flecha -exactamente el bug reportado. Forzar un repaint() síncrono
-        de TODA la barra en cada clic impide que el residuo llegue a
-        acumularse: cada uso deja la barra perfectamente limpia otra vez,
-        sin cambiar en nada cómo se ve."""
         for boton in self.tabBar().findChildren(QToolButton):
             if boton in self._botones_scroll_enganchados:
                 continue
@@ -311,10 +329,12 @@ class TabWidgetNavegable(QTabWidget):
             boton.clicked.connect(self._repintar_barra_limpia)
 
     def _repintar_barra_limpia(self):
+
         barra= self.tabBar()
         QTimer.singleShot(0, barra.repaint)
 
     def sizeHint(self):
+
         w= self.currentWidget()
         if w is None:
             return super().sizeHint()
@@ -322,6 +342,7 @@ class TabWidgetNavegable(QTabWidget):
         return QSize(w.sizeHint().width(), cromo.height())
 
     def minimumSizeHint(self):
+
         w= self.currentWidget()
         if w is None:
             return super().minimumSizeHint()
@@ -331,6 +352,7 @@ class TabWidgetNavegable(QTabWidget):
         return QSize(w.minimumSizeHint().width(), cromo.height())
 
     def keyPressEvent(self, event):
+
         if self.count() > 1 and event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
             paso= -1 if event.key() == Qt.Key.Key_Left else 1
             self.setCurrentIndex((self.currentIndex() + paso) % self.count())
@@ -340,23 +362,24 @@ class TabWidgetNavegable(QTabWidget):
         super().keyPressEvent(event)
 
 
+#QSS para las flechitas ('«' '»') que Qt agrega solas a la derecha de un
+#QTabBar cuando las pestañas no caben todas en el ancho disponible.
+#
+#Sin este QSS, ese control se dibuja con el estilo NATIVO del sistema
+#operativo (una cajita gris de Windows, por ejemplo) que no combina en
+#absoluto con el diseño "píldora" plano del resto de la barra de
+#pestañas -de ahí que se vea tan fuera de lugar-. Esto lo viste con el
+#mismo lenguaje visual: fondo redondeado a juego con el panel, hover con
+#el color de acento suavizado, y el degradado del acento al presionar.
+#
+#Se expone como función (y no como un bloque de QSS ya armado) porque
+#Calificaciones, Configuración y Reportes arman cada uno su propio
+#grupo de colores del tema con nombres de variables distintos; cada
+#módulo llama a esta función con SUS variables y concatena el resultado
+#al QSS que ya arma para `self.tabs` (junto al de QTabBar::tab), en vez
+#de mantener tres copias casi idénticas de este bloque desperdigadas.
 def estilo_flechas_navegacion_tabs(accent, accent_hover, bg_panel, bg_boton, accent_suave):
-    """QSS para las flechitas ('«' '»') que Qt agrega solas a la derecha de un
-    QTabBar cuando las pestañas no caben todas en el ancho disponible.
 
-    Sin este QSS, ese control se dibuja con el estilo NATIVO del sistema
-    operativo (una cajita gris de Windows, por ejemplo) que no combina en
-    absoluto con el diseño "píldora" plano del resto de la barra de
-    pestañas -de ahí que se vea tan fuera de lugar-. Esto lo viste con el
-    mismo lenguaje visual: fondo redondeado a juego con el panel, hover con
-    el color de acento suavizado, y el degradado del acento al presionar.
-
-    Se expone como función (y no como un bloque de QSS ya armado) porque
-    Calificaciones, Configuración y Reportes arman cada uno su propio
-    grupo de colores del tema con nombres de variables distintos; cada
-    módulo llama a esta función con SUS variables y concatena el resultado
-    al QSS que ya arma para `self.tabs` (junto al de QTabBar::tab), en vez
-    de mantener tres copias casi idénticas de este bloque desperdigadas."""
     #El hover se recibe semitransparente (rgba con alfa), pero aquí se "aplana" a un sólido equivalente antes de
     #usarlo: estos botones se repintan en cada clic de scroll y, al vivir dentro de ventanas translúcidas, un fondo
     #con alfa se va acumulando sobre sí mismo con el uso repetido hasta volverse opaco y tapar la flecha por
@@ -393,14 +416,15 @@ def estilo_flechas_navegacion_tabs(accent, accent_hover, bg_panel, bg_boton, acc
     """
 
 
+#Contenedor de sección con aspecto de 'tarjeta' moderna: encabezado con
+#icono + título (y descripción opcional), sombra suave que se eleva al pasar
+#el mouse, y un layout interno (`contenido`) donde el código existente agrega
+#sus widgets/formularios tal cual los tenía. Es solo un contenedor visual:
+#no cambia qué controles existen ni cómo funcionan.
 class TarjetaSeccion(QFrame):
-    """Contenedor de sección con aspecto de 'tarjeta' moderna: encabezado con
-    icono + título (y descripción opcional), sombra suave que se eleva al pasar
-    el mouse, y un layout interno (`contenido`) donde el código existente agrega
-    sus widgets/formularios tal cual los tenía. Es solo un contenedor visual:
-    no cambia qué controles existen ni cómo funcionan."""
 
     def __init__(self, icono="", titulo="", descripcion=None, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaSeccion")
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
@@ -441,6 +465,7 @@ class TarjetaSeccion(QFrame):
         raiz.addLayout(self.contenido)
 
     def aplicar_paleta(self, bg_panel, borde, txt_prim, txt_sec, accent, modo_oscuro):
+
         self.setStyleSheet(f"""
             QFrame#TarjetaSeccion {{
                 background-color: {bg_panel};
@@ -458,14 +483,17 @@ class TarjetaSeccion(QFrame):
                 f"font-size: 15px; color: {accent};")
 
     def enterEvent(self, event):
+
         self._animar_sombra(24)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(14)
         super().leaveEvent(event)
 
     def _animar_sombra(self, destino):
+
         anim= QPropertyAnimation(self._sombra, b"blurRadius", self)
         anim.setDuration(220)
         anim.setStartValue(self._sombra.blurRadius())
@@ -494,12 +522,13 @@ COMPETENCIAS_FUNDAMENTALES_RD= [
 NOMBRES_PERIODOS_RD= ["P1", "P2", "P3", "P4"]
 
 
+#Centra `dialogo` sobre su ventana padre (o sobre la pantalla si no hay
+#padre visible) y se asegura de que aparezca POR ENCIMA de todas las demás
+#ventanas de la app, aunque el usuario haya cambiado de ventana mientras
+#tanto. Sin esto, en apps con varias ventanas los diálogos pueden abrirse
+#"detrás" y el usuario tiene que buscarlos en la barra de tareas.
 def _centrar_y_al_frente(dialogo, parent):
-    """Centra `dialogo` sobre su ventana padre (o sobre la pantalla si no hay
-    padre visible) y se asegura de que aparezca POR ENCIMA de todas las demás
-    ventanas de la app, aunque el usuario haya cambiado de ventana mientras
-    tanto. Sin esto, en apps con varias ventanas los diálogos pueden abrirse
-    "detrás" y el usuario tiene que buscarlos en la barra de tareas."""
+
     dialogo.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
     referencia= parent if (parent is not None and parent.isVisible()) else None
     if referencia is not None:
@@ -520,17 +549,19 @@ def _centrar_y_al_frente(dialogo, parent):
     dialogo.activateWindow()
 
 
+#Abre en el explorador de archivos del sistema la carpeta que contiene
+#`ruta` (funciona tanto si `ruta` es un archivo como una carpeta).
 def _abrir_carpeta_contenedora(ruta):
-    """Abre en el explorador de archivos del sistema la carpeta que contiene
-    `ruta` (funciona tanto si `ruta` es un archivo como una carpeta)."""
+
     carpeta= ruta if os.path.isdir(ruta) else os.path.dirname(ruta)
     if carpeta and os.path.isdir(carpeta):
         QDesktopServices.openUrl(QUrl.fromLocalFile(carpeta))
 
 
+#Muestra un diálogo de éxito con la ruta guardada y un botón extra
+#para abrir esa carpeta directamente, en vez de solo mostrar el texto.
 def _preguntar_abrir_carpeta(parent, ruta, titulo, mensaje):
-    """Muestra un diálogo de éxito con la ruta guardada y un botón extra
-    para abrir esa carpeta directamente, en vez de solo mostrar el texto."""
+
     caja= QMessageBox(parent)
     caja.setIcon(QMessageBox.Icon.Information)
     caja.setWindowTitle(titulo)
@@ -568,6 +599,7 @@ COLORES_NIVEL_DESEMPENO_RD= {
 
 
 def es_sistema_dominicano(sistema):
+
     return sistema == SISTEMA_DOMINICANO
 
 
@@ -587,32 +619,34 @@ NOTA_MIN_SECUNDARIA_PISO= 70
 NOTA_MIN_SECUNDARIA_TECHO= 1000
 
 
+#Lee `campo` de `fila` (sqlite3.Row o dict) tolerando que la columna no
+#exista (bases de datos viejas ya migradas en memoria, tests, etc.).
 def _valor_o_defecto(fila, campo, defecto=None):
-    """Lee `campo` de `fila` (sqlite3.Row o dict) tolerando que la columna no
-    exista (bases de datos viejas ya migradas en memoria, tests, etc.)."""
+
     if fila is None:
         return defecto
     try:
+
         valor= fila[campo]
     except (IndexError, KeyError):
         return defecto
     return valor if valor is not None else defecto
 
 
+#Nota mínima aprobatoria a usar, dada la fila `cfg` de `configuracion`
+#(sqlite3.Row o dict con al menos nota_minima/nota_minima_primaria/
+#nota_minima_secundaria/sistema_calificacion).
+#
+#- Si el sistema NO es el Dominicano: siempre `nota_minima` (comportamiento
+#de siempre, sin cambios — Numérico Personalizado y Estados Unidos usan
+#un único valor global).
+#- Si el sistema SÍ es el Dominicano: usa `nota_minima_primaria` o
+#`nota_minima_secundaria` según `nivel_educativo`. Si ese valor no está
+#configurado (instalación recién migrada, o grado sin `nivel_educativo`
+#clasificado, o `nivel_educativo` None/desconocido) cae de vuelta a
+#`nota_minima` para no dejar nunca un cálculo sin nota mínima.
 def resolver_nota_minima(cfg, sistema=None, nivel_educativo=None):
-    """Nota mínima aprobatoria a usar, dada la fila `cfg` de `configuracion`
-    (sqlite3.Row o dict con al menos nota_minima/nota_minima_primaria/
-    nota_minima_secundaria/sistema_calificacion).
 
-    - Si el sistema NO es el Dominicano: siempre `nota_minima` (comportamiento
-      de siempre, sin cambios — Numérico Personalizado y Estados Unidos usan
-      un único valor global).
-    - Si el sistema SÍ es el Dominicano: usa `nota_minima_primaria` o
-      `nota_minima_secundaria` según `nivel_educativo`. Si ese valor no está
-      configurado (instalación recién migrada, o grado sin `nivel_educativo`
-      clasificado, o `nivel_educativo` None/desconocido) cae de vuelta a
-      `nota_minima` para no dejar nunca un cálculo sin nota mínima.
-    """
     sistema= sistema if sistema is not None else _valor_o_defecto(cfg, "sistema_calificacion", "")
     generica= _valor_o_defecto(cfg, "nota_minima", 70)
     if not es_sistema_dominicano(sistema):
@@ -624,11 +658,12 @@ def resolver_nota_minima(cfg, sistema=None, nivel_educativo=None):
     return generica
 
 
+#Muestra u oculta, en un QFormLayout, la fila (etiqueta + campo) de
+#`campo_widget`. Usado para alternar entre "Nota Mínima Aprobatoria" (un
+#solo campo) y sus dos variantes por nivel (Primaria/Secundaria) según el
+#Sistema de Calificación elegido, sin reconstruir el formulario.
 def _alternar_fila_form(form, campo_widget, visible):
-    """Muestra u oculta, en un QFormLayout, la fila (etiqueta + campo) de
-    `campo_widget`. Usado para alternar entre "Nota Mínima Aprobatoria" (un
-    solo campo) y sus dos variantes por nivel (Primaria/Secundaria) según el
-    Sistema de Calificación elegido, sin reconstruir el formulario."""
+
     campo_widget.setVisible(visible)
     etiqueta= form.labelForField(campo_widget)
     if etiqueta is not None:
@@ -651,30 +686,30 @@ NIVELES_ACADEMICOS= ["Primaria", "Secundaria", "Preparatoria", "Universidad"]
 CICLOS_SECUNDARIA= ["Primer Ciclo", "Segundo Ciclo"]
 
 
+#Niveles que ESTA institución realmente ofrece, según su
+#tipo_institucion (reutiliza el mismo patrón que ya usaba
+#`modulos_personalizados` para decidir si Politécnico/Universidad están
+#activos dentro de 'Personalizado' — ver _actualizar_visibilidad_modulos_personalizados).
+#
+#- Universidad     -> siempre y solo ['Universidad'] (se deduce del tipo,
+#no hace falta que nadie lo configure a mano).
+#- Politécnico     -> siempre y solo ['Secundaria'] (un Politécnico
+#dominicano trabaja el nivel Secundaria con modalidad técnica en 2do
+#ciclo -ver puede_tener_componente_tecnico).
+#- Escuela         -> lo que la institución haya marcado en
+#`niveles_educativos_habilitados` (Configuración > Académico), sin
+#incluir nunca 'Universidad' (una Escuela no matricula por Carrera).
+#Si todavía no ha configurado nada (instalación recién migrada), el
+#valor por defecto es ['Primaria', 'Secundaria'] -el comportamiento de
+#siempre, para no romper nada retroactivamente.
+#- Personalizado   -> totalmente flexible: exactamente lo que la
+#institución haya marcado, SIN ninguna restricción adicional
+#hardcodeada aquí (puede incluir Universidad si así lo decide, igual
+#que ya puede activar el módulo Universidad vía `modulos_personalizados`).
+#Si no ha configurado nada todavía, no se asume ningún nivel -evita que
+#un Personalizado recién creado "adivine" un valor que no pidió.
 def niveles_academicos_habilitados(cfg):
-    """Niveles que ESTA institución realmente ofrece, según su
-    tipo_institucion (reutiliza el mismo patrón que ya usaba
-    `modulos_personalizados` para decidir si Politécnico/Universidad están
-    activos dentro de 'Personalizado' — ver _actualizar_visibilidad_modulos_personalizados).
 
-    - Universidad     -> siempre y solo ['Universidad'] (se deduce del tipo,
-      no hace falta que nadie lo configure a mano).
-    - Politécnico     -> siempre y solo ['Secundaria'] (un Politécnico
-      dominicano trabaja el nivel Secundaria con modalidad técnica en 2do
-      ciclo -ver puede_tener_componente_tecnico).
-    - Escuela         -> lo que la institución haya marcado en
-      `niveles_educativos_habilitados` (Configuración > Académico), sin
-      incluir nunca 'Universidad' (una Escuela no matricula por Carrera).
-      Si todavía no ha configurado nada (instalación recién migrada), el
-      valor por defecto es ['Primaria', 'Secundaria'] -el comportamiento de
-      siempre, para no romper nada retroactivamente.
-    - Personalizado   -> totalmente flexible: exactamente lo que la
-      institución haya marcado, SIN ninguna restricción adicional
-      hardcodeada aquí (puede incluir Universidad si así lo decide, igual
-      que ya puede activar el módulo Universidad vía `modulos_personalizados`).
-      Si no ha configurado nada todavía, no se asume ningún nivel -evita que
-      un Personalizado recién creado "adivine" un valor que no pidió.
-    """
     tipo= _valor_o_defecto(cfg, "tipo_institucion", "Escuela")
     dominicano= es_sistema_dominicano(_valor_o_defecto(cfg, "sistema_calificacion", ""))
     guardados= [n for n in (_valor_o_defecto(cfg, "niveles_educativos_habilitados", "") or "").split(",")
@@ -695,41 +730,42 @@ def niveles_academicos_habilitados(cfg):
     return guardados or ["Primaria", "Secundaria"]
 
 
+#True si es académicamente válido asignarle a este nivel/ciclo algo
+#del componente técnico-profesional (área técnica/especialidad,
+#materias con modelo_evaluacion='Técnica (RA)', Calificaciones Técnicas).
+#
+#Reglas:
+#- Universidad NUNCA (el componente técnico-profesional del Politécnico
+#es un concepto de Secundaria, no de educación superior).
+#- Primaria/Preparatoria NUNCA.
+#- Secundaria: solo Segundo Ciclo. Un grado de Secundaria sin `ciclo`
+#todavía clasificado (instalación existente, o institución que no usa
+#Politécnico) se trata como válido -no se bloquea retroactivamente a
+#nadie; es responsabilidad de la institución clasificar sus grados de
+#Secundaria por ciclo (Materias > Secciones) para que la restricción
+#de Primer Ciclo empiece a aplicar.
+#- Si la institución ni siquiera tiene el componente técnico activo
+#(no es 'Politécnico' y, siendo 'Personalizado', no marcó el módulo
+#Politécnico), tampoco es válido sin importar el nivel/ciclo -eso ya
+#lo decide `modulos_personalizados`/tipo_institucion en otros lados;
+#esta función solo añade la restricción de nivel/ciclo encima.
 def puede_tener_componente_tecnico(nivel, ciclo, tipo_institucion):
-    """True si es académicamente válido asignarle a este nivel/ciclo algo
-    del componente técnico-profesional (área técnica/especialidad,
-    materias con modelo_evaluacion='Técnica (RA)', Calificaciones Técnicas).
 
-    Reglas:
-    - Universidad NUNCA (el componente técnico-profesional del Politécnico
-      es un concepto de Secundaria, no de educación superior).
-    - Primaria/Preparatoria NUNCA.
-    - Secundaria: solo Segundo Ciclo. Un grado de Secundaria sin `ciclo`
-      todavía clasificado (instalación existente, o institución que no usa
-      Politécnico) se trata como válido -no se bloquea retroactivamente a
-      nadie; es responsabilidad de la institución clasificar sus grados de
-      Secundaria por ciclo (Materias > Secciones) para que la restricción
-      de Primer Ciclo empiece a aplicar.
-    - Si la institución ni siquiera tiene el componente técnico activo
-      (no es 'Politécnico' y, siendo 'Personalizado', no marcó el módulo
-      Politécnico), tampoco es válido sin importar el nivel/ciclo -eso ya
-      lo decide `modulos_personalizados`/tipo_institucion en otros lados;
-      esta función solo añade la restricción de nivel/ciclo encima.
-    """
     if nivel != "Secundaria":
         return False
     return ciclo != "Primer Ciclo"
 
 
+#Set de `secciones.id` cuyo Grado es académicamente elegible para
+#componente técnico-profesional (Secundaria, no-Primer-Ciclo — ver
+#puede_tener_componente_tecnico). Pensado para pasarse como
+#`secciones_permitidas` a poblar_combo_curso/cascada_seccion_por_curso
+#(filtros_curso_seccion.py) en las pantallas de Politécnico, reutilizando
+#el mismo mecanismo de filtrado que ya usa el RBAC de Profesor -así el
+#combo de Curso/Sección de una asignación técnica no ofrece, de entrada,
+#cursos que no pueden tener nada técnico.
 def secciones_con_componente_tecnico_valido():
-    """Set de `secciones.id` cuyo Grado es académicamente elegible para
-    componente técnico-profesional (Secundaria, no-Primer-Ciclo — ver
-    puede_tener_componente_tecnico). Pensado para pasarse como
-    `secciones_permitidas` a poblar_combo_curso/cascada_seccion_por_curso
-    (filtros_curso_seccion.py) en las pantallas de Politécnico, reutilizando
-    el mismo mecanismo de filtrado que ya usa el RBAC de Profesor -así el
-    combo de Curso/Sección de una asignación técnica no ofrece, de entrada,
-    cursos que no pueden tener nada técnico."""
+
     from src.nucleo.bd import obtener_conexion
     conn= obtener_conexion()
     c= conn.cursor()
@@ -741,6 +777,7 @@ def secciones_con_componente_tecnico_valido():
 
 
 def anio_academico_actual():
+
     ahora= datetime.now()
     if ahora.month >= 8:
         return f"{ahora.year}-{ahora.year + 1}"
@@ -748,6 +785,7 @@ def anio_academico_actual():
 
 
 def _escala_y_minima_por_sistema(sistema):
+
     if sistema == "Estados Unidos (Letras A-F, GPA 4.0)":
         return 100, 60
     if sistema == SISTEMA_DOMINICANO:
@@ -756,20 +794,21 @@ def _escala_y_minima_por_sistema(sistema):
 
 
 #Indicador de progreso del wizard (stepper dibujado a mano)
+#Indicador de progreso del asistente: una línea con un círculo
+#numerado por paso, que se rellena de color de acento a medida que se
+#avanza y marca con un check los pasos ya completados. Reemplaza la
+#barra de progreso plana + el contador de texto que había antes -de un
+#vistazo se ve cuánto falta y hacia dónde se puede volver, sin tener que
+#leer "Paso 3 / 7".
+#
+#Se dibuja a mano con QPainter usando solo primitivas simples (líneas,
+#círculos, texto) -sin pixmaps ni efectos de por medio-, así que
+#repintar en cada fotograma de la animación de avance (ver `ir_a`) es
+#prácticamente gratis, incluso en equipos modestos.
 class WizardStepper(QWidget):
-    """Indicador de progreso del asistente: una línea con un círculo
-    numerado por paso, que se rellena de color de acento a medida que se
-    avanza y marca con un check los pasos ya completados. Reemplaza la
-    barra de progreso plana + el contador de texto que había antes -de un
-    vistazo se ve cuánto falta y hacia dónde se puede volver, sin tener que
-    leer "Paso 3 / 7".
-
-    Se dibuja a mano con QPainter usando solo primitivas simples (líneas,
-    círculos, texto) -sin pixmaps ni efectos de por medio-, así que
-    repintar en cada fotograma de la animación de avance (ver `ir_a`) es
-    prácticamente gratis, incluso en equipos modestos."""
 
     def __init__(self, total_pasos, parent=None):
+
         super().__init__(parent)
         self._total= max(total_pasos, 1)
         self._indice_actual= 0
@@ -786,6 +825,7 @@ class WizardStepper(QWidget):
         self._anim.valueChanged.connect(self._on_valor_anim)
 
     def establecer_colores(self, accent, muted, fondo_circulo, texto_muted):
+
         self._color_accent= accent
         self._color_muted= muted
         self._color_fondo_circulo= fondo_circulo
@@ -793,12 +833,14 @@ class WizardStepper(QWidget):
         self.update()
 
     def _on_valor_anim(self, valor):
+
         self._progreso_visual= valor
         self.update()
 
+    #Anima la línea/círculos hasta `indice` (0-based). Segura de
+    #llamar aunque el widget aún no se haya pintado ni una vez.
     def ir_a(self, indice):
-        """Anima la línea/círculos hasta `indice` (0-based). Segura de
-        llamar aunque el widget aún no se haya pintado ni una vez."""
+
         indice= max(0, min(indice, self._total - 1))
         self._anim.stop()
         self._anim.setStartValue(float(self._progreso_visual))
@@ -807,6 +849,7 @@ class WizardStepper(QWidget):
         self._anim.start()
 
     def paintEvent(self, event):
+
         if self._total < 2:
             return
         painter= QPainter(self)
@@ -870,7 +913,9 @@ class WizardStepper(QWidget):
 
 #Wizard de configuración inicial (8 PASOS)
 class WizardConfiguracion(QDialog):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.setWindowTitle("Asistente de Configuración Inicial - AcaDeXI")
@@ -882,6 +927,7 @@ class WizardConfiguracion(QDialog):
         centrar_y_al_frente(self, main_window)
 
     def _build_ui(self):
+
         layout= QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -965,13 +1011,16 @@ class WizardConfiguracion(QDialog):
             boton.installEventFilter(self._realce_wizard)
 
     def _titulos(self):
+
         return ["Bienvenida", "Datos de la Institución", "Logotipo", "Tipo de Institución",
                 "Sistema de Calificaciones", "Periodo Académico", "Usuario Administrador", "Finalización"]
 
     def _iconos_pasos(self):
+
         return ["👋", "🏛", "🖼", "🏫", "📊", "🗓", "👤", "🏁"]
 
     def _actualizar_encabezado(self, index):
+
         titulos= self._titulos()
         iconos= self._iconos_pasos()
         self.lbl_paso.setText(titulos[index])
@@ -985,7 +1034,8 @@ class WizardConfiguracion(QDialog):
         self.stepper.ir_a(index)
 
     def _crear_paso_bienvenida(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addStretch()
         lbl_hero= QLabel()
         lbl_hero.setPixmap(pixmap_emoji("👋", 64))
@@ -1031,20 +1081,22 @@ class WizardConfiguracion(QDialog):
         l.addStretch()
         self.stack.addWidget(w)
 
+    #Permite a un Docente/Personal saltarse por completo este asistente
+    #importando el .acdx que le entregó su Administrador/Director (el mismo
+    #botón que existe en el login, pero disponible ANTES del wizard, ya que
+    #antes el wizard bloqueaba la app entera sin dejar llegar al login —
+    #incluso en instalaciones hechas con el instalador de Docentes/Personal,
+    #donde el wizard nunca debería aparecer).
     def _importar_perfil_desde_wizard(self):
-        """Permite a un Docente/Personal saltarse por completo este asistente
-        importando el .acdx que le entregó su Administrador/Director (el mismo
-        botón que existe en el login, pero disponible ANTES del wizard, ya que
-        antes el wizard bloqueaba la app entera sin dejar llegar al login —
-        incluso en instalaciones hechas con el instalador de Docentes/Personal,
-        donde el wizard nunca debería aparecer)."""
+
         from src.interfaz.perfil import (leer_perfil_archivo, aplicar_perfil, EXTENSION,
                             perfil_incluye_bd_base, local_ya_tiene_usuarios, aplicar_bd_base)
-        ruta, _ = QFileDialog.getOpenFileName(
+        ruta, _= QFileDialog.getOpenFileName(
             self, "Importar Perfil Institucional", "", f"Perfil AcaDeXI (*{EXTENSION})")
         if not ruta:
             return
         try:
+
             datos= leer_perfil_archivo(ruta)
         except Exception as e:
             mostrar_mensaje("error", "Perfil inválido", str(e), self)
@@ -1066,6 +1118,7 @@ class WizardConfiguracion(QDialog):
                 "reemplazarla.", self) != QMessageBox.StandardButton.Yes:
                 return
         try:
+
             aplicar_bd_base(datos)
         except Exception as e:
             mostrar_mensaje("error", "Error",
@@ -1078,7 +1131,8 @@ class WizardConfiguracion(QDialog):
         self.accept()
 
     def _crear_paso1_institucion(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addWidget(self._titulo_paso("Datos de la Institución"))
         form= QFormLayout()
         form.setSpacing(12)
@@ -1102,7 +1156,8 @@ class WizardConfiguracion(QDialog):
         self.stack.addWidget(w)
 
     def _crear_paso2_logo(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addWidget(self._titulo_paso("Selección de Logotipo"))
         l.addWidget(QLabel("Carga la imagen oficial del centro educativo. Se usará en reportes y en el login."))
         self.lbl_preview_logo= QLabel("Sin logotipo seleccionado")
@@ -1127,6 +1182,7 @@ class WizardConfiguracion(QDialog):
         self.stack.addWidget(w)
 
     def _elegir_logo(self):
+
         destino_dir= os.path.join(get_app_data_dir(), "logos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="logo")
         if not destino:
@@ -1137,7 +1193,8 @@ class WizardConfiguracion(QDialog):
         self.lbl_preview_logo.setPixmap(pixmap)
 
     def _crear_paso3_tipo(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addWidget(self._titulo_paso("Tipo de Institución"))
         l.addWidget(QLabel("Selecciona la modalidad institucional. AcaDeXI adaptará sus módulos automáticamente."))
         self.combo_tipo= QComboBox()
@@ -1154,6 +1211,7 @@ class WizardConfiguracion(QDialog):
         self.stack.addWidget(w)
 
     def _actualizar_info_tipo(self, tipo):
+
         info= {
             "Escuela": "Activa: Estudiantes, Profesores, Materias, Asistencia, Calificaciones Estándar y Boletines.",
             "Politécnico": "Activa además: Especialidades Técnicas, Talleres/Laboratorios, Empresas de Pasantía y Registro de Horas Prácticas.",
@@ -1163,7 +1221,8 @@ class WizardConfiguracion(QDialog):
         self.lbl_info_tipo.setText(info.get(tipo, ""))
 
     def _crear_paso4_calificaciones(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addWidget(self._titulo_paso("Sistema de Calificaciones"))
         form= QFormLayout()
         form.setSpacing(12)
@@ -1211,17 +1270,19 @@ class WizardConfiguracion(QDialog):
         l.addStretch()
         self.stack.addWidget(w)
 
+    #Autocompleta Primaria/Secundaria con su piso normativo (65/70) cuando
+    #el usuario ELIGE el Sistema Dominicano — nunca al cargar un valor ya
+    #guardado (ver el comentario junto a la conexión de `activated`).
     def _restablecer_nota_min_nivel_defecto(self, *_):
-        """Autocompleta Primaria/Secundaria con su piso normativo (65/70) cuando
-        el usuario ELIGE el Sistema Dominicano — nunca al cargar un valor ya
-        guardado (ver el comentario junto a la conexión de `activated`)."""
+
         if self.combo_sistema_calificacion.currentText() != SISTEMA_DOMINICANO:
             return
         self.spin_nota_min_primaria.setValue(NOTA_MIN_PRIMARIA_PISO)
         self.spin_nota_min_secundaria.setValue(NOTA_MIN_SECUNDARIA_PISO)
 
     def _sync_sistema_calificacion(self, sistema):
-        escala, minima = _escala_y_minima_por_sistema(sistema)
+
+        escala, minima= _escala_y_minima_por_sistema(sistema)
         dominicano= sistema == SISTEMA_DOMINICANO
         #En el Sistema Dominicano, la nota mínima aprobatoria varía entre Primaria y Secundaria (Ordenanza 04-2023,
         #MINERD): se ocultan el campo único y se muestran los dos campos por nivel en su lugar. Para cualquier otro
@@ -1258,6 +1319,7 @@ class WizardConfiguracion(QDialog):
                 "mínima aprobatoria (ej. 0-10, 0-20, 0-100).")
 
     def _sync_periodo_por_sistema(self, sistema):
+
         if not hasattr(self, "combo_division"):
             return
         if es_sistema_dominicano(sistema):
@@ -1270,7 +1332,8 @@ class WizardConfiguracion(QDialog):
             self.spin_cantidad.setEnabled(True)
 
     def _crear_paso5_periodo(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addWidget(self._titulo_paso("Periodo Académico"))
         form= QFormLayout()
         form.setSpacing(12)
@@ -1292,7 +1355,8 @@ class WizardConfiguracion(QDialog):
         self.stack.addWidget(w)
 
     def _crear_paso6_admin(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addWidget(self._titulo_paso("Crear Usuario Administrador"))
         fila_seguridad= QHBoxLayout()
         fila_seguridad.setSpacing(6)
@@ -1325,7 +1389,8 @@ class WizardConfiguracion(QDialog):
         self.stack.addWidget(w)
 
     def _crear_paso7_final(self):
-        w, l = self._nueva_pagina()
+
+        w, l= self._nueva_pagina()
         l.addStretch()
         lbl_hero= QLabel()
         lbl_hero.setPixmap(pixmap_emoji("🏁", 64))
@@ -1345,18 +1410,20 @@ class WizardConfiguracion(QDialog):
         self.stack.addWidget(w)
 
     def _titulo_paso(self, texto):
+
         lbl= QLabel(texto)
         lbl.setObjectName("WizardSubtitulo")
         return lbl
 
+    #Crea el contenedor de una página del asistente: una tarjeta
+    #elevada (bordes redondeados, sombra suave) centrada dentro del área
+    #de contenido, con el fondo del diálogo asomando alrededor -el mismo
+    #efecto de "tarjeta flotante" que ya usan otras ventanas de la app.
+    #Devuelve (contenedor, layout_interno); cada _crear_pasoN sigue
+    #llenando su formulario igual que antes, solo cambia el punto de
+    #partida (antes era un QWidget liso con márgenes grandes).
     def _nueva_pagina(self):
-        """Crea el contenedor de una página del asistente: una tarjeta
-        elevada (bordes redondeados, sombra suave) centrada dentro del área
-        de contenido, con el fondo del diálogo asomando alrededor -el mismo
-        efecto de "tarjeta flotante" que ya usan otras ventanas de la app.
-        Devuelve (contenedor, layout_interno); cada _crear_pasoN sigue
-        llenando su formulario igual que antes, solo cambia el punto de
-        partida (antes era un QWidget liso con márgenes grandes)."""
+
         contenedor= QWidget()
         externo= QVBoxLayout(contenedor)
         externo.setContentsMargins(0, 0, 0, 0)
@@ -1374,16 +1441,17 @@ class WizardConfiguracion(QDialog):
         l.setSpacing(12)
         return contenedor, l
 
+    #Cambia de página con una transición corta de deslizamiento +
+    #fundido (~220ms), en el sentido del avance -desde la derecha al
+    #pulsar 'Siguiente', desde la izquierda al pulsar 'Atrás'- para que
+    #se sienta como un paso hacia adelante/atrás y no un salto brusco.
+    #
+    #Deliberadamente barata: solo se anima la página ENTRANTE (posición
+    #+ opacidad); la saliente no se toca ni se vuelve a pintar, así el
+    #costo es el mismo que el fundido simple que había antes, pero se ve
+    #bastante más vivo.
     def _ir_a_paso(self, nuevo_idx, direccion=1):
-        """Cambia de página con una transición corta de deslizamiento +
-        fundido (~220ms), en el sentido del avance -desde la derecha al
-        pulsar 'Siguiente', desde la izquierda al pulsar 'Atrás'- para que
-        se sienta como un paso hacia adelante/atrás y no un salto brusco.
 
-        Deliberadamente barata: solo se anima la página ENTRANTE (posición
-        + opacidad); la saliente no se toca ni se vuelve a pintar, así el
-        costo es el mismo que el fundido simple que había antes, pero se ve
-        bastante más vivo."""
         self.stack.setCurrentIndex(nuevo_idx)
         pagina= self.stack.currentWidget()
         ancho= max(self.stack.width(), 1)
@@ -1405,6 +1473,7 @@ class WizardConfiguracion(QDialog):
         anim_op.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         def _limpiar():
+
             pagina.setGraphicsEffect(None)
         anim_pos.finished.connect(_limpiar)
         #Se guardan las referencias en la página para que Python no las recolecte a mitad de camino (mismo patrón que
@@ -1415,10 +1484,12 @@ class WizardConfiguracion(QDialog):
         anim_op.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
     def _anterior(self):
+
         if self.stack.currentIndex() > 0:
             self._ir_a_paso(self.stack.currentIndex() - 1, direccion=-1)
 
     def _siguiente(self):
+
         idx= self.stack.currentIndex()
         if idx == 1 and not self.in_nombre.text().strip():
             mostrar_mensaje("advertencia", "Falta información", "Ingresa el nombre de la institución.", self)
@@ -1442,7 +1513,9 @@ class WizardConfiguracion(QDialog):
         self._ir_a_paso(idx + 1, direccion=1)
 
     def _finalizar(self):
+
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             sistema_texto= self.combo_sistema_calificacion.currentText()
@@ -1492,12 +1565,13 @@ class WizardConfiguracion(QDialog):
         self.accept()
 
     def _apply_theme(self):
+
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
         idx= 1 if self.main_window.modo_oscuro else 0
-        bg_window, bg_panel = paleta["window_bg"][idx], paleta["display_bg"][idx]
-        txt_prim, txt_sec = paleta["text_primary"][idx], paleta["text_secondary"][idx]
-        bg_btn, accent = paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
+        bg_window, bg_panel= paleta["window_bg"][idx], paleta["display_bg"][idx]
+        txt_prim, txt_sec= paleta["text_primary"][idx], paleta["text_secondary"][idx]
+        bg_btn, accent= paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
         hv_accent= paleta["btn_op_hover"][idx]
         self.setStyleSheet(f"""
             QDialog {{ background-color: {bg_window}; }}
@@ -1544,7 +1618,9 @@ class WizardConfiguracion(QDialog):
 
 #Módulo de configuración (ajustes generales)
 class ModuloConfiguracion(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self._titulo_modulo_atajos= "Configuración"
@@ -1554,6 +1630,7 @@ class ModuloConfiguracion(QWidget):
 
     #Atajos de teclado (ver atajos.py)
     def _configurar_atajos(self):
+
         #Ctrl+1..Ctrl+7: salto directo a cada pestaña, en el mismo orden en que aparecen en self.tabs (ver _build_ui).
         #Se lee el texto real de cada pestaña -ya construidas en este punto, _build_ui corrió antes- para que la
         #ventanita de ayuda muestre "Ir a Institución" en vez de un genérico "Ir a la pestaña 1".
@@ -1563,10 +1640,12 @@ class ModuloConfiguracion(QWidget):
                              f"Ir a {titulo}", lambda idx=i: self._ir_a_pestana(idx))
 
     def _ir_a_pestana(self, indice):
+
         if 0 <= indice < self.tabs.count() and self.tabs.isTabVisible(indice):
             self.tabs.setCurrentIndex(indice)
 
     def _build_ui(self):
+
         layout= QVBoxLayout(self)
         layout.setContentsMargins(30, 25, 30, 20)
         layout.setSpacing(14)
@@ -1646,6 +1725,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- INSTITUCIÓN / BRANDING (sin cambios) ----------------
     def _tab_institucion(self):
+
         contenido= QWidget()
         l= QVBoxLayout(contenido)
         l.setContentsMargins(4, 10, 10, 10)
@@ -1754,11 +1834,13 @@ class ModuloConfiguracion(QWidget):
         return scroll
 
     def _cambiar_logo(self):
+
         destino_dir= os.path.join(get_app_data_dir(), "logos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="logo")
         if not destino:
             return
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("UPDATE configuracion SET logo_path=? WHERE id=1", (destino,))
@@ -1770,6 +1852,7 @@ class ModuloConfiguracion(QWidget):
             mostrar_mensaje("error", "Error", f"No se pudo actualizar el logotipo:\n{e}", self)
 
     def _ver_logo_ampliado(self):
+
         ruta= getattr(self.main_window, "logo_path_actual", None) or ""
         if not ruta:
             conn= obtener_conexion()
@@ -1784,6 +1867,7 @@ class ModuloConfiguracion(QWidget):
         VisorFotoDialog(ruta, self, titulo="Logotipo Institucional").exec()
 
     def _cargar_logo(self, ruta):
+
         if ruta and os.path.exists(ruta):
             pixmap= QPixmap(ruta).scaled(84, 84, Qt.AspectRatioMode.KeepAspectRatio,
                                             Qt.TransformationMode.SmoothTransformation)
@@ -1792,11 +1876,13 @@ class ModuloConfiguracion(QWidget):
             self.lbl_logo_actual.setText("Sin logotipo")
 
     def _cambiar_firma(self):
+
         destino_dir= os.path.join(get_app_data_dir(), "logos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="firma")
         if not destino:
             return
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("UPDATE configuracion SET firma_path=? WHERE id=1", (destino,))
@@ -1808,6 +1894,7 @@ class ModuloConfiguracion(QWidget):
             mostrar_mensaje("error", "Error", f"No se pudo actualizar la firma:\n{e}", self)
 
     def _quitar_firma(self):
+
         if mostrar_mensaje("pregunta", "Confirmar", "¿Quitar la firma digital de los reportes?", self) != QMessageBox.StandardButton.Yes:
             return
         conn= obtener_conexion()
@@ -1819,6 +1906,7 @@ class ModuloConfiguracion(QWidget):
         registrar_auditoria("Configuración", "Quitó la firma digital", self.main_window.usuario_actual)
 
     def _ver_firma_ampliada(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT firma_path FROM configuracion WHERE id=1")
@@ -1831,6 +1919,7 @@ class ModuloConfiguracion(QWidget):
         VisorFotoDialog(ruta, self, titulo="Firma Digital Institucional").exec()
 
     def _cargar_firma(self, ruta):
+
         if ruta and os.path.exists(ruta):
             pixmap= QPixmap(ruta).scaled(84, 44, Qt.AspectRatioMode.KeepAspectRatio,
                                             Qt.TransformationMode.SmoothTransformation)
@@ -1839,7 +1928,9 @@ class ModuloConfiguracion(QWidget):
             self.lbl_firma_actual.setText("Sin firma")
 
     def _guardar_institucion(self):
+
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("""UPDATE configuracion SET nombre_institucion=?, direccion=?, telefono=?,
@@ -1857,6 +1948,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- ACADÉMICO (sin cambios) ----------------
     def _tab_academico(self):
+
         contenido= QWidget()
         l= QVBoxLayout(contenido)
         l.setContentsMargins(4, 10, 10, 10)
@@ -2041,10 +2133,12 @@ class ModuloConfiguracion(QWidget):
         return scroll
 
     def _actualizar_visibilidad_modulos_personalizados(self, tipo=None):
+
         tipo= tipo if tipo is not None else self.combo_tipo.currentText()
         self.grupo_modulos_personalizados.setVisible(tipo == "Personalizado")
 
     def _actualizar_visibilidad_niveles_educativos(self, _valor=None):
+
         tipo= self.combo_tipo.currentText()
         #Solo editable cuando el nivel no se deduce automáticamente del tipo de institución (ver
         #niveles_academicos_habilitados en el módulo).
@@ -2075,15 +2169,17 @@ class ModuloConfiguracion(QWidget):
             chk.setEnabled(habilitar)
 
     def _usar_anio_academico_actual(self):
+
         self.in_anio.setText(anio_academico_actual())
 
+    #Texto de introducción de la tarjeta "Número de Lista de los
+    #Estudiantes": cambia según el Sistema de Calificación elegido arriba
+    #(Dominicano vs cualquier otro), sin nombrar a ningún organismo
+    #regulador -cada institución define su propio criterio de numeración
+    #por aula, así que aquí solo se describe la convención, no quién la
+    #exige.
     def _texto_intro_numero_lista(self, sistema_texto):
-        """Texto de introducción de la tarjeta "Número de Lista de los
-        Estudiantes": cambia según el Sistema de Calificación elegido arriba
-        (Dominicano vs cualquier otro), sin nombrar a ningún organismo
-        regulador -cada institución define su propio criterio de numeración
-        por aula, así que aquí solo se describe la convención, no quién la
-        exige."""
+
         if es_sistema_dominicano(sistema_texto):
             return ("No existe un criterio único de numeración por aula: cada institución define el "
                      "suyo. Aquí eliges cómo AcaDeXI numera a cada estudiante DENTRO de su Sección (1, "
@@ -2094,19 +2190,22 @@ class ModuloConfiguracion(QWidget):
                 "global) para pasar lista, exámenes, etc.")
 
     def _actualizar_intro_numero_lista(self, sistema_texto=None):
+
         sistema_texto= sistema_texto or self.combo_sistema_calificacion.currentText()
         if hasattr(self.grupo_numero_lista, "lbl_desc"):
             self.grupo_numero_lista.lbl_desc.setText(self._texto_intro_numero_lista(sistema_texto))
 
     def _actualizar_info_criterio_lista(self, criterio=None):
+
         criterio= criterio or self.combo_criterio_lista.currentText()
         self.lbl_info_criterio_lista.setText(DESCRIPCION_CRITERIO_NUMERO_LISTA.get(criterio, ""))
 
+    #Fuerza un recálculo puntual de TODAS las secciones con el criterio
+    #actualmente elegido en el combo (SIN necesidad de haber presionado
+    #"Guardar Configuración Académica" antes: es una acción inmediata,
+    #igual que el resto de botones de esta pestaña).
     def _recalcular_numeros_lista_manual(self):
-        """Fuerza un recálculo puntual de TODAS las secciones con el criterio
-        actualmente elegido en el combo (SIN necesidad de haber presionado
-        "Guardar Configuración Académica" antes: es una acción inmediata,
-        igual que el resto de botones de esta pestaña)."""
+
         criterio= self.combo_criterio_lista.currentText()
         if criterio == CRITERIO_MANUAL:
             if mostrar_mensaje(
@@ -2122,19 +2221,21 @@ class ModuloConfiguracion(QWidget):
         mostrar_mensaje("exito", "Números de Lista recalculados",
                        f"Se recalcularon todas las secciones usando el criterio: {criterio}.", self)
 
+    #Ver el método homónimo en WizardConfiguracion: autocompleta Primaria/
+    #Secundaria con su piso normativo (65/70) solo cuando el usuario elige
+    #el Sistema Dominicano con el mouse/teclado, nunca al cargar un valor
+    #ya guardado en `configuracion`.
     def _restablecer_nota_min_nivel_defecto(self, *_):
-        """Ver el método homónimo en WizardConfiguracion: autocompleta Primaria/
-        Secundaria con su piso normativo (65/70) solo cuando el usuario elige
-        el Sistema Dominicano con el mouse/teclado, nunca al cargar un valor
-        ya guardado en `configuracion`."""
+
         if self.combo_sistema_calificacion.currentText() != SISTEMA_DOMINICANO:
             return
         self.spin_nota_min_primaria.setValue(NOTA_MIN_PRIMARIA_PISO)
         self.spin_nota_min_secundaria.setValue(NOTA_MIN_SECUNDARIA_PISO)
 
+    #Pinta cada botón con el color que tiene elegido (en vez de un
+    #texto tipo '#1F9E9E' que no dice nada de un vistazo).
     def _refrescar_botones_color_boletin(self):
-        """Pinta cada botón con el color que tiene elegido (en vez de un
-        texto tipo '#1F9E9E' que no dice nada de un vistazo)."""
+
         for nivel, boton in (("Secundaria", self.btn_color_banda_secundaria),
                              ("Primaria", self.btn_color_banda_primaria)):
             color= self._colores_boletin_elegidos.get(nivel, "#1F9E9E")
@@ -2142,6 +2243,7 @@ class ModuloConfiguracion(QWidget):
             boton.setStyleSheet(f"background-color: {color}; color: white; font-weight: bold;")
 
     def _elegir_color_boletin(self, nivel):
+
         from PySide6.QtWidgets import QColorDialog, QDialog
         from PySide6.QtGui import QColor
         actual= QColor(self._colores_boletin_elegidos.get(nivel, "#1F9E9E"))
@@ -2159,7 +2261,8 @@ class ModuloConfiguracion(QWidget):
                 self._refrescar_botones_color_boletin()
 
     def _sync_sistema_calificacion_config(self, sistema):
-        escala, minima = _escala_y_minima_por_sistema(sistema)
+
+        escala, minima= _escala_y_minima_por_sistema(sistema)
         dominicano= es_sistema_dominicano(sistema)
         _alternar_fila_form(self.form_academico, self.spin_nota_min, not dominicano)
         _alternar_fila_form(self.form_academico, self.spin_nota_min_primaria, dominicano)
@@ -2193,7 +2296,9 @@ class ModuloConfiguracion(QWidget):
             _alternar_fila_form(self.form_boletin_oficial, self.btn_color_banda_primaria, dominicano)
 
     def _guardar_academico(self):
+
         try:
+
             modulos_personalizados= ""
             if self.combo_tipo.currentText() == "Personalizado":
                 seleccionados= []
@@ -2235,6 +2340,7 @@ class ModuloConfiguracion(QWidget):
             #guardado del resto de la configuración académica.
             if hasattr(self, "combo_formato_boletin"):
                 try:
+
                     c.execute("UPDATE configuracion SET formato_boletin_general=? WHERE id=1",
                               (self.combo_formato_boletin.currentData(),))
                     c.execute("""UPDATE configuracion SET boletin_color_banda_secundaria=?,
@@ -2268,6 +2374,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- APARIENCIA (sin cambios) ----------------
     def _tab_apariencia(self):
+
         contenido= QWidget()
         l= QVBoxLayout(contenido)
         l.setContentsMargins(4, 10, 10, 10)
@@ -2284,6 +2391,7 @@ class ModuloConfiguracion(QWidget):
         form.setSpacing(30)
 
         def _fila_tema(texto, combo):
+
             fila= QHBoxLayout()
             fila.setSpacing(12)
             lbl= QLabel(texto)
@@ -2375,6 +2483,7 @@ class ModuloConfiguracion(QWidget):
         return contenido
 
     def _aplicar_accesibilidad(self):
+
         self.main_window.etiquetas_con_recuadro= self.chk_etiquetas_recuadro.isChecked()
         self.main_window.guardar_configuracion()
         self.main_window.aplicar_tema()
@@ -2382,6 +2491,7 @@ class ModuloConfiguracion(QWidget):
                          "Los cambios de accesibilidad visual se aplicaron correctamente.", self)
 
     def _aplicar_apariencia(self):
+
         self.main_window.tema_actual= self.combo_tema.currentText()
         self.main_window.modo_oscuro= self.chk_oscuro.isChecked()
         self.main_window.login_translucido= self.chk_login_translucido.isChecked()
@@ -2406,6 +2516,7 @@ class ModuloConfiguracion(QWidget):
         idioma_no_disponible= idioma_seleccionado != "Español"
         idioma_a_guardar= "Español" if idioma_no_disponible else idioma_seleccionado
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("UPDATE configuracion SET idioma=? WHERE id=1", (idioma_a_guardar,))
@@ -2432,6 +2543,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- USUARIOS Y ROLES (CON PAGINACIÓN Y BOTONES DEBAJO DE LA TABLA, SIN "VER DETALLE") ----------------
     def _tab_usuarios(self):
+
         #Envolver en scroll
         scroll= QScrollArea()
         scroll.setWidgetResizable(True)
@@ -2634,6 +2746,7 @@ class ModuloConfiguracion(QWidget):
         return scroll
 
     def _tooltip_combo_rol_usuarios(self):
+
         if self._edicion_es_side_stepper():
             return ("Rol del usuario; define a qué módulos tendrá acceso. En Side Stepper "
                     "también puedes elegir (o escribir) un cargo personalizado ya configurado "
@@ -2641,23 +2754,26 @@ class ModuloConfiguracion(QWidget):
         return "Rol del usuario; define a qué módulos tendrá acceso"
 
     def _edicion_es_side_stepper(self):
+
         try:
+
             from src.nucleo.edicion import edicion_actual
             return edicion_actual() == "side_stepper"
         except Exception:
             return False
 
+    #Rellena el selector de rol de "Crear / Editar Usuario" con los 5
+    #roles fijos y, en Side Stepper, también con los cargos
+    #PERSONALIZADOS ya configurados en "Permisos de Side Stepper" (ver
+    #side_stepper_config.py) -típicamente uno llamado "Psicólogo/a", pero
+    #el nombre es libre-. Sin esto, un Director podía configurar un
+    #cargo con el módulo "Psicología" otorgado, pero no había forma de
+    #asignárselo a nadie desde esta tabla: solo existía el flujo de
+    #autorregistro (WizardCrearCuentaSideStepper), lo que dejaba a medio
+    #camino el sentido de tener esa configuración. Se conserva la
+    #selección actual si sigue existiendo entre las opciones nuevas.
     def _poblar_combo_rol_usuarios(self):
-        """Rellena el selector de rol de "Crear / Editar Usuario" con los 5
-        roles fijos y, en Side Stepper, también con los cargos
-        PERSONALIZADOS ya configurados en "Permisos de Side Stepper" (ver
-        side_stepper_config.py) -típicamente uno llamado "Psicólogo/a", pero
-        el nombre es libre-. Sin esto, un Director podía configurar un
-        cargo con el módulo "Psicología" otorgado, pero no había forma de
-        asignárselo a nadie desde esta tabla: solo existía el flujo de
-        autorregistro (WizardCrearCuentaSideStepper), lo que dejaba a medio
-        camino el sentido de tener esa configuración. Se conserva la
-        selección actual si sigue existiendo entre las opciones nuevas."""
+
         actual= self.combo_u_rol.currentText() if self.combo_u_rol.count() else None
         self.combo_u_rol.blockSignals(True)
         self.combo_u_rol.clear()
@@ -2668,6 +2784,7 @@ class ModuloConfiguracion(QWidget):
         self.combo_u_rol.setEditable(es_side_stepper)
         if es_side_stepper:
             try:
+
                 cargos_personalizados= sorted(
                     info["rol"] for info in listar_roles_side_stepper_configurados()
                     if info["rol"] not in ROLES)
@@ -2685,12 +2802,14 @@ class ModuloConfiguracion(QWidget):
         self.combo_u_rol.blockSignals(False)
 
     def _crear_usuario(self):
+
         user= self.in_u_user.text().strip()
         pw= self.in_u_pass.text().strip()
         if not user or not pw:
             mostrar_mensaje("advertencia", "Datos incompletos", "Usuario y contraseña son obligatorios.", self)
             return
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("""INSERT INTO usuarios (username, password, nombre_completo, rol, correo,
@@ -2701,13 +2820,17 @@ class ModuloConfiguracion(QWidget):
             conn.commit()
             conn.close()
             registrar_auditoria("Usuarios", "Creó usuario", self.main_window.usuario_actual, user)
-            self.in_u_nombre.clear(); self.in_u_user.clear(); self.in_u_pass.clear(); self.in_u_correo.clear()
+            self.in_u_nombre.clear()
+            self.in_u_user.clear()
+            self.in_u_pass.clear()
+            self.in_u_correo.clear()
             self._cargar_usuarios()
             mostrar_mensaje("exito", "Usuario creado", f"Se creó la cuenta '{user}'.", self)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo crear el usuario:\n{e}", self)
 
     def _guardar_psicologia_admin(self, activo):
+
         if getattr(self, "_cargando_psicologia_admin", False):
             return
         conn= obtener_conexion()
@@ -2727,6 +2850,7 @@ class ModuloConfiguracion(QWidget):
             self.main_window._aplicar_permisos_por_rol()
 
     def _limpiar_usuario(self):
+
         self.in_u_nombre.clear()
         self.in_u_user.clear()
         self.in_u_pass.clear()
@@ -2736,10 +2860,12 @@ class ModuloConfiguracion(QWidget):
         desactivar_modo_edicion(self.in_u_nombre)
 
     def _filtro_usuarios_cambio(self):
+
         self.paginacion_usuarios.reiniciar()
         self._cargar_usuarios()
 
     def _cargar_usuarios(self):
+
         texto= _normalizar(self.in_buscar_usuarios.text().strip()) if hasattr(self, "in_buscar_usuarios") else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -2752,7 +2878,7 @@ class ModuloConfiguracion(QWidget):
                 f"{f['username']} {f['nombre_completo'] or ''} {f['rol']} {f['correo'] or ''}")]
 
         self.paginacion_usuarios.establecer_total(len(filas))
-        inicio, fin = self.paginacion_usuarios.rango_actual()
+        inicio, fin= self.paginacion_usuarios.rango_actual()
         pagina= filas[inicio:fin]
 
         with tabla_pausada(self.tabla_usuarios):
@@ -2770,6 +2896,7 @@ class ModuloConfiguracion(QWidget):
                 self.tabla_usuarios.setItem(i, 5, item_estado)
 
     def _fila_usuario_seleccionada(self):
+
         fila= self.tabla_usuarios.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un usuario de la tabla.", self)
@@ -2777,6 +2904,7 @@ class ModuloConfiguracion(QWidget):
         return int(self.tabla_usuarios.item(fila, 0).text())
 
     def _toggle_usuario(self):
+
         id_usuario= self._fila_usuario_seleccionada()
         if id_usuario is None:
             return
@@ -2789,6 +2917,7 @@ class ModuloConfiguracion(QWidget):
         self._cargar_usuarios()
 
     def _cargar_usuario_seleccionado(self):
+
         fila= self.tabla_usuarios.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un usuario de la tabla.", self)
@@ -2811,6 +2940,7 @@ class ModuloConfiguracion(QWidget):
                              f"Editando usuario: {f['username'] or ''}")
 
     def _guardar_usuario(self):
+
         id_usuario= self._fila_usuario_seleccionada()
         if id_usuario is None:
             return
@@ -2831,6 +2961,7 @@ class ModuloConfiguracion(QWidget):
             return
 
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             if pw:
@@ -2854,6 +2985,7 @@ class ModuloConfiguracion(QWidget):
         mostrar_mensaje("exito", "Guardado", f"Se guardaron los cambios de '{user}'.", self)
 
     def _eliminar_usuario(self):
+
         id_usuario= self._fila_usuario_seleccionada()
         if id_usuario is None:
             return
@@ -2880,6 +3012,7 @@ class ModuloConfiguracion(QWidget):
         self._cargar_usuarios()
 
     def _generar_perfil_usuario(self):
+
         id_usuario= self._fila_usuario_seleccionada()
         if id_usuario is None:
             return
@@ -2893,6 +3026,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- MI CUENTA (autoservicio: cualquier rol con acceso a Configuración) ----------------
     def _tab_mi_cuenta(self):
+
         contenido= QWidget()
         l= QVBoxLayout(contenido)
         l.setContentsMargins(4, 10, 10, 10)
@@ -3029,7 +3163,7 @@ class ModuloConfiguracion(QWidget):
         #no una materia técnica (especialidad_id). Solo aplica al rol Profesor -los roles gerenciales siempre ven el
         #módulo cuando la institución es Politécnico, sin este checkbox- y solo tiene efecto si la institución
         #configurada es de tipo Politécnico (si no, el módulo no existe para nadie, esté marcado o no).
-        #        #EXCEPCIÓN: si la institución ES Politécnico (o "Personalizado" con el módulo Politécnico activo), se asume que
+        ##EXCEPCIÓN: si la institución ES Politécnico (o "Personalizado" con el módulo Politécnico activo), se asume que
         #es la norma para todos los docentes, así que se activa sola (ver main.py ▸ mostrar_login) y este checkbox
         #queda fijo/informativo — no tiene sentido pedirle al docente que la "active" cuando ya está encendida para
         #todos.
@@ -3062,6 +3196,7 @@ class ModuloConfiguracion(QWidget):
         #separado ni se usa la etiqueta "Modo Docente": de cara al docente es, simplemente, "el tutorial del sistema".
         es_docente= getattr(self.main_window, "rol_actual", None) == "Profesor"
         try:
+
             from src.nucleo.edicion import edicion_actual
             _edicion_tutorial= edicion_actual()
         except Exception:
@@ -3111,22 +3246,27 @@ class ModuloConfiguracion(QWidget):
         return scroll
 
     def _ver_tutorial_general_de_nuevo(self):
+
         from src.inicio.tutoriales import ofrecer_tutorial
         ofrecer_tutorial(self.main_window, "general", forzar=True)
 
     def _ver_tutorial_docente_de_nuevo(self):
+
         from src.inicio.tutoriales import ofrecer_tutorial
         ofrecer_tutorial(self.main_window, "docente", forzar=True)
 
     def _ver_tutorial_single_teacher_de_nuevo(self):
+
         from src.inicio.tutoriales import ofrecer_tutorial
         ofrecer_tutorial(self.main_window, "single_teacher", forzar=True)
 
     def _ver_tutorial_side_stepper_de_nuevo(self):
+
         from src.inicio.tutoriales import ofrecer_tutorial
         ofrecer_tutorial(self.main_window, "side_stepper", forzar=True)
 
     def _cambiar_mi_password(self):
+
         id_usuario= getattr(self.main_window, "id_usuario_actual", None)
         if id_usuario is None:
             mostrar_mensaje("advertencia", "Sin sesión", "No se detectó un usuario con sesión iniciada.", self)
@@ -3145,6 +3285,7 @@ class ModuloConfiguracion(QWidget):
                             "La nueva contraseña y su confirmación no coinciden.", self)
             return
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT password FROM usuarios WHERE id=?", (id_usuario,))
@@ -3168,6 +3309,7 @@ class ModuloConfiguracion(QWidget):
                         "para iniciar sesión).", self)
 
     def _exportar_mi_perfil(self):
+
         from src.interfaz.perfil import DialogoExportarPerfilPropio
         if getattr(self.main_window, "id_usuario_actual", None) is None:
             mostrar_mensaje("advertencia", "Sin sesión", "No se detectó un usuario con sesión iniciada.", self)
@@ -3178,6 +3320,7 @@ class ModuloConfiguracion(QWidget):
                                 self.main_window.usuario_actual)
 
     def _guardar_preferencias_app(self):
+
         #_establecer_minimizar_a_bandeja ya llama a guardar_configuracion() por su cuenta y sincroniza el checkbox del menú de la
         #bandeja del sistema.
         if hasattr(self.main_window, "_establecer_minimizar_a_bandeja"):
@@ -3189,15 +3332,16 @@ class ModuloConfiguracion(QWidget):
                          f"Ahora hay que mantener presionada la tecla "
                          f"\"{self.main_window.tecla_atajos}\" para ver la ventanita de atajos.", self)
 
+    #Si la institución es un Politécnico (o "Personalizado" con el
+    #módulo Politécnico activo), "Calificaciones Técnicas" se activa sola
+    #para todos los docentes (ver main.py ▸ mostrar_login) y este checkbox
+    #pasa a ser solo informativo: se muestra marcado y bloqueado, en vez
+    #de sugerir un control que en la práctica ya no decide nada.
     def _actualizar_estado_calif_tecnicas(self):
-        """Si la institución es un Politécnico (o "Personalizado" con el
-        módulo Politécnico activo), "Calificaciones Técnicas" se activa sola
-        para todos los docentes (ver main.py ▸ mostrar_login) y este checkbox
-        pasa a ser solo informativo: se muestra marcado y bloqueado, en vez
-        de sugerir un control que en la práctica ya no decide nada."""
+
         if getattr(self, "chk_calif_tecnicas", None) is None:
             return
-        tipo_inst, personalizados_inst = self.main_window._tipo_institucion()
+        tipo_inst, personalizados_inst= self.main_window._tipo_institucion()
         es_politecnico_inst= (tipo_inst == "Politécnico"
                                 or (tipo_inst == "Personalizado" and "Politécnico" in personalizados_inst))
         self.chk_calif_tecnicas.setEnabled(not es_politecnico_inst)
@@ -3212,6 +3356,7 @@ class ModuloConfiguracion(QWidget):
             self.chk_calif_tecnicas.setToolTip("")
 
     def _guardar_preferencia_calif_tecnicas(self):
+
         from src.nucleo.permisos import guardar_preferencia_calif_tecnicas
         if getattr(self.main_window, "id_usuario_actual", None) is None:
             mostrar_mensaje("advertencia", "Sin sesión", "No se detectó un usuario con sesión iniciada.", self)
@@ -3229,6 +3374,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- SEGURIDAD Y BACKUPS ----------------
     def _tab_seguridad(self):
+
         contenido= QWidget()
         l= QVBoxLayout(contenido)
         l.setContentsMargins(4, 10, 10, 10)
@@ -3578,6 +3724,7 @@ class ModuloConfiguracion(QWidget):
         return scroll
 
     def _refrescar_estado_bd_base(self):
+
         from src.nucleo.bd import info_bd_base
         info= info_bd_base()
         if info:
@@ -3591,6 +3738,7 @@ class ModuloConfiguracion(QWidget):
                 "guardes una.")
 
     def _guardar_bd_base(self):
+
         from src.nucleo.bd import guardar_bd_base_desde_actual
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
@@ -3605,6 +3753,7 @@ class ModuloConfiguracion(QWidget):
                 self) != QMessageBox.StandardButton.Yes:
             return
         try:
+
             ruta= guardar_bd_base_desde_actual()
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo guardar la BD Base:\n{e}", self)
@@ -3616,6 +3765,7 @@ class ModuloConfiguracion(QWidget):
                                  f"La BD Base Institucional se guardó correctamente en:\n{ruta}")
 
     def _quitar_bd_base(self):
+
         from src.nucleo.bd import eliminar_bd_base, existe_bd_base
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
@@ -3634,10 +3784,11 @@ class ModuloConfiguracion(QWidget):
         self._refrescar_estado_bd_base()
         mostrar_mensaje("exito", "BD Base eliminada", "La BD Base Institucional se eliminó.", self)
 
+    #Igual que 'Generar Perfil (.acdx)' de la pestaña Usuarios y Roles, pero
+    #sin necesitar una fila ya seleccionada: el propio diálogo deja elegir
+    #el usuario primero.
     def _generar_perfil_usuario_libre(self):
-        """Igual que 'Generar Perfil (.acdx)' de la pestaña Usuarios y Roles, pero
-        sin necesitar una fila ya seleccionada: el propio diálogo deja elegir
-        el usuario primero."""
+
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
                             "Solo Administradores/Directores pueden generar perfiles institucionales.", self)
@@ -3648,11 +3799,12 @@ class ModuloConfiguracion(QWidget):
             registrar_auditoria("Seguridad", "Generó perfil institucional (.acdx)",
                                 self.main_window.usuario_actual, dialogo.username or "")
 
+    #Copia el instalador (.exe) ya compilado para Docentes/Personal a la carpeta elegida.
+    #Primero intenta la función del módulo 'instalador' (por compatibilidad); si esa no lo
+    #encuentra, hace una búsqueda propia más amplia (ver _localizar_instalador_docentes)
+    #antes de rendirse.
     def _exportar_instalador_docentes(self):
-        """Copia el instalador (.exe) ya compilado para Docentes/Personal a la carpeta elegida.
-        Primero intenta la función del módulo 'instalador' (por compatibilidad); si esa no lo
-        encuentra, hace una búsqueda propia más amplia (ver _localizar_instalador_docentes)
-        antes de rendirse."""
+
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
                             "Solo Administradores/Directores pueden exportar el instalador.", self)
@@ -3663,7 +3815,9 @@ class ModuloConfiguracion(QWidget):
             return
 
         try:
+
             try:
+
                 from src.servicios.instalador import exportar_instalador_docentes
                 destino= exportar_instalador_docentes(ruta)
             except FileNotFoundError:
@@ -3684,6 +3838,7 @@ class ModuloConfiguracion(QWidget):
                         "Perfil).", self)
 
     def _abrir_configuracion_side_stepper(self):
+
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
                             "Solo Administradores/Directores pueden configurar Side Stepper.", self)
@@ -3692,6 +3847,7 @@ class ModuloConfiguracion(QWidget):
         DialogoExportarSideStepper(self.main_window, parent=self).exec()
 
     def _exportar_paquete_permisos_side_stepper(self):
+
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
                             "Solo Administradores/Directores pueden exportar Side Stepper.", self)
@@ -3700,6 +3856,7 @@ class ModuloConfiguracion(QWidget):
         if not ruta:
             return
         try:
+
             from src.servicios.instalador import exportar_paquete_permisos_side_stepper
             destino= exportar_paquete_permisos_side_stepper(ruta)
         except ValueError as e:
@@ -3716,6 +3873,7 @@ class ModuloConfiguracion(QWidget):
                         self)
 
     def _exportar_instalador_side_stepper(self):
+
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
                             "Solo Administradores/Directores pueden exportar el instalador.", self)
@@ -3724,6 +3882,7 @@ class ModuloConfiguracion(QWidget):
         if not ruta:
             return
         try:
+
             from src.servicios.instalador import exportar_instalador_side_stepper
             destino= exportar_instalador_side_stepper(ruta)
         except FileNotFoundError as e:
@@ -3738,13 +3897,14 @@ class ModuloConfiguracion(QWidget):
                         f"El instalador se copió en:\n{destino}\n\nEs el mismo archivo siempre: entrégaselo "
                         "junto con el paquete de permisos (Exportar paquete de permisos).", self)
 
+    #Busca 'AcaDeXI_Docentes_Setup.exe' en todas las carpetas donde razonablemente puede
+    #haber quedado tras compilarlo con Inno Setup: junto al ejecutable de AcaDeXI, dentro de
+    #su carpeta '_internal' (así queda al empaquetar con PyInstaller en modo carpeta, ej.
+    #AcaDeXI\AcaDeXI.exe + AcaDeXI\_internal\...), y junto a main.py cuando se ejecuta en
+    #modo desarrollo (sin empaquetar). Devuelve la ruta completa si lo encuentra, o lanza
+    #FileNotFoundError con el detalle de dónde se buscó.
     def _localizar_instalador_docentes(self):
-        """Busca 'AcaDeXI_Docentes_Setup.exe' en todas las carpetas donde razonablemente puede
-        haber quedado tras compilarlo con Inno Setup: junto al ejecutable de AcaDeXI, dentro de
-        su carpeta '_internal' (así queda al empaquetar con PyInstaller en modo carpeta, ej.
-        AcaDeXI\\AcaDeXI.exe + AcaDeXI\\_internal\\...), y junto a main.py cuando se ejecuta en
-        modo desarrollo (sin empaquetar). Devuelve la ruta completa si lo encuentra, o lanza
-        FileNotFoundError con el detalle de dónde se buscó."""
+
         nombre= "AcaDeXI_Docentes_Setup.exe"
         carpetas= []
 
@@ -3785,7 +3945,9 @@ class ModuloConfiguracion(QWidget):
         )
 
     def _guardar_smtp(self):
+
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("""UPDATE configuracion SET smtp_host=?, smtp_puerto=?, smtp_usuario=?,
@@ -3801,11 +3963,13 @@ class ModuloConfiguracion(QWidget):
             mostrar_mensaje("error", "Error", f"No se pudo guardar la configuración SMTP:\n{e}", self)
 
     def _probar_smtp(self):
+
         destino= self.in_smtp_usuario.text().strip()
         if not destino:
             mostrar_mensaje("advertencia", "Sin destinatario", "Ingresa un usuario SMTP para enviarte la prueba.", self)
             return
         try:
+
             from src.nucleo.bd import enviar_correo
             enviar_correo(destino, "AcaDeXI - Correo de prueba",
                           "Este es un correo de prueba de la configuración SMTP de AcaDeXI.\n"
@@ -3815,16 +3979,19 @@ class ModuloConfiguracion(QWidget):
             mostrar_mensaje("error", "Error al enviar", str(e), self)
 
     def _guardar_seguridad(self):
+
         self.main_window.requerir_login= self.chk_requerir_login.isChecked()
         self.main_window.guardar_configuracion()
         mostrar_mensaje("exito", "Guardado", "Preferencias de seguridad actualizadas.", self)
 
     def _elegir_carpeta_backup(self):
+
         carpeta= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta destino de backups")
         if carpeta:
             self.in_backup_carpeta.setText(carpeta)
 
     def _guardar_config_backup(self):
+
         from src.nucleo.bd import guardar_config_backup, guardar_mostrar_backups_gerenciales
         carpeta= self.in_backup_carpeta.text().strip()
         guardar_config_backup(self.combo_backup_modo.currentText(), carpeta)
@@ -3839,6 +4006,7 @@ class ModuloConfiguracion(QWidget):
             self.main_window._aplicar_permisos_por_rol()
 
     def _cargar_config_backup(self):
+
         from src.nucleo.bd import obtener_config_backup, mostrar_backups_gerenciales
         cfg= obtener_config_backup()
         self.combo_backup_modo.setCurrentText(cfg["modo"])
@@ -3851,6 +4019,7 @@ class ModuloConfiguracion(QWidget):
         self._refrescar_estado_sync()
 
     def _cargar_historial_backups(self):
+
         filas= obtener_historial_backups(100)
         with tabla_pausada(self.tabla_backups):
             self.tabla_backups.setRowCount(len(filas))
@@ -3863,6 +4032,7 @@ class ModuloConfiguracion(QWidget):
                 self.tabla_backups.setItem(i, 4, QTableWidgetItem("Exitoso" if f["exitoso"] else "Fallido"))
 
     def _cargar_combo_profesor_export_docente(self):
+
         combo= self.combo_profesor_export_docente
         seleccion_previa= combo.currentData()
         combo.blockSignals(True)
@@ -3880,6 +4050,7 @@ class ModuloConfiguracion(QWidget):
         combo.blockSignals(False)
 
     def _exportar_paquete_docente_click(self):
+
         profesor_id= self.combo_profesor_export_docente.currentData()
         profesor_nombre= None
         if profesor_id is not None:
@@ -3887,7 +4058,9 @@ class ModuloConfiguracion(QWidget):
         exportar_paquete_docente(self.main_window, self, profesor_id=profesor_id, profesor_nombre=profesor_nombre)
 
     def _crear_backup(self):
+
         try:
+
             ruta= crear_backup(self.in_backup_carpeta.text().strip() or None,
                                 tipo= "Manual", usuario=self.main_window.usuario_actual)
             registrar_auditoria("Seguridad", "Creó backup", self.main_window.usuario_actual, ruta)
@@ -3897,7 +4070,8 @@ class ModuloConfiguracion(QWidget):
             mostrar_mensaje("error", "Error", f"No se pudo crear el backup:\n{e}", self)
 
     def _restaurar_backup(self):
-        ruta, _ = QFileDialog.getOpenFileName(self, "Seleccionar Backup", os.path.join(get_app_data_dir(), "backups"),
+
+        ruta, _= QFileDialog.getOpenFileName(self, "Seleccionar Backup", os.path.join(get_app_data_dir(), "backups"),
                                                "Base de Datos (*.db)")
         if not ruta:
             return
@@ -3905,6 +4079,7 @@ class ModuloConfiguracion(QWidget):
                            "Esto reemplazará TODOS los datos actuales. ¿Continuar?", self) != QMessageBox.StandardButton.Yes:
             return
         try:
+
             restaurar_backup(ruta)
             registrar_auditoria("Seguridad", "Restauró backup", self.main_window.usuario_actual, ruta)
             mostrar_mensaje("exito", "Restaurado", "La base de datos fue restaurada. Reinicia la aplicación.", self)
@@ -3913,6 +4088,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- SINCRONIZACIÓN ----------------
     def _refrescar_estado_sync(self):
+
         estado= obtener_estado(self.main_window)
         textos= {
             "sin_carpeta": "No hay carpeta de sincronización configurada (usa la Carpeta Personalizada de arriba).",
@@ -3925,7 +4101,9 @@ class ModuloConfiguracion(QWidget):
         self.lbl_estado_sync.setText(textos.get(estado["estado"], ""))
 
     def _subir_cambios_sync(self):
+
         try:
+
             estado= obtener_estado(self.main_window)
             if estado["estado"] == "conflicto":
                 if mostrar_mensaje("pregunta", "Conflicto de sincronización",
@@ -3940,7 +4118,9 @@ class ModuloConfiguracion(QWidget):
         self._refrescar_estado_sync()
 
     def _descargar_novedades_sync(self):
+
         try:
+
             estado= obtener_estado(self.main_window)
             if estado["estado"] == "conflicto":
                 if mostrar_mensaje("pregunta", "Conflicto de sincronización",
@@ -3959,6 +4139,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- AUDITORÍA (sin cambios) ----------------
     def _tab_auditoria(self):
+
         contenido= QWidget()
         l= QVBoxLayout(contenido)
         l.setContentsMargins(4, 10, 10, 10)
@@ -4078,6 +4259,7 @@ class ModuloConfiguracion(QWidget):
         return scroll
 
     def _guardar_auditoria_activa(self):
+
         if not es_admin(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos",
                             "Solo un Administrador o Director puede activar o desactivar el "
@@ -4085,6 +4267,7 @@ class ModuloConfiguracion(QWidget):
             return
         activar= self.chk_auditoria_activa.isChecked()
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("UPDATE configuracion SET auditoria_activa=? WHERE id=1", (1 if activar else 0,))
@@ -4101,14 +4284,17 @@ class ModuloConfiguracion(QWidget):
         self._cargar_auditoria()
 
     def _qdate_hoy(self):
+
         from PySide6.QtCore import QDate
         return QDate.currentDate()
 
     def _qdate_hace_dias(self, dias):
+
         from PySide6.QtCore import QDate
         return QDate.currentDate().addDays(-dias)
 
     def _limpiar_filtros_auditoria(self):
+
         self.date_auditoria_desde.setDate(self._qdate_hace_dias(30))
         self.date_auditoria_hasta.setDate(self._qdate_hoy())
         self.combo_auditoria_modulo.setCurrentIndex(0)
@@ -4116,6 +4302,7 @@ class ModuloConfiguracion(QWidget):
         self._cargar_auditoria()
 
     def _cargar_combos_auditoria(self):
+
         modulo_sel= self.combo_auditoria_modulo.currentData()
         usuario_sel= self.combo_auditoria_usuario.currentData()
         self.combo_auditoria_modulo.blockSignals(True)
@@ -4147,6 +4334,7 @@ class ModuloConfiguracion(QWidget):
         self.combo_auditoria_usuario.blockSignals(False)
 
     def _cargar_auditoria(self):
+
         self._cargar_combos_auditoria()
         desde= self.date_auditoria_desde.date().toString("yyyy-MM-dd") + " 00:00:00"
         hasta= self.date_auditoria_hasta.date().toString("yyyy-MM-dd") + " 23:59:59"
@@ -4168,7 +4356,7 @@ class ModuloConfiguracion(QWidget):
         total_registros= c.fetchone()["total"]
 
         self.paginacion_auditoria.establecer_total(total_registros)
-        inicio, fin = self.paginacion_auditoria.rango_actual()
+        inicio, fin= self.paginacion_auditoria.rango_actual()
 
         consulta= "SELECT * FROM auditoria WHERE fecha BETWEEN ? AND ?"
         parametros= [desde, hasta]
@@ -4207,6 +4395,7 @@ class ModuloConfiguracion(QWidget):
 
     #---------------- CARGA GENERAL ----------------
     def refrescar(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM configuracion WHERE id=1")
@@ -4241,6 +4430,7 @@ class ModuloConfiguracion(QWidget):
             self.spin_nota_min_secundaria.setValue(_valor_o_defecto(cfg, "nota_minima_secundaria", cfg["nota_minima"] or 70))
             self.combo_metodo.setCurrentText(cfg["metodo_calculo"] or "Promedio Ponderado")
             try:
+
                 self.combo_sistema_calificacion.setCurrentText(
                     cfg["sistema_calificacion"] or "Numérico (Personalizado)")
             except (IndexError, KeyError):
@@ -4301,6 +4491,7 @@ class ModuloConfiguracion(QWidget):
         self.aplicar_permisos_por_rol()
 
     def aplicar_permisos_por_rol(self):
+
         rol= getattr(self.main_window, "rol_actual", None)
         permitido= es_admin(self.main_window)
         es_restringido= rol in ("Profesor", "Administrativo")
@@ -4354,16 +4545,18 @@ class ModuloConfiguracion(QWidget):
             solo_administrador= rol is None or rol == "Administrador"
             self.tarjeta_psicologia_admin.setVisible(solo_administrador)
 
+    #Se llama automáticamente (ver main.py ▸ aplicar_tema) cada vez que el usuario
+    #cambia el tema/modo oscuro de la aplicación, para que las tarjetas y estilos
+    #propios de este módulo se mantengan sincronizados con el resto del sistema.
     def actualizar_tema(self):
-        """Se llama automáticamente (ver main.py ▸ aplicar_tema) cada vez que el usuario
-        cambia el tema/modo oscuro de la aplicación, para que las tarjetas y estilos
-        propios de este módulo se mantengan sincronizados con el resto del sistema."""
+
         self._aplicar_tema_visual()
 
+    #Construye y aplica la hoja de estilos moderna del módulo (pestañas, tarjetas,
+    #campos, tablas, scrollbars) usando los colores del tema actual de la aplicación.
+    #Es puramente visual: no lee ni modifica ningún dato.
     def _aplicar_tema_visual(self):
-        """Construye y aplica la hoja de estilos moderna del módulo (pestañas, tarjetas,
-        campos, tablas, scrollbars) usando los colores del tema actual de la aplicación.
-        Es puramente visual: no lee ni modifica ningún dato."""
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None)
         if not paletas:

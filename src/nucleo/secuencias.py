@@ -2,12 +2,12 @@
 #Acá no hay nada de Qt, solo datos y la exportación a Word. La pantalla está en src/modulos/secuencias.py.
 #
 #Una secuencia tiene tres partes:
-#  encabezado: centro, materia, grado, sección, período y docente
-#  cuerpo: eje transversal, situación de aprendizaje, competencias fundamentales y específicas,
-#          contenidos (conceptos, procedimientos, actitudes y valores), indicadores de logro y
-#          estrategia de enseñanza y aprendizaje
-#  sesiones: van en orden y cada una tiene fecha, momento (inicio, desarrollo o cierre),
-#            actividades, evidencias, instrumento de evaluación, metacognición y recursos
+#encabezado: centro, materia, grado, sección, período y docente
+#cuerpo: eje transversal, situación de aprendizaje, competencias fundamentales y específicas,
+#contenidos (conceptos, procedimientos, actitudes y valores), indicadores de logro y
+#estrategia de enseñanza y aprendizaje
+#sesiones: van en orden y cada una tiene fecha, momento (inicio, desarrollo o cierre),
+#actividades, evidencias, instrumento de evaluación, metacognición y recursos
 #
 #Las competencias específicas y los indicadores de logro son los mismos registros que usa
 #Calificaciones (tablas competencias_especificas e indicadores_logro), así que planificar y evaluar
@@ -362,6 +362,7 @@ def eliminar_secuencia(secuencia_id):
     conn= obtener_conexion()
 
     try:
+
         conn.execute("DELETE FROM secuencias_didacticas WHERE id=?", (secuencia_id,))
         conn.commit()
 
@@ -399,6 +400,7 @@ def marcar_sesion_realizada(sesion_id, realizada=True):
     conn= obtener_conexion()
 
     try:
+
         conn.execute("UPDATE secuencia_sesiones SET realizada=? WHERE id=?", (1 if realizada else 0, sesion_id))
         conn.commit()
 
@@ -844,6 +846,7 @@ def _sombrear_celda(celda, color="D9E2F3"):
 def _fecha_para_word(fecha_iso):
 
     try:
+
         return datetime.strptime(str(fecha_iso)[:10], "%Y-%m-%d").strftime("%d/%m/%Y")
 
     except (ValueError, TypeError):

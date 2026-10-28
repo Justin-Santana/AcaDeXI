@@ -1,4 +1,4 @@
-"""Calendario de AcaDeXI."""
+#Calendario de AcaDeXI.
 import unicodedata
 from datetime import datetime, date, timedelta
 
@@ -58,19 +58,21 @@ MESES= ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto"
 
 
 #Utilidades visuales (solo estética/animación — no tocan datos ni lógica)
+#Convierte '#RRGGBB' a 'rgba(r, g, b, a)' para usar en hojas de estilo.
 def _hex_a_rgba(hex_color, alpha):
-    """Convierte '#RRGGBB' a 'rgba(r, g, b, a)' para usar en hojas de estilo."""
+
     hex_color= (hex_color or "#000000").lstrip("#")
     if len(hex_color) < 6:
         hex_color= "000000"
-    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Quita mayúsculas y acentos para que el buscador no sea estricto:
+#'reunion', 'Reunión' y 'REUNIÓN' encuentran lo mismo (mismo criterio
+#que configuracion.py).
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que el buscador no sea estricto:
-    'reunion', 'Reunión' y 'REUNIÓN' encuentran lo mismo (mismo criterio
-    que configuracion.py)."""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -78,20 +80,23 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que configuracion.py, horario.py y asistencia.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-    (mismo diseño que configuracion.py, horario.py y asistencia.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -102,10 +107,11 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#Aparece/desaparece `widget` con un fundido de opacidad. Segura ante
+#llamadas repetidas y rápidas: nunca deja un efecto huérfano ni un widget
+#en un estado de visibilidad incorrecto.
 def _fundido(widget, mostrar, duracion=200):
-    """Aparece/desaparece `widget` con un fundido de opacidad. Segura ante
-    llamadas repetidas y rápidas: nunca deja un efecto huérfano ni un widget
-    en un estado de visibilidad incorrecto."""
+
     efecto= widget.graphicsEffect()
     if not isinstance(efecto, QGraphicsOpacityEffect):
         efecto= QGraphicsOpacityEffect(widget)
@@ -120,6 +126,7 @@ def _fundido(widget, mostrar, duracion=200):
     anim.setEasingCurve(QEasingCurve.Type.OutCubic if mostrar else QEasingCurve.Type.InCubic)
 
     def _fin(w=widget, e=efecto, ocultar=not mostrar):
+
         if w.graphicsEffect() is e:
             w.setGraphicsEffect(None)
         if ocultar:
@@ -130,9 +137,10 @@ def _fundido(widget, mostrar, duracion=200):
     anim.start()
 
 
+#Pulso de resplandor rojo (sin mover el widget, sin romper el layout) para
+#señalar un campo inválido de forma dinámica en vez de un diálogo bloqueante.
 def _glow_invalido(widget):
-    """Pulso de resplandor rojo (sin mover el widget, sin romper el layout) para
-    señalar un campo inválido de forma dinámica en vez de un diálogo bloqueante."""
+
     efecto= QGraphicsDropShadowEffect(widget)
     efecto.setColor(QColor("#EF4444"))
     efecto.setOffset(0, 0)
@@ -147,6 +155,7 @@ def _glow_invalido(widget):
     anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _fin(w=widget, e=efecto):
+
         if w.graphicsEffect() is e:
             w.setGraphicsEffect(None)
 
@@ -155,11 +164,12 @@ def _glow_invalido(widget):
     anim.start()
 
 
+#Punto circular que 'respira' en bucle — usado para señalar 'hoy' o el
+#próximo evento sin recurrir a tarjetas de indicador.
 class _PuntoPulso(QWidget):
-    """Punto circular que 'respira' en bucle — usado para señalar 'hoy' o el
-    próximo evento sin recurrir a tarjetas de indicador."""
 
     def __init__(self, color="#22C55E", diametro=9, parent=None):
+
         super().__init__(parent)
         self._color= QColor(color)
         self._d= diametro
@@ -177,10 +187,12 @@ class _PuntoPulso(QWidget):
         self._anim.start()
 
     def poner_color(self, color):
+
         self._color= QColor(color)
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QBrush(self._color))
@@ -188,12 +200,13 @@ class _PuntoPulso(QWidget):
         painter.drawEllipse(0, 0, self._d, self._d)
 
 
+#Contenedor tipo 'panel' con esquinas redondeadas y una sombra suave que
+#se eleva al pasar el mouse. Es solo un envoltorio visual reutilizable
+#(formulario, resumen, franja semanal) — no es una tarjeta de indicador/KPI.
 class PanelFlotante(QFrame):
-    """Contenedor tipo 'panel' con esquinas redondeadas y una sombra suave que
-    se eleva al pasar el mouse. Es solo un envoltorio visual reutilizable
-    (formulario, resumen, franja semanal) — no es una tarjeta de indicador/KPI."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setObjectName("PanelFlotanteCalendario")
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
@@ -206,14 +219,17 @@ class PanelFlotante(QFrame):
         self.setGraphicsEffect(self._sombra)
 
     def enterEvent(self, event):
+
         self._animar_sombra(self._blur_hover)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(self._blur_normal)
         super().leaveEvent(event)
 
     def _animar_sombra(self, destino):
+
         anim= QPropertyAnimation(self._sombra, b"blurRadius", self)
         anim.setDuration(200)
         anim.setStartValue(self._sombra.blurRadius())
@@ -223,6 +239,7 @@ class PanelFlotante(QFrame):
         anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
     def aplicar_colores(self, bg, borde):
+
         self.setStyleSheet(f"""
             QFrame#PanelFlotanteCalendario {{
                 background-color: {bg};
@@ -232,14 +249,15 @@ class PanelFlotante(QFrame):
         """)
 
 
+#Chip de un día dentro de la franja 'Esta semana'. Muestra el número de
+#día, hasta 3 puntos de color (uno por evento, más un '+N' si sobran) y,
+#si es hoy, un punto que respira. Al hacer clic filtra la tabla por ese día.
 class ChipDia(QFrame):
-    """Chip de un día dentro de la franja 'Esta semana'. Muestra el número de
-    día, hasta 3 puntos de color (uno por evento, más un '+N' si sobran) y,
-    si es hoy, un punto que respira. Al hacer clic filtra la tabla por ese día."""
 
     clicked= Signal(str)
 
     def __init__(self, fecha, parent=None):
+
         super().__init__(parent)
         self.fecha= fecha
         self.fecha_iso= fecha.strftime("%Y-%m-%d")
@@ -278,6 +296,7 @@ class ChipDia(QFrame):
         lay.addWidget(self._fila_dots)
 
     def poner_hoy(self, es_hoy):
+
         while self._lay_pulso.count():
             item= self._lay_pulso.takeAt(0)
             w= item.widget()
@@ -287,6 +306,7 @@ class ChipDia(QFrame):
             self._lay_pulso.addWidget(_PuntoPulso("#22C55E", 7))
 
     def poner_eventos(self, tipos):
+
         while self._lay_dots.count():
             item= self._lay_dots.takeAt(0)
             w= item.widget()
@@ -308,10 +328,12 @@ class ChipDia(QFrame):
             self._lay_dots.addWidget(extra_lbl)
 
     def mousePressEvent(self, event):
+
         self.clicked.emit(self.fecha_iso)
         super().mousePressEvent(event)
 
     def aplicar_estilo(self, bg, borde, txt_prim, txt_sec, accent, es_hoy):
+
         if self.seleccionado:
             fondo= _hex_a_rgba(accent, 0.20)
             borde_final= accent
@@ -337,13 +359,14 @@ class ChipDia(QFrame):
             f"font-size: 16px; font-weight: {peso}; color: {color_num}; background: transparent;")
 
 
+#Aviso flotante no bloqueante que aparece brevemente sobre el contenido
+#del módulo y se desvanece solo. Sustituye a los diálogos emergentes para
+#confirmaciones rápidas (guardado, eliminado, validaciones) sin interrumpir
+#el flujo de trabajo.
 class _ToastFlotante(QFrame):
-    """Aviso flotante no bloqueante que aparece brevemente sobre el contenido
-    del módulo y se desvanece solo. Sustituye a los diálogos emergentes para
-    confirmaciones rápidas (guardado, eliminado, validaciones) sin interrumpir
-    el flujo de trabajo."""
 
     def __init__(self, parent):
+
         super().__init__(parent)
         self.setObjectName("ToastCalendario")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -378,6 +401,7 @@ class _ToastFlotante(QFrame):
         self._timer_oculto.timeout.connect(self._ocultar)
 
     def mostrar(self, texto, tipo="exito"):
+
         colores= {"exito": "#16A34A", "error": "#DC2626", "info": "#2563EB", "advertencia": "#D97706"}
         iconos= {"exito": "", "error": "", "info": "ℹ", "advertencia": ""}
         color= colores.get(tipo, "#16A34A")
@@ -405,6 +429,7 @@ class _ToastFlotante(QFrame):
         self._timer_oculto.start(2600)
 
     def _reposicionar(self):
+
         padre= self.parentWidget()
         if padre is None:
             return
@@ -412,6 +437,7 @@ class _ToastFlotante(QFrame):
         self.move(max(x, 12), 16)
 
     def _ocultar(self):
+
         anim_out= QPropertyAnimation(self._efecto, b"opacity", self)
         anim_out.setDuration(320)
         anim_out.setStartValue(self._efecto.opacity())
@@ -422,14 +448,15 @@ class _ToastFlotante(QFrame):
         anim_out.start()
 
 
+#Dibuja a mano un icono circular verde con '+' (colapsado) o '−'
+#(expandido) -mismo criterio que IconoLupa en horario.py: no depender de
+#que el sistema tenga instalado un glifo/emoji concreto (el '+'/'−' de
+#algunas fuentes se ve desalineado o directamente no existe)-. Es el
+#icono que reemplaza a la flecha de texto (▸/▾) en el encabezado de
+#PanelDesplegable, para que 'Añadir/Nueva ...' se lea de un vistazo como
+#una acción de agregar en TODOS los módulos que usan este panel.
 def _pixmap_circulo_mas_menos(expandido, diametro=18):
-    """Dibuja a mano un icono circular verde con '+' (colapsado) o '−'
-    (expandido) -mismo criterio que IconoLupa en horario.py: no depender de
-    que el sistema tenga instalado un glifo/emoji concreto (el '+'/'−' de
-    algunas fuentes se ve desalineado o directamente no existe)-. Es el
-    icono que reemplaza a la flecha de texto (▸/▾) en el encabezado de
-    PanelDesplegable, para que 'Añadir/Nueva ...' se lea de un vistazo como
-    una acción de agregar en TODOS los módulos que usan este panel."""
+
     pixmap= QPixmap(diametro, diametro)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter= QPainter(pixmap)
@@ -451,14 +478,15 @@ def _pixmap_circulo_mas_menos(expandido, diametro=18):
     return pixmap
 
 
+#Bloque colapsable con un encabezado clicable (icono ⊕/⊖ + título).
+#Empieza cerrado por defecto -mismo widget que usa horario.py para
+#'Agregar una clase local'-; aquí se usa para que el formulario de
+#'Registrar evento' no le gane protagonismo visual a los eventos que ya
+#existen, pero siga a un clic de distancia para quien sí lo necesite.
 class PanelDesplegable(QWidget):
-    """Bloque colapsable con un encabezado clicable (icono ⊕/⊖ + título).
-    Empieza cerrado por defecto -mismo widget que usa horario.py para
-    'Agregar una clase local'-; aquí se usa para que el formulario de
-    'Registrar evento' no le gane protagonismo visual a los eventos que ya
-    existen, pero siga a un clic de distancia para quien sí lo necesite."""
 
     def __init__(self, titulo, parent=None):
+
         super().__init__(parent)
         self._titulo= titulo
         self._expandido= False
@@ -498,15 +526,18 @@ class PanelDesplegable(QWidget):
         self._anim.finished.connect(self._al_terminar_animacion)
 
     def cuerpo_layout(self):
+
         return self.contenedor_layout
 
     def _alternar(self):
+
         self.expandir(not self._expandido)
 
+    #Color del texto del encabezado según el modo claro/oscuro:
+    #negro (casi) puro en claro, blanco en oscuro. El fondo gris
+    #translúcido funciona igual en ambos modos.
     def _aplicar_color_tema(self):
-        """Color del texto del encabezado según el modo claro/oscuro:
-        negro (casi) puro en claro, blanco en oscuro. El fondo gris
-        translúcido funciona igual en ambos modos."""
+
         modo_oscuro= getattr(self.window(), "modo_oscuro", False)
         color= "#FFFFFF" if modo_oscuro else "#0F172A"
         self.btn_cabecera.setStyleSheet(f"""
@@ -516,21 +547,25 @@ class PanelDesplegable(QWidget):
             QPushButton:hover {{ background: rgba(127,127,127,0.18); }}
         """)
 
+    #Refresca el color del texto del encabezado al cambiar de tema en
+    #runtime; el showEvent solo dispara la primera vez que se muestra.
     def actualizar_color_tema(self):
-        """Refresca el color del texto del encabezado al cambiar de tema en
-        runtime; el showEvent solo dispara la primera vez que se muestra."""
+
         self._aplicar_color_tema()
 
     def showEvent(self, event):
+
         #Al mostrarse la ventana ya está enganchada al main window, así que aquí el modo claro/oscuro se conoce con
         #certeza (en __init__ puede no estarlo todavía si el panel se crea antes de asignar el padre).
         try:
+
             self._aplicar_color_tema()
         except RuntimeError:
             pass
         super().showEvent(event)
 
     def _al_terminar_animacion(self):
+
         #Solo se oculta de verdad cuando TERMINA la animación de cierre -mientras se está abriendo tiene que permanecer
         #visible para que se vea crecer-. Si en el ínterin el usuario volvió a abrirlo, este
         #callback llega con self._expandido=True y no hace nada.
@@ -538,6 +573,7 @@ class PanelDesplegable(QWidget):
             self.contenedor.setVisible(False)
 
     def expandir(self, expandir=True, animar=True):
+
         self._expandido= expandir
         self.btn_cabecera.setIcon(QIcon(_pixmap_circulo_mas_menos(expandir)))
         if expandir:
@@ -563,7 +599,9 @@ class PanelDesplegable(QWidget):
 
 
 class ModuloCalendario(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion= None
@@ -577,6 +615,7 @@ class ModuloCalendario(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Calendario"
         registrar_atajo(self, self.main_window, "Ctrl+G", "Guardar evento", self._guardar)
         registrar_atajo(self, self.main_window, "Ctrl+L", "Limpiar formulario", self._limpiar)
@@ -586,6 +625,7 @@ class ModuloCalendario(QWidget):
 
     #Construcción de la interfaz
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -703,35 +743,47 @@ class ModuloCalendario(QWidget):
         form= QGridLayout()
         form.setHorizontalSpacing(10)
         form.setVerticalSpacing(10)
-        self.in_titulo= QLineEdit(); self.in_titulo.setPlaceholderText("Título del evento")
+        self.in_titulo= QLineEdit()
+        self.in_titulo.setPlaceholderText("Título del evento")
         limitar_campo_texto(self.in_titulo, 300)
-        self.combo_tipo= QComboBox(); self.combo_tipo.addItems(TIPOS_EVENTO)
+        self.combo_tipo= QComboBox()
+        self.combo_tipo.addItems(TIPOS_EVENTO)
         conectar_tooltip_seleccion(self.combo_tipo, "Tipo de evento")
         self.combo_tipo.currentTextChanged.connect(self._sync_visibilidad_por_tipo)
-        self.date_fecha= QDateEdit(calendarPopup=True); self.date_fecha.setDate(QDate.currentDate())
-        self.time_hora= QTimeEdit(); self.time_hora.setTime(QTime(8, 0))
+        self.date_fecha= QDateEdit(calendarPopup=True)
+        self.date_fecha.setDate(QDate.currentDate())
+        self.time_hora= QTimeEdit()
+        self.time_hora.setTime(QTime(8, 0))
         aplicar_formato_widget_fecha(self.date_fecha, self.main_window)
         aplicar_formato_widget_hora(self.time_hora, self.main_window)
         self.combo_curso= QComboBox()
         self.combo_curso.currentIndexChanged.connect(self._curso_evento_cambio)
         self.combo_seccion= QComboBox()
         self.combo_materia= QComboBox()
-        self.in_desc= QTextEdit(); self.in_desc.setPlaceholderText("Detalle (opcional)")
+        self.in_desc= QTextEdit()
+        self.in_desc.setPlaceholderText("Detalle (opcional)")
         limitar_campo_texto(self.in_desc, 5000)
         self.in_desc.setFixedHeight(70)
         self.lbl_curso= QLabel("Curso/Grado (opcional):")
         self.lbl_seccion= QLabel("Sección (opcional):")
         self.lbl_materia= QLabel("Materia (opcional):")
         form.addWidget(self.in_titulo, 0, 0, 1, 2)
-        form.addWidget(QLabel("Tipo:"), 0, 2); form.addWidget(self.combo_tipo, 0, 3)
-        form.addWidget(QLabel("Fecha:"), 1, 0); form.addWidget(self.date_fecha, 1, 1)
-        form.addWidget(QLabel("Hora:"), 1, 2); form.addWidget(self.time_hora, 1, 3)
-        form.addWidget(self.lbl_curso, 2, 0); form.addWidget(self.combo_curso, 2, 1)
-        form.addWidget(self.lbl_seccion, 2, 2); form.addWidget(self.combo_seccion, 2, 3)
-        form.addWidget(self.lbl_materia, 3, 0); form.addWidget(self.combo_materia, 3, 1)
+        form.addWidget(QLabel("Tipo:"), 0, 2)
+        form.addWidget(self.combo_tipo, 0, 3)
+        form.addWidget(QLabel("Fecha:"), 1, 0)
+        form.addWidget(self.date_fecha, 1, 1)
+        form.addWidget(QLabel("Hora:"), 1, 2)
+        form.addWidget(self.time_hora, 1, 3)
+        form.addWidget(self.lbl_curso, 2, 0)
+        form.addWidget(self.combo_curso, 2, 1)
+        form.addWidget(self.lbl_seccion, 2, 2)
+        form.addWidget(self.combo_seccion, 2, 3)
+        form.addWidget(self.lbl_materia, 3, 0)
+        form.addWidget(self.combo_materia, 3, 1)
         form.addWidget(self.in_desc, 4, 0, 1, 4)
         if not self.gerencial:
-            self.combo_tipo.clear(); self.combo_tipo.addItems(["Personal"])
+            self.combo_tipo.clear()
+            self.combo_tipo.addItems(["Personal"])
 
         #Área Técnica (Politécnico) / Carrera (Universidad): en SU PROPIA fila, dentro de un cuadrito con aire
         #alrededor — nunca apretados junto a Curso/Sección/Materia. Van ANTES del formulario (se eligen primero).
@@ -944,6 +996,7 @@ class ModuloCalendario(QWidget):
         btn_eliminar.clicked.connect(self._eliminar)
         fila_botones.addWidget(btn_eliminar)
         def _extra_botones_detalle(fila_sel):
+
             item_desc= self.tabla.item(fila_sel, 8)
             texto_completo= (item_desc.text() if item_desc else "").strip()
             return [("Ver detalle completo",
@@ -964,12 +1017,14 @@ class ModuloCalendario(QWidget):
         self.lbl_hoy.setText(self._formatear_fecha_larga(date.today()).capitalize())
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         if hasattr(self, "toast"):
             self.toast._reposicionar()
 
     #FORMULARIO: mostrar/ocultar sección y materia según el tipo elegido
     def _sync_visibilidad_por_tipo(self, texto):
+
         if not texto:
             return
         mostrar= (texto != "Personal")
@@ -978,6 +1033,7 @@ class ModuloCalendario(QWidget):
             _fundido(w, mostrar, duracion=200)
 
     def _crear_chip_filtro(self, texto, dato, icono=None):
+
         btn= QPushButton(texto)
         if icono:
             btn.setIcon(icono_emoji(icono))
@@ -989,6 +1045,7 @@ class ModuloCalendario(QWidget):
         return btn
 
     def _on_filtro_tipo(self, dato):
+
         self.filtro_tipo_actual= dato
         for chip, color, d in self.chips_filtro:
             chip.setChecked(d == dato)
@@ -997,6 +1054,7 @@ class ModuloCalendario(QWidget):
         self._aplicar_filtros_y_tabla()
 
     def _restilizar_chips_filtro(self):
+
         for chip, color, dato in self.chips_filtro:
             if chip.isChecked():
                 chip.setStyleSheet(f"""
@@ -1028,27 +1086,32 @@ class ModuloCalendario(QWidget):
                 """)
 
     #Carga de datos (una sola consulta reutilizada por el resumen y la tabla)
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo). Mismo criterio usado en materias.py,
+    #estudiantes.py y banco_tareas.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo). Mismo criterio usado en materias.py,
-        estudiantes.py y banco_tareas.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo). Mismo criterio usado en materias.py,
+    #estudiantes.py y banco_tareas.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo). Mismo criterio usado en materias.py,
-        estudiantes.py y banco_tareas.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
     def _cargar_combos(self):
+
         poblar_combo_curso(self.combo_curso, incluir_todos=False)
         self._cargar_filtro_tecnico_evento()
         self._filtrar_secciones_evento_por_curso()
@@ -1058,10 +1121,11 @@ class ModuloCalendario(QWidget):
         self._filtrar_secciones_vista_por_curso()
         self._cargar_materias_combo_vista()
 
+    #Igual que en Estudiantes: los combos de Área Técnica y Carrera del
+    #formulario 'Registrar evento' solo se muestran/pueblan si la
+    #institución tiene ese módulo activo.
     def _cargar_filtro_tecnico_evento(self):
-        """Igual que en Estudiantes: los combos de Área Técnica y Carrera del
-        formulario 'Registrar evento' solo se muestran/pueblan si la
-        institución tiene ese módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_evento.setVisible(es_poli)
         self.combo_filtro_especialidad_evento.setVisible(es_poli)
@@ -1099,10 +1163,12 @@ class ModuloCalendario(QWidget):
             self.combo_filtro_carrera_evento.blockSignals(False)
 
     def _filtro_tecnico_evento_cambio(self):
+
         self._filtrar_secciones_evento_por_curso()
         self._cargar_materias_combo_evento()
 
     def _cargar_materias_combo_evento(self):
+
         #El combo mezcla materias académicas y módulos técnicos (no se filtra por modelo_evaluacion salvo que se haya
         #elegido un Área Técnica), así que en Politécnico el label y el tooltip lo dejan claro — mismo criterio ligero
         #que usa materias.py.
@@ -1114,7 +1180,8 @@ class ModuloCalendario(QWidget):
 
         especialidad_id= self.combo_filtro_especialidad_evento.currentData() if es_poli else None
         actual= self.combo_materia.currentData()
-        self.combo_materia.clear(); self.combo_materia.addItem("— Ninguna —", None)
+        self.combo_materia.clear()
+        self.combo_materia.addItem("— Ninguna —", None)
         conn= obtener_conexion()
         c= conn.cursor()
         if especialidad_id is not None:
@@ -1131,19 +1198,21 @@ class ModuloCalendario(QWidget):
         self.combo_materia.setCurrentIndex(idx if idx >= 0 else 0)
 
     def _curso_evento_cambio(self):
+
         self._filtrar_secciones_evento_por_curso()
 
+    #Recarga 'Sección' con solo las secciones del curso elegido en 'Curso/Grado'.
+    #Igual que en TODOS los módulos de AcaDeXI (patrón de referencia: 'Asignar Clase'
+    #en Horarios de Materias), Curso es obligatorio primero — sin excepciones, ni
+    #siquiera para un campo opcional como este: mientras no se elija un curso,
+    #Sección queda vacía con el placeholder 'Selecciona primero un curso/grado…'.
+    #
+    #Si además hay un Área Técnica/Carrera elegidos, la lista de secciones se
+    #acota más: Área Técnica usa secciones.especialidad_id directamente;
+    #Carrera (dato por estudiante, no por sección) se resuelve viendo qué
+    #secciones tienen al menos un estudiante activo de esa carrera.
     def _filtrar_secciones_evento_por_curso(self, seccion_id_preseleccionar=None):
-        """Recarga 'Sección' con solo las secciones del curso elegido en 'Curso/Grado'.
-        Igual que en TODOS los módulos de AcaDeXI (patrón de referencia: 'Asignar Clase'
-        en Horarios de Materias), Curso es obligatorio primero — sin excepciones, ni
-        siquiera para un campo opcional como este: mientras no se elija un curso,
-        Sección queda vacía con el placeholder 'Selecciona primero un curso/grado…'.
 
-        Si además hay un Área Técnica/Carrera elegidos, la lista de secciones se
-        acota más: Área Técnica usa secciones.especialidad_id directamente;
-        Carrera (dato por estudiante, no por sección) se resuelve viendo qué
-        secciones tienen al menos un estudiante activo de esa carrera."""
         cascada_seccion_por_curso(self.combo_curso, self.combo_seccion, incluir_todas=False)
 
         especialidad_id= (self.combo_filtro_especialidad_evento.currentData()
@@ -1184,12 +1253,13 @@ class ModuloCalendario(QWidget):
             self.combo_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
     #Filtros de la lista de eventos (ventanita aparte, todos opcionales)
+    #Ventanita (no modal) con los filtros de la TABLA de eventos —
+    #distinta del formulario 'Registrar evento'. Mismo patrón que usan
+    #estudiantes.py y horario.py: todos los combos viven aquí para no
+    #apilarlos en la pantalla principal, y la tabla de atrás se sigue
+    #actualizando en vivo mientras el diálogo queda abierto.
     def _construir_dialogo_filtros_vista(self):
-        """Ventanita (no modal) con los filtros de la TABLA de eventos —
-        distinta del formulario 'Registrar evento'. Mismo patrón que usan
-        estudiantes.py y horario.py: todos los combos viven aquí para no
-        apilarlos en la pantalla principal, y la tabla de atrás se sigue
-        actualizando en vivo mientras el diálogo queda abierto."""
+
         self.dialogo_filtros_vista= QDialog(self)
         self.dialogo_filtros_vista.setObjectName("DialogoFiltros")
         self.dialogo_filtros_vista.setWindowTitle("Filtros de Calendario")
@@ -1262,6 +1332,7 @@ class ModuloCalendario(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros_vista(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros_vista.parent() is not _fc:
@@ -1271,6 +1342,7 @@ class ModuloCalendario(QWidget):
         self.dialogo_filtros_vista.activateWindow()
 
     def _limpiar_filtros_vista(self):
+
         self.combo_filtro_vista_especialidad.blockSignals(True)
         self.combo_filtro_vista_especialidad.setCurrentIndex(0)
         self.combo_filtro_vista_especialidad.blockSignals(False)
@@ -1287,10 +1359,11 @@ class ModuloCalendario(QWidget):
         self.paginacion.reiniciar()
         self._aplicar_filtros_y_tabla()
 
+    #Puebla Área Técnica/Carrera del diálogo de filtros de la lista;
+    #solo se muestran si la institución tiene ese módulo activo (mismo
+    #criterio que en el formulario 'Registrar evento').
     def _cargar_filtro_tecnico_vista(self):
-        """Puebla Área Técnica/Carrera del diálogo de filtros de la lista;
-        solo se muestran si la institución tiene ese módulo activo (mismo
-        criterio que en el formulario 'Registrar evento')."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_vista_especialidad.setVisible(es_poli)
         self.combo_filtro_vista_especialidad.setVisible(es_poli)
@@ -1328,16 +1401,18 @@ class ModuloCalendario(QWidget):
             self.combo_filtro_vista_carrera.blockSignals(False)
 
     def _filtro_tecnico_vista_cambio(self):
+
         self._filtrar_secciones_vista_por_curso()
         self._cargar_materias_combo_vista()
         self.paginacion.reiniciar()
         self._aplicar_filtros_y_tabla()
 
+    #Igual que en el formulario: en Politécnico el combo mezcla materias
+    #académicas y módulos técnicos, así que el label y el tooltip lo
+    #aclaran; si además hay un Área Técnica elegida en el filtro, la lista
+    #se acota estrictamente a los módulos de esa área.
     def _cargar_materias_combo_vista(self):
-        """Igual que en el formulario: en Politécnico el combo mezcla materias
-        académicas y módulos técnicos, así que el label y el tooltip lo
-        aclaran; si además hay un Área Técnica elegida en el filtro, la lista
-        se acota estrictamente a los módulos de esa área."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_vista_materia.setText(
             "Materia / Módulo Técnico (opcional):" if es_poli else "Materia (opcional):")
@@ -1366,20 +1441,23 @@ class ModuloCalendario(QWidget):
         self.combo_filtro_vista_materia.blockSignals(False)
 
     def _curso_filtro_vista_cambio(self):
+
         self._filtrar_secciones_vista_por_curso()
         self.paginacion.reiniciar()
         self._aplicar_filtros_y_tabla()
 
     def _filtro_vista_cambio(self):
+
         self.paginacion.reiniciar()
         self._aplicar_filtros_y_tabla()
 
+    #A diferencia del formulario 'Registrar evento' (donde Curso es
+    #obligatorio antes que Sección), este filtro es 100% opcional: se
+    #puede filtrar por Sección sin elegir Curso, o al revés. Si además hay
+    #un Área Técnica/Carrera elegidos, la lista de secciones se acota más
+    #-mismo criterio que _filtrar_secciones_evento_por_curso-.
     def _filtrar_secciones_vista_por_curso(self):
-        """A diferencia del formulario 'Registrar evento' (donde Curso es
-        obligatorio antes que Sección), este filtro es 100% opcional: se
-        puede filtrar por Sección sin elegir Curso, o al revés. Si además hay
-        un Área Técnica/Carrera elegidos, la lista de secciones se acota más
-        -mismo criterio que _filtrar_secciones_evento_por_curso-."""
+
         cascada_seccion_por_curso(self.combo_filtro_vista_curso, self.combo_filtro_vista_seccion,
                                    incluir_todas= True)
 
@@ -1414,11 +1492,12 @@ class ModuloCalendario(QWidget):
             idx= self.combo_filtro_vista_seccion.findData(actual)
             self.combo_filtro_vista_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
+    #Consulta la base de datos una sola vez y a partir de ese resultado
+    #actualiza el banner de próximo evento, la franja semanal y la tabla.
+    #Cambiar de página o de filtro NO vuelve a consultar la base de datos:
+    #solo re-filtra la lista ya cargada, para que la navegación sea fluida.
     def _cargar_datos(self):
-        """Consulta la base de datos una sola vez y a partir de ese resultado
-        actualiza el banner de próximo evento, la franja semanal y la tabla.
-        Cambiar de página o de filtro NO vuelve a consultar la base de datos:
-        solo re-filtra la lista ya cargada, para que la navegación sea fluida."""
+
         usuario_id= getattr(self.main_window, "id_usuario_actual", None)
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1448,10 +1527,12 @@ class ModuloCalendario(QWidget):
         self._aplicar_filtros_y_tabla()
 
     def _filtro_busqueda_cambio(self):
+
         self.paginacion.reiniciar()
         self._aplicar_filtros_y_tabla()
 
     def _aplicar_filtros_y_tabla(self):
+
         termino= _normalizar(self.in_busqueda.text().strip()) if hasattr(self, "in_busqueda") else ""
         grado_id= self.combo_filtro_vista_curso.currentData() if hasattr(self, "combo_filtro_vista_curso") else None
         seccion_id= (self.combo_filtro_vista_seccion.currentData()
@@ -1495,10 +1576,11 @@ class ModuloCalendario(QWidget):
                     continue
             filtrados.append(f)
         self.paginacion.establecer_total(len(filtrados))
-        inicio, fin = self.paginacion.rango_actual()
+        inicio, fin= self.paginacion.rango_actual()
         self._poblar_tabla(filtrados[inicio:fin])
 
     def _poblar_tabla(self, pagina):
+
         with tabla_pausada(self.tabla):
             self.tabla.setRowCount(len(pagina))
             for i, f in enumerate(pagina):
@@ -1533,6 +1615,7 @@ class ModuloCalendario(QWidget):
             ajustar_anchos_columnas(self.tabla)
 
     def _crear_pill_tipo(self, tipo):
+
         color= TIPO_COLORES.get(tipo, "#64748B")
         cont= QWidget()
         #Transparente a eventos de mouse: así el clic/doble clic sigue llegando a la tabla (selección de fila, detalle
@@ -1556,6 +1639,7 @@ class ModuloCalendario(QWidget):
 
     #Resumen dinámico: próximo evento + franja de la semana
     def _actualizar_banner_proximo(self):
+
         hoy= date.today()
         candidatos= []
         for f in self._eventos_todos:
@@ -1572,7 +1656,7 @@ class ModuloCalendario(QWidget):
             self.lbl_proximo_cuenta.setVisible(False)
             self.lbl_proximo_cuenta.setText("")
         else:
-            fecha_ev, _hora_orden, f = candidatos[0]
+            fecha_ev, _hora_orden, f= candidatos[0]
             tipo= f["tipo"] or "Personal"
             color_tipo= TIPO_COLORES.get(tipo, "#64748B")
             self._pulso_proximo.poner_color(color_tipo)
@@ -1595,6 +1679,7 @@ class ModuloCalendario(QWidget):
         self._colorear_textos_proximo()
 
     def _colorear_textos_proximo(self):
+
         c= self._colores_tema()
         self.lbl_proximo_eyebrow.setStyleSheet(
             f"font-size: 11px; font-weight: 800; letter-spacing: 1px; "
@@ -1603,6 +1688,7 @@ class ModuloCalendario(QWidget):
             f"font-size: 13px; color: {c['txt_sec']}; background: transparent;")
 
     def _actualizar_franja_semana(self):
+
         eventos_por_dia= {}
         for f in self._eventos_todos:
             fecha_ev= self._parsear_fecha(f["fecha"])
@@ -1614,6 +1700,7 @@ class ModuloCalendario(QWidget):
         self._aplicar_estilos_semana()
 
     def _aplicar_estilos_semana(self):
+
         c= self._colores_tema()
         hoy= date.today()
         for chip in self.chips_semana:
@@ -1622,6 +1709,7 @@ class ModuloCalendario(QWidget):
                                  c["accent"], chip.fecha == hoy)
 
     def _on_click_dia(self, fecha_iso):
+
         self.filtro_fecha_actual= None if self.filtro_fecha_actual == fecha_iso else fecha_iso
         for chip in self.chips_semana:
             chip.seleccionado= (chip.fecha_iso == self.filtro_fecha_actual)
@@ -1631,6 +1719,7 @@ class ModuloCalendario(QWidget):
         self._aplicar_filtros_y_tabla()
 
     def _limpiar_filtro_fecha(self):
+
         self.filtro_fecha_actual= None
         for chip in self.chips_semana:
             chip.seleccionado= False
@@ -1640,6 +1729,7 @@ class ModuloCalendario(QWidget):
         self._aplicar_filtros_y_tabla()
 
     def _actualizar_indicador_filtro_fecha(self):
+
         if self.filtro_fecha_actual:
             fecha_obj= self._parsear_fecha(self.filtro_fecha_actual)
             texto= self._formatear_fecha_larga(fecha_obj) if fecha_obj else self.filtro_fecha_actual
@@ -1650,24 +1740,29 @@ class ModuloCalendario(QWidget):
 
     #Formato de fechas / HORAS (texto en español, sin depender del locale)
     def _parsear_fecha(self, fecha_str):
+
         if not fecha_str:
             return None
         try:
+
             return datetime.strptime(fecha_str, "%Y-%m-%d").date()
         except ValueError:
             return None
 
     def _formatear_fecha_larga(self, fecha_obj):
+
         dia_semana= DIAS_SEMANA[fecha_obj.weekday()]
         mes= MESES[fecha_obj.month - 1]
         return f"{dia_semana} {fecha_obj.day} de {mes}"
 
     def _formatear_hora(self, hora_str):
+
         #Respeta el formato de hora elegido en Configuración › Apariencia (24h o 12h); el dato sigue guardándose
         #siempre en 24h.
         return formatear_hora(hora_str, self.main_window)
 
     def _texto_cuenta_regresiva(self, fecha_evento):
+
         delta= (fecha_evento - date.today()).days
         if delta == 0:
             return "Hoy"
@@ -1679,6 +1774,7 @@ class ModuloCalendario(QWidget):
 
     #TEMA / paleta de colores
     def _colores_tema(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None) or {}
         paleta= paletas.get(getattr(mw, "tema_actual", None))
@@ -1705,6 +1801,7 @@ class ModuloCalendario(QWidget):
         }
 
     def actualizar_tema(self):
+
         c= self._colores_tema()
         #Refrescar colores de los encabezados colapsables (PanelDesplegable)
         for panel in self.findChildren(PanelDesplegable):
@@ -1843,6 +1940,7 @@ class ModuloCalendario(QWidget):
 
     #ACCIONES: guardar / cargar / eliminar
     def _guardar(self):
+
         if not self.in_titulo.text().strip():
             self.toast.mostrar("El título del evento es obligatorio.", "advertencia")
             _glow_invalido(self.in_titulo)
@@ -1873,6 +1971,7 @@ class ModuloCalendario(QWidget):
             #Re-arma su alarma: al cambiar fecha/hora debe volver a sonar en el nuevo momento (borra las marcas de "ya
             #disparada").
             try:
+
                 from src.servicios.alarmas import rearmar_alarmas_evento
                 rearmar_alarmas_evento(self.id_edicion)
             except Exception:
@@ -1885,6 +1984,7 @@ class ModuloCalendario(QWidget):
         self._cargar_datos()
 
     def _es_evento_propio(self, id_evento):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT usuario_id, visibilidad FROM eventos WHERE id=?", (id_evento,))
@@ -1895,6 +1995,7 @@ class ModuloCalendario(QWidget):
         return f["visibilidad"] == "Personal" and f["usuario_id"] == getattr(self.main_window, "id_usuario_actual", None)
 
     def _actualizar_estado_form(self, editando, titulo=""):
+
         if editando:
             texto= (titulo or "").strip() or "evento"
             if len(texto) > 28:
@@ -1913,6 +2014,7 @@ class ModuloCalendario(QWidget):
             self.btn_limpiar.setText("Limpiar")
 
     def _limpiar(self):
+
         self.id_edicion= None
         self.in_titulo.clear()
         self.in_desc.clear()
@@ -1928,6 +2030,7 @@ class ModuloCalendario(QWidget):
         desactivar_modo_edicion(self.in_titulo)
 
     def _cargar_seleccionado(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             self.toast.mostrar("Selecciona un evento de la tabla.", "advertencia")
@@ -1965,6 +2068,7 @@ class ModuloCalendario(QWidget):
         activar_modo_edicion(self.in_titulo, f"Editando evento: {f['titulo'] or ''}")
 
     def _eliminar(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             self.toast.mostrar("Selecciona un evento de la tabla.", "advertencia")
@@ -1988,6 +2092,7 @@ class ModuloCalendario(QWidget):
         conn.close()
         #Limpia también las marcas de alarma de este evento.
         try:
+
             from src.servicios.alarmas import rearmar_alarmas_evento
             rearmar_alarmas_evento(id_ev)
         except Exception:
@@ -1998,5 +2103,6 @@ class ModuloCalendario(QWidget):
 
     #Puntos de entrada llamados desde main.py
     def refrescar(self):
+
         self._cargar_combos()
         self._cargar_datos()

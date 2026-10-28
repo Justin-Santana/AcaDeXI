@@ -1,33 +1,32 @@
-"""Buscador Global de AcaDeXI.
-
-Permite buscar por nombre/matrícula/código en Estudiantes, Profesores, Personal
-Administrativo, Materias, Eventos del Calendario, Tareas del Banco de Tareas,
-Observaciones, Casos de Psicología, Materiales (inventario), Clases del
-Horario, Facultades/Carreras (Universidad) y Especialidades/Empresas/Pasantías
-(Politécnico) desde cualquier parte del sistema, y navegar directamente al
-módulo y registro correspondiente. Respeta el RBAC real por fila: un Profesor
-logueado solo ve resultados de sus propias secciones/materias/eventos;
-Psicología solo aparece para quien tiene acceso real al módulo (ver
-puede_ver_psicologia) y Materiales respeta el permiso granular por categoría.
-
-Además:
-- Encuentra un módulo por nombre (o sinónimo) y navega directo a él, sin
-  registro asociado: escribir "calificaciones", "banco de tareas" u "horario"
-  ya alcanza (ver _ALIAS_MODULOS y _buscar_modulos).
-- Un estudiante también aparece al buscar por su grado/curso, su sección, su
-  área técnica o su carrera (según el tipo de institución), combinados o no
-  con su nombre: "adrian informatica", "5to C", "5c", "5-C" y "Adrián 5-C"
-  encuentran al mismo estudiante si le corresponde 5to grado, sección C y
-  área técnica/carrera "Informática".
-- Escribir el nombre de una categoría (p. ej. "profesor") junto con un
-  nombre propio, como en "profesor felix", prioriza resultados de esa
-  categoría con ese nombre.
-- Modo Docente: cuando busca un Profesor (que solo ve "Mis Estudiantes"),
-  se aplican sus retoques LOCALES (ver datos_locales_docente.py) por encima
-  del dato institucional — igual que en la tabla del propio módulo — para
-  que encuentre y muestre la versión que él mismo corrigió, aunque
-  Dirección todavía no haya actualizado ese dato en el sistema.
-"""
+#Buscador Global de AcaDeXI.
+#
+#Permite buscar por nombre/matrícula/código en Estudiantes, Profesores, Personal
+#Administrativo, Materias, Eventos del Calendario, Tareas del Banco de Tareas,
+#Observaciones, Casos de Psicología, Materiales (inventario), Clases del
+#Horario, Facultades/Carreras (Universidad) y Especialidades/Empresas/Pasantías
+#(Politécnico) desde cualquier parte del sistema, y navegar directamente al
+#módulo y registro correspondiente. Respeta el RBAC real por fila: un Profesor
+#logueado solo ve resultados de sus propias secciones/materias/eventos;
+#Psicología solo aparece para quien tiene acceso real al módulo (ver
+#puede_ver_psicologia) y Materiales respeta el permiso granular por categoría.
+#
+#Además:
+#- Encuentra un módulo por nombre (o sinónimo) y navega directo a él, sin
+#registro asociado: escribir "calificaciones", "banco de tareas" u "horario"
+#ya alcanza (ver _ALIAS_MODULOS y _buscar_modulos).
+#- Un estudiante también aparece al buscar por su grado/curso, su sección, su
+#área técnica o su carrera (según el tipo de institución), combinados o no
+#con su nombre: "adrian informatica", "5to C", "5c", "5-C" y "Adrián 5-C"
+#encuentran al mismo estudiante si le corresponde 5to grado, sección C y
+#área técnica/carrera "Informática".
+#- Escribir el nombre de una categoría (p. ej. "profesor") junto con un
+#nombre propio, como en "profesor felix", prioriza resultados de esa
+#categoría con ese nombre.
+#- Modo Docente: cuando busca un Profesor (que solo ve "Mis Estudiantes"),
+#se aplican sus retoques LOCALES (ver datos_locales_docente.py) por encima
+#del dato institucional — igual que en la tabla del propio módulo — para
+#que encuentre y muestre la versión que él mismo corrigió, aunque
+#Dirección todavía no haya actualizado ese dato en el sistema.
 import re
 import unicodedata
 from difflib import SequenceMatcher
@@ -47,8 +46,9 @@ from src.nucleo.formato_hora import formatear_fecha
 from src.nucleo.limite_campos import limitar_campo_texto
 
 
+#Normaliza texto: convierte a minúsculas y elimina acentos.
 def _normalizar_texto(texto):
-    """Normaliza texto: convierte a minúsculas y elimina acentos."""
+
     if not texto:
         return ""
     texto= texto.lower()
@@ -64,26 +64,27 @@ _UMBRAL_PALABRA= 0.72
 _UMBRAL_PALABRA_CORTA= 0.55
 
 
+#True si `palabra_busqueda` (ya normalizada) aparece dentro del texto
+#destino, ya sea como subcadena exacta, como prefijo de alguna palabra del
+#destino (para búsquedas incompletas tipo "gonz" -> "gonzalez"), o con
+#suficiente similitud aproximada Y la misma letra inicial frente a alguna
+#palabra del destino (para tolerar errores de tipeo, ej. "gonzales" ->
+#"gonzalez", sin confundir palabras distintas que solo comparten letras
+#en el medio, ej. "maria" / "adrian").
+#
+#CASO ESPECIAL - palabra de una sola letra: no se busca como subcadena de
+#TODO el texto destino, porque una sola letra aparece casi siempre en
+#algún lugar de cualquier bloque de texto largo (nombre, especialidad,
+#carrera...) y esa comprobación tan floja lo volvería inútil. Esto importa
+#en especial ahora que la sección de un estudiante ("A", "B", "C"...) se
+#puede buscar por separado (ej. "5to C"): una letra suelta debe exigir que
+#alguna palabra COMPLETA del destino EMPIECE con ella (como cualquier otra
+#palabra corta), no que la letra aparezca en cualquier posición de
+#cualquier palabra. Así "c" encuentra la sección "C" (o un nombre que
+#empiece por C, como "Carlos"), pero no cualquier palabra que solo
+#contenga una 'c' en el medio (como "Informática").
 def _palabra_coincide(palabra_busqueda, texto_destino_norm, palabras_destino):
-    """True si `palabra_busqueda` (ya normalizada) aparece dentro del texto
-    destino, ya sea como subcadena exacta, como prefijo de alguna palabra del
-    destino (para búsquedas incompletas tipo "gonz" -> "gonzalez"), o con
-    suficiente similitud aproximada Y la misma letra inicial frente a alguna
-    palabra del destino (para tolerar errores de tipeo, ej. "gonzales" ->
-    "gonzalez", sin confundir palabras distintas que solo comparten letras
-    en el medio, ej. "maria" / "adrian").
 
-    CASO ESPECIAL - palabra de una sola letra: no se busca como subcadena de
-    TODO el texto destino, porque una sola letra aparece casi siempre en
-    algún lugar de cualquier bloque de texto largo (nombre, especialidad,
-    carrera...) y esa comprobación tan floja lo volvería inútil. Esto importa
-    en especial ahora que la sección de un estudiante ("A", "B", "C"...) se
-    puede buscar por separado (ej. "5to C"): una letra suelta debe exigir que
-    alguna palabra COMPLETA del destino EMPIECE con ella (como cualquier otra
-    palabra corta), no que la letra aparezca en cualquier posición de
-    cualquier palabra. Así "c" encuentra la sección "C" (o un nombre que
-    empiece por C, como "Carlos"), pero no cualquier palabra que solo
-    contenga una 'c' en el medio (como "Informática")."""
     if len(palabra_busqueda) == 1:
         return any(p.startswith(palabra_busqueda) for p in palabras_destino)
     if palabra_busqueda in texto_destino_norm:
@@ -108,18 +109,19 @@ def _palabra_coincide(palabra_busqueda, texto_destino_norm, palabras_destino):
     return False
 
 
+#Verifica coincidencia entre la búsqueda y el texto destino, ignorando
+#acentos y mayúsculas/minúsculas.
+#
+#A diferencia de comparar las dos frases completas de un tirón (lo que
+#diluye la similitud y falla apenas el destino es más largo que la
+#búsqueda, como pasa con "nombre apellidos matrícula" concatenados), aquí
+#la búsqueda se separa en palabras y CADA una debe encontrarse en algún
+#lugar del destino (en cualquier orden). Esto permite encontrar, por
+#ejemplo, "perez juan" o solo "gonz" (prefijo) o "gonzales" con una letra
+#de más/menos (tolerancia a tipeo), sin exigir que el texto completo se
+#parezca en su totalidad.
 def _coincidencia_fuzzy(texto_busqueda, texto_destino):
-    """Verifica coincidencia entre la búsqueda y el texto destino, ignorando
-    acentos y mayúsculas/minúsculas.
 
-    A diferencia de comparar las dos frases completas de un tirón (lo que
-    diluye la similitud y falla apenas el destino es más largo que la
-    búsqueda, como pasa con "nombre apellidos matrícula" concatenados), aquí
-    la búsqueda se separa en palabras y CADA una debe encontrarse en algún
-    lugar del destino (en cualquier orden). Esto permite encontrar, por
-    ejemplo, "perez juan" o solo "gonz" (prefijo) o "gonzales" con una letra
-    de más/menos (tolerancia a tipeo), sin exigir que el texto completo se
-    parezca en su totalidad."""
     if not texto_busqueda or not texto_destino:
         return False
     busqueda_norm= _normalizar_texto(texto_busqueda)
@@ -131,9 +133,10 @@ def _coincidencia_fuzzy(texto_busqueda, texto_destino):
     return all(_palabra_coincide(p, destino_norm, palabras_destino) for p in palabras_busqueda)
 
 
+#Puntaje simple para ordenar resultados: las coincidencias más exactas
+#(o que empiezan igual) se muestran primero que las aproximadas.
 def _puntaje_relevancia(texto_busqueda, texto_destino):
-    """Puntaje simple para ordenar resultados: las coincidencias más exactas
-    (o que empiezan igual) se muestran primero que las aproximadas."""
+
     busqueda_norm= _normalizar_texto(texto_busqueda)
     destino_norm= _normalizar_texto(texto_destino)
     if destino_norm.startswith(busqueda_norm):
@@ -144,11 +147,13 @@ def _puntaje_relevancia(texto_busqueda, texto_destino):
 
 
 def _modulo_visible_estudiantes(rol, restringido):
+
     nombre= "Mis Estudiantes" if restringido else "Estudiantes"
     return modulo_visible(rol, nombre)
 
 
 def _modulo_visible_materias(rol, restringido):
+
     nombre= "Mis Materias" if restringido else "Materias"
     return modulo_visible(rol, nombre)
 
@@ -177,24 +182,25 @@ _ALIAS_MODULOS= {
 }
 
 
+#Busca por nombre de módulo (o alguno de sus sinónimos en _ALIAS_MODULOS)
+#para poder saltar directo a él escribiendo, por ejemplo, "calificaciones",
+#"banco de tareas" u "horario", sin tener que ir a buscarlo en el menú
+#lateral. Solo devuelve módulos visibles para el usuario actual: se
+#consulta el estado real (oculto/visible) de cada fila del menú, que ya
+#tiene en cuenta el rol Y cualquier ocultamiento dinámico adicional (p. ej.
+#"Copias de Seguridad" solo para roles gerenciales).
+#
+#El ícono que se devuelve (en la posición del ícono, no concatenado al
+#texto de la etiqueta) es el MISMO que ya se ve en esa fila de la
+#sidebar -PNG de sidebar_icons/ o, si el módulo no tiene uno propio
+#todavía, el icono vectorial coherente de iconos_auto.py-, solo que
+#reducido a tamaño de emoji (ver icono_qicon_modulo en iconos.py). Antes
+#se usaba el emoji suelto de respaldo de modulos_info (que ni siquiera
+#es lo que la sidebar termina mostrando la mayoría de las veces, según
+#su propio comentario en main.py), así que un resultado de "Módulos"
+#podía verse con un ícono distinto al de esa misma fila en el menú.
 def _buscar_modulos(main_window, texto):
-    """Busca por nombre de módulo (o alguno de sus sinónimos en _ALIAS_MODULOS)
-    para poder saltar directo a él escribiendo, por ejemplo, "calificaciones",
-    "banco de tareas" u "horario", sin tener que ir a buscarlo en el menú
-    lateral. Solo devuelve módulos visibles para el usuario actual: se
-    consulta el estado real (oculto/visible) de cada fila del menú, que ya
-    tiene en cuenta el rol Y cualquier ocultamiento dinámico adicional (p. ej.
-    "Copias de Seguridad" solo para roles gerenciales).
 
-    El ícono que se devuelve (en la posición del ícono, no concatenado al
-    texto de la etiqueta) es el MISMO que ya se ve en esa fila de la
-    sidebar -PNG de sidebar_icons/ o, si el módulo no tiene uno propio
-    todavía, el icono vectorial coherente de iconos_auto.py-, solo que
-    reducido a tamaño de emoji (ver icono_qicon_modulo en iconos.py). Antes
-    se usaba el emoji suelto de respaldo de modulos_info (que ni siquiera
-    es lo que la sidebar termina mostrando la mayoría de las veces, según
-    su propio comentario en main.py), así que un resultado de "Módulos"
-    podía verse con un ícono distinto al de esa misma fila en el menú."""
     resultados= []
     modulos_info= getattr(main_window, "modulos_info", None) or []
     nav_list= getattr(main_window, "nav_list", None)
@@ -241,21 +247,23 @@ TEXTO_BUSCAR_ROLE= Qt.ItemDataRole.UserRole + 1
 #resolución en cada resultado de una búsqueda.
 @lru_cache(maxsize=None)
 def _icono_categoria(nombre_modulo):
+
     return icono_qicon_modulo(nombre_modulo)
 
 
+#Devuelve una lista de tuplas (categoria, etiqueta, modulo_destino,
+#texto_filtro, icono) con los resultados que coinciden con `texto` en las
+#distintas entidades del sistema, respetando las restricciones de RBAC
+#por fila para el rol Profesor. `icono` ya es un QIcon real y reducido a
+#tamaño de emoji -el mismo que usa la sidebar para el módulo de esa
+#categoría (ver icono_qicon_modulo en iconos.py)-, listo para pasarse
+#directo a QListWidgetItem.setIcon(), nunca un emoji crudo dentro de la
+#etiqueta de texto.
+#Utiliza fuzzy matching (por palabra, no por frase completa) para mayor
+#flexibilidad, y revisa TODOS los registros activos de cada categoría, no
+#solo los primeros de la lista, ordenando después por relevancia.
 def buscar_global(main_window, texto):
-    """Devuelve una lista de tuplas (categoria, etiqueta, modulo_destino,
-    texto_filtro, icono) con los resultados que coinciden con `texto` en las
-    distintas entidades del sistema, respetando las restricciones de RBAC
-    por fila para el rol Profesor. `icono` ya es un QIcon real y reducido a
-    tamaño de emoji -el mismo que usa la sidebar para el módulo de esa
-    categoría (ver icono_qicon_modulo en iconos.py)-, listo para pasarse
-    directo a QListWidgetItem.setIcon(), nunca un emoji crudo dentro de la
-    etiqueta de texto.
-    Utiliza fuzzy matching (por palabra, no por frase completa) para mayor
-    flexibilidad, y revisa TODOS los registros activos de cada categoría, no
-    solo los primeros de la lista, ordenando después por relevancia."""
+
     texto= (texto or "").strip()
     if len(texto) < 1:
         return []
@@ -325,7 +333,7 @@ def buscar_global(main_window, texto):
             if restringir_secciones and seccion_id_efectiva != f["seccion_id"]:
                 #El docente reasignó localmente a este estudiante a otra sección: se resuelve su nombre en el mapa completo
                 #(arriba) en vez del que trae el JOIN (que sigue la sección institucional).
-                grado_nombre, seccion_nombre = mapa_grado_seccion.get(
+                grado_nombre, seccion_nombre= mapa_grado_seccion.get(
                     seccion_id_efectiva, (f["grado_nombre"] or "", f["seccion_nombre"] or ""))
             else:
                 grado_nombre= f["grado_nombre"] or ""
@@ -686,11 +694,12 @@ def buscar_global(main_window, texto):
     return resultados
 
 
+#Ventana emergente de búsqueda global: escribe y pulsa Enter (o el botón)
+#para ver resultados agrupados; doble clic navega al módulo correspondiente.
 class DialogoBusquedaGlobal(QDialog):
-    """Ventana emergente de búsqueda global: escribe y pulsa Enter (o el botón)
-    para ver resultados agrupados; doble clic navega al módulo correspondiente."""
 
     def __init__(self, main_window, texto_inicial=""):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.setWindowTitle("Buscador Global")
@@ -749,6 +758,7 @@ class DialogoBusquedaGlobal(QDialog):
         centrar_y_al_frente(self, main_window)
 
     def _buscar(self):
+
         texto= self.in_texto.text().strip()
         self.lista.clear()
         if len(texto) < 1:
@@ -782,6 +792,7 @@ class DialogoBusquedaGlobal(QDialog):
             self.lista.addItem(item)
 
     def _ir_a_resultado(self, item):
+
         modulo= item.data(MODULO_ROLE)
         texto_filtro= item.data(TEXTO_BUSCAR_ROLE)
         if not modulo:

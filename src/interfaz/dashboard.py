@@ -30,6 +30,7 @@ _FUENTES_EMOJI= ["Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji"]
 
 
 def _aplicar_fuente_emoji(label, tamano_pt=None):
+
     f= label.font()
     disponibles= set(QFontDatabase.families())
     familias= [fam for fam in _FUENTES_EMOJI if fam in disponibles] or _FUENTES_EMOJI[:1]
@@ -42,12 +43,14 @@ def _aplicar_fuente_emoji(label, tamano_pt=None):
 
 #Utilidades de color
 def _hex_a_rgba(hex_color, alpha):
+
     hex_color= hex_color.lstrip("#")
-    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
 def _color_por_umbral_asistencia(valor):
+
     if valor >= 85:
         return "#10B981"
     if valor >= 60:
@@ -78,6 +81,7 @@ _PALETA_MODULO_RESPALDO= ["#6366F1", "#0D9488", "#8B5CF6", "#F59E0B",
 
 
 def _color_para_modulo(nombre):
+
     if nombre in _COLORES_MODULO:
         return _COLORES_MODULO[nombre]
     idx= sum(ord(ch) for ch in (nombre or "?")) % len(_PALETA_MODULO_RESPALDO)
@@ -85,6 +89,7 @@ def _color_para_modulo(nombre):
 
 
 def _icono_para_accion(accion):
+
     texto= (accion or "").lower()
     if any(p in texto for p in ("elimin", "borr")):
         return "🗑"
@@ -102,11 +107,13 @@ def _icono_para_accion(accion):
 
 
 def _tiempo_relativo(fecha_str):
+
     if not fecha_str:
         return "—"
     dt= None
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
+
             dt= datetime.strptime(fecha_str, fmt)
             break
         except ValueError:
@@ -131,10 +138,11 @@ def _tiempo_relativo(fecha_str):
 
 
 #Widgets visuales personalizados
+#Punto circular animado (respira) que indica datos en vivo.
 class PuntoPulso(QWidget):
-    """Punto circular animado (respira) que indica datos en vivo."""
 
     def __init__(self, color="#22C55E", diametro=9, parent=None):
+
         super().__init__(parent)
         self._color= QColor(color)
         self._diametro= diametro
@@ -160,10 +168,12 @@ class PuntoPulso(QWidget):
         self._anim.start()
 
     def poner_color(self, color):
+
         self._color= QColor(color)
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(Qt.PenStyle.NoPen)
@@ -171,11 +181,12 @@ class PuntoPulso(QWidget):
         painter.drawEllipse(0, 0, self._diametro, self._diametro)
 
 
+#Tarjeta KPI con insignia de color, valor animado, tendencia y elevación al pasar el mouse.
 class TarjetaIndicador(QFrame):
-    """Tarjeta KPI con insignia de color, valor animado, tendencia y elevación al pasar el mouse."""
 
     def __init__(self, icono, titulo, color_acento="#6366F1", sufijo="", decimales=0,
                  invertir_tendencia= False, on_click=None, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaIndicadorViva")
         self._icono= icono
@@ -232,27 +243,33 @@ class TarjetaIndicador(QFrame):
         self._anim.valueChanged.connect(self._on_anim_tick)
 
     def _formatear(self, valor):
+
         if self._decimales:
             return f"{valor:.{self._decimales}f}{self._sufijo}"
         return f"{int(round(valor))}{self._sufijo}"
 
     def _on_anim_tick(self, valor):
+
         self._valor_actual= valor
         self.lbl_valor.setText(self._formatear(valor))
 
     def poner_color_acento(self, color):
+
         if color and color != self._color_acento:
             self._color_acento= color
             self._pintar_acento()
 
     def poner_titulo(self, texto):
+
         self.lbl_titulo.setText(texto)
 
     def poner_icono(self, icono):
+
         self._icono= icono
         self.lbl_badge.setPixmap(pixmap_emoji(icono, 30))
 
     def actualizar(self, nuevo_valor, color_acento=None):
+
         if color_acento:
             self.poner_color_acento(color_acento)
 
@@ -279,6 +296,7 @@ class TarjetaIndicador(QFrame):
         self._anim.start()
 
     def aplicar_paleta(self, bg_panel, borde, txt_prim, txt_sec, modo_oscuro):
+
         self._paleta= (bg_panel, borde, txt_prim, txt_sec, modo_oscuro)
         self._pintar_normal()
         self.lbl_titulo.setStyleSheet(
@@ -286,9 +304,10 @@ class TarjetaIndicador(QFrame):
         self._pintar_acento()
 
     def _pintar_normal(self):
+
         if not self._paleta:
             return
-        bg_panel, borde, _txt_prim, _txt_sec, _modo_oscuro = self._paleta
+        bg_panel, borde, _txt_prim, _txt_sec, _modo_oscuro= self._paleta
         self.setStyleSheet(f"""
             QFrame#TarjetaIndicadorViva {{
                 background-color: {bg_panel};
@@ -298,9 +317,10 @@ class TarjetaIndicador(QFrame):
         """)
 
     def _pintar_hover(self):
+
         if not self._paleta:
             return
-        bg_panel, _borde, _txt_prim, _txt_sec, modo_oscuro = self._paleta
+        bg_panel, _borde, _txt_prim, _txt_sec, modo_oscuro= self._paleta
         #Tinte del acento sobre el fondo + borde grueso del color del acento:
         #así el hover se nota igual de bien en modo oscuro que en modo claro, en vez de depender solo de la sombra (que
         #en modo claro casi no se ve).
@@ -315,6 +335,7 @@ class TarjetaIndicador(QFrame):
         """)
 
     def _pintar_acento(self):
+
         modo_oscuro= self._paleta[4] if self._paleta else True
         alpha= 0.26 if modo_oscuro else 0.14
         badge_bg= _hex_a_rgba(self._color_acento, alpha)
@@ -323,6 +344,7 @@ class TarjetaIndicador(QFrame):
         self.lbl_valor.setStyleSheet(f"color: {self._color_acento}; background: transparent;")
 
     def enterEvent(self, event):
+
         if self._on_click:
             self._pintar_hover()
             self._animar_sombra(34, offset_y=9, alpha=110)
@@ -331,6 +353,7 @@ class TarjetaIndicador(QFrame):
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         if self._on_click:
             self._pintar_normal()
             self._animar_sombra(16, offset_y=5, alpha=55)
@@ -339,11 +362,13 @@ class TarjetaIndicador(QFrame):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
+
         if self._on_click and event.button() == Qt.MouseButton.LeftButton:
             self._on_click()
         super().mousePressEvent(event)
 
     def _animar_sombra(self, destino_blur, offset_y=None, alpha=None):
+
         anim_blur= QPropertyAnimation(self._sombra, b"blurRadius", self)
         anim_blur.setDuration(220)
         anim_blur.setStartValue(self._sombra.blurRadius())
@@ -362,10 +387,11 @@ class TarjetaIndicador(QFrame):
             self._sombra.setColor(color_nuevo)
 
 
+#Anillo de progreso circular animado para mostrar un porcentaje.
 class AnilloProgreso(QWidget):
-    """Anillo de progreso circular animado para mostrar un porcentaje."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._valor= 0.0
         self._color= QColor("#10B981")
@@ -379,10 +405,12 @@ class AnilloProgreso(QWidget):
         self._anim.valueChanged.connect(self._on_tick)
 
     def _on_tick(self, valor):
+
         self._valor= valor
         self.update()
 
     def poner_valor(self, nuevo_valor, color=None):
+
         if color:
             self._color= QColor(color)
         self._anim.stop()
@@ -391,11 +419,13 @@ class AnilloProgreso(QWidget):
         self._anim.start()
 
     def poner_colores(self, color_pista, color_texto):
+
         self._pista= QColor(color_pista)
         self._texto_color= QColor(color_texto)
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -428,10 +458,11 @@ class AnilloProgreso(QWidget):
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{self._valor:.0f}%")
 
 
+#Gráfico de barras animado con la tendencia de asistencia de los últimos días.
 class GraficoBarrasSemanal(QWidget):
-    """Gráfico de barras animado con la tendencia de asistencia de los últimos días."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._datos= []
         self._progreso= 0.0
@@ -445,10 +476,12 @@ class GraficoBarrasSemanal(QWidget):
         self._anim.valueChanged.connect(self._on_tick)
 
     def _on_tick(self, valor):
+
         self._progreso= valor
         self.update()
 
     def poner_datos(self, datos):
+
         self._datos= datos
         self._anim.stop()
         self._anim.setStartValue(0.0)
@@ -456,11 +489,13 @@ class GraficoBarrasSemanal(QWidget):
         self._anim.start()
 
     def poner_colores(self, color_texto, color_texto_prim):
+
         self._color_texto= QColor(color_texto)
         self._color_texto_prim= QColor(color_texto_prim)
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if not self._datos:
@@ -505,10 +540,11 @@ class GraficoBarrasSemanal(QWidget):
             x += ancho_barra + espacio
 
 
+#Una fila 'Sección — barra animada — %' para el detalle de asistencia.
 class FilaAsistenciaSeccion(QWidget):
-    """Una fila 'Sección — barra animada — %' para el detalle de asistencia."""
 
     def __init__(self, nombre, parent=None):
+
         super().__init__(parent)
         fila= QHBoxLayout(self)
         fila.setContentsMargins(0, 0, 0, 0)
@@ -535,10 +571,12 @@ class FilaAsistenciaSeccion(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def poner_nombre(self, nombre):
+
         self.lbl_nombre.setText(nombre)
         self.lbl_nombre.setToolTip(nombre)
 
     def aplicar_color_nombre(self, color_texto, bg_panel=None, borde=None):
+
         #lbl_nombre tiene su propio tooltip (el nombre puede venir truncado por el ancho fijo de 170px). Como este
         #QLabel recibe su propio
         #setStyleSheet() aquí abajo, eso reemplaza -para el tooltip de ESTE
@@ -562,6 +600,7 @@ class FilaAsistenciaSeccion(QWidget):
         """)
 
     def poner_valor(self, pct, color_texto="#0F172A"):
+
         color= _color_por_umbral_asistencia(pct)
         self.barra.setStyleSheet(f"""
             QProgressBar {{
@@ -583,12 +622,13 @@ class FilaAsistenciaSeccion(QWidget):
         self._anim.start()
 
 
+#Lista de secciones/cursos con su % de asistencia, cada una con su propia
+#barra animada. Reutiliza las filas existentes entre refrescos (por clave)
+#para que la animación parta del valor anterior en vez de reiniciar en 0.
 class PanelDetalleAsistencia(QWidget):
-    """Lista de secciones/cursos con su % de asistencia, cada una con su propia
-    barra animada. Reutiliza las filas existentes entre refrescos (por clave)
-    para que la animación parta del valor anterior en vez de reiniciar en 0."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._layout= QVBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
@@ -598,8 +638,9 @@ class PanelDetalleAsistencia(QWidget):
         self._bg_panel= None
         self._borde= None
 
+    #datos: lista de tuplas (clave, nombre, porcentaje), en el orden deseado.
     def poner_datos(self, datos):
-        """datos: lista de tuplas (clave, nombre, porcentaje), en el orden deseado."""
+
         claves_nuevas= [d[0] for d in datos]
         for clave in list(self._filas):
             if clave not in claves_nuevas:
@@ -619,6 +660,7 @@ class PanelDetalleAsistencia(QWidget):
             fila.aplicar_color_nombre(self._color_texto, self._bg_panel, self._borde)
 
     def poner_colores(self, color_texto, bg_panel=None, borde=None):
+
         self._color_texto= color_texto
         self._bg_panel= bg_panel
         self._borde= borde
@@ -629,6 +671,7 @@ class PanelDetalleAsistencia(QWidget):
 #Helpers de celdas para la tabla de actividad (QTableWidgetItem simples: setCellWidget() daba filas con alto 0
 #en este entorno, así que se evita por completo)
 def _item_modulo(modulo, color):
+
     item= QTableWidgetItem(f"●  {modulo}")
     item.setForeground(QColor(color))
     fuente= item.font()
@@ -638,13 +681,16 @@ def _item_modulo(modulo, color):
 
 
 def _item_usuario(nombre):
+
     nombre= nombre or "Sistema"
     return QTableWidgetItem(nombre)
 
 
 #Módulo principal del dashboard
 class ModuloDashboard(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self._colores_actuales= None
@@ -665,6 +711,7 @@ class ModuloDashboard(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Dashboard"
         registrar_atajo(self, self.main_window, "F5", "Actualizar panel", self.refrescar)
 
@@ -674,10 +721,12 @@ class ModuloDashboard(QWidget):
     #la app está en segundo plano, en vez de solo confiar en el chequeo de isVisible() del autorefresh (que evita
     #la consulta a la BD, pero no evita que el timer del reloj siga despertando el proceso 60 veces por minuto).
     def pausar_actualizaciones(self):
+
         self._timer_reloj.stop()
         self._timer_autorefresh.stop()
 
     def reanudar_actualizaciones(self):
+
         if not self._timer_reloj.isActive():
             self._actualizar_reloj()
             self._timer_reloj.start(1000)
@@ -687,6 +736,7 @@ class ModuloDashboard(QWidget):
 
     #Construcción de interfaz
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -859,6 +909,7 @@ class ModuloDashboard(QWidget):
         layout_raiz.addWidget(scroll, 1)
 
     def _ir_a_modulo(self, nombre, pestana=None):
+
         mw= self.main_window
         #Los docentes (rol Profesor) no tienen acceso a la gestión completa de Profesores/Estudiantes/Materias: su
         #información propia vive en el Modo
@@ -886,27 +937,29 @@ class ModuloDashboard(QWidget):
         else:
             mw.nav_list.setCurrentRow(indice)
 
+    #True si la institución actual es un Politécnico -o "Personalizado"
+    #con el módulo Politécnico activo-, es decir, cuando además del
+    #currículo académico normal (Materias) existe formación técnica
+    #(Módulos Técnicos, ver politecnico.py). `_tipo_institucion` ya
+    #devuelve ("Escuela", []) ante cualquier error, así que no hace
+    #falta try/except aquí también.
     def _es_politecnico_activo(self):
-        """True si la institución actual es un Politécnico -o "Personalizado"
-        con el módulo Politécnico activo-, es decir, cuando además del
-        currículo académico normal (Materias) existe formación técnica
-        (Módulos Técnicos, ver politecnico.py). `_tipo_institucion` ya
-        devuelve ("Escuela", []) ante cualquier error, así que no hace
-        falta try/except aquí también."""
+
         mw= self.main_window
         if not hasattr(mw, "_tipo_institucion"):
             return False
-        tipo, personalizados = mw._tipo_institucion()
+        tipo, personalizados= mw._tipo_institucion()
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #El selector Materias/Módulos solo aparece si, además de que la
+    #institución sea de tipo Politécnico, el ROL actual de verdad tiene
+    #acceso al módulo "Politécnico" del menú lateral (respeta permisos
+    #recortados en Side Stepper, por ejemplo). Si no lo tiene, la tarjeta
+    #se comporta exactamente como antes: rótulo "Materias" y va directo
+    #a materias.py, sin ofrecer una opción que de todos modos no podría
+    #usar.
     def _puede_elegir_modulos_tecnicos(self):
-        """El selector Materias/Módulos solo aparece si, además de que la
-        institución sea de tipo Politécnico, el ROL actual de verdad tiene
-        acceso al módulo "Politécnico" del menú lateral (respeta permisos
-        recortados en Side Stepper, por ejemplo). Si no lo tiene, la tarjeta
-        se comporta exactamente como antes: rótulo "Materias" y va directo
-        a materias.py, sin ofrecer una opción que de todos modos no podría
-        usar."""
+
         mw= self.main_window
         modulos= getattr(mw, "modulos", None) or []
         if "Politécnico" not in modulos:
@@ -914,13 +967,14 @@ class ModuloDashboard(QWidget):
         rol_actual= getattr(mw, "rol_actual", None)
         return modulo_visible(rol_actual, "Politécnico")
 
+    #Selector rápido que aparece al hacer click en la tarjeta "Materias/
+    #Módulos" cuando la institución tiene ambos mundos (currículo
+    #académico + formación técnica): deja elegir entre ir a Materias
+    #(materias.py) o a Módulos Técnicos (politecnico.py), en vez de
+    #adivinar cuál de los dos quería el usuario.
     def _mostrar_selector_materias_modulos(self):
-        """Selector rápido que aparece al hacer click en la tarjeta "Materias/
-        Módulos" cuando la institución tiene ambos mundos (currículo
-        académico + formación técnica): deja elegir entre ir a Materias
-        (materias.py) o a Módulos Técnicos (politecnico.py), en vez de
-        adivinar cuál de los dos quería el usuario."""
-        bg_panel, bg_borde, txt_prim, txt_sec, accent, modo_oscuro = (
+
+        bg_panel, bg_borde, txt_prim, txt_sec, accent, modo_oscuro= (
             self._colores_actuales if getattr(self, "_colores_actuales", None)
             else ("#1E293B", "#334155", "#F8FAFC", "#94A3B8", "#8B5CF6", True))
 
@@ -949,6 +1003,7 @@ class ModuloDashboard(QWidget):
         layout.addLayout(fila_opciones)
 
         def _crear_opcion(nombre_icono, titulo_op, subtitulo_op, color):
+
             boton= QPushButton()
             boton.setCursor(Qt.CursorShape.PointingHandCursor)
             boton.setMinimumHeight(148)
@@ -999,10 +1054,12 @@ class ModuloDashboard(QWidget):
         fila_opciones.addWidget(btn_modulos)
 
         def _ir_a_materias():
+
             dialogo.accept()
             self._ir_a_modulo("Materias")
 
         def _ir_a_modulos_tecnicos():
+
             dialogo.accept()
             #Pide saltar directo a la pestaña "Módulos Técnicos" (índice 1) del módulo Politécnico: el showEvent del módulo
             #consume este "banderín" apenas se muestra la vista.
@@ -1015,6 +1072,7 @@ class ModuloDashboard(QWidget):
         dialogo.exec()
 
     def _actualizar_logo(self, logo_path):
+
         if logo_path and os.path.isfile(logo_path):
             pixmap= QPixmap(logo_path)
             if not pixmap.isNull():
@@ -1028,17 +1086,18 @@ class ModuloDashboard(QWidget):
 
     #RELOJ / SALUDO / AUTOREFRESCO
     def _actualizar_reloj(self):
+
         ahora= datetime.now()
         hora= ahora.hour
         #Solo 2 iconos para todo el saludo: sol (mañana + tarde, ambas "de día") y luna (noche) -el mismo criterio
         #horario de siempre, solo que ahora comparten un único icono vectorial "de día" en vez de dos emojis de sol
         #distintos (☀ para mañana, 🌤 para tarde).
         if 5 <= hora < 12:
-            saludo, icono = "Buenos días", EMOJI_SALUDO_DIA
+            saludo, icono= "Buenos días", EMOJI_SALUDO_DIA
         elif 12 <= hora < 19:
-            saludo, icono = "Buenas tardes", EMOJI_SALUDO_DIA
+            saludo, icono= "Buenas tardes", EMOJI_SALUDO_DIA
         else:
-            saludo, icono = "Buenas noches", EMOJI_SALUDO_NOCHE
+            saludo, icono= "Buenas noches", EMOJI_SALUDO_NOCHE
 
         dias= ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
         meses= ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
@@ -1055,11 +1114,13 @@ class ModuloDashboard(QWidget):
         self.lbl_reloj.setText(f"{fecha_txt.capitalize()} · {hora_txt}")
 
     def _autorefrescar(self):
+
         if self.isVisible():
             self.refrescar()
 
     #Refresco de datos
     def refrescar(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
 
@@ -1069,6 +1130,7 @@ class ModuloDashboard(QWidget):
         #en vez de mostrar el Dashboard. En lugar de dejar caer la excepción, se reintenta UNA vez tras forzar
         #inicializar_bd() (que agrega cualquier columna/tabla faltante sin tocar los datos existentes).
         try:
+
             c.execute("SELECT estado_publicacion FROM calificaciones LIMIT 1")
         except sqlite3.OperationalError:
             conn.close()
@@ -1369,6 +1431,7 @@ class ModuloDashboard(QWidget):
 
     #TEMA
     def actualizar_tema(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None)
         if not paletas:

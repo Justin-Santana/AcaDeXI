@@ -45,12 +45,13 @@ _COLORES_TIPO_ASIGNACION= {"Auxiliar": "#3B82F6", "Suplente": "#F59E0B",
                              "Co-titular": "#8B5CF6", "Practicante": "#14B8A6"}
 
 
+#Da color + negrita a una celda de tabla para que ciertos valores
+#(estado, turno, tipo de asignación) se lean de un vistazo. No agrega
+#widgets extra ni efectos gráficos: es solo texto+color sobre el
+#QTableWidgetItem ya existente, así que el costo es prácticamente nulo
+#incluso con tablas grandes.
 def _colorear_texto(item, color_hex):
-    """Da color + negrita a una celda de tabla para que ciertos valores
-    (estado, turno, tipo de asignación) se lean de un vistazo. No agrega
-    widgets extra ni efectos gráficos: es solo texto+color sobre el
-    QTableWidgetItem ya existente, así que el costo es prácticamente nulo
-    incluso con tablas grandes."""
+
     item.setForeground(QColor(color_hex))
     f= item.font()
     f.setBold(True)
@@ -58,28 +59,31 @@ def _colorear_texto(item, color_hex):
 
 
 def _minutos(hora_txt):
+
     partes= hora_txt.strip().split(":")
     if len(partes) != 2:
         raise ValueError("Formato de hora inválido")
-    h, m = int(partes[0]), int(partes[1])
+    h, m= int(partes[0]), int(partes[1])
     if not (0 <= h < 24 and 0 <= m < 60):
         raise ValueError("Hora fuera de rango")
     return h * 60 + m
 
 def _se_solapan(inicio1, fin1, inicio2, fin2):
+
     return inicio1 < fin2 and inicio2 < fin1
 
 
+#Barras animadas y originales con la cantidad de clases programadas por
+#día de la semana: de un vistazo se ve qué días están más cargados de
+#horario. Solo se repinta cuando cambian los datos o el tamaño (no hay
+#temporizador continuo), así que el costo real es una animación de
+#entrada de ~700ms una sola vez por refresco — insignificante incluso
+#con muchos horarios, porque lo que se agrega son 6 barras, no una por
+#horario.
 class GraficoOcupacionSemanal(QWidget):
-    """Barras animadas y originales con la cantidad de clases programadas por
-    día de la semana: de un vistazo se ve qué días están más cargados de
-    horario. Solo se repinta cuando cambian los datos o el tamaño (no hay
-    temporizador continuo), así que el costo real es una animación de
-    entrada de ~700ms una sola vez por refresco — insignificante incluso
-    con muchos horarios, porque lo que se agrega son 6 barras, no una por
-    horario."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._datos= []
         self._progreso= 0.0
@@ -93,11 +97,13 @@ class GraficoOcupacionSemanal(QWidget):
         self._anim.valueChanged.connect(self._on_tick)
 
     def _on_tick(self, valor):
+
         self._progreso= valor
         self.update()
 
+    #datos: lista de tuplas (etiqueta_dia, cantidad).
     def poner_datos(self, datos, color_acento=None):
-        """datos: lista de tuplas (etiqueta_dia, cantidad)."""
+
         self._datos= datos
         if color_acento:
             self._color_barra= QColor(color_acento)
@@ -107,11 +113,13 @@ class GraficoOcupacionSemanal(QWidget):
         self._anim.start()
 
     def poner_colores(self, color_texto, color_texto_prim):
+
         self._color_texto= QColor(color_texto)
         self._color_texto_prim= QColor(color_texto_prim)
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if not self._datos or not any(c for _, c in self._datos):
@@ -124,7 +132,7 @@ class GraficoOcupacionSemanal(QWidget):
         #margen_sup reserva espacio fijo para el numerito encima de la barra más alta, para que nunca quede cortado
         #contra el borde del widget (antes la barra con más clases podía llegar casi hasta arriba y el texto se
         #dibujaba parcialmente fuera del área visible).
-        margen_inf, margen_sup = 22, 24
+        margen_inf, margen_sup= 22, 24
         alto_disponible= self.height() - margen_inf - margen_sup
         n= len(self._datos)
         espacio= 12
@@ -165,7 +173,9 @@ class GraficoOcupacionSemanal(QWidget):
 
 
 class ModuloMaterias(QWidget):
+
     def __init__(self, main_window):
+
         #Sin padre de Qt todavía; ver nota equivalente en calificaciones.py (evita la "ventana fantasma" al cargar el
         #módulo perezosamente).
         super().__init__()
@@ -180,6 +190,7 @@ class ModuloMaterias(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         #Módulo exclusivo de roles gerenciales (Materias, Secciones y Aulas institucionales): un Profesor no llega a
         #esta pantalla, así que no hace falta ningún gateo de Modo Docente aquí.
         self._titulo_modulo_atajos= "Materias"
@@ -190,12 +201,13 @@ class ModuloMaterias(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+Del", "Eliminar materia", self._eliminar_materia)
         registrar_atajo(self, self.main_window, "F5", "Actualizar lista de materias", self._cargar_materias)
 
+    #True si ya existe otra materia ACADÉMICA (no técnica) con el mismo
+    #nombre, comparado sin distinguir mayúsculas/acentos. Los módulos
+    #técnicos (área técnica + modelo RA) viven en el mismo `materias` pero
+    #se comparan aparte, en politecnico.py, porque son un catálogo distinto
+    #de cara al usuario.
     def _nombre_duplicado_materia(self, nombre, id_excluir=None):
-        """True si ya existe otra materia ACADÉMICA (no técnica) con el mismo
-        nombre, comparado sin distinguir mayúsculas/acentos. Los módulos
-        técnicos (área técnica + modelo RA) viven en el mismo `materias` pero
-        se comparan aparte, en politecnico.py, porque son un catálogo distinto
-        de cara al usuario."""
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT id, nombre FROM materias
@@ -213,6 +225,7 @@ class ModuloMaterias(QWidget):
         return False
 
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -275,10 +288,11 @@ class ModuloMaterias(QWidget):
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
 
+    #Fila de indicadores KPI (reutiliza la tarjeta animada del Dashboard) más
+    #un anillo de progreso con el % de materias activas, para ver de un vistazo
+    #el tamaño y la salud de la oferta académica antes de entrar al detalle.
     def _construir_resumen(self):
-        """Fila de indicadores KPI (reutiliza la tarjeta animada del Dashboard) más
-        un anillo de progreso con el % de materias activas, para ver de un vistazo
-        el tamaño y la salud de la oferta académica antes de entrar al detalle."""
+
         fila= QWidget()
         l= QHBoxLayout(fila)
         l.setContentsMargins(0, 0, 0, 0)
@@ -315,16 +329,17 @@ class ModuloMaterias(QWidget):
 
         return fila
 
+    #Envuelve un formulario en una tarjeta con look moderno (fondo translúcido
+    #neutro, que se adapta bien tanto a modo claro como oscuro sin necesitar
+    #recalcular colores por tema).
+    #
+    #Rendimiento: a propósito NO lleva QGraphicsDropShadowEffect. Un efecto
+    #gráfico permanente obliga a Qt a recomponer la tarjeta en un buffer aparte
+    #en cada repintado (incluido cada frame del colapso animado del sidebar);
+    #el look de "tarjeta" ya se logra con el fondo translúcido + borde
+    #redondeado, que se pintan de forma nativa y son prácticamente gratis.
     def _tarjeta_formulario(self, titulo_seccion=None):
-        """Envuelve un formulario en una tarjeta con look moderno (fondo translúcido
-        neutro, que se adapta bien tanto a modo claro como oscuro sin necesitar
-        recalcular colores por tema).
 
-        Rendimiento: a propósito NO lleva QGraphicsDropShadowEffect. Un efecto
-        gráfico permanente obliga a Qt a recomponer la tarjeta en un buffer aparte
-        en cada repintado (incluido cada frame del colapso animado del sidebar);
-        el look de "tarjeta" ya se logra con el fondo translúcido + borde
-        redondeado, que se pintan de forma nativa y son prácticamente gratis."""
         frame= QFrame()
         frame.setObjectName("TarjetaFormulario")
         frame.setStyleSheet("""
@@ -351,11 +366,12 @@ class ModuloMaterias(QWidget):
         contenedor.addLayout(grid)
         return frame, grid
 
+    #Crea una barra de búsqueda con debounce, mismo diseño (lupa dibujada +
+    #marco redondeado) que se usa en Configuración/Estudiantes, para poder
+    #filtrar tablas largas sin tener que pasar de página en página.
+    #Devuelve (frame, line_edit).
     def _barra_busqueda(self, placeholder, al_cambiar):
-        """Crea una barra de búsqueda con debounce, mismo diseño (lupa dibujada +
-        marco redondeado) que se usa en Configuración/Estudiantes, para poder
-        filtrar tablas largas sin tener que pasar de página en página.
-        Devuelve (frame, line_edit)."""
+
         frame= QFrame()
         frame.setObjectName("TarjetaFiltros")
         #Fixed en el eje vertical: esta barra tiene una altura "de diseño" (la del QLineEdit + su padding) y nunca debe
@@ -388,10 +404,11 @@ class ModuloMaterias(QWidget):
         campo.textChanged.connect(lambda _t: temporizador.start())
         return frame, campo
 
+    #Agrega el botón '☰ Filtros' a la derecha de una barra de búsqueda ya
+    #creada con `_barra_busqueda` (mismo diseño/ubicación que en Estudiantes,
+    #Horario, Calendario y Banco de Tareas). Devuelve el botón.
     def _agregar_boton_filtros(self, frame_busqueda, callback_abrir):
-        """Agrega el botón '☰ Filtros' a la derecha de una barra de búsqueda ya
-        creada con `_barra_busqueda` (mismo diseño/ubicación que en Estudiantes,
-        Horario, Calendario y Banco de Tareas). Devuelve el botón."""
+
         btn_filtros= QPushButton("Filtros")
         icono_boton_filtro(btn_filtros)
         btn_filtros.setIconSize(_QSize_emoji(16, 16))
@@ -400,16 +417,17 @@ class ModuloMaterias(QWidget):
         frame_busqueda.layout().addWidget(btn_filtros)
         return btn_filtros
 
+    #Ventanita NO modal con los filtros de una pestaña -mismo patrón que
+    #usan Estudiantes/Horario/Calendario/Banco de Tareas (DialogoFiltros)-:
+    #se puede dejar abierta mientras se ajustan los combos, y la tabla de
+    #atrás se sigue actualizando en vivo.
+    #
+    #`campos`: lista de tuplas (etiqueta_o_None, widget). Si la etiqueta es
+    #None, se asume que el propio widget ya trae su primer ítem tipo
+    #"Todos los..." y no hace falta QLabel aparte.
+    #Devuelve el QDialog ya armado (todavía sin mostrar).
     def _construir_dialogo_filtros(self, titulo, campos):
-        """Ventanita NO modal con los filtros de una pestaña -mismo patrón que
-        usan Estudiantes/Horario/Calendario/Banco de Tareas (DialogoFiltros)-:
-        se puede dejar abierta mientras se ajustan los combos, y la tabla de
-        atrás se sigue actualizando en vivo.
 
-        `campos`: lista de tuplas (etiqueta_o_None, widget). Si la etiqueta es
-        None, se asume que el propio widget ya trae su primer ítem tipo
-        "Todos los..." y no hace falta QLabel aparte.
-        Devuelve el QDialog ya armado (todavía sin mostrar)."""
         dialogo= QDialog(self)
         dialogo.setObjectName("DialogoFiltros")
         dialogo.setWindowTitle(titulo)
@@ -470,10 +488,11 @@ class ModuloMaterias(QWidget):
         lay_dialogo.addLayout(fila_botones)
         return dialogo
 
+    #Regresa a 'Todos'/índice 0 cada combo de una ventana de filtros.
+    #Los widgets que no sean QComboBox (p. ej. un QLabel colado como fila
+    #completa) se ignoran sin error.
     def _limpiar_combos_filtro(self, widgets):
-        """Regresa a 'Todos'/índice 0 cada combo de una ventana de filtros.
-        Los widgets que no sean QComboBox (p. ej. un QLabel colado como fila
-        completa) se ignoran sin error."""
+
         for widget in widgets:
             if isinstance(widget, QComboBox) and widget.count():
                 widget.blockSignals(True)
@@ -486,6 +505,7 @@ class ModuloMaterias(QWidget):
                 primero.currentIndexChanged.emit(primero.currentIndex())
 
     def _abrir_dialogo(self, dialogo):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and dialogo.parent() is not _fc:
@@ -494,23 +514,25 @@ class ModuloMaterias(QWidget):
         dialogo.raise_()
         dialogo.activateWindow()
 
+    #Envuelve uno o más widgets (típicamente el formulario de 'Añadir'
+    #de una pestaña, y su cuadrito de filtro técnico si tiene) en
+    #un PanelDesplegable colapsable -el mismo 'cosito de ocultar' que usa
+    #Politécnico en todas sus pestañas- para que el formulario no le gane
+    #protagonismo visual a la tabla de abajo, pero siga a un clic de
+    #distancia para quien lo necesite. Empieza cerrado por defecto.
     def _envolver_en_panel(self, layout_padre, titulo, *widgets):
-        """Envuelve uno o más widgets (típicamente el formulario de 'Añadir'
-        de una pestaña, y su cuadrito de filtro técnico si tiene) en
-        un PanelDesplegable colapsable -el mismo 'cosito de ocultar' que usa
-        Politécnico en todas sus pestañas- para que el formulario no le gane
-        protagonismo visual a la tabla de abajo, pero siga a un clic de
-        distancia para quien lo necesite. Empieza cerrado por defecto."""
+
         panel= PanelDesplegable(titulo)
         for widget in widgets:
             panel.cuerpo_layout().addWidget(widget)
         layout_padre.addWidget(panel)
         return panel
 
+    #Tarjeta que agrupa tabla + paginación + botones de acción de una pestaña,
+    #para que se lea como un panel propio en vez de elementos sueltos. Sin sombra
+    #permanente por la misma razón de rendimiento que `_tarjeta_formulario`.
     def _tarjeta_resultados(self):
-        """Tarjeta que agrupa tabla + paginación + botones de acción de una pestaña,
-        para que se lea como un panel propio en vez de elementos sueltos. Sin sombra
-        permanente por la misma razón de rendimiento que `_tarjeta_formulario`."""
+
         frame= QFrame()
         frame.setObjectName("TarjetaFormulario")
         frame.setStyleSheet("""
@@ -526,6 +548,7 @@ class ModuloMaterias(QWidget):
         return frame, contenedor
 
     def actualizar_tema(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None)
         #Refrescar colores de los encabezados colapsables (PanelDesplegable)
@@ -658,6 +681,7 @@ class ModuloMaterias(QWidget):
         """)
 
     def _actualizar_kpis(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         #Una sola consulta con subconsultas en vez de 4 idas y vueltas separadas.
@@ -670,7 +694,7 @@ class ModuloMaterias(QWidget):
                         (SELECT COUNT(*) FROM horarios) as total_horarios""")
         fila= c.fetchone()
         conn.close()
-        total_materias, activas = fila["total_materias"], fila["activas"]
+        total_materias, activas= fila["total_materias"], fila["activas"]
         self.tarjeta_kpi_materias.actualizar(total_materias)
         self.tarjeta_kpi_activas.actualizar(activas)
         self.tarjeta_kpi_secciones.actualizar(fila["total_secciones"])
@@ -679,11 +703,12 @@ class ModuloMaterias(QWidget):
         self.anillo_activas.poner_valor(porcentaje_activas, "#10B981")
 
     def _tab_materias(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(4, 12, 4, 4)
         l.setSpacing(14)
-        frame_form, form = self._tarjeta_formulario("Datos de la Materia")
+        frame_form, form= self._tarjeta_formulario("Datos de la Materia")
         self.lbl_nota_tecnicos= QLabel(
             "ℹ Esta pestaña es solo para materias académicas normales. Los módulos técnicos"
             "(con área técnica y evaluación por Resultados de Aprendizaje) se crean y gestionan "
@@ -755,8 +780,8 @@ class ModuloMaterias(QWidget):
         form.addWidget(btn_exportar_profesor, 3, 2, 1, 2)
         self._envolver_en_panel(l, "Añadir Materia", frame_form)
 
-        frame_resultados, lr = self._tarjeta_resultados()
-        barra_busqueda, self.busq_materias = self._barra_busqueda(
+        frame_resultados, lr= self._tarjeta_resultados()
+        barra_busqueda, self.busq_materias= self._barra_busqueda(
             "Buscar por código, nombre o profesor…", self._filtro_materias_cambio)
 
         #--- Ventana de filtros (Profesor / Estado) ---
@@ -837,6 +862,7 @@ class ModuloMaterias(QWidget):
         return w
 
     def _exportar_paquete_profesor_seleccionado(self):
+
         profesor_id= self.m_profesor.currentData()
         if profesor_id is None:
             mostrar_mensaje("advertencia", "Sin profesor seleccionado",
@@ -847,18 +873,20 @@ class ModuloMaterias(QWidget):
         exportar_paquete_docente(self.main_window, self, profesor_id=profesor_id, profesor_nombre=profesor_nombre)
 
     def _previsualizar_codigo_materia(self):
+
         if self._codigo_materia_manual:
             return
         if self.id_edicion_materia is None:
             self.m_codigo.setText(self._generar_codigo_materia() if self.m_nombre.text().strip() else "")
 
+    #Clic derecho sobre el campo "Código": alterna entre escribirlo a
+    #mano y dejarlo autogenerado de nuevo. Si ya está en modo manual
+    #-sea porque se pidió con este mismo menú, o porque se cargó una
+    #materia existente para editarla (ver _cargar_materia_seleccionada)-,
+    #el menú ofrece volver a autogenerado; si no, ofrece pasar a
+    #manual.
     def _menu_contextual_codigo_materia(self, pos):
-        """Clic derecho sobre el campo "Código": alterna entre escribirlo a
-        mano y dejarlo autogenerado de nuevo. Si ya está en modo manual
-        -sea porque se pidió con este mismo menú, o porque se cargó una
-        materia existente para editarla (ver _cargar_materia_seleccionada)-,
-        el menú ofrece volver a autogenerado; si no, ofrece pasar a
-        manual."""
+
         menu= QMenu(self)
         if self._codigo_materia_manual:
             accion= menu.addAction(icono_emoji("🔄"), "Volver a autogenerado")
@@ -876,6 +904,7 @@ class ModuloMaterias(QWidget):
                 self.m_codigo.selectAll()
 
     def _generar_codigo_materia(self):
+
         base= "".join(w[0] for w in self.m_nombre.text().strip().upper().split()[:3]) or "MAT"
         conn= obtener_conexion()
         c= conn.cursor()
@@ -888,6 +917,7 @@ class ModuloMaterias(QWidget):
         return f"{base}-{n:03d}"
 
     def _guardar_materia(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no puede editar materias.", self)
             return
@@ -908,6 +938,7 @@ class ModuloMaterias(QWidget):
                  MODELO_EVALUACION_COMPETENCIAS, self.m_curso.currentData())
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             if self.id_edicion_materia is None:
                 c.execute("""INSERT INTO materias (codigo, nombre, creditos, especialidad_id, profesor_id, estado,
@@ -929,6 +960,7 @@ class ModuloMaterias(QWidget):
         self._cargar_materias()
 
     def _limpiar_materia(self):
+
         self.id_edicion_materia= None
         self.m_codigo.clear()
         #Vuelve al modo autogenerado por defecto para una materia nueva; si el usuario quiere un código propio, siempre
@@ -943,41 +975,47 @@ class ModuloMaterias(QWidget):
         self.tabla_materias.clearSelection()
         desactivar_modo_edicion(self.m_nombre)
 
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo) — solo entonces tiene sentido pedir el Área
+    #Técnica en Cursos y Secciones, o mostrar el módulo Politécnico.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo) — solo entonces tiene sentido pedir el Área
-        Técnica en Cursos y Secciones, o mostrar el módulo Politécnico."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo). Mismo criterio usado en estudiantes.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #Muestra/oculta lo que solo tiene sentido en un Politécnico: el campo
+    #Área Técnica de Cursos y Secciones (en un colegio regular no existen
+    #'áreas técnicas', así que no se le pide al usuario que piense en eso).
+    #Los módulos técnicos en sí (materias RA) ya no viven en este módulo,
+    #sino en Politécnico. La visibilidad final también depende del Nivel/
+    #Ciclo elegido -ver _actualizar_ciclo_y_especialidad_seccion-, por eso
+    #se recalcula aquí también (por ejemplo, al cambiar el tipo de
+    #institución en Configuración sin haber tocado el combo de Nivel).
     def _actualizar_visibilidad_modelo_evaluacion(self):
-        """Muestra/oculta lo que solo tiene sentido en un Politécnico: el campo
-        Área Técnica de Cursos y Secciones (en un colegio regular no existen
-        'áreas técnicas', así que no se le pide al usuario que piense en eso).
-        Los módulos técnicos en sí (materias RA) ya no viven en este módulo,
-        sino en Politécnico. La visibilidad final también depende del Nivel/
-        Ciclo elegido -ver _actualizar_ciclo_y_especialidad_seccion-, por eso
-        se recalcula aquí también (por ejemplo, al cambiar el tipo de
-        institución en Configuración sin haber tocado el combo de Nivel)."""
+
         self._actualizar_ciclo_y_especialidad_seccion()
 
+    #Repuebla el combo de Nivel Educativo con solo los niveles que esta
+    #institución tiene habilitados (Configuración > Académico) — igual
+    #principio que el resto de combos "en cascada" del proyecto: no
+    #ofrecer opciones que no tengan sentido para el contexto actual.
     def _poblar_nivel_educativo_seccion(self):
-        """Repuebla el combo de Nivel Educativo con solo los niveles que esta
-        institución tiene habilitados (Configuración > Académico) — igual
-        principio que el resto de combos "en cascada" del proyecto: no
-        ofrecer opciones que no tengan sentido para el contexto actual."""
+
         seleccion_previa= self.s_nivel_educativo.currentData() if self.s_nivel_educativo.count() else None
         conn= obtener_conexion()
         c= conn.cursor()
@@ -995,18 +1033,19 @@ class ModuloMaterias(QWidget):
         self.s_nivel_educativo.setCurrentIndex(idx if idx >= 0 else 0)
         self.s_nivel_educativo.blockSignals(False)
 
+    #El Ciclo solo tiene sentido si el nivel elegido es Secundaria, y el
+    #Área Técnica solo es académicamente válida en Secundaria - Segundo
+    #Ciclo (República Dominicana): ver puede_tener_componente_tecnico() en
+    #configuracion.py, la única lógica que decide esto en todo el sistema.
+    #
+    #Tanto Área Técnica como Carrera se OCULTAN por completo (no solo se
+    #deshabilitan) cuando el Nivel/Ciclo elegido no admite ese componente
+    #-por ejemplo, Primaria o Secundaria Primer Ciclo en una institución
+    #Personalizada con Politécnico Y Primaria activos a la vez-, para que
+    #no queden combos visibles pidiendo un dato que ni siquiera es válido
+    #para ese curso.
     def _actualizar_ciclo_y_especialidad_seccion(self):
-        """El Ciclo solo tiene sentido si el nivel elegido es Secundaria, y el
-        Área Técnica solo es académicamente válida en Secundaria - Segundo
-        Ciclo (República Dominicana): ver puede_tener_componente_tecnico() en
-        configuracion.py, la única lógica que decide esto en todo el sistema.
 
-        Tanto Área Técnica como Carrera se OCULTAN por completo (no solo se
-        deshabilitan) cuando el Nivel/Ciclo elegido no admite ese componente
-        -por ejemplo, Primaria o Secundaria Primer Ciclo en una institución
-        Personalizada con Politécnico Y Primaria activos a la vez-, para que
-        no queden combos visibles pidiendo un dato que ni siquiera es válido
-        para ese curso."""
         nivel= self.s_nivel_educativo.currentData()
         self.s_ciclo_secundaria.setVisible(nivel == "Secundaria")
         if nivel != "Secundaria":
@@ -1037,6 +1076,7 @@ class ModuloMaterias(QWidget):
             self.s_carrera.setCurrentIndex(0)
 
     def _tipo_institucion(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT tipo_institucion FROM configuracion WHERE id=1")
@@ -1045,6 +1085,7 @@ class ModuloMaterias(QWidget):
         return (f["tipo_institucion"] if f else None) or "Escuela"
 
     def _cargar_materia_seleccionada(self):
+
         fila= self.tabla_materias.currentRow()
         if fila < 0:
             return
@@ -1072,6 +1113,7 @@ class ModuloMaterias(QWidget):
         activar_modo_edicion(self.m_nombre, f"Editando materia: {f['nombre'] or ''}")
 
     def _eliminar_materia(self):
+
         fila= self.tabla_materias.currentRow()
         if fila < 0:
             return
@@ -1088,10 +1130,12 @@ class ModuloMaterias(QWidget):
         self._cargar_materias()
 
     def _filtro_materias_cambio(self):
+
         self.paginacion_materias.reiniciar()
         self._cargar_materias()
 
     def _cargar_materias(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         #Esta tabla solo muestra materias académicas normales: los módulos
@@ -1115,7 +1159,7 @@ class ModuloMaterias(QWidget):
             filas= [f for f in filas if texto in _normalizar(
                 f"{f['codigo']} {f['nombre']} {f['prof_nombre']}")]
         self.paginacion_materias.establecer_total(len(filas))
-        inicio, fin = self.paginacion_materias.rango_actual()
+        inicio, fin= self.paginacion_materias.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_materias):
             self.tabla_materias.setRowCount(len(pagina))
@@ -1131,11 +1175,12 @@ class ModuloMaterias(QWidget):
             ajustar_anchos_columnas(self.tabla_materias)
 
     def _tab_secciones(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(4, 12, 4, 4)
         l.setSpacing(14)
-        frame_form, form = self._tarjeta_formulario("Datos de la Sección")
+        frame_form, form= self._tarjeta_formulario("Datos de la Sección")
         self.s_grado= QLineEdit()
         limitar_campo_texto(self.s_grado, 300)
         self.s_grado.setPlaceholderText("Grado/Curso (ej. 5to)")
@@ -1206,8 +1251,8 @@ class ModuloMaterias(QWidget):
         form.addWidget(btn_limpiar, 3, 1)
         self._envolver_en_panel(l, "Añadir Sección", frame_form)
 
-        frame_resultados, lr = self._tarjeta_resultados()
-        barra_busqueda, self.busq_secciones = self._barra_busqueda(
+        frame_resultados, lr= self._tarjeta_resultados()
+        barra_busqueda, self.busq_secciones= self._barra_busqueda(
             "Buscar por grado, sección, aula, área técnica, carrera o profesor guía…", self._filtro_secciones_cambio)
 
         #--- Ventana de filtros (Nivel Educativo / Turno) --- Mismo patrón (y misma fuente de verdad,
@@ -1286,6 +1331,7 @@ class ModuloMaterias(QWidget):
         return w
 
     def _guardar_seccion(self):
+
         if not self.s_grado.text().strip() or not self.s_nombre.text().strip():
             mostrar_mensaje("advertencia", "Datos incompletos", "Grado y sección son obligatorios.", self)
             return
@@ -1355,6 +1401,7 @@ class ModuloMaterias(QWidget):
         self.refrescar()
 
     def _limpiar_seccion(self):
+
         #BUG corregido: antes solo se limpiaban Grado y Sección, así que Turno, Aula, Especialidad y Profesor Guía
         #quedaban con el valor de la última sección cargada/guardada. Eso hacía que una sección nueva pudiera guardarse
         #por accidente con el profesor guía (u otro dato) de la anterior, sin que el usuario lo notara.
@@ -1375,6 +1422,7 @@ class ModuloMaterias(QWidget):
         desactivar_modo_edicion(self.s_nombre)
 
     def _cargar_seccion_seleccionada(self):
+
         fila= self.tabla_secciones.currentRow()
         if fila < 0:
             return
@@ -1409,6 +1457,7 @@ class ModuloMaterias(QWidget):
         activar_modo_edicion(self.s_nombre, f"Editando sección: {f['nombre'] or ''}")
 
     def _eliminar_seccion(self):
+
         fila= self.tabla_secciones.currentRow()
         if fila < 0:
             return
@@ -1424,10 +1473,12 @@ class ModuloMaterias(QWidget):
         self.refrescar()
 
     def _filtro_secciones_cambio(self):
+
         self.paginacion_secciones.reiniciar()
         self._cargar_secciones()
 
     def _cargar_secciones(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT secciones.*, grados.nombre as grado_nombre, aulas.nombre as aula_nombre,
@@ -1455,7 +1506,7 @@ class ModuloMaterias(QWidget):
                 f"{f['grado_nombre']} {f['nombre']} {f['turno']} {f['aula_nombre']} "
                 f"{f['especialidad_nombre']} {f['carrera_nombre']} {f['prof_nombre']}")]
         self.paginacion_secciones.establecer_total(len(filas))
-        inicio, fin = self.paginacion_secciones.rango_actual()
+        inicio, fin= self.paginacion_secciones.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_secciones):
             self.tabla_secciones.setRowCount(len(pagina))
@@ -1473,11 +1524,12 @@ class ModuloMaterias(QWidget):
             ajustar_anchos_columnas(self.tabla_secciones)
 
     def _tab_aulas(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(4, 12, 4, 4)
         l.setSpacing(14)
-        frame_form, form = self._tarjeta_formulario("Datos del Espacio Físico")
+        frame_form, form= self._tarjeta_formulario("Datos del Espacio Físico")
         self.a_nombre= QLineEdit()
         limitar_campo_texto(self.a_nombre, 300)
         self.a_nombre.setPlaceholderText("Nombre del Aula/Laboratorio")
@@ -1505,8 +1557,8 @@ class ModuloMaterias(QWidget):
         form.addWidget(btn_limpiar_aula, 1, 1)
         self._envolver_en_panel(l, "Añadir Aula", frame_form)
 
-        frame_resultados, lr = self._tarjeta_resultados()
-        barra_busqueda, self.busq_aulas = self._barra_busqueda(
+        frame_resultados, lr= self._tarjeta_resultados()
+        barra_busqueda, self.busq_aulas= self._barra_busqueda(
             "Buscar por nombre o tipo…", self._filtro_aulas_cambio)
 
         #--- Ventana de filtros (Tipo de espacio) ---
@@ -1578,6 +1630,7 @@ class ModuloMaterias(QWidget):
         return w
 
     def _limpiar_aula(self):
+
         self.id_edicion_aula= None
         self.a_nombre.clear()
         self.a_tipo.setCurrentIndex(0)
@@ -1586,6 +1639,7 @@ class ModuloMaterias(QWidget):
         desactivar_modo_edicion(self.a_nombre)
 
     def _cargar_aula_seleccionada(self):
+
         fila= self.tabla_aulas.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un aula de la tabla.", self)
@@ -1605,6 +1659,7 @@ class ModuloMaterias(QWidget):
         activar_modo_edicion(self.a_nombre, f"Editando aula: {f['nombre'] or ''}")
 
     def _guardar_aula(self):
+
         if not self.a_nombre.text().strip():
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
             return
@@ -1626,6 +1681,7 @@ class ModuloMaterias(QWidget):
         self.refrescar()
 
     def _eliminar_aula(self):
+
         fila= self.tabla_aulas.currentRow()
         if fila < 0:
             return
@@ -1639,10 +1695,12 @@ class ModuloMaterias(QWidget):
         self.refrescar()
 
     def _filtro_aulas_cambio(self):
+
         self.paginacion_aulas.reiniciar()
         self._cargar_aulas()
 
     def _cargar_aulas(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM aulas ORDER BY nombre")
@@ -1655,7 +1713,7 @@ class ModuloMaterias(QWidget):
         if texto:
             filas= [f for f in filas if texto in _normalizar(f"{f['nombre']} {f['tipo']}")]
         self.paginacion_aulas.establecer_total(len(filas))
-        inicio, fin = self.paginacion_aulas.rango_actual()
+        inicio, fin= self.paginacion_aulas.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_aulas):
             self.tabla_aulas.setRowCount(len(pagina))
@@ -1667,12 +1725,13 @@ class ModuloMaterias(QWidget):
             ajustar_anchos_columnas(self.tabla_aulas)
 
     def _tab_horarios(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(4, 12, 4, 4)
         l.setSpacing(14)
 
-        frame_grafico, lg = self._tarjeta_resultados()
+        frame_grafico, lg= self._tarjeta_resultados()
         lbl_grafico= QLabel("Clases programadas por día")
         f_lbl= lbl_grafico.font()
         f_lbl.setBold(True)
@@ -1684,7 +1743,7 @@ class ModuloMaterias(QWidget):
         lg.addWidget(self.grafico_ocupacion)
         l.addWidget(frame_grafico)
 
-        frame_form, form = self._tarjeta_formulario("Asignar Clase")
+        frame_form, form= self._tarjeta_formulario("Asignar Clase")
         #Curso/Grado va PRIMERO y es obligatorio: acota de una vez la lista de Secciones a las de ese curso (antes se
         #elegía directo la Sección, ya mezclando todos los cursos, y encima el combo arrancaba con la primera sección
         #de la lista ya seleccionada — así que "Sección" en realidad nunca era obligatoria, se guardaba el valor por
@@ -1765,8 +1824,8 @@ class ModuloMaterias(QWidget):
         fila_filtro_tecnico_horario.addStretch()
         self._envolver_en_panel(l, "Asignar Clase", frame_filtro_tecnico_horario, frame_form)
 
-        frame_resultados, lr = self._tarjeta_resultados()
-        barra_busqueda, self.busq_horarios = self._barra_busqueda(
+        frame_resultados, lr= self._tarjeta_resultados()
+        barra_busqueda, self.busq_horarios= self._barra_busqueda(
             "Buscar por sección, materia/módulo técnico o aula…", self._filtro_horarios_cambio)
 
         #--- Ventana de filtros (Curso/Grado, Sección, Día) --- Combos INDEPENDIENTES de los del formulario "Asignar
@@ -1849,17 +1908,18 @@ class ModuloMaterias(QWidget):
         l.addWidget(frame_resultados, 1)
         return w
 
+    #Repuebla 'Sección' con solo las secciones del curso/grado elegido en
+    #'Curso/Grado'. Mientras no se elija un curso, 'Sección' queda vacía
+    #(con un placeholder sin datos), así que no puede quedar seleccionada
+    #por accidente una sección de otro curso.
+    #
+    #Si además hay un Área Técnica/Carrera elegidos en el cuadrito de
+    #abajo, la lista de secciones se acota más: Área Técnica usa
+    #secciones.especialidad_id directamente; Carrera (dato por
+    #estudiante, no por sección) se resuelve viendo qué secciones tienen
+    #al menos un estudiante activo de esa carrera.
     def _al_cambiar_curso_horario(self, _indice=None, seccion_id_preseleccionar=None):
-        """Repuebla 'Sección' con solo las secciones del curso/grado elegido en
-        'Curso/Grado'. Mientras no se elija un curso, 'Sección' queda vacía
-        (con un placeholder sin datos), así que no puede quedar seleccionada
-        por accidente una sección de otro curso.
 
-        Si además hay un Área Técnica/Carrera elegidos en el cuadrito de
-        abajo, la lista de secciones se acota más: Área Técnica usa
-        secciones.especialidad_id directamente; Carrera (dato por
-        estudiante, no por sección) se resuelve viendo qué secciones tienen
-        al menos un estudiante activo de esa carrera."""
         cascada_seccion_por_curso(self.h_curso, self.h_seccion, incluir_todas=False)
 
         especialidad_id= self.h_filtro_especialidad.currentData() if self._es_politecnico() else None
@@ -1896,10 +1956,11 @@ class ModuloMaterias(QWidget):
             idx= self.h_seccion.findData(seccion_id_preseleccionar)
             self.h_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
+    #Igual que en Estudiantes: los combos de Área Técnica y Carrera del
+    #formulario 'Asignar Clase' solo se muestran/pueblan si la
+    #institución tiene ese módulo activo.
     def _cargar_filtro_tecnico_horario(self):
-        """Igual que en Estudiantes: los combos de Área Técnica y Carrera del
-        formulario 'Asignar Clase' solo se muestran/pueblan si la
-        institución tiene ese módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_horario.setVisible(es_poli)
         self.h_filtro_especialidad.setVisible(es_poli)
@@ -1937,14 +1998,16 @@ class ModuloMaterias(QWidget):
             self.h_filtro_carrera.blockSignals(False)
 
     def _filtro_tecnico_horario_cambio(self):
+
         self._al_cambiar_curso_horario()
         self._cargar_combo_h_materia()
 
+    #Materia/Módulo Técnico de 'Asignar Clase'. Si hay un Área Técnica
+    #elegida, se filtra ESTRICTAMENTE a los módulos de esa área — pedido
+    #explícito: al elegir curso+sección+área técnica, el combo debe
+    #listar únicamente los módulos de esa área.
     def _cargar_combo_h_materia(self):
-        """Materia/Módulo Técnico de 'Asignar Clase'. Si hay un Área Técnica
-        elegida, se filtra ESTRICTAMENTE a los módulos de esa área — pedido
-        explícito: al elegir curso+sección+área técnica, el combo debe
-        listar únicamente los módulos de esa área."""
+
         especialidad_id= self.h_filtro_especialidad.currentData() if self._es_politecnico() else None
         actual= self.h_materia.currentData()
         self.h_materia.clear()
@@ -1962,6 +2025,7 @@ class ModuloMaterias(QWidget):
         self.h_materia.setCurrentIndex(idx if idx >= 0 else 0)
 
     def _limpiar_horario_form(self):
+
         self.id_edicion_horario= None
         self.h_curso.setCurrentIndex(0)
         self.h_seccion.setCurrentIndex(0)
@@ -1979,6 +2043,7 @@ class ModuloMaterias(QWidget):
         desactivar_modo_edicion(self.h_hora_inicio)
 
     def _cargar_horario_seleccionado(self):
+
         fila= self.tabla_horarios.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un horario de la tabla.", self)
@@ -2003,6 +2068,7 @@ class ModuloMaterias(QWidget):
         activar_modo_edicion(self.h_hora_inicio, "Editando franja de horario")
 
     def _guardar_horario(self):
+
         if self.h_curso.currentData() is None:
             mostrar_mensaje("advertencia", "Datos incompletos", "Selecciona el curso/grado.", self)
             return
@@ -2013,6 +2079,7 @@ class ModuloMaterias(QWidget):
         hora_inicio_txt= self.h_hora_inicio.text().strip()
         hora_fin_txt= self.h_hora_fin.text().strip()
         try:
+
             nuevo_inicio= _minutos(hora_inicio_txt)
             nuevo_fin= _minutos(hora_fin_txt)
         except ValueError:
@@ -2051,6 +2118,7 @@ class ModuloMaterias(QWidget):
         self.refrescar()
 
     def _detectar_conflicto_horario(self, dia, nuevo_inicio, nuevo_fin, materia_id, aula_id, excluir_id=None):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT horarios.id, horarios.hora_inicio, horarios.hora_fin, horarios.aula_id,
@@ -2076,6 +2144,7 @@ class ModuloMaterias(QWidget):
             if excluir_id is not None and f["id"] == excluir_id:
                 continue
             try:
+
                 existente_inicio= _minutos(f["hora_inicio"])
                 existente_fin= _minutos(f["hora_fin"])
             except (ValueError, TypeError, AttributeError):
@@ -2095,6 +2164,7 @@ class ModuloMaterias(QWidget):
         return None
 
     def _eliminar_horario(self):
+
         fila= self.tabla_horarios.currentRow()
         if fila < 0:
             return
@@ -2107,17 +2177,20 @@ class ModuloMaterias(QWidget):
         registrar_auditoria("Horarios", "Eliminó horario", self.main_window.usuario_actual, str(id_h))
         self.refrescar()
 
+    #Cascada del combo 'Curso/Grado' de la ventana de FILTROS de Horarios
+    #(no confundir con self.h_curso, el del formulario 'Asignar Clase').
     def _al_cambiar_filtro_curso_horarios(self):
-        """Cascada del combo 'Curso/Grado' de la ventana de FILTROS de Horarios
-        (no confundir con self.h_curso, el del formulario 'Asignar Clase')."""
+
         cascada_seccion_por_curso(self.filtro_horarios_curso, self.filtro_horarios_seccion, incluir_todas=True)
         self._filtro_horarios_cambio()
 
     def _filtro_horarios_cambio(self):
+
         self.paginacion_horarios.reiniciar()
         self._cargar_horarios()
 
     def _cargar_horarios(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT horarios.*, grados.nombre as grado_nombre, secciones.nombre as seccion_nombre,
@@ -2150,7 +2223,7 @@ class ModuloMaterias(QWidget):
                 f"{f['grado_nombre']} {f['seccion_nombre']} {f['materia_nombre']} {f['dia']} {f['aula_nombre']}")]
 
         self.paginacion_horarios.establecer_total(len(filas))
-        inicio, fin = self.paginacion_horarios.rango_actual()
+        inicio, fin= self.paginacion_horarios.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_horarios):
             self.tabla_horarios.setRowCount(len(pagina))
@@ -2167,6 +2240,7 @@ class ModuloMaterias(QWidget):
             ajustar_anchos_columnas(self.tabla_horarios)
 
     def _tab_asignaciones(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(4, 12, 4, 4)
@@ -2180,7 +2254,7 @@ class ModuloMaterias(QWidget):
         desc.setObjectName("DescModulo")
         desc.setWordWrap(True)
         l.addWidget(desc)
-        frame_form, form = self._tarjeta_formulario("Nueva Asignación")
+        frame_form, form= self._tarjeta_formulario("Nueva Asignación")
         self.ap_materia= QComboBox()
         conectar_tooltip_seleccion(self.ap_materia, "Materia académica a la que se asigna este co-docente")
         #Igual que en Horarios: primero se elige el Grado/Curso (opcional) y eso acota las opciones de Sección, en vez
@@ -2251,8 +2325,8 @@ class ModuloMaterias(QWidget):
         fila_filtro_tecnico_asignacion.addStretch()
         self._envolver_en_panel(l, "Nueva Asignación", frame_filtro_tecnico_asignacion, frame_form)
 
-        frame_resultados, lr = self._tarjeta_resultados()
-        barra_busqueda, self.busq_asignaciones = self._barra_busqueda(
+        frame_resultados, lr= self._tarjeta_resultados()
+        barra_busqueda, self.busq_asignaciones= self._barra_busqueda(
             "Buscar por materia, sección, profesor o tipo…", self._filtro_asignaciones_cambio)
 
         #--- Ventana de filtros (Tipo de asignación) ---
@@ -2326,6 +2400,7 @@ class ModuloMaterias(QWidget):
         return w
 
     def _al_cambiar_curso_asignacion(self, _indice=None, seccion_id_preseleccionar=None):
+
         cascada_seccion_por_curso(self.ap_curso, self.ap_seccion, incluir_todas=False)
 
         especialidad_id= self.ap_filtro_especialidad.currentData() if self._es_politecnico() else None
@@ -2362,10 +2437,11 @@ class ModuloMaterias(QWidget):
             idx= self.ap_seccion.findData(seccion_id_preseleccionar)
             self.ap_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
+    #Igual que en Estudiantes: los combos de Área Técnica y Carrera de
+    #'Asignar Profesor' solo se muestran/pueblan si la institución tiene
+    #ese módulo activo.
     def _cargar_filtro_tecnico_asignacion(self):
-        """Igual que en Estudiantes: los combos de Área Técnica y Carrera de
-        'Asignar Profesor' solo se muestran/pueblan si la institución tiene
-        ese módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_asignacion.setVisible(es_poli)
         self.ap_filtro_especialidad.setVisible(es_poli)
@@ -2403,6 +2479,7 @@ class ModuloMaterias(QWidget):
             self.ap_filtro_carrera.blockSignals(False)
 
     def _limpiar_asignacion(self):
+
         self.ap_materia.setCurrentIndex(0)
         if hasattr(self, "ap_filtro_especialidad"):
             self.ap_filtro_especialidad.setCurrentIndex(0)
@@ -2418,9 +2495,10 @@ class ModuloMaterias(QWidget):
         if hasattr(self, "btn_guardar_asignacion"):
             self.btn_guardar_asignacion.setText("Asignar Co-Docente")
 
+    #Carga la asignación de co-docente seleccionada en el formulario
+    #(arriba) para poder editarla y guardarla con 'Actualizar'.
     def _cargar_asignacion_seleccionada(self):
-        """Carga la asignación de co-docente seleccionada en el formulario
-        (arriba) para poder editarla y guardarla con 'Actualizar'."""
+
         fila= self.tabla_asignaciones.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una asignación de la tabla.", self)
@@ -2462,6 +2540,7 @@ class ModuloMaterias(QWidget):
         activar_modo_edicion(self.ap_materia, f"Editando asignación #{id_asig}")
 
     def _guardar_asignacion(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no puede asignar co-docentes.", self)
             return
@@ -2506,6 +2585,7 @@ class ModuloMaterias(QWidget):
         self._cargar_asignaciones()
 
     def _eliminar_asignacion(self):
+
         fila= self.tabla_asignaciones.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una asignación de la tabla.", self)
@@ -2522,10 +2602,12 @@ class ModuloMaterias(QWidget):
         self._cargar_asignaciones()
 
     def _filtro_asignaciones_cambio(self):
+
         self.paginacion_asignaciones.reiniciar()
         self._cargar_asignaciones()
 
     def _cargar_asignaciones(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT materia_profesores.id, materias.nombre as materia_nombre,
@@ -2550,7 +2632,7 @@ class ModuloMaterias(QWidget):
                 f"{f['materia_nombre']} {f['grado_nombre'] or ''} {f['seccion_nombre'] or 'Todas sus secciones'} "
                 f"{f['profesor_nombre']} {f['tipo_asignacion']}")]
         self.paginacion_asignaciones.establecer_total(len(filas))
-        inicio, fin = self.paginacion_asignaciones.rango_actual()
+        inicio, fin= self.paginacion_asignaciones.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_asignaciones):
             self.tabla_asignaciones.setRowCount(len(pagina))
@@ -2566,6 +2648,7 @@ class ModuloMaterias(QWidget):
             ajustar_anchos_columnas(self.tabla_asignaciones)
 
     def _cargar_combos(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         self.s_especialidad.clear()
@@ -2632,6 +2715,7 @@ class ModuloMaterias(QWidget):
         conn.close()
 
     def refrescar(self):
+
         self._actualizar_visibilidad_modelo_evaluacion()
         #Igual que ya hace Estudiantes (tabla.setColumnHidden 7/8 según _es_politecnico/_es_universidad): en una
         #institución que no es Politécnico ni Universidad (p. ej. una Escuela normal, o un Personalizado sin esos

@@ -317,6 +317,7 @@ class EditorSecuenciaST(QDialog):
     def _guardar(self):
 
         try:
+
             self.secuencia_id= logica.guardar_secuencia(
                 self._datos(), tareas_ids=self._tareas_marcadas(), sesiones=self.tabla_sesiones.sesiones(),
                 secuencia_id=self.secuencia_id, main_window=self.main_window)
@@ -441,6 +442,7 @@ class ModuloSecuenciasST(QWidget):
         conn= bd_single_teacher.obtener_conexion(self.main_window)
 
         try:
+
             for fila in conn.execute("SELECT id, nombre FROM materias ORDER BY nombre"):
                 self.combo_materia.addItem(fila["nombre"], fila["id"])
 
@@ -541,7 +543,7 @@ class ModuloSecuenciasST(QWidget):
         #el título se vuelve un nombre de archivo válido: lo que no es letra, número, espacio, _ o - pasa a _
         nombre_sugerido= "".join(letra if letra.isalnum() or letra in " _-" else "_" for letra in secuencia["titulo"]).strip() or "secuencia"
 
-        ruta, _ = QFileDialog.getSaveFileName(
+        ruta, _= QFileDialog.getSaveFileName(
             self, "Exportar secuencia", os.path.join(os.path.expanduser("~"), nombre_sugerido + ".docx"),
             "Documento de Word (*.docx)")
 
@@ -552,6 +554,7 @@ class ModuloSecuenciasST(QWidget):
             ruta += ".docx"
 
         try:
+
             logica.exportar_docx(secuencia_id, ruta, self.main_window)
 
         except Exception as error:

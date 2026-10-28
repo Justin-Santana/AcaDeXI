@@ -1,31 +1,30 @@
-"""Asistente de Configuración — Sincronización Directa (Fase B) de AcaDeXI.
-
-Guía paso a paso, dentro de la aplicación, para conectar uno de los métodos
-avanzados (Google Drive, Dropbox, OneDrive o Servidor institucional propio).
-Es un complemento visual a sync_backends.py: aquí solo se explica y se
-recolectan credenciales; la lógica de conexión real vive en ese módulo.
-
-Se abre desde Sincronización ▸ botón "🧭 Asistente de Configuración".
-
---------------------------------------------------------------------------
-Capa visual: en vez de radio-buttons sueltos, la primera página usa
-tarjetas seleccionables con un indicador circular pintado a mano; cada
-página de backend usa una tarjeta de estado animada (spinner + sello ✓/✕
-pintados con QPainter) en vez de una etiqueta de texto plano; y las
-llamadas de red/OAuth de cada backend corren en un hilo aparte para que la
-ventana nunca se congele mientras se espera una respuesta (el flujo de
-OneDrive, por ejemplo, puede tardar minutos en lo que el usuario confirma
-en el navegador). El resto de la lógica de datos es la misma de siempre.
-
-Nota sobre los textos largos: antes las explicaciones extensas se pasaban
-a setSubTitle(), que en QWizard usa una franja de altura fija de una sola
-línea — el texto se veía cortado hasta que el usuario agrandaba la
-ventana manualmente. Ahora los subtítulos son frases cortas y el texto
-extenso vive en etiquetas con salto de línea (word-wrap) dentro del
-cuerpo de cada página, que siempre se ve completo sin importar el tamaño
-de la ventana.
---------------------------------------------------------------------------
-"""
+#Asistente de Configuración — Sincronización Directa (Fase B) de AcaDeXI.
+#
+#Guía paso a paso, dentro de la aplicación, para conectar uno de los métodos
+#avanzados (Google Drive, Dropbox, OneDrive o Servidor institucional propio).
+#Es un complemento visual a sync_backends.py: aquí solo se explica y se
+#recolectan credenciales; la lógica de conexión real vive en ese módulo.
+#
+#Se abre desde Sincronización ▸ botón "🧭 Asistente de Configuración".
+#
+# -----------------------------------------
+# capa visual: en vez de radio-buttons sueltos, la primera página usa
+# -----------------------------------------
+#tarjetas seleccionables con un indicador circular pintado a mano; cada
+#página de backend usa una tarjeta de estado animada (spinner + sello ✓/✕
+#pintados con QPainter) en vez de una etiqueta de texto plano; y las
+#llamadas de red/OAuth de cada backend corren en un hilo aparte para que la
+#ventana nunca se congele mientras se espera una respuesta (el flujo de
+#OneDrive, por ejemplo, puede tardar minutos en lo que el usuario confirma
+#en el navegador). El resto de la lógica de datos es la misma de siempre.
+#
+#Nota sobre los textos largos: antes las explicaciones extensas se pasaban
+#a setSubTitle(), que en QWizard usa una franja de altura fija de una sola
+#línea — el texto se veía cortado hasta que el usuario agrandaba la
+#ventana manualmente. Ahora los subtítulos son frases cortas y el texto
+#extenso vive en etiquetas con salto de línea (word-wrap) dentro del
+#cuerpo de cada página, que siempre se ve completo sin importar el tamaño
+#de la ventana.
 import webbrowser
 
 from PySide6.QtWidgets import (QWizard, QWizardPage, QWidget, QVBoxLayout, QHBoxLayout,
@@ -49,11 +48,12 @@ ID_SERVIDOR= 4
 ID_FINAL= 5
 
 
+#Colores del tema activo de la app (mismo criterio que
+#ModuloSincronizacion._paleta), para que el asistente combine con el modo
+#claro/oscuro. Si no hay ventana principal disponible, usa una paleta
+#neutra por defecto.
 def _paleta(main_window):
-    """Colores del tema activo de la app (mismo criterio que
-    ModuloSincronizacion._paleta), para que el asistente combine con el modo
-    claro/oscuro. Si no hay ventana principal disponible, usa una paleta
-    neutra por defecto."""
+
     paletas= getattr(main_window, "theme_palettes", None)
     tema= getattr(main_window, "tema_actual", None)
     if not paletas or tema not in paletas:
@@ -67,6 +67,7 @@ def _paleta(main_window):
 
 
 def _estilo_asistente(paleta):
+
     p= paleta
     accent= p["accent"]
     return f"""
@@ -105,6 +106,7 @@ def _estilo_asistente(paleta):
 
 
 def _etiqueta_explicativa(texto):
+
     lbl= QLabel(texto)
     lbl.setWordWrap(True)
     lbl.setTextFormat(Qt.TextFormat.RichText)
@@ -113,12 +115,13 @@ def _etiqueta_explicativa(texto):
 
 
 #Indicador de selección (radio circular pintado a mano)
+#Punto de selección tipo radio, dibujado con QPainter. El relleno
+#interior aparece con una pequeña animación de 'pop' al marcarse, en vez
+#de aparecer o desaparecer de golpe.
 class _IndicadorRadio(QWidget):
-    """Punto de selección tipo radio, dibujado con QPainter. El relleno
-    interior aparece con una pequeña animación de 'pop' al marcarse, en vez
-    de aparecer o desaparecer de golpe."""
 
     def __init__(self, color="#6366F1", parent=None):
+
         super().__init__(parent)
         self.setFixedSize(22, 22)
         self._color= QColor(color)
@@ -128,15 +131,18 @@ class _IndicadorRadio(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutBack)
 
     def _leer_progreso(self):
+
         return self._progreso
 
     def _poner_progreso(self, valor):
+
         self._progreso= valor
         self.update()
 
     progreso= Property(float, _leer_progreso, _poner_progreso)
 
     def poner_marcado(self, marcado, animar=True):
+
         self._anim.stop()
         destino= 1.0 if marcado else 0.0
         if not animar:
@@ -148,6 +154,7 @@ class _IndicadorRadio(QWidget):
         self._anim.start()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         margen= 2.0
@@ -166,13 +173,14 @@ class _IndicadorRadio(QWidget):
 
 
 #Tarjeta de método (reemplaza los QRadioButton sueltos de la intro)
+#Tarjeta seleccionable con icono, título y descripción corta, con
+#una sombra que 'respira' al pasar el mouse y un rebote al hacer clic.
 class _TarjetaMetodo(QFrame):
-    """Tarjeta seleccionable con icono, título y descripción corta, con
-    una sombra que 'respira' al pasar el mouse y un rebote al hacer clic."""
 
     clicked= Signal()
 
     def __init__(self, icono, titulo, subtitulo, color, paleta, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaMetodo")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -211,6 +219,7 @@ class _TarjetaMetodo(QFrame):
         self._aplicar_estilo()
 
     def _aplicar_estilo(self):
+
         p= self._paleta
         if self._marcada:
             fondo= _hex_a_rgba(self._color, 0.12)
@@ -234,6 +243,7 @@ class _TarjetaMetodo(QFrame):
         """)
 
     def _animar_sombra(self, destino):
+
         anim= QPropertyAnimation(self._sombra, b"blurRadius", self)
         anim.setDuration(200)
         anim.setStartValue(self._sombra.blurRadius())
@@ -242,22 +252,26 @@ class _TarjetaMetodo(QFrame):
         anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
     def poner_marcada(self, marcada, animar=True):
+
         self._marcada= marcada
         self._aplicar_estilo()
         self.indicador.poner_marcado(marcada, animar=animar)
         self._animar_sombra(26 if marcada else 0)
 
     def enterEvent(self, event):
+
         super().enterEvent(event)
         if not self._marcada:
             self._animar_sombra(14)
 
     def leaveEvent(self, event):
+
         super().leaveEvent(event)
         if not self._marcada:
             self._animar_sombra(0)
 
     def mousePressEvent(self, event):
+
         super().mousePressEvent(event)
         _animar_click(self)
         self.clicked.emit()
@@ -265,6 +279,7 @@ class _TarjetaMetodo(QFrame):
 
 #PÁGINA 0: introducción y selección de método
 class PaginaIntro(QWizardPage):
+
     METODOS_INFO= [
         ("google_drive", "☁", "Google Drive",
          "Recomendado si tu institución ya usa Google Workspace.", "#22C55E"),
@@ -277,6 +292,7 @@ class PaginaIntro(QWizardPage):
     ]
 
     def __init__(self, main_window=None):
+
         super().__init__()
         self.setTitle("Sincronización Directa")
         self.setSubTitle("Elige qué método quieres configurar en este equipo.")
@@ -301,6 +317,7 @@ class PaginaIntro(QWizardPage):
         layout.addStretch()
 
     def _seleccionar(self, clave):
+
         if clave == self._metodo_seleccionado:
             return
         self._metodo_seleccionado= clave
@@ -308,16 +325,18 @@ class PaginaIntro(QWizardPage):
             tarjeta.poner_marcada(cl == clave)
 
     def nextId(self):
+
         return {"google_drive": ID_GOOGLE, "dropbox": ID_DROPBOX,
                 "onedrive": ID_ONEDRIVE, "servidor": ID_SERVIDOR}[self._metodo_seleccionado]
 
 
 #SELLO ✓ / ✕ pintado a mano (para la tarjeta de estado)
+#Círculo con una marca ✓ o ✕ dibujada con QPainter, con una pequeña
+#animación de aparición (escala) en vez de aparecer de golpe.
 class _IconoEstadoPintado(QWidget):
-    """Círculo con una marca ✓ o ✕ dibujada con QPainter, con una pequeña
-    animación de aparición (escala) en vez de aparecer de golpe."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(20, 20)
         self._tipo= None  #None | "ok" | "error"
@@ -328,15 +347,18 @@ class _IconoEstadoPintado(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutBack)
 
     def _leer_escala(self):
+
         return self._escala
 
     def _poner_escala(self, valor):
+
         self._escala= valor
         self.update()
 
     escala= Property(float, _leer_escala, _poner_escala)
 
     def mostrar(self, tipo):
+
         self._tipo= tipo
         self._color= QColor("#22C55E" if tipo == "ok" else "#EF4444")
         self._anim.stop()
@@ -345,17 +367,19 @@ class _IconoEstadoPintado(QWidget):
         self._anim.start()
 
     def limpiar(self):
+
         self._anim.stop()
         self._tipo= None
         self._escala= 0.0
         self.update()
 
     def paintEvent(self, event):
+
         if not self._tipo or self._escala <= 0.001:
             return
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        cx, cy = self.width() / 2, self.height() / 2
+        cx, cy= self.width() / 2, self.height() / 2
         radio= (self.width() / 2 - 1) * self._escala
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(self._color))
@@ -376,12 +400,13 @@ class _IconoEstadoPintado(QWidget):
 
 
 #Tarjeta de estado de conexión (reemplaza el QLabel de texto plano)
+#Fila de estado animada para el resultado de una conexión: spinner
+#mientras corre en segundo plano, y un sello ✓/✕ pintado a mano cuando
+#termina.
 class _ChipEstado(QWidget):
-    """Fila de estado animada para el resultado de una conexión: spinner
-    mientras corre en segundo plano, y un sello ✓/✕ pintado a mano cuando
-    termina."""
 
     def __init__(self, color_acento="#6366F1", parent=None):
+
         super().__init__(parent)
         layout= QHBoxLayout(self)
         layout.setContentsMargins(0, 4, 0, 4)
@@ -396,11 +421,13 @@ class _ChipEstado(QWidget):
         self.hide()
 
     def ocioso(self):
+
         self._spinner.detener()
         self._icono.limpiar()
         self.hide()
 
     def conectando(self, texto="Conectando…"):
+
         self._icono.limpiar()
         self._lbl.setStyleSheet("color: #64748B; font-weight: 600; background: transparent;")
         self._lbl.setText(texto)
@@ -409,6 +436,7 @@ class _ChipEstado(QWidget):
         self._spinner.iniciar()
 
     def ok(self, texto="Conectado correctamente."):
+
         self._spinner.detener()
         self._lbl.setStyleSheet("color: #16A34A; font-weight: 700; background: transparent;")
         self._lbl.setText(texto)
@@ -416,6 +444,7 @@ class _ChipEstado(QWidget):
         self._icono.mostrar("ok")
 
     def error(self, texto):
+
         self._spinner.detener()
         self._lbl.setStyleSheet("color: #DC2626; font-weight: 700; background: transparent;")
         self._lbl.setText(texto)
@@ -424,15 +453,16 @@ class _ChipEstado(QWidget):
 
 
 #Base común de las páginas de backend (conexión sin congelar la ventana)
+#Agrega a QWizardPage el manejo común de 'conectar en segundo plano':
+#antes, las llamadas de red/OAuth de cada backend corrían directo en el
+#hilo de la interfaz y podían congelar el asistente varios segundos —o
+#minutos, en el caso del flujo de código de dispositivo de OneDrive—.
+#Ahora corren en un QThread aparte y la ventana se mantiene fluida,
+#mostrando una tarjeta de estado animada mientras tanto.
 class _PaginaConectable(QWizardPage):
-    """Agrega a QWizardPage el manejo común de 'conectar en segundo plano':
-    antes, las llamadas de red/OAuth de cada backend corrían directo en el
-    hilo de la interfaz y podían congelar el asistente varios segundos —o
-    minutos, en el caso del flujo de código de dispositivo de OneDrive—.
-    Ahora corren en un QThread aparte y la ventana se mantiene fluida,
-    mostrando una tarjeta de estado animada mientras tanto."""
 
     def __init__(self, color_acento="#6366F1"):
+
         super().__init__()
         self._conectado= False
         self._hilo= None
@@ -441,10 +471,12 @@ class _PaginaConectable(QWizardPage):
         self.chip= _ChipEstado(color_acento)
 
     def _registrar_boton(self, boton):
+
         boton.setObjectName("BtnConectarAsistente")
         self._botones_a_bloquear.append(boton)
 
     def _ejecutar_en_hilo(self, funcion, al_terminar, texto_conectando="Conectando…"):
+
         if self._hilo is not None and self._hilo.isRunning():
             return
         for b in self._botones_a_bloquear:
@@ -453,6 +485,7 @@ class _PaginaConectable(QWizardPage):
         self._hilo= _HiloOperacionSync(funcion, self)
 
         def _listo(resultado, error):
+
             for b in self._botones_a_bloquear:
                 b.setEnabled(True)
             al_terminar(resultado, error)
@@ -461,15 +494,19 @@ class _PaginaConectable(QWizardPage):
         self._hilo.start()
 
     def isComplete(self):
+
         return self._conectado
 
     def nextId(self):
+
         return ID_FINAL
 
 
 #Página: Google Drive
 class PaginaGoogle(_PaginaConectable):
+
     def __init__(self):
+
         super().__init__(color_acento="#22C55E")
         self.setTitle("Google Drive")
         self.setSubTitle("Crea una app OAuth propia y conéctala aquí.")
@@ -516,6 +553,7 @@ class PaginaGoogle(_PaginaConectable):
         self.registerField("google_client_secret", self.in_client_secret)
 
     def _conectar(self):
+
         client_id= self.in_client_id.text().strip()
         client_secret= self.in_client_secret.text().strip()
         if not client_id or not client_secret:
@@ -526,6 +564,7 @@ class PaginaGoogle(_PaginaConectable):
                         "después de aceptar.", self)
 
         def _al_terminar(resultado, error):
+
             if error is not None:
                 self.chip.error(f"No se pudo conectar: {error}")
                 return
@@ -539,7 +578,9 @@ class PaginaGoogle(_PaginaConectable):
 
 #Página: Dropbox
 class PaginaDropbox(_PaginaConectable):
+
     def __init__(self):
+
         super().__init__(color_acento="#3B82F6")
         self.setTitle("Dropbox")
         self.setSubTitle("Registra una app en Dropbox y conéctala aquí.")
@@ -586,18 +627,20 @@ class PaginaDropbox(_PaginaConectable):
         self.registerField("dropbox_secret", self.in_secret)
 
     def _conectar(self):
+
         app_key= self.in_key.text().strip()
         app_secret= self.in_secret.text().strip()
         if not app_key or not app_secret:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa el App Key y App Secret.", self)
             return
         try:
-            flow, url = avanzado.dropbox_conectar(app_key, app_secret)
+
+            flow, url= avanzado.dropbox_conectar(app_key, app_secret)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo iniciar la conexión:\n{e}", self)
             return
         webbrowser.open(url)
-        codigo, ok = QInputDialog.getText(
+        codigo, ok= QInputDialog.getText(
             self, "Conectar Dropbox",
             f"Se abrió tu navegador para autorizar el acceso.\nSi no se abrió, visita:\n{url}\n\n"
             "Pega aquí el código de autorización que te muestra Dropbox:")
@@ -605,6 +648,7 @@ class PaginaDropbox(_PaginaConectable):
             return
 
         def _al_terminar(resultado, error):
+
             if error is not None:
                 self.chip.error(f"No se pudo completar la conexión: {error}")
                 return
@@ -619,7 +663,9 @@ class PaginaDropbox(_PaginaConectable):
 
 #Página: OneDrive
 class PaginaOneDrive(_PaginaConectable):
+
     def __init__(self):
+
         super().__init__(color_acento="#0EA5E9")
         self.setTitle("OneDrive / Microsoft 365")
         self.setSubTitle("Registra una app en Microsoft Entra ID y conéctala aquí.")
@@ -662,16 +708,18 @@ class PaginaOneDrive(_PaginaConectable):
         self.registerField("onedrive_client_id", self.in_client_id)
 
     def _conectar(self):
+
         client_id= self.in_client_id.text().strip()
         if not client_id:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa el Client ID.", self)
             return
 
         def _tras_iniciar(resultado, error):
+
             if error is not None:
                 self.chip.error(f"No se pudo iniciar la conexión: {error}")
                 return
-            app, flujo = resultado
+            app, flujo= resultado
             self.chip.ocioso()
             if mostrar_mensaje("pregunta", "Conectar OneDrive",
                     f"{flujo['message']}\n\n¿Ya completaste el inicio de sesión en el navegador?",
@@ -679,6 +727,7 @@ class PaginaOneDrive(_PaginaConectable):
                 return
 
             def _tras_finalizar(resultado2, error2):
+
                 if error2 is not None:
                     self.chip.error(f"No se pudo completar la conexión: {error2}")
                     return
@@ -695,7 +744,9 @@ class PaginaOneDrive(_PaginaConectable):
 
 #Página: servidor institucional
 class PaginaServidor(_PaginaConectable):
+
     def __init__(self, main_window=None):
+
         super().__init__(color_acento="#F59E0B")
         self._main_window= main_window
         self.setTitle("Servidor Institucional Propio")
@@ -756,9 +807,11 @@ class PaginaServidor(_PaginaConectable):
         self.registerField("servidor_token", self.in_token)
 
     def _exportar(self):
+
         exportar_paquete_servidor(self._main_window, self)
 
     def _conectar(self):
+
         url= self.in_url.text().strip()
         token= self.in_token.text().strip()
         if not url or not token:
@@ -766,6 +819,7 @@ class PaginaServidor(_PaginaConectable):
             return
 
         def _al_terminar(resultado, error):
+
             if error is not None:
                 self.chip.error(f"No se pudo conectar: {error}")
                 return
@@ -779,7 +833,9 @@ class PaginaServidor(_PaginaConectable):
 
 #Página final
 class PaginaFinal(QWizardPage):
+
     def __init__(self):
+
         super().__init__()
         self.setTitle("Listo")
         self.setSubTitle("La conexión quedó guardada en este equipo.")
@@ -794,12 +850,15 @@ class PaginaFinal(QWizardPage):
         layout.addStretch()
 
     def nextId(self):
+
         return -1
 
 
 #ASISTENTE (QWizard)
 class AsistenteSincronizacion(QWizard):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.setWindowTitle("Asistente de Configuración — Sincronización Directa")
         aplicar_icono_ventana(self, ICONO_ASISTENTE)
@@ -826,6 +885,7 @@ class AsistenteSincronizacion(QWizard):
                 boton.pressed.connect(lambda b=boton: _animar_click(b))
 
     def _al_cambiar_pagina(self, _id):
+
         pagina= self.currentPage()
         if pagina is not None:
             _fundido_entrada(pagina, duracion=240)

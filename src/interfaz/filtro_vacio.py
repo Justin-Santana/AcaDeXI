@@ -1,5 +1,6 @@
-#-----------------------------------------
-#estado vacío para tablas con filtro obligatorio
+# -----------------------------------------
+# estado vacío para tablas con filtro obligatorio
+# -----------------------------------------
 #Cuando la tabla depende de un filtro que el usuario todavía no eligió (curso, materia, rango de
 #fechas), antes quedaba vacía sin decir nada y parecía que no había datos o que había fallado la
 #carga. Este módulo pone encima de la tabla un cartel centrado con un icono y un texto, que se
@@ -9,7 +10,6 @@
 #self.estado_vacio= EstadoVacioFiltro(self.tabla)
 #y después, cada vez que se repuebla según el filtro:
 #self.estado_vacio.actualizar(hay_filtro_elegido=curso_id is not None)
-#-----------------------------------------
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from PySide6.QtCore import Qt
 

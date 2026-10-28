@@ -1,9 +1,8 @@
-"""Diálogos reutilizables de "Intercambio entre ediciones" (ver
-intercambio_datos.py). Un solo lugar para la UI de exportar/importar
-paquetes .acdxpkg, usado tanto desde estudiantes.py como desde
-calificaciones.py -y disponible para cualquier otro módulo que en el futuro
-quiera sumarse (Asistencia, Banco de Tareas...) sin reinventar el diálogo.
-"""
+#Diálogos reutilizables de "Intercambio entre ediciones" (ver
+#intercambio_datos.py). Un solo lugar para la UI de exportar/importar
+#paquetes .acdxpkg, usado tanto desde estudiantes.py como desde
+#calificaciones.py -y disponible para cualquier otro módulo que en el futuro
+#quiera sumarse (Asistencia, Banco de Tareas...) sin reinventar el diálogo.
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog, QComboBox
 from PySide6.QtCore import QSize
 
@@ -13,6 +12,7 @@ from src.nucleo import intercambio_datos as intercambio
 
 
 def _edicion_legible(codigo):
+
     return {
         "full": "AcaDeXI (Admin/Director)",
         "docentes": "AcaDeXI Docentes",
@@ -21,12 +21,14 @@ def _edicion_legible(codigo):
     }.get(codigo, codigo)
 
 
+#Secciones/cursos disponibles como destino de importación en ESTA
+#instalación, sin importar la edición: consulta bd.py (full/docentes) o
+#bd_single_teacher.py (single_teacher) según corresponda, y devuelve
+#[(id, etiqueta), ...]. side_stepper reutiliza el esquema de bd.py.
 def _listar_secciones_destino(main_window):
-    """Secciones/cursos disponibles como destino de importación en ESTA
-    instalación, sin importar la edición: consulta bd.py (full/docentes) o
-    bd_single_teacher.py (single_teacher) según corresponda, y devuelve
-    [(id, etiqueta), ...]. side_stepper reutiliza el esquema de bd.py."""
+
     try:
+
         from src.nucleo.edicion import edicion_actual
         edicion= edicion_actual()
     except Exception:
@@ -51,7 +53,9 @@ def _listar_secciones_destino(main_window):
 
 
 class _DialogoBase(QDialog):
+
     def __init__(self, titulo, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle(titulo)
         aplicar_icono_ventana(self)
@@ -63,7 +67,9 @@ class _DialogoBase(QDialog):
 
 #ESTUDIANTES
 class DialogoExportarEstudiantes(_DialogoBase):
+
     def __init__(self, main_window, seccion_id_actual=None, parent=None):
+
         super().__init__("Exportar estudiantes a otra edición de AcaDeXI", parent)
         self.main_window= main_window
         self.seccion_id_actual= seccion_id_actual
@@ -95,7 +101,8 @@ class DialogoExportarEstudiantes(_DialogoBase):
         centrar_y_al_frente(self, parent)
 
     def _exportar(self):
-        ruta, _ = QFileDialog.getSaveFileName(
+
+        ruta, _= QFileDialog.getSaveFileName(
             self, "Guardar paquete de estudiantes", "estudiantes" + intercambio.EXTENSION,
             f"Paquete AcaDeXI (*{intercambio.EXTENSION})")
         if not ruta:
@@ -103,6 +110,7 @@ class DialogoExportarEstudiantes(_DialogoBase):
         if not ruta.endswith(intercambio.EXTENSION):
             ruta += intercambio.EXTENSION
         try:
+
             n= intercambio.exportar_estudiantes(self.main_window, ruta, seccion_id=self.seccion_id_actual)
             mostrar_mensaje("exito", "Exportado",
                              f"Se exportaron {n} estudiante(s) a:\n{ruta}", self)
@@ -112,7 +120,9 @@ class DialogoExportarEstudiantes(_DialogoBase):
 
 
 class DialogoImportarEstudiantes(_DialogoBase):
+
     def __init__(self, main_window, parent=None):
+
         super().__init__("Importar estudiantes desde otra edición de AcaDeXI", parent)
         self.main_window= main_window
         self.ruta_seleccionada= None
@@ -156,17 +166,20 @@ class DialogoImportarEstudiantes(_DialogoBase):
         centrar_y_al_frente(self, parent)
 
     def _elegir_archivo(self):
-        ruta, _ = QFileDialog.getOpenFileName(
+
+        ruta, _= QFileDialog.getOpenFileName(
             self, "Elegir paquete de estudiantes", "", f"Paquete AcaDeXI (*{intercambio.EXTENSION})")
         if ruta:
             self.ruta_seleccionada= ruta
             self.lbl_archivo.setText(f"Archivo: {ruta}")
 
     def _importar(self):
+
         if not self.ruta_seleccionada:
             mostrar_mensaje("advertencia", "Falta el archivo", "Elige primero un archivo .acdxpkg.", self)
             return
         try:
+
             resultado= intercambio.importar_estudiantes(
                 self.main_window, self.ruta_seleccionada,
                 seccion_id_destino= self.combo_seccion_destino.currentData())
@@ -179,7 +192,9 @@ class DialogoImportarEstudiantes(_DialogoBase):
 
 #CALIFICACIONES
 class DialogoExportarCalificaciones(_DialogoBase):
+
     def __init__(self, main_window, materia_id, materia_nombre, periodo_id=None, periodo_nombre="", parent=None):
+
         super().__init__("Exportar calificaciones a otra edición de AcaDeXI", parent)
         self.main_window= main_window
         self.materia_id= materia_id
@@ -213,7 +228,8 @@ class DialogoExportarCalificaciones(_DialogoBase):
         centrar_y_al_frente(self, parent)
 
     def _exportar(self):
-        ruta, _ = QFileDialog.getSaveFileName(
+
+        ruta, _= QFileDialog.getSaveFileName(
             self, "Guardar paquete de calificaciones", "calificaciones" + intercambio.EXTENSION,
             f"Paquete AcaDeXI (*{intercambio.EXTENSION})")
         if not ruta:
@@ -221,6 +237,7 @@ class DialogoExportarCalificaciones(_DialogoBase):
         if not ruta.endswith(intercambio.EXTENSION):
             ruta += intercambio.EXTENSION
         try:
+
             n= intercambio.exportar_calificaciones(self.main_window, ruta, self.materia_id, self.periodo_id)
             mostrar_mensaje("exito", "Exportado",
                              f"Se exportaron {n} calificación(es) a:\n{ruta}", self)
@@ -229,13 +246,15 @@ class DialogoExportarCalificaciones(_DialogoBase):
             mostrar_mensaje("error", "No se pudo exportar", str(e), self)
 
 
+#A diferencia de Estudiantes, aquí SIEMPRE se pide Materia y Periodo
+#DESTINO explícitos (ver intercambio_datos.importar_calificaciones): no
+#se intenta adivinar a cuál corresponden por nombre, para no arriesgar
+#mezclar calificaciones entre materias/periodos por una coincidencia de
+#texto accidental.
 class DialogoImportarCalificaciones(_DialogoBase):
-    """A diferencia de Estudiantes, aquí SIEMPRE se pide Materia y Periodo
-    DESTINO explícitos (ver intercambio_datos.importar_calificaciones): no
-    se intenta adivinar a cuál corresponden por nombre, para no arriesgar
-    mezclar calificaciones entre materias/periodos por una coincidencia de
-    texto accidental."""
+
     def __init__(self, main_window, combo_materia_origen, combo_periodo_origen, parent=None):
+
         super().__init__("Importar calificaciones desde otra edición de AcaDeXI", parent)
         self.main_window= main_window
         self.ruta_seleccionada= None
@@ -278,13 +297,15 @@ class DialogoImportarCalificaciones(_DialogoBase):
         centrar_y_al_frente(self, parent)
 
     def _elegir_archivo(self):
-        ruta, _ = QFileDialog.getOpenFileName(
+
+        ruta, _= QFileDialog.getOpenFileName(
             self, "Elegir paquete de calificaciones", "", f"Paquete AcaDeXI (*{intercambio.EXTENSION})")
         if ruta:
             self.ruta_seleccionada= ruta
             self.lbl_archivo.setText(f"Archivo: {ruta}")
 
     def _importar(self):
+
         materia_id= self._combo_materia_origen.currentData()
         periodo_id= self._combo_periodo_origen.currentData()
         if not self.ruta_seleccionada:
@@ -295,6 +316,7 @@ class DialogoImportarCalificaciones(_DialogoBase):
                              "Elige una Materia y un Periodo destino arriba antes de importar.", self)
             return
         try:
+
             resultado= intercambio.importar_calificaciones(
                 self.main_window, self.ruta_seleccionada, materia_id, periodo_id)
             texto= f"Importadas: {resultado['importadas']}"

@@ -9,13 +9,14 @@ from PySide6.QtGui import QIcon, QPixmap
 from src.nucleo.rutas import obtener_carpeta_iconos
 
 
-#-----------------------------------------
-#bus de eventos de exito
+# -----------------------------------------
+# bus de eventos de exito
+# -----------------------------------------
 #un solo objeto vivo durante toda la app. Se emite cada vez que un módulo reporta una operación
 #exitosa con mostrar_mensaje("exito", ...), y lo escucha tutoriales.py para saber que la acción
 #ocurrió de verdad, no que el usuario solo hizo clic en un botón.
-#-----------------------------------------
 class _BusEventosUI(QObject):
+
     exito_reportado= Signal(object, str, str)   #(parent, titulo, texto)
 
 
@@ -24,11 +25,11 @@ eventos_ui= _BusEventosUI()
 CARPETA_ICONOS= obtener_carpeta_iconos()
 
 
-#-----------------------------------------
-#carpetas donde puede estar la carpeta "iconos"
+# -----------------------------------------
+# carpetas donde puede estar la carpeta "iconos"
+# -----------------------------------------
 #en desarrollo es una sola; empaquetado con PyInstaller (--onedir) hay que probar también la
 #carpeta _internal que queda junto al .exe, sin importar en qué disco la instaló Inno Setup.
-#-----------------------------------------
 def _carpetas_candidatas_iconos():
 
     candidatas= [CARPETA_ICONOS]
@@ -58,11 +59,11 @@ def _carpetas_candidatas_iconos():
     return resultado
 
 
-#-----------------------------------------
-#iconos de la barra lateral
+# -----------------------------------------
+# iconos de la barra lateral
+# -----------------------------------------
 #viven en iconos/sidebar_icons/*.png y se resuelven con las mismas carpetas de arriba, así que
 #si "iconos" ya va empaquetada, la subcarpeta viaja sola sin tocar el instalador.
-#-----------------------------------------
 def _carpetas_candidatas_sidebar_icons():
 
     candidatas= [os.path.join(carpeta, "sidebar_icons") for carpeta in _carpetas_candidatas_iconos()]
@@ -137,6 +138,7 @@ def _indice_archivos_sidebar_icons():
             continue
 
         try:
+
             nombres= os.listdir(carpeta)
 
         except OSError:
@@ -175,15 +177,16 @@ def ruta_icono_sidebar(nombre_modulo):
     return None
 
 
-#-----------------------------------------
-#recortar el aire transparente del png
+# -----------------------------------------
+# recortar el aire transparente del png
+# -----------------------------------------
 #cada icono viene con una cantidad distinta de margen alrededor del dibujo, así que al escalarlos
 #a la misma caja unos se ven grandes y otros diminutos. Recortando primero al contenido real y
 #escalando después, todos ocupan la misma proporción del chip.
-#-----------------------------------------
 def _recortar_margen_transparente(ruta):
 
     try:
+
         from PIL import Image
 
         with Image.open(ruta) as imagen:
@@ -280,9 +283,9 @@ def aplicar_icono_cabecera(label, nombre_modulo, tamano=30):
     label.setPixmap(QPixmap())
 
 
-#-----------------------------------------
-#iconos de la app
-#-----------------------------------------
+# -----------------------------------------
+# iconos de la app
+# -----------------------------------------
 ICONO_APP= "schoolsys.ico"
 LOGO_APP_GRANDE= "AcaDeXI_logo.png"       #el escudo grande, no el .ico de la ventana
 
@@ -366,9 +369,9 @@ def aplicar_icono_ventana(ventana, icono=None):
     ventana.setWindowIcon(obtener_icono(icono) if icono else icono_app())
 
 
-#-----------------------------------------
-#centrar ventanas
-#-----------------------------------------
+# -----------------------------------------
+# centrar ventanas
+# -----------------------------------------
 #centra la ventana sobre su padre, o sobre la pantalla si no hay padre, y la trae al frente. Sin
 #lo de WindowStaysOnTopHint el diálogo podía abrirse detrás de la ventana y había que buscarlo.
 def _centrar_ventana(ventana, parent=None):
@@ -381,6 +384,7 @@ def _centrar_ventana(ventana, parent=None):
     if parent is not None:
 
         try:
+
             ventana_padre= parent.window()
             if ventana_padre is not None and ventana_padre.isVisible():
                 centro= ventana_padre.frameGeometry().center()
@@ -413,6 +417,7 @@ def centrar_y_al_frente(ventana, parent=None):
 
     #con una tabla en pantalla completa abierta se centra sobre ella, no sobre la ventana de atrás
     try:
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         activa= dialogo_pantalla_completa_activo()
         if activa is not None and activa.isVisible():
@@ -424,6 +429,7 @@ def centrar_y_al_frente(ventana, parent=None):
     if parent is not None:
 
         try:
+
             ventana_padre= parent.window()
             if ventana_padre is not None and ventana_padre.isVisible():
                 centro= ventana_padre.frameGeometry().center()
@@ -446,9 +452,9 @@ def centrar_y_al_frente(ventana, parent=None):
     ventana.activateWindow()
 
 
-#-----------------------------------------
-#mensajes al usuario
-#-----------------------------------------
+# -----------------------------------------
+# mensajes al usuario
+# -----------------------------------------
 #todos los avisos de la app pasan por acá: "info", "exito", "error", "advertencia" o "pregunta".
 #Toma el tema activo para que el cuadro respete el modo claro u oscuro, y devuelve lo que eligió
 #el usuario. Si hay una tabla en pantalla completa, el aviso cuelga de ese diálogo y no de la
@@ -465,6 +471,7 @@ def mostrar_mensaje(tipo, titulo, texto, parent=None):
     icono_qt, icono_archivo= mapa_icono.get(tipo, (QMessageBox.Icon.Information, ICONO_OK))
 
     try:
+
         from src.interfaz.paginacion import padre_de_dialogo
         parent= padre_de_dialogo(parent)
 
@@ -489,6 +496,7 @@ def mostrar_mensaje(tipo, titulo, texto, parent=None):
     if origen_tema is not None and hasattr(origen_tema, "theme_palettes"):
 
         try:
+
             paleta= origen_tema.theme_palettes.get(origen_tema.tema_actual, {})
             indice= 1 if getattr(origen_tema, "modo_oscuro", True) else 0
             fondo= paleta.get("display_bg", ("#FFFFFF", "#1E293B"))[indice]

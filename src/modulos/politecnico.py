@@ -33,12 +33,13 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, html_icono_emoji
 ESTADOS_PASANTIA= ["En curso", "Finalizada", "Suspendida"]
 
 
+#Muestra las horas acumuladas de una pasantía como '2 horas' (o
+#'1 hora' en singular) en vez del número "pelado" que se guarda en la
+#base de datos -mismo criterio que el sufijo " horas" del spinbox del
+#formulario, para que lo que se ve al registrar coincida con lo que se
+#ve luego en la tabla.
 def _formatear_horas(valor):
-    """Muestra las horas acumuladas de una pasantía como '2 horas' (o
-    '1 hora' en singular) en vez del número "pelado" que se guarda en la
-    base de datos -mismo criterio que el sufijo " horas" del spinbox del
-    formulario, para que lo que se ve al registrar coincida con lo que se
-    ve luego en la tabla."""
+
     n= valor or 0
     n= int(n) if float(n).is_integer() else n
     return f"{n} hora" if n == 1 else f"{n} horas"
@@ -63,12 +64,14 @@ SEGMENTOS_PASANTIAS= [
 ]
 
 
+#Lee la paleta/tema activo de la ventana principal (mismo criterio que
+#universidad.py) para que los elementos visuales de este módulo respeten
+#el tema y el modo claro/oscuro elegido, con un respaldo seguro si algo
+#no está disponible todavía.
 def _colores_tema_politecnico(main_window):
-    """Lee la paleta/tema activo de la ventana principal (mismo criterio que
-    universidad.py) para que los elementos visuales de este módulo respeten
-    el tema y el modo claro/oscuro elegido, con un respaldo seguro si algo
-    no está disponible todavía."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -85,12 +88,13 @@ def _colores_tema_politecnico(main_window):
 
 
 #Widgets dibujados a mano (reemplazan a las tarjetas KPI clásicas)
+#Círculo que muestra el color elegido para una especialidad, con un
+#pequeño 'rebote' animado cada vez que el color cambia — confirmación
+#visual inmediata en vez de un simple botón plano.
 class MuestraColor(QWidget):
-    """Círculo que muestra el color elegido para una especialidad, con un
-    pequeño 'rebote' animado cada vez que el color cambia — confirmación
-    visual inmediata en vez de un simple botón plano."""
 
     def __init__(self, color="#6366F1", parent=None):
+
         super().__init__(parent)
         self.setFixedSize(34, 34)
         self._color= QColor(color)
@@ -103,16 +107,19 @@ class MuestraColor(QWidget):
         self._anim.valueChanged.connect(self._on_anim)
 
     def _on_anim(self, v):
+
         self._escala= float(v)
         self.update()
 
     def establecer_color(self, color_hex):
+
         self._color= QColor(color_hex)
         self._anim.stop()
         self._anim.start()
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         lado= min(self.width(), self.height()) * self._escala
@@ -123,12 +130,13 @@ class MuestraColor(QWidget):
         painter.drawEllipse(rect)
 
 
+#Anillo (donut) animado dibujado con QPainter: reparte proporciones de
+#un círculo entre categorías con sus propios colores y 'se abre' con una
+#animación suave al cargar los datos, en vez de aparecer de golpe.
 class AnilloDonut(QWidget):
-    """Anillo (donut) animado dibujado con QPainter: reparte proporciones de
-    un círculo entre categorías con sus propios colores y 'se abre' con una
-    animación suave al cargar los datos, en vez de aparecer de golpe."""
 
     def __init__(self, etiqueta_central="", parent=None):
+
         super().__init__(parent)
         self._etiqueta_central= etiqueta_central
         self.setMinimumSize(150, 150)
@@ -147,16 +155,19 @@ class AnilloDonut(QWidget):
         self._anim.valueChanged.connect(self._on_anim)
 
     def _on_anim(self, v):
+
         self._progreso= float(v)
         self.update()
 
     def poner_colores(self, texto, sub, pista):
+
         self._color_texto= texto
         self._color_sub= sub
         self._color_pista= pista
         self.update()
 
     def establecer_datos(self, segmentos):
+
         self._segmentos= [s for s in segmentos if s["valor"] > 0]
         self._total= sum(s["valor"] for s in self._segmentos)
         self._anim.stop()
@@ -164,9 +175,11 @@ class AnilloDonut(QWidget):
         self._anim.start()
 
     def sizeHint(self):
+
         return QSize(165, 165)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         lado= min(self.width(), self.height()) - 16
@@ -215,16 +228,17 @@ class AnilloDonut(QWidget):
             painter.drawText(rect_sub, Qt.AlignmentFlag.AlignCenter, self._etiqueta_central)
 
 
+#Barra tipo cápsula que reparte su ancho proporcionalmente entre
+#categorías, con transición animada al cambiar los datos (sustituye a las
+#tarjetas KPI clásicas). Si `interactiva=True`, además se puede hacer clic
+#en un tramo para filtrar la tabla, con un tooltip al pasar el mouse.
 class BarraSegmentadaPill(QWidget):
-    """Barra tipo cápsula que reparte su ancho proporcionalmente entre
-    categorías, con transición animada al cambiar los datos (sustituye a las
-    tarjetas KPI clásicas). Si `interactiva=True`, además se puede hacer clic
-    en un tramo para filtrar la tabla, con un tooltip al pasar el mouse."""
 
     segmento_clicado= Signal(str)
     ALTURA= 26
 
     def __init__(self, interactiva=False, parent=None):
+
         super().__init__(parent)
         self._interactiva= interactiva
         self.setFixedHeight(self.ALTURA)
@@ -248,11 +262,13 @@ class BarraSegmentadaPill(QWidget):
         self._anim.valueChanged.connect(self._en_paso)
 
     def poner_colores(self, pista, borde):
+
         self._color_pista= pista
         self._color_borde= borde
         self.update()
 
     def establecer_datos(self, segmentos):
+
         self._segmentos= list(segmentos)
         total= sum(s["valor"] for s in self._segmentos) or 1
         self._fracciones_inicio= dict(self._fracciones)
@@ -262,6 +278,7 @@ class BarraSegmentadaPill(QWidget):
         self._anim.start()
 
     def _en_paso(self, t):
+
         for s in self._segmentos:
             clave= s["clave"]
             ini= self._fracciones_inicio.get(clave, 0.0)
@@ -270,10 +287,12 @@ class BarraSegmentadaPill(QWidget):
         self.update()
 
     def establecer_filtro_activo(self, claves_activas):
+
         self._claves_activas= set(claves_activas) if claves_activas else None
         self.update()
 
     def _segmento_en_x(self, x):
+
         if self.width() <= 0:
             return None
         acumulado= 0.0
@@ -287,6 +306,7 @@ class BarraSegmentadaPill(QWidget):
         return None
 
     def mouseMoveEvent(self, event):
+
         clave= self._segmento_en_x(event.position().x())
         if clave != self._segmento_hover:
             self._segmento_hover= clave
@@ -300,11 +320,13 @@ class BarraSegmentadaPill(QWidget):
         super().mouseMoveEvent(event)
 
     def leaveEvent(self, event):
+
         self._segmento_hover= None
         self.update()
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
+
         if self._interactiva and event.button() == Qt.MouseButton.LeftButton:
             clave= self._segmento_en_x(event.position().x())
             if clave:
@@ -312,6 +334,7 @@ class BarraSegmentadaPill(QWidget):
         super().mousePressEvent(event)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         radio= self.height() / 2
@@ -339,14 +362,15 @@ class BarraSegmentadaPill(QWidget):
         painter.drawPath(ruta)
 
 
+#Chip de leyenda con conteo animado; si es interactivo, se puede pulsar
+#para filtrar la tabla por esa categoría (mismo gesto que el tramo de la
+#barra al que acompaña).
 class ContadorClicable(QLabel):
-    """Chip de leyenda con conteo animado; si es interactivo, se puede pulsar
-    para filtrar la tabla por esa categoría (mismo gesto que el tramo de la
-    barra al que acompaña)."""
 
     clicada= Signal()
 
     def __init__(self, etiqueta_texto, color, interactiva=False, parent=None):
+
         super().__init__(parent)
         self._etiqueta= etiqueta_texto
         self._color= color
@@ -363,9 +387,11 @@ class ContadorClicable(QLabel):
         self.establecer_activa(False)
 
     def _refrescar_texto(self, valor):
+
         self.setText(f"●  <b>{valor}</b>  {self._etiqueta}")
 
     def establecer_valor(self, valor):
+
         self._anim.stop()
         self._anim.setStartValue(self._valor_actual)
         self._anim.setEndValue(valor)
@@ -373,6 +399,7 @@ class ContadorClicable(QLabel):
         self._valor_actual= valor
 
     def establecer_activa(self, activa):
+
         fondo= _hex_a_rgba(self._color, 0.16) if activa else "transparent"
         borde= self._color if activa else "transparent"
         self.setStyleSheet(f"""
@@ -387,16 +414,18 @@ class ContadorClicable(QLabel):
         """)
 
     def mousePressEvent(self, event):
+
         if self._interactiva and event.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
         super().mousePressEvent(event)
 
 
 #MÓDULO
+#Módulo condicional activado cuando tipo_institucion = 'Politécnico'.
 class ModuloPolitecnico(QWidget):
-    """Módulo condicional activado cuando tipo_institucion = 'Politécnico'."""
 
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion_empresa= None
@@ -417,6 +446,7 @@ class ModuloPolitecnico(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         #Módulo institucional del Politécnico (Áreas Técnicas, Empresas, Pasantías): exclusivo de roles gerenciales.
         self._titulo_modulo_atajos= "Politécnico"
         registrar_atajo(self, self.main_window, "Ctrl+G", "Guardar área técnica",
@@ -428,12 +458,13 @@ class ModuloPolitecnico(QWidget):
                          self._eliminar_especialidad)
         registrar_atajo(self, self.main_window, "F5", "Actualizar", self._cargar_especialidades)
 
+    #True si ya existe otra fila de `tabla` con el mismo `nombre`
+    #(comparado sin distinguir mayúsculas/acentos vía _normalizar).
+    #`filtro_extra`, si se pasa, es (condicion_sql, parametros) para acotar
+    #la comparación en vez de compararlo contra toda la tabla — por
+    #ejemplo, solo los módulos técnicos dentro de `materias`.
     def _nombre_duplicado(self, tabla, nombre, id_excluir=None, filtro_extra=None):
-        """True si ya existe otra fila de `tabla` con el mismo `nombre`
-        (comparado sin distinguir mayúsculas/acentos vía _normalizar).
-        `filtro_extra`, si se pasa, es (condicion_sql, parametros) para acotar
-        la comparación en vez de compararlo contra toda la tabla — por
-        ejemplo, solo los módulos técnicos dentro de `materias`."""
+
         conn= obtener_conexion()
         c= conn.cursor()
         query= f"SELECT id, nombre FROM {tabla}"
@@ -454,6 +485,7 @@ class ModuloPolitecnico(QWidget):
 
     #---------------- ESTRUCTURA GENERAL ----------------
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -493,6 +525,7 @@ class ModuloPolitecnico(QWidget):
         self.actualizar_tema()
 
     def _construir_cabecera(self):
+
         self.frame_cabecera= QFrame()
         self.frame_cabecera.setObjectName("CabeceraPolitecnico")
         cab= QHBoxLayout(self.frame_cabecera)
@@ -531,10 +564,11 @@ class ModuloPolitecnico(QWidget):
 
         return self.frame_cabecera
 
+    #Barra de búsqueda con lupa dibujada a mano e insensible a mayúsculas/
+    #acentos — mismo diseño y comportamiento que en Configuración, para que
+    #todos los módulos del sistema busquen exactamente igual.
     def _crear_barra_busqueda(self, placeholder, callback_filtro):
-        """Barra de búsqueda con lupa dibujada a mano e insensible a mayúsculas/
-        acentos — mismo diseño y comportamiento que en Configuración, para que
-        todos los módulos del sistema busquen exactamente igual."""
+
         marco= QFrame()
         marco.setObjectName("MarcoBusquedaPolitecnico")
         lay= QHBoxLayout(marco)
@@ -558,12 +592,13 @@ class ModuloPolitecnico(QWidget):
         self._iconos_busqueda.append(icono)
         return marco, campo
 
+    #Ventanita (no modal) de "☰ Filtros", mismo patrón que usan
+    #calendario.py/banco_tareas.py/calificaciones_tecnicas.py: devuelve
+    #(dialogo, grid) para que cada pestaña agregue sus propios combos.
+    #Todas comparten el objectName "DialogoFiltrosPoli" para heredar el
+    #mismo estilo del tema activo desde un solo lugar.
     def _crear_ventana_filtros(self, titulo_ventana, subtitulo):
-        """Ventanita (no modal) de "☰ Filtros", mismo patrón que usan
-        calendario.py/banco_tareas.py/calificaciones_tecnicas.py: devuelve
-        (dialogo, grid) para que cada pestaña agregue sus propios combos.
-        Todas comparten el objectName "DialogoFiltrosPoli" para heredar el
-        mismo estilo del tema activo desde un solo lugar."""
+
         dialogo= QDialog(self)
         dialogo.setObjectName("DialogoFiltrosPoli")
         dialogo.setWindowTitle(titulo_ventana)
@@ -604,9 +639,10 @@ class ModuloPolitecnico(QWidget):
         self._filas_botones_dialogo_filtros= getattr(self, "_filas_botones_dialogo_filtros", [])
         return dialogo, grid, lay_dialogo
 
+    #Agrega la fila de botones "✖ Limpiar filtros" / "Cerrar" al final
+    #de una ventana de filtros creada con `_crear_ventana_filtros`.
     def _cerrar_ventana_filtros(self, dialogo, lay_dialogo, callback_limpiar=None):
-        """Agrega la fila de botones "✖ Limpiar filtros" / "Cerrar" al final
-        de una ventana de filtros creada con `_crear_ventana_filtros`."""
+
         fila_botones= QHBoxLayout()
         if callback_limpiar is not None:
             btn_limpiar= QPushButton("Limpiar filtros")
@@ -625,13 +661,15 @@ class ModuloPolitecnico(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_ventana(self, dialogo):
+
         dialogo.show()
         dialogo.raise_()
         dialogo.activateWindow()
 
+    #Resplandor breve en la sombra de una tarjeta como confirmación
+    #visual tras guardar/eliminar (verde=éxito, rojo=aviso).
     def _destello(self, tarjeta, color_hex="#22C55E"):
-        """Resplandor breve en la sombra de una tarjeta como confirmación
-        visual tras guardar/eliminar (verde=éxito, rojo=aviso)."""
+
         if tarjeta is None or not hasattr(tarjeta, "_sombra"):
             return
         sombra= tarjeta._sombra
@@ -653,6 +691,7 @@ class ModuloPolitecnico(QWidget):
         self._anim_destello= grupo
 
     def _animar_valor_chip(self, chip, atributo, valor_final, formato):
+
         valor_inicial= getattr(self, atributo, 0)
         setattr(self, atributo, valor_final)
         if valor_inicial == valor_final:
@@ -668,6 +707,7 @@ class ModuloPolitecnico(QWidget):
         setattr(self, f"_anim_{atributo}", anim)
 
     def showEvent(self, event):
+
         super().showEvent(event)
         #Si el Dashboard pidió saltar directo a una pestaña (el selector
         #"Materias / Módulos" pone _pestana_pendiente_politecnico = 1 para
@@ -681,6 +721,7 @@ class ModuloPolitecnico(QWidget):
                 self.tabs.setCurrentIndex(pendiente)
 
     def _cambio_pestana(self, index):
+
         widget_actual= self.tabs.widget(index)
         if widget_actual is not None:
             _fundido_entrada(widget_actual, 240)
@@ -706,6 +747,7 @@ class ModuloPolitecnico(QWidget):
 
     #---------------- ESPECIALIDADES ----------------
     def _tab_especialidades(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
@@ -728,11 +770,13 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_especialidad= TarjetaSeccion("✏", "Nueva Área Técnica")
         form= QGridLayout()
         form.setSpacing(10)
-        self.e_nombre= QLineEdit(); self.e_nombre.setPlaceholderText("Nombre (ej. Informática)")
+        self.e_nombre= QLineEdit()
+        self.e_nombre.setPlaceholderText("Nombre (ej. Informática)")
         limitar_campo_texto(self.e_nombre, 300)
         self.e_nombre.setToolTip("Nombre del área técnica")
         self.e_nombre.textChanged.connect(self._actualizar_codigo_especialidad)
-        self.e_codigo= QLineEdit(); self.e_codigo.setPlaceholderText("Código (autogenerado)")
+        self.e_codigo= QLineEdit()
+        self.e_codigo.setPlaceholderText("Código (autogenerado)")
         limitar_campo_texto(self.e_codigo, 300)
         self.e_codigo.setReadOnly(True)
         self.e_codigo.setToolTip(
@@ -771,7 +815,7 @@ class ModuloPolitecnico(QWidget):
         fila_cabecera_tabla_especialidades= QHBoxLayout()
         fila_cabecera_tabla_especialidades.addStretch()
         self.tarjeta_tabla_especialidades.contenido.addLayout(fila_cabecera_tabla_especialidades)
-        marco_busqueda, self.in_buscar_especialidades = self._crear_barra_busqueda(
+        marco_busqueda, self.in_buscar_especialidades= self._crear_barra_busqueda(
             "Buscar por nombre o código…", self._filtro_especialidades_cambio)
         self.tarjeta_tabla_especialidades.contenido.addWidget(marco_busqueda)
 
@@ -837,6 +881,7 @@ class ModuloPolitecnico(QWidget):
         return w
 
     def _limpiar_especialidad(self):
+
         self.id_edicion_especialidad= None
         self.e_nombre.clear()
         self.e_codigo.clear()
@@ -847,10 +892,11 @@ class ModuloPolitecnico(QWidget):
         self.tabla_especialidades.clearSelection()
         desactivar_modo_edicion(self.e_nombre)
 
+    #Autocódigo con el mismo criterio que `_generar_codigo_materia` en
+    #materias.py: iniciales de hasta 3 palabras del nombre + sufijo
+    #numérico de 3 dígitos (p. ej. 'Informática' -> 'I-001').
     def _generar_codigo_especialidad(self, excluir_id=None):
-        """Autocódigo con el mismo criterio que `_generar_codigo_materia` en
-        materias.py: iniciales de hasta 3 palabras del nombre + sufijo
-        numérico de 3 dígitos (p. ej. 'Informática' -> 'I-001')."""
+
         nombre= self.e_nombre.text().strip()
         base= "".join(w[0] for w in nombre.upper().split()[:3]) or "ESP"
         conn= obtener_conexion()
@@ -868,6 +914,7 @@ class ModuloPolitecnico(QWidget):
         return f"{base}-{n:03d}"
 
     def _actualizar_codigo_especialidad(self, texto=None):
+
         if self._codigo_especialidad_manual:
             return
         if not self.e_nombre.text().strip():
@@ -875,10 +922,11 @@ class ModuloPolitecnico(QWidget):
             return
         self.e_codigo.setText(self._generar_codigo_especialidad(excluir_id=self.id_edicion_especialidad))
 
+    #Clic derecho sobre el campo "Código" del área técnica: alterna
+    #entre escribirlo a mano y dejarlo autogenerado de nuevo -mismo
+    #patrón que `_menu_contextual_codigo_materia` en materias.py.
     def _menu_contextual_codigo_especialidad(self, pos):
-        """Clic derecho sobre el campo "Código" del área técnica: alterna
-        entre escribirlo a mano y dejarlo autogenerado de nuevo -mismo
-        patrón que `_menu_contextual_codigo_materia` en materias.py."""
+
         menu= QMenu(self)
         if self._codigo_especialidad_manual:
             accion= menu.addAction(icono_emoji("🔄"), "Volver a autogenerado")
@@ -896,6 +944,7 @@ class ModuloPolitecnico(QWidget):
                 self.e_codigo.selectAll()
 
     def _elegir_color(self):
+
         dialogo_color= QColorDialog(QColor(self.color_seleccionado), self)
         aplicar_icono_ventana(dialogo_color, ICONO_COLOR)
         if dialogo_color.exec() != QDialog.DialogCode.Accepted:
@@ -906,6 +955,7 @@ class ModuloPolitecnico(QWidget):
             self.muestra_color.establecer_color(self.color_seleccionado)
 
     def _guardar_especialidad(self):
+
         nombre= self.e_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
@@ -919,6 +969,7 @@ class ModuloPolitecnico(QWidget):
             self.e_codigo.setText(self._generar_codigo_especialidad(excluir_id=self.id_edicion_especialidad))
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             if self.id_edicion_especialidad is None:
                 c.execute("INSERT INTO especialidades (nombre, codigo, color) VALUES (?,?,?)",
@@ -946,6 +997,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_resumen_cabecera()
 
     def _cargar_especialidad_seleccionada(self):
+
         fila= self.tabla_especialidades.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un área técnica de la tabla.", self)
@@ -974,6 +1026,7 @@ class ModuloPolitecnico(QWidget):
         activar_modo_edicion(self.e_nombre, f"Editando área técnica: {f['nombre'] or ''}")
 
     def _eliminar_especialidad(self):
+
         fila= self.tabla_especialidades.currentRow()
         if fila < 0:
             return
@@ -998,10 +1051,12 @@ class ModuloPolitecnico(QWidget):
         self._cargar_resumen_cabecera()
 
     def _filtro_especialidades_cambio(self):
+
         self.paginacion_especialidades.reiniciar()
         self._cargar_especialidades()
 
     def _cargar_especialidades(self):
+
         texto= _normalizar(self.in_buscar_especialidades.text().strip()) if hasattr(
             self, "in_buscar_especialidades") else ""
         conn= obtener_conexion()
@@ -1012,7 +1067,7 @@ class ModuloPolitecnico(QWidget):
         if texto:
             filas= [f for f in filas if texto in _normalizar(f"{f['nombre'] or ''} {f['codigo'] or ''}")]
         self.paginacion_especialidades.establecer_total(len(filas))
-        inicio, fin = self.paginacion_especialidades.rango_actual()
+        inicio, fin= self.paginacion_especialidades.rango_actual()
         filas= filas[inicio:fin]
         with tabla_pausada(self.tabla_especialidades):
             self.tabla_especialidades.setRowCount(len(filas))
@@ -1026,6 +1081,7 @@ class ModuloPolitecnico(QWidget):
             ajustar_anchos_columnas(self.tabla_especialidades)
 
     def _cargar_donut_especialidades(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT especialidades.id, especialidades.nombre, especialidades.color,
@@ -1042,6 +1098,7 @@ class ModuloPolitecnico(QWidget):
             self._actualizar_leyenda_esp(segmentos)
 
     def _actualizar_leyenda_esp(self, segmentos):
+
         while self.layout_leyenda_esp.count():
             item= self.layout_leyenda_esp.takeAt(0)
             wdg= item.widget()
@@ -1071,6 +1128,7 @@ class ModuloPolitecnico(QWidget):
 
     #---------------- MÓDULOS TÉCNICOS (materias RA por área técnica) ----------------
     def _tab_modulos_tecnicos(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
@@ -1086,7 +1144,8 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_modulo= TarjetaSeccion("✏", "Nuevo Módulo Técnico")
         form= QGridLayout()
         form.setSpacing(10)
-        self.mt_codigo= QLineEdit(); self.mt_codigo.setPlaceholderText("Código (autogenerado)")
+        self.mt_codigo= QLineEdit()
+        self.mt_codigo.setPlaceholderText("Código (autogenerado)")
         limitar_campo_texto(self.mt_codigo, 300)
         self.mt_codigo.setReadOnly(True)
         self.mt_codigo.setToolTip(
@@ -1095,7 +1154,8 @@ class ModuloPolitecnico(QWidget):
         self.mt_codigo.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.mt_codigo.customContextMenuRequested.connect(self._menu_contextual_codigo_modulo)
         self._codigo_modulo_manual= False
-        self.mt_nombre= QLineEdit(); self.mt_nombre.setPlaceholderText("Nombre del Módulo Técnico")
+        self.mt_nombre= QLineEdit()
+        self.mt_nombre.setPlaceholderText("Nombre del Módulo Técnico")
         limitar_campo_texto(self.mt_nombre, 300)
         self.mt_nombre.textChanged.connect(self._previsualizar_codigo_modulo)
         self.mt_creditos= QSpinBox()
@@ -1138,7 +1198,7 @@ class ModuloPolitecnico(QWidget):
         l.addWidget(self.panel_form_modulo)
 
         self.tarjeta_tabla_modulos= TarjetaSeccion("🧰", "Módulos Técnicos registrados")
-        marco_busqueda, self.in_buscar_modulos = self._crear_barra_busqueda(
+        marco_busqueda, self.in_buscar_modulos= self._crear_barra_busqueda(
             "Buscar por código, nombre, área técnica o profesor…", self._filtro_modulos_cambio)
         fila_busqueda_modulos= QHBoxLayout()
         fila_busqueda_modulos.addWidget(marco_busqueda, 1)
@@ -1155,7 +1215,7 @@ class ModuloPolitecnico(QWidget):
         btn_filtros_modulos.setIconSize(_QSize_emoji(16, 16))
         btn_filtros_modulos.setObjectName("BtnAccionNeutro")
         btn_filtros_modulos.setToolTip("Filtrar por área técnica y estado")
-        dialogo_mt, grid_mt, lay_mt = self._crear_ventana_filtros(
+        dialogo_mt, grid_mt, lay_mt= self._crear_ventana_filtros(
             "Filtros de Módulos Técnicos", "Todos son opcionales; se combinan con la búsqueda de arriba.")
         self.dialogo_filtros_modulos= dialogo_mt
         grid_mt.addWidget(QLabel("Área Técnica:"), 0, 0)
@@ -1223,6 +1283,7 @@ class ModuloPolitecnico(QWidget):
         return w
 
     def _previsualizar_codigo_modulo(self, _texto=None):
+
         if self._codigo_modulo_manual:
             return
         if not self.mt_nombre.text().strip():
@@ -1230,10 +1291,11 @@ class ModuloPolitecnico(QWidget):
             return
         self.mt_codigo.setText(self._generar_codigo_modulo(excluir_id=self.id_edicion_modulo_tecnico))
 
+    #Clic derecho sobre el campo "Código" del módulo técnico: alterna
+    #entre escribirlo a mano y dejarlo autogenerado de nuevo -mismo
+    #patrón que `_menu_contextual_codigo_materia` en materias.py.
     def _menu_contextual_codigo_modulo(self, pos):
-        """Clic derecho sobre el campo "Código" del módulo técnico: alterna
-        entre escribirlo a mano y dejarlo autogenerado de nuevo -mismo
-        patrón que `_menu_contextual_codigo_materia` en materias.py."""
+
         menu= QMenu(self)
         if self._codigo_modulo_manual:
             accion= menu.addAction(icono_emoji("🔄"), "Volver a autogenerado")
@@ -1251,6 +1313,7 @@ class ModuloPolitecnico(QWidget):
                 self.mt_codigo.selectAll()
 
     def _generar_codigo_modulo(self, excluir_id=None):
+
         nombre= self.mt_nombre.text().strip()
         base= "".join(w[0] for w in nombre.upper().split()[:3]) or "MT"
         conn= obtener_conexion()
@@ -1267,6 +1330,7 @@ class ModuloPolitecnico(QWidget):
         return f"{base}-{n:03d}"
 
     def _limpiar_modulo_tecnico(self):
+
         self.id_edicion_modulo_tecnico= None
         self.mt_codigo.clear()
         self._codigo_modulo_manual= False
@@ -1281,6 +1345,7 @@ class ModuloPolitecnico(QWidget):
         desactivar_modo_edicion(self.mt_nombre)
 
     def _guardar_modulo_tecnico(self):
+
         nombre= self.mt_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
@@ -1308,6 +1373,7 @@ class ModuloPolitecnico(QWidget):
                  "Técnica (RA)", grado_id)
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             if self.id_edicion_modulo_tecnico is None:
                 c.execute("""INSERT INTO materias (codigo, nombre, creditos, especialidad_id, profesor_id, estado,
@@ -1332,6 +1398,7 @@ class ModuloPolitecnico(QWidget):
             self._cargar_combos_asignaciones_tecnicas()
 
     def _cargar_modulo_tecnico_seleccionado(self):
+
         fila= self.tabla_modulos_tecnicos.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un módulo técnico de la tabla.", self)
@@ -1366,6 +1433,7 @@ class ModuloPolitecnico(QWidget):
         activar_modo_edicion(self.mt_nombre, f"Editando módulo técnico: {f['nombre'] or ''}")
 
     def _eliminar_modulo_tecnico(self):
+
         fila= self.tabla_modulos_tecnicos.currentRow()
         if fila < 0:
             return
@@ -1379,6 +1447,7 @@ class ModuloPolitecnico(QWidget):
             return
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             c.execute("DELETE FROM materias WHERE id=?", (id_mod,))
             conn.commit()
@@ -1398,10 +1467,12 @@ class ModuloPolitecnico(QWidget):
             self._cargar_asignaciones_tecnicas()
 
     def _filtro_modulos_cambio(self):
+
         self.paginacion_modulos_tecnicos.reiniciar()
         self._cargar_modulos_tecnicos()
 
     def _limpiar_filtros_modulos(self):
+
         self.mt_filtro_especialidad.blockSignals(True)
         self.mt_filtro_especialidad.setCurrentIndex(0)
         self.mt_filtro_especialidad.blockSignals(False)
@@ -1411,6 +1482,7 @@ class ModuloPolitecnico(QWidget):
         self._filtro_modulos_cambio()
 
     def _cargar_combos_modulos_tecnicos(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         self.mt_especialidad.clear()
@@ -1438,6 +1510,7 @@ class ModuloPolitecnico(QWidget):
         conn.close()
 
     def _cargar_modulos_tecnicos(self):
+
         if not hasattr(self, "mt_especialidad") or self.mt_especialidad.count() == 0:
             self._cargar_combos_modulos_tecnicos()
         texto= _normalizar(self.in_buscar_modulos.text().strip()) if hasattr(self, "in_buscar_modulos") else ""
@@ -1462,7 +1535,7 @@ class ModuloPolitecnico(QWidget):
         if estado_f and self.mt_filtro_estado.currentIndex() != 0:
             filas= [f for f in filas if f["estado"] == estado_f]
         self.paginacion_modulos_tecnicos.establecer_total(len(filas))
-        inicio, fin = self.paginacion_modulos_tecnicos.rango_actual()
+        inicio, fin= self.paginacion_modulos_tecnicos.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_modulos_tecnicos):
             self.tabla_modulos_tecnicos.setRowCount(len(pagina))
@@ -1484,6 +1557,7 @@ class ModuloPolitecnico(QWidget):
     #perfectamente bajo un solo código. Esta pestaña es solo un atajo más cómodo, con el combo de "Materia" acotado
     #a únicamente módulos técnicos, para no tener que salir del módulo Politécnico a asignar co-docentes.
     def _tab_asignaciones_tecnicas(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
@@ -1559,7 +1633,7 @@ class ModuloPolitecnico(QWidget):
         l.addWidget(self.panel_form_asig_tecnica)
 
         self.tarjeta_tabla_asig_tecnica= TarjetaSeccion(EMOJI_PROFESOR, "Profesores asignados")
-        marco_busqueda, self.in_buscar_asig_tecnica = self._crear_barra_busqueda(
+        marco_busqueda, self.in_buscar_asig_tecnica= self._crear_barra_busqueda(
             "Buscar por módulo, curso, sección, profesor o tipo…", self._filtro_asignaciones_tecnicas_cambio)
         fila_busqueda_asig= QHBoxLayout()
         fila_busqueda_asig.addWidget(marco_busqueda, 1)
@@ -1573,7 +1647,7 @@ class ModuloPolitecnico(QWidget):
         btn_filtros_asig.setIconSize(_QSize_emoji(16, 16))
         btn_filtros_asig.setObjectName("BtnAccionNeutro")
         btn_filtros_asig.setToolTip("Filtrar por área técnica y tipo de asignación")
-        dialogo_at, grid_at, lay_at = self._crear_ventana_filtros(
+        dialogo_at, grid_at, lay_at= self._crear_ventana_filtros(
             "Filtros de Profesores por Módulo",
             "Área Técnica acota también el formulario \"Nueva Asignación\" de arriba. Todos son opcionales.")
         self.dialogo_filtros_asig_tecnica= dialogo_at
@@ -1634,11 +1708,12 @@ class ModuloPolitecnico(QWidget):
         l.addStretch()
         return w
 
+    #Set de `secciones.id` cuyo Grado tiene asignada la especialidad
+    #elegida en `at_filtro_especialidad` (grados.especialidad_id). None si
+    #el combo está en "Todas las áreas técnicas" (sin restricción) o el
+    #módulo Politécnico no está activo.
     def _secciones_de_especialidad_asignacion(self):
-        """Set de `secciones.id` cuyo Grado tiene asignada la especialidad
-        elegida en `at_filtro_especialidad` (grados.especialidad_id). None si
-        el combo está en "Todas las áreas técnicas" (sin restricción) o el
-        módulo Politécnico no está activo."""
+
         if not hasattr(self, "at_filtro_especialidad") or not self._es_politecnico():
             return None
         especialidad_id= self.at_filtro_especialidad.currentData()
@@ -1653,10 +1728,11 @@ class ModuloPolitecnico(QWidget):
         conn.close()
         return ids
 
+    #Igual que en los demás módulos: el combo de Área Técnica de esta
+    #pestaña solo se muestra/puebla si la institución tiene el módulo
+    #Politécnico activo.
     def _cargar_filtro_especialidad_asignacion_tecnica(self):
-        """Igual que en los demás módulos: el combo de Área Técnica de esta
-        pestaña solo se muestra/puebla si la institución tiene el módulo
-        Politécnico activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_asig.setVisible(es_poli)
         self.at_filtro_especialidad.setVisible(es_poli)
@@ -1676,10 +1752,11 @@ class ModuloPolitecnico(QWidget):
         self.at_filtro_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
         self.at_filtro_especialidad.blockSignals(False)
 
+    #Al cambiar el Área Técnica: recarga Grado/Curso (y en cascada
+    #Sección) restringidos a esa área, y recarga Módulo Técnico para que
+    #solo aparezcan los módulos de esa misma área.
     def _filtro_area_asignacion_tecnica_cambio(self):
-        """Al cambiar el Área Técnica: recarga Grado/Curso (y en cascada
-        Sección) restringidos a esa área, y recarga Módulo Técnico para que
-        solo aparezcan los módulos de esa misma área."""
+
         curso_previo= self.at_curso.currentData() if self.at_curso.count() else None
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
@@ -1688,9 +1765,10 @@ class ModuloPolitecnico(QWidget):
         self._al_cambiar_curso_asignacion_tecnica()
         self._cargar_modulos_tecnicos_combo_asignacion()
 
+    #Puebla `at_modulo` con los Módulos Técnicos, acotados al Área
+    #Técnica elegida en `at_filtro_especialidad` (si hay alguna elegida).
     def _cargar_modulos_tecnicos_combo_asignacion(self):
-        """Puebla `at_modulo` con los Módulos Técnicos, acotados al Área
-        Técnica elegida en `at_filtro_especialidad` (si hay alguna elegida)."""
+
         especialidad_id= (self.at_filtro_especialidad.currentData()
                             if hasattr(self, "at_filtro_especialidad") and self._es_politecnico() else None)
         modulo_previo= self.at_modulo.currentData() if self.at_modulo.count() else None
@@ -1704,6 +1782,7 @@ class ModuloPolitecnico(QWidget):
         self.at_modulo.blockSignals(False)
 
     def _al_cambiar_curso_asignacion_tecnica(self, _indice=None, seccion_id_preseleccionar=None):
+
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
         cascada_seccion_por_curso(self.at_curso, self.at_seccion, incluir_todas=False,
@@ -1715,6 +1794,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_modulos_tecnicos_combo_asignacion()
 
     def _limpiar_asignacion_tecnica(self):
+
         self.at_modulo.setCurrentIndex(0)
         self.at_curso.setCurrentIndex(0)
         self.at_seccion.setCurrentIndex(0)
@@ -1723,6 +1803,7 @@ class ModuloPolitecnico(QWidget):
         self.tabla_asig_tecnica.clearSelection()
 
     def _guardar_asignacion_tecnica(self):
+
         modulo_id= self.at_modulo.currentData()
         profesor_id= self.at_profesor.currentData()
         if modulo_id is None or profesor_id is None:
@@ -1753,6 +1834,7 @@ class ModuloPolitecnico(QWidget):
         tipo= self.at_tipo.currentText()
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             c.execute("""SELECT id FROM materia_profesores
                          WHERE materia_id=? AND profesor_id=? AND
@@ -1779,6 +1861,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_asignaciones_tecnicas()
 
     def _eliminar_asignacion_tecnica(self):
+
         fila= self.tabla_asig_tecnica.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una asignación de la tabla.", self)
@@ -1788,6 +1871,7 @@ class ModuloPolitecnico(QWidget):
             return
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             c.execute("DELETE FROM materia_profesores WHERE id=?", (id_asig,))
             conn.commit()
@@ -1803,10 +1887,12 @@ class ModuloPolitecnico(QWidget):
         self._cargar_asignaciones_tecnicas()
 
     def _filtro_asignaciones_tecnicas_cambio(self):
+
         self.paginacion_asig_tecnica.reiniciar()
         self._cargar_asignaciones_tecnicas()
 
     def _limpiar_filtros_asig_tecnica(self):
+
         self.at_filtro_tipo.blockSignals(True)
         self.at_filtro_tipo.setCurrentIndex(0)
         self.at_filtro_tipo.blockSignals(False)
@@ -1817,6 +1903,7 @@ class ModuloPolitecnico(QWidget):
         self._filtro_asignaciones_tecnicas_cambio()
 
     def _cargar_combos_asignaciones_tecnicas(self):
+
         self._cargar_filtro_especialidad_asignacion_tecnica()
 
         self.at_profesor.clear()
@@ -1842,6 +1929,7 @@ class ModuloPolitecnico(QWidget):
         self._al_cambiar_curso_asignacion_tecnica()
 
     def _cargar_asignaciones_tecnicas(self):
+
         if not hasattr(self, "at_modulo") or self.at_modulo.count() == 0:
             self._cargar_combos_asignaciones_tecnicas()
         texto= _normalizar(self.in_buscar_asig_tecnica.text().strip()) if hasattr(
@@ -1875,7 +1963,7 @@ class ModuloPolitecnico(QWidget):
             tipo_f= self.at_filtro_tipo.currentText()
             filas= [f for f in filas if f["tipo_asignacion"] == tipo_f]
         self.paginacion_asig_tecnica.establecer_total(len(filas))
-        inicio, fin = self.paginacion_asig_tecnica.rango_actual()
+        inicio, fin= self.paginacion_asig_tecnica.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_asig_tecnica):
             self.tabla_asig_tecnica.setRowCount(len(pagina))
@@ -1890,6 +1978,7 @@ class ModuloPolitecnico(QWidget):
 
     #---------------- TALLERES Y LABORATORIOS ----------------
     def _tab_talleres(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
 
@@ -1949,7 +2038,7 @@ class ModuloPolitecnico(QWidget):
         fila_cabecera_tabla_talleres= QHBoxLayout()
         fila_cabecera_tabla_talleres.addStretch()
         self.tarjeta_tabla_talleres.contenido.addLayout(fila_cabecera_tabla_talleres)
-        marco_busqueda, self.in_buscar_talleres = self._crear_barra_busqueda(
+        marco_busqueda, self.in_buscar_talleres= self._crear_barra_busqueda(
             "Buscar por taller/laboratorio, tipo o área técnica…", self._filtro_talleres_cambio)
         self.tarjeta_tabla_talleres.contenido.addWidget(marco_busqueda)
 
@@ -2003,6 +2092,7 @@ class ModuloPolitecnico(QWidget):
         return w
 
     def _alternar_filtro_talleres(self, valor):
+
         self._filtro_talleres_vinculo= None if self._filtro_talleres_vinculo == valor else valor
         self.barra_talleres.establecer_filtro_activo(
             {self._filtro_talleres_vinculo} if self._filtro_talleres_vinculo else None)
@@ -2012,6 +2102,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_talleres()
 
     def _cargar_barra_talleres(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT COUNT(*) as n FROM aulas WHERE tipo IN ('Taller','Laboratorio')
@@ -2031,6 +2122,7 @@ class ModuloPolitecnico(QWidget):
             lbl.establecer_valor(conteo.get(clave, 0))
 
     def _cargar_combos_talleres(self):
+
         self.t_espacio.clear()
         self.t_especialidad.clear()
         self.t_especialidad.addItem("Sin área técnica", None)
@@ -2045,6 +2137,7 @@ class ModuloPolitecnico(QWidget):
         conn.close()
 
     def _vincular_taller(self):
+
         aula_id= self.t_espacio.currentData()
         if aula_id is None:
             mostrar_mensaje("advertencia", "Sin talleres/laboratorios",
@@ -2065,6 +2158,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_donut_especialidades()
 
     def _desvincular_taller(self):
+
         fila= self.tabla_talleres.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un taller/laboratorio de la tabla.", self)
@@ -2083,6 +2177,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_donut_especialidades()
 
     def _cargar_taller_seleccionado(self):
+
         fila= self.tabla_talleres.currentRow()
         if fila < 0:
             return
@@ -2101,10 +2196,12 @@ class ModuloPolitecnico(QWidget):
         activar_modo_edicion(self.t_espacio, "Editando taller/laboratorio")
 
     def _filtro_talleres_cambio(self):
+
         self.paginacion_talleres.reiniciar()
         self._cargar_talleres()
 
     def _cargar_talleres(self):
+
         texto= _normalizar(self.in_buscar_talleres.text().strip()) if hasattr(self, "in_buscar_talleres") else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -2122,7 +2219,7 @@ class ModuloPolitecnico(QWidget):
             filas= [f for f in filas if texto in _normalizar(
                 f"{f['nombre'] or ''} {f['tipo'] or ''} {f['especialidad_nombre'] or ''}")]
         self.paginacion_talleres.establecer_total(len(filas))
-        inicio, fin = self.paginacion_talleres.rango_actual()
+        inicio, fin= self.paginacion_talleres.rango_actual()
         filas= filas[inicio:fin]
         with tabla_pausada(self.tabla_talleres):
             self.tabla_talleres.setRowCount(len(filas))
@@ -2136,6 +2233,7 @@ class ModuloPolitecnico(QWidget):
 
     #---------------- EMPRESAS DE PASANTÍA ----------------
     def _tab_empresas(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
@@ -2158,18 +2256,24 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_empresa= TarjetaSeccion("➕", "Nueva empresa")
         form= QGridLayout()
         form.setSpacing(10)
-        self.emp_nombre= QLineEdit(); self.emp_nombre.setPlaceholderText("Nombre de la Empresa")
+        self.emp_nombre= QLineEdit()
+        self.emp_nombre.setPlaceholderText("Nombre de la Empresa")
         limitar_campo_texto(self.emp_nombre, 300)
-        self.emp_rubro= QComboBox(); self.emp_rubro.setEditable(True)
+        self.emp_rubro= QComboBox()
+        self.emp_rubro.setEditable(True)
         self.emp_rubro.addItems(RUBROS_SUGERIDOS)
         conectar_tooltip_seleccion(self.emp_rubro, "Rubro / sector de la empresa")
-        self.emp_ubicacion= QLineEdit(); self.emp_ubicacion.setPlaceholderText("Ubicación (ciudad/dirección)")
+        self.emp_ubicacion= QLineEdit()
+        self.emp_ubicacion.setPlaceholderText("Ubicación (ciudad/dirección)")
         limitar_campo_texto(self.emp_ubicacion, 300)
-        self.emp_contacto= QLineEdit(); self.emp_contacto.setPlaceholderText("Contacto")
+        self.emp_contacto= QLineEdit()
+        self.emp_contacto.setPlaceholderText("Contacto")
         limitar_campo_texto(self.emp_contacto, 300)
-        self.emp_telefono= QLineEdit(); self.emp_telefono.setPlaceholderText("Teléfono")
+        self.emp_telefono= QLineEdit()
+        self.emp_telefono.setPlaceholderText("Teléfono")
         limitar_campo_texto(self.emp_telefono, 300)
-        self.emp_cupos= QSpinBox(); self.emp_cupos.setRange(0, 500)
+        self.emp_cupos= QSpinBox()
+        self.emp_cupos.setRange(0, 500)
         self.emp_cupos.setToolTip("Cantidad de cupos de pasantía disponibles en esta empresa")
         form.addWidget(self.emp_nombre, 0, 0)
         form.addWidget(self.emp_rubro, 0, 1)
@@ -2198,7 +2302,7 @@ class ModuloPolitecnico(QWidget):
         fila_cabecera_tabla_empresas= QHBoxLayout()
         fila_cabecera_tabla_empresas.addStretch()
         self.tarjeta_tabla_empresas.contenido.addLayout(fila_cabecera_tabla_empresas)
-        marco_busqueda, self.in_buscar_empresas = self._crear_barra_busqueda(
+        marco_busqueda, self.in_buscar_empresas= self._crear_barra_busqueda(
             "Buscar por empresa, rubro, ubicación o contacto…", self._filtro_empresas_cambio)
         self.tarjeta_tabla_empresas.contenido.addWidget(marco_busqueda)
 
@@ -2258,6 +2362,7 @@ class ModuloPolitecnico(QWidget):
         return w
 
     def _guardar_empresa(self):
+
         if not self.emp_nombre.text().strip():
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
             return
@@ -2284,15 +2389,20 @@ class ModuloPolitecnico(QWidget):
         self._cargar_resumen_cabecera()
 
     def _limpiar_empresa(self):
+
         self.id_edicion_empresa= None
         self.emp_nombre.clear()
-        self.emp_rubro.setCurrentIndex(-1); self.emp_rubro.clearEditText()
-        self.emp_ubicacion.clear(); self.emp_contacto.clear(); self.emp_telefono.clear()
+        self.emp_rubro.setCurrentIndex(-1)
+        self.emp_rubro.clearEditText()
+        self.emp_ubicacion.clear()
+        self.emp_contacto.clear()
+        self.emp_telefono.clear()
         self.emp_cupos.setValue(0)
         self.tabla_empresas.clearSelection()
         desactivar_modo_edicion(self.emp_nombre)
 
     def _cargar_seleccionado_empresa(self):
+
         fila= self.tabla_empresas.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una empresa de la tabla.", self)
@@ -2317,6 +2427,7 @@ class ModuloPolitecnico(QWidget):
         activar_modo_edicion(self.emp_nombre, f"Editando empresa: {f['nombre'] or ''}")
 
     def _eliminar_empresa(self):
+
         fila= self.tabla_empresas.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una empresa de la tabla.", self)
@@ -2337,10 +2448,12 @@ class ModuloPolitecnico(QWidget):
         self._cargar_resumen_cabecera()
 
     def _filtro_empresas_cambio(self):
+
         self.paginacion_empresas.reiniciar()
         self._cargar_empresas()
 
     def _cargar_empresas(self):
+
         texto= _normalizar(self.in_buscar_empresas.text().strip()) if hasattr(self, "in_buscar_empresas") else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -2351,7 +2464,7 @@ class ModuloPolitecnico(QWidget):
             filas= [f for f in filas if texto in _normalizar(
                 f"{f['nombre'] or ''} {f['rubro'] or ''} {f['ubicacion'] or ''} {f['contacto'] or ''}")]
         self.paginacion_empresas.establecer_total(len(filas))
-        inicio, fin = self.paginacion_empresas.rango_actual()
+        inicio, fin= self.paginacion_empresas.rango_actual()
         filas= filas[inicio:fin]
         with tabla_pausada(self.tabla_empresas):
             self.tabla_empresas.setRowCount(len(filas))
@@ -2366,6 +2479,7 @@ class ModuloPolitecnico(QWidget):
             ajustar_anchos_columnas(self.tabla_empresas)
 
     def _cargar_barra_empresas(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT COALESCE(NULLIF(TRIM(rubro), ''), 'Sin rubro') as rubro, COUNT(*) as total
@@ -2386,6 +2500,7 @@ class ModuloPolitecnico(QWidget):
             self._actualizar_leyenda_empresas(segmentos)
 
     def _actualizar_leyenda_empresas(self, segmentos):
+
         while self.layout_leyenda_empresas.count():
             item= self.layout_leyenda_empresas.takeAt(0)
             wdg= item.widget()
@@ -2413,6 +2528,7 @@ class ModuloPolitecnico(QWidget):
 
     #---------------- CONTROL DE PASANTÍAS ----------------
     def _tab_pasantias(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(14)
@@ -2461,7 +2577,7 @@ class ModuloPolitecnico(QWidget):
         conectar_tooltip_seleccion(self.p_filtro_seccion, "Filtrar por sección del estudiante")
         self.p_filtro_seccion.currentIndexChanged.connect(self._filtro_estudiantes_pasantia_cambio)
 
-        marco_buscar_est, self.p_buscar_estudiante = self._crear_barra_busqueda(
+        marco_buscar_est, self.p_buscar_estudiante= self._crear_barra_busqueda(
             "Buscar estudiante por nombre, apellido o matrícula…", self._filtro_estudiantes_pasantia_cambio)
         self._construir_dialogo_filtros_pasantias(marco_buscar_est)
 
@@ -2472,13 +2588,16 @@ class ModuloPolitecnico(QWidget):
             "Estudiante que realiza la pasantía (usa \" Filtros\" para ubicarlo más rápido)")
         self.p_empresa= QComboBox()
         conectar_tooltip_seleccion(self.p_empresa, "Empresa donde el estudiante realiza la pasantía")
-        self.p_horas= QDoubleSpinBox(); self.p_horas.setRange(0, 5000)
+        self.p_horas= QDoubleSpinBox()
+        self.p_horas.setRange(0, 5000)
         self.p_horas.setDecimals(0)
         self.p_horas.setSuffix(" horas")
         self.p_horas.setToolTip("Horas acumuladas de la pasantía")
-        self.p_estado= QComboBox(); self.p_estado.addItems(ESTADOS_PASANTIA)
+        self.p_estado= QComboBox()
+        self.p_estado.addItems(ESTADOS_PASANTIA)
         conectar_tooltip_seleccion(self.p_estado, "Estado actual de la pasantía (En curso, Finalizada, Suspendida)")
-        self.p_desempeno= QLineEdit(); self.p_desempeno.setPlaceholderText("Desempeño técnico (observaciones)")
+        self.p_desempeno= QLineEdit()
+        self.p_desempeno.setPlaceholderText("Desempeño técnico (observaciones)")
         limitar_campo_texto(self.p_desempeno, 300)
         form.addWidget(self.p_estudiante, 0, 0)
         form.addWidget(self.p_empresa, 0, 1)
@@ -2508,7 +2627,7 @@ class ModuloPolitecnico(QWidget):
         l.addWidget(self.lbl_resumen_filtros_pasantias)
 
         self.tarjeta_tabla_pasantias= TarjetaSeccion(EMOJI_CONTROL_PASANTIAS, "Pasantías registradas")
-        marco_busqueda, self.in_buscar_pasantias = self._crear_barra_busqueda(
+        marco_busqueda, self.in_buscar_pasantias= self._crear_barra_busqueda(
             "Buscar por estudiante, empresa o estado…", self._filtro_pasantias_cambio)
         fila_busqueda_pasantias= QHBoxLayout()
         fila_busqueda_pasantias.addWidget(marco_busqueda, 1)
@@ -2576,15 +2695,16 @@ class ModuloPolitecnico(QWidget):
         l.addStretch()
         return w
 
+    #Ventanita (no modal) con Área Técnica, Carrera, Curso, Sección y
+    #el buscador de estudiante — mismo patrón que
+    #`_construir_dialogo_filtros_tareas` de banco_tareas.py. Estos
+    #combos acotan tanto el combo "Estudiante" del formulario de arriba
+    #como, ahora, la propia tabla "Pasantías registradas" (según el
+    #curso/sección/área técnica/carrera real del estudiante de cada
+    #pasantía).
     def _construir_dialogo_filtros_pasantias(self, marco_buscar_est):
-        """Ventanita (no modal) con Área Técnica, Carrera, Curso, Sección y
-        el buscador de estudiante — mismo patrón que
-        `_construir_dialogo_filtros_tareas` de banco_tareas.py. Estos
-        combos acotan tanto el combo "Estudiante" del formulario de arriba
-        como, ahora, la propia tabla "Pasantías registradas" (según el
-        curso/sección/área técnica/carrera real del estudiante de cada
-        pasantía)."""
-        dialogo, grid, lay_dialogo = self._crear_ventana_filtros(
+
+        dialogo, grid, lay_dialogo= self._crear_ventana_filtros(
             "Filtros de Pasantías",
             "Acotan tanto el combo \"Estudiante\" del formulario de arriba como la tabla "
             "\"Pasantías registradas\". Todos son opcionales.")
@@ -2607,6 +2727,7 @@ class ModuloPolitecnico(QWidget):
         self._cerrar_ventana_filtros(dialogo, lay_dialogo, callback_limpiar=self._limpiar_filtros_pasantias)
 
     def _limpiar_filtros_pasantias(self):
+
         self.p_buscar_estudiante.blockSignals(True)
         self.p_buscar_estudiante.clear()
         self.p_buscar_estudiante.blockSignals(False)
@@ -2617,10 +2738,11 @@ class ModuloPolitecnico(QWidget):
         self._cargar_filtro_seccion_pasantia()
         self._filtro_estudiantes_pasantia_cambio()
 
+    #Como Área Técnica/Carrera/Curso/Sección/Buscar ahora viven en la
+    #ventana de Filtros (oculta por defecto), esta línea deja a la vista,
+    #sin abrir el diálogo, qué se está mostrando en la tabla.
     def _actualizar_resumen_filtros_pasantias(self):
-        """Como Área Técnica/Carrera/Curso/Sección/Buscar ahora viven en la
-        ventana de Filtros (oculta por defecto), esta línea deja a la vista,
-        sin abrir el diálogo, qué se está mostrando en la tabla."""
+
         if not hasattr(self, "lbl_resumen_filtros_pasantias"):
             return
         #Iconos dibujados con QPainter (mismos dibujos que ya usa el resto de la app, ver _cargar_resumen_cabecera más
@@ -2640,9 +2762,11 @@ class ModuloPolitecnico(QWidget):
         self.lbl_resumen_filtros_pasantias.setText(" · ".join(partes))
 
     def _filtro_tecnico_pasantia_cambio(self):
+
         self._filtro_estudiantes_pasantia_cambio()
 
     def _alternar_filtro_pasantias(self, valor):
+
         self._filtro_pasantias_estado= None if self._filtro_pasantias_estado == valor else valor
         self.barra_pasantias.establecer_filtro_activo(
             {self._filtro_pasantias_estado} if self._filtro_pasantias_estado else None)
@@ -2652,6 +2776,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_pasantias()
 
     def _cargar_barra_pasantias(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT estado, COUNT(*) as n FROM pasantias GROUP BY estado")
@@ -2666,6 +2791,7 @@ class ModuloPolitecnico(QWidget):
             lbl.establecer_valor(conteo.get(clave, 0))
 
     def _limpiar_pasantia(self):
+
         self.id_edicion_pasantia= None
         if hasattr(self, "p_buscar_estudiante"):
             self.p_buscar_estudiante.clear()
@@ -2682,6 +2808,7 @@ class ModuloPolitecnico(QWidget):
         desactivar_modo_edicion(self.p_desempeno)
 
     def _cargar_pasantia_seleccionada(self):
+
         fila= self.tabla_pasantias.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una pasantía de la tabla.", self)
@@ -2715,6 +2842,7 @@ class ModuloPolitecnico(QWidget):
         activar_modo_edicion(self.p_desempeno, "Editando pasantía")
 
     def _cargar_combos_pasantias(self):
+
         self.p_empresa.clear()
         conn= obtener_conexion()
         c= conn.cursor()
@@ -2740,28 +2868,33 @@ class ModuloPolitecnico(QWidget):
         self._cargar_filtro_especialidad_carrera_pasantia()
         self._filtro_estudiantes_pasantia_cambio()
 
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo). Mismo criterio usado en estudiantes.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo). Mismo criterio usado en estudiantes.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #Igual que en Estudiantes: los combos de Área Técnica y Carrera de
+    #Pasantías solo se muestran/pueblan si la institución tiene ese
+    #módulo activo.
     def _cargar_filtro_especialidad_carrera_pasantia(self):
-        """Igual que en Estudiantes: los combos de Área Técnica y Carrera de
-        Pasantías solo se muestran/pueblan si la institución tiene ese
-        módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_pasantia.setVisible(es_poli)
         self.p_filtro_especialidad.setVisible(es_poli)
@@ -2798,18 +2931,21 @@ class ModuloPolitecnico(QWidget):
             self.p_filtro_carrera.setCurrentIndex(idx if idx >= 0 else 0)
             self.p_filtro_carrera.blockSignals(False)
 
+    #Recarga el combo de sección según el curso elegido (o todas).
     def _cargar_filtro_seccion_pasantia(self):
-        """Recarga el combo de sección según el curso elegido (o todas)."""
+
         cascada_seccion_por_curso(self.p_filtro_curso, self.p_filtro_seccion, incluir_todas=False)
 
     def _filtro_curso_pasantia_cambio(self):
+
         self._cargar_filtro_seccion_pasantia()
         self._filtro_estudiantes_pasantia_cambio()
 
+    #Recalcula las opciones del combo 'Estudiante' según los filtros de
+    #búsqueda, curso y sección, conservando la selección previa si sigue
+    #siendo válida.
     def _filtro_estudiantes_pasantia_cambio(self):
-        """Recalcula las opciones del combo 'Estudiante' según los filtros de
-        búsqueda, curso y sección, conservando la selección previa si sigue
-        siendo válida."""
+
         id_previo= self.p_estudiante.currentData()
         texto= _normalizar(self.p_buscar_estudiante.text().strip()) if hasattr(self, "p_buscar_estudiante") else ""
         grado_id= self.p_filtro_curso.currentData() if hasattr(self, "p_filtro_curso") else None
@@ -2846,6 +2982,7 @@ class ModuloPolitecnico(QWidget):
             self._cargar_pasantias()
 
     def _guardar_pasantia(self):
+
         est_id= self.p_estudiante.currentData()
         emp_id= self.p_empresa.currentData()
         if est_id is None or emp_id is None:
@@ -2874,6 +3011,7 @@ class ModuloPolitecnico(QWidget):
         self._cargar_resumen_cabecera()
 
     def _eliminar_pasantia(self):
+
         fila= self.tabla_pasantias.currentRow()
         if fila < 0:
             return
@@ -2892,10 +3030,12 @@ class ModuloPolitecnico(QWidget):
         self._cargar_resumen_cabecera()
 
     def _filtro_pasantias_cambio(self):
+
         self.paginacion_pasantias.reiniciar()
         self._cargar_pasantias()
 
     def _cargar_pasantias(self):
+
         texto= _normalizar(self.in_buscar_pasantias.text().strip()) if hasattr(self, "in_buscar_pasantias") else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -2948,7 +3088,7 @@ class ModuloPolitecnico(QWidget):
         self.tabla_pasantias.setColumnHidden(0, not mostrar_columna_numero)
 
         self.paginacion_pasantias.establecer_total(len(filas))
-        inicio, fin = self.paginacion_pasantias.rango_actual()
+        inicio, fin= self.paginacion_pasantias.rango_actual()
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_pasantias):
             self.tabla_pasantias.setRowCount(len(pagina))
@@ -2969,6 +3109,7 @@ class ModuloPolitecnico(QWidget):
 
     #---------------- RESUMEN / TEMA ----------------
     def _cargar_resumen_cabecera(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT COUNT(*) as n FROM especialidades")
@@ -2989,11 +3130,12 @@ class ModuloPolitecnico(QWidget):
         self._animar_valor_chip(self.chip_pasantias, "_valor_chip_pasantias", total_pasantias_curso,
                                  lambda v: f"{html_icono_emoji('🎓', 14)} {v} pasantía" + ("s" if v != 1 else "") + " en curso")
 
+    #Refresca combos e indicadores (donut/barras/chips) y la pestaña
+    #visible; el resto de pestañas se cargan solas la primera vez que el
+    #usuario las visita (ver _cambio_pestana), así entrar al módulo se
+    #siente instantáneo.
     def refrescar(self):
-        """Refresca combos e indicadores (donut/barras/chips) y la pestaña
-        visible; el resto de pestañas se cargan solas la primera vez que el
-        usuario las visita (ver _cambio_pestana), así entrar al módulo se
-        siente instantáneo."""
+
         self._cargar_combos_talleres()
         self._cargar_combos_pasantias()
         self._cargar_combos_modulos_tecnicos()
@@ -3002,9 +3144,10 @@ class ModuloPolitecnico(QWidget):
         self._pestanas_cargadas= set()
         self._cambio_pestana(self.tabs.currentIndex())
 
+    #Sincroniza los colores del módulo (cabecera, tarjetas, anillo,
+    #barras y buscadores) con el tema/modo claro-oscuro actual de la app.
     def actualizar_tema(self):
-        """Sincroniza los colores del módulo (cabecera, tarjetas, anillo,
-        barras y buscadores) con el tema/modo claro-oscuro actual de la app."""
+
         colores= _colores_tema_politecnico(self.main_window)
         bg_panel= colores["bg_panel"]
         #Refrescar colores de los encabezados colapsables (PanelDesplegable)

@@ -165,6 +165,7 @@ def _preparar_tabla_permisos_side_stepper(conn):
 def _leer_modulos(texto_json):
 
     try:
+
         return json.loads(texto_json)
 
     except (TypeError, ValueError):

@@ -1,4 +1,4 @@
-"""Vistas propias del 'Modo Docente' (rol Profesor) de AcaDeXI."""
+#Vistas propias del 'Modo Docente' (rol Profesor) de AcaDeXI.
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
 QFrame, QScrollArea, QLayout, QColorDialog, QDialog, QMenu)
 from PySide6.QtCore import (Qt, QTimer, QRect, QRectF, QPoint, QSize, QPropertyAnimation,
@@ -22,30 +22,35 @@ _PALETA_MATERIA= ["#6366F1", "#0D9488", "#8B5CF6", "#F59E0B", "#10B981",
 
 
 def _hex_a_rgba(hex_color, alpha):
+
     hex_color= (hex_color or "#6366F1").lstrip("#")
-    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
 def _color_para_materia(nombre):
+
     idx= sum(ord(ch) for ch in (nombre or "?")) % len(_PALETA_MATERIA)
     return _PALETA_MATERIA[idx]
 
 
 def _minutos_desde_texto(hhmm):
+
     try:
-        h, m = (hhmm or "").strip().split(":")
+
+        h, m= (hhmm or "").strip().split(":")
         return int(h) * 60 + int(m)
     except (ValueError, AttributeError):
         return None
 
 
+#Desliza un widget desde `offset_y` px por debajo hasta su posición final
+#(ya calculada por el layout). Usa una animación de geometría (no de opacidad
+#ni de efectos gráficos): es la forma más barata de dar una entrada animada,
+#porque no obliga a Qt a recomponer el widget en un buffer aparte en cada
+#frame, solo a reposicionarlo.
 def _animar_entrada_geometria(widget, offset_y=16, duracion=260, retraso=0):
-    """Desliza un widget desde `offset_y` px por debajo hasta su posición final
-    (ya calculada por el layout). Usa una animación de geometría (no de opacidad
-    ni de efectos gráficos): es la forma más barata de dar una entrada animada,
-    porque no obliga a Qt a recomponer el widget en un buffer aparte en cada
-    frame, solo a reposicionarlo."""
+
     geo_final= QRect(widget.geometry())
     geo_inicio= QRect(geo_final.x(), geo_final.y() + offset_y, geo_final.width(), geo_final.height())
     widget.setGeometry(geo_inicio)
@@ -58,12 +63,13 @@ def _animar_entrada_geometria(widget, offset_y=16, duracion=260, retraso=0):
     QTimer.singleShot(retraso, anim.start)
 
 
+#Layout de flujo (envuelve tarjetas a la siguiente línea según el ancho
+#disponible). Recalcula posiciones sin recrear widgets, así que reflowar
+#con el resize de la ventana es barato incluso con varias decenas de tarjetas.
 class FlowLayout(QLayout):
-    """Layout de flujo (envuelve tarjetas a la siguiente línea según el ancho
-    disponible). Recalcula posiciones sin recrear widgets, así que reflowar
-    con el resize de la ventana es barato incluso con varias decenas de tarjetas."""
 
     def __init__(self, parent=None, margin=0, spacing=12):
+
         super().__init__(parent)
         if parent is not None:
             self.setContentsMargins(margin, margin, margin, margin)
@@ -71,34 +77,44 @@ class FlowLayout(QLayout):
         self._items= []
 
     def addItem(self, item):
+
         self._items.append(item)
 
     def count(self):
+
         return len(self._items)
 
     def itemAt(self, index):
+
         return self._items[index] if 0 <= index < len(self._items) else None
 
     def takeAt(self, index):
+
         return self._items.pop(index) if 0 <= index < len(self._items) else None
 
     def expandingDirections(self):
+
         return Qt.Orientation(0)
 
     def hasHeightForWidth(self):
+
         return True
 
     def heightForWidth(self, width):
+
         return self._hacer_layout(QRect(0, 0, width, 0), True)
 
     def setGeometry(self, rect):
+
         super().setGeometry(rect)
         self._hacer_layout(rect, False)
 
     def sizeHint(self):
+
         return self.minimumSize()
 
     def minimumSize(self):
+
         tam= QSize()
         for item in self._items:
             tam= tam.expandedTo(item.minimumSize())
@@ -107,7 +123,8 @@ class FlowLayout(QLayout):
         return tam
 
     def _hacer_layout(self, rect, solo_calcular):
-        x, y = rect.x(), rect.y()
+
+        x, y= rect.x(), rect.y()
         alto_linea= 0
         espacio= self.spacing()
         for item in self._items:
@@ -125,9 +142,10 @@ class FlowLayout(QLayout):
         return y + alto_linea - rect.y()
 
 
+#Botón redondeado, moderno y divertido que abre un diálogo con la explicación
+#de la pantalla, en vez de un párrafo largo siempre visible.
 def _boton_info(texto, callback):
-    """Botón redondeado, moderno y divertido que abre un diálogo con la explicación
-    de la pantalla, en vez de un párrafo largo siempre visible."""
+
     btn= QPushButton(texto)
     btn.setCursor(Qt.CursorShape.PointingHandCursor)
     btn.setStyleSheet("""
@@ -150,10 +168,11 @@ def _boton_info(texto, callback):
     return btn
 
 #Widgets visuales de "mis materias"
+#Pastilla con ícono + número animado (cuenta hacia el valor nuevo) + etiqueta.
 class PastillaContador(QFrame):
-    """Pastilla con ícono + número animado (cuenta hacia el valor nuevo) + etiqueta."""
 
     def __init__(self, icono, color, parent=None):
+
         super().__init__(parent)
         self.setObjectName("PastillaContadorDocente")
         self._color= color
@@ -180,9 +199,11 @@ class PastillaContador(QFrame):
         self._anim.valueChanged.connect(lambda v: self.lbl_valor.setText(str(int(v))))
 
     def poner_texto(self, texto):
+
         self.lbl_texto.setText(texto)
 
     def poner_valor(self, nuevo):
+
         if nuevo == self._valor_actual:
             return
         self._anim.stop()
@@ -192,6 +213,7 @@ class PastillaContador(QFrame):
         self._anim.start()
 
     def aplicar_paleta(self, bg_panel, borde, txt_sec):
+
         self.setStyleSheet(f"""
             QFrame#PastillaContadorDocente {{
                 background-color: {bg_panel};
@@ -202,8 +224,9 @@ class PastillaContador(QFrame):
         self.lbl_valor.setStyleSheet(f"color: {self._color}; background: transparent;")
         self.lbl_texto.setStyleSheet(f"color: {txt_sec}; font-size: 11px; background: transparent;")
 
+    #Variante translúcida en blanco, para usarse sobre la cabecera con degradado.
     def aplicar_paleta_clara(self):
-        """Variante translúcida en blanco, para usarse sobre la cabecera con degradado."""
+
         self.setStyleSheet("""
             QFrame#PastillaContadorDocente {
                 background-color: rgba(255, 255, 255, 40);
@@ -215,11 +238,12 @@ class PastillaContador(QFrame):
         self.lbl_texto.setStyleSheet("color: rgba(255, 255, 255, 210); font-size: 11px; background: transparent;")
 
 
+#Tarjeta de una materia asignada al docente: código, créditos y estado,
+#con acento de color propio y elevación animada al pasar el mouse.
 class TarjetaMateria(QFrame):
-    """Tarjeta de una materia asignada al docente: código, créditos y estado,
-    con acento de color propio y elevación animada al pasar el mouse."""
 
     def __init__(self, codigo, nombre, creditos, estado, color, parent=None, on_cambiar_color=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaMateriaDocente")
         self.setFixedWidth(246)
@@ -300,13 +324,15 @@ class TarjetaMateria(QFrame):
         raiz.addLayout(fila_bottom)
 
     def aplicar_paleta(self, bg_panel, borde, txt_prim, txt_sec):
+
         self._paleta= (bg_panel, borde, txt_prim, txt_sec)
         self._repintar()
 
     def _repintar(self):
+
         if not getattr(self, "_paleta", None):
             return
-        bg_panel, borde, txt_prim, txt_sec = self._paleta
+        bg_panel, borde, txt_prim, txt_sec= self._paleta
         self.setStyleSheet(f"""
             QFrame#TarjetaMateriaDocente {{
                 background-color: {bg_panel};
@@ -342,13 +368,15 @@ class TarjetaMateria(QFrame):
         self.lbl_codigo.setStyleSheet(
             f"color: {self._color}; font-weight: 700; font-size: 11px; background: transparent;")
 
+    #Aplica un nuevo color de acento (personalización guardada por el
+    #docente) sin tener que recrear la tarjeta.
     def actualizar_color(self, color):
-        """Aplica un nuevo color de acento (personalización guardada por el
-        docente) sin tener que recrear la tarjeta."""
+
         self._color= color
         self._repintar()
 
     def contextMenuEvent(self, event):
+
         if not self._on_cambiar_color:
             return
         menu= QMenu(self)
@@ -367,13 +395,14 @@ class TarjetaMateria(QFrame):
             self._on_cambiar_color(self._nombre_materia, None)
 
 
+#Bloque de una clase dentro del horario semanal visual. Color propio por
+#materia, se eleva y revela los detalles completos (sección, aula, horas)
+#en un tooltip al pasar el mouse, sin necesidad de abrir nada.
 class ChipClaseHorario(QFrame):
-    """Bloque de una clase dentro del horario semanal visual. Color propio por
-    materia, se eleva y revela los detalles completos (sección, aula, horas)
-    en un tooltip al pasar el mouse, sin necesidad de abrir nada."""
 
     def __init__(self, materia, seccion, aula, hora_ini, hora_fin, color, parent=None,
                  clave= None, on_cambiar_color=None, main_window=None):
+
         super().__init__(parent)
         self.setObjectName("ChipClaseHorario")
         self._color= color
@@ -424,6 +453,7 @@ class ChipClaseHorario(QFrame):
         l.addStretch()
 
     def _aplicar_color(self, color):
+
         self._color= color
         color_claro= QColor(color).lighter(122).name()
         self.setStyleSheet(f"""
@@ -432,6 +462,7 @@ class ChipClaseHorario(QFrame):
         """)
 
     def contextMenuEvent(self, event):
+
         if not self._on_cambiar_color:
             return
         menu= QMenu(self)
@@ -451,23 +482,24 @@ class ChipClaseHorario(QFrame):
             self._on_cambiar_color(self._clave, None)
 
 
+#Vista visual del horario semanal del docente: columnas por día, bloques
+#de clase posicionados y dimensionados según su hora real. Reemplaza la
+#tabla plana por algo que se entiende de un vistazo.
+#
+#Rendimiento: el fondo (líneas de hora, cabeceras de día) se pinta una sola
+#vez por repintado en `paintEvent` (nada de temporizadores); los bloques de
+#clase son widgets reales (así el hover/tooltip funciona nativo) que solo
+#se recrean cuando cambian los datos, no en cada resize — en un resize solo
+#se reposicionan (`_reflow`), que es una operación O(n) muy barata para las
+#pocas decenas de clases que tiene el horario de un solo docente.
 class PanelHorarioSemanal(QWidget):
-    """Vista visual del horario semanal del docente: columnas por día, bloques
-    de clase posicionados y dimensionados según su hora real. Reemplaza la
-    tabla plana por algo que se entiende de un vistazo.
-
-    Rendimiento: el fondo (líneas de hora, cabeceras de día) se pinta una sola
-    vez por repintado en `paintEvent` (nada de temporizadores); los bloques de
-    clase son widgets reales (así el hover/tooltip funciona nativo) que solo
-    se recrean cuando cambian los datos, no en cada resize — en un resize solo
-    se reposicionan (`_reflow`), que es una operación O(n) muy barata para las
-    pocas decenas de clases que tiene el horario de un solo docente."""
 
     ALTO_POR_HORA= 58
     ANCHO_COL_HORA= 48
     MARGEN_SUP= 30
 
     def __init__(self, parent=None, main_window=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self._entradas= []
@@ -481,28 +513,32 @@ class PanelHorarioSemanal(QWidget):
         self._on_color_cambiada= None
         self.setMinimumHeight(300)
 
+    #resolver_color(materia) -> color hex a usar (respeta la
+    #personalización local del docente si existe). on_color_cambiada(clave,
+    #color_o_None) se llama cuando el docente elige/reinicia un color desde
+    #el menú contextual de un chip.
     def configurar_colores(self, resolver_color, on_color_cambiada):
-        """resolver_color(materia) -> color hex a usar (respeta la
-        personalización local del docente si existe). on_color_cambiada(clave,
-        color_o_None) se llama cuando el docente elige/reinicia un color desde
-        el menú contextual de un chip."""
+
         self._resolver_color= resolver_color
         self._on_color_cambiada= on_color_cambiada
 
+    #Repinta en el acto todos los chips visibles de esta materia, sin
+    #reconstruir el panel entero.
     def actualizar_color_materia(self, clave, color):
-        """Repinta en el acto todos los chips visibles de esta materia, sin
-        reconstruir el panel entero."""
+
         for e, chip in self._pares:
             if e["materia"] == clave:
                 chip._aplicar_color(color)
 
     def poner_colores(self, color_linea, color_texto):
+
         self._color_linea= QColor(color_linea)
         self._color_texto= QColor(color_texto)
         self.update()
 
+    #entradas: lista de dicts con dia, hora_inicio, hora_fin, materia, seccion, aula.
     def poner_entradas(self, entradas):
-        """entradas: lista de dicts con dia, hora_inicio, hora_fin, materia, seccion, aula."""
+
         self._entradas= entradas
         dias_con_clase= {e["dia"] for e in entradas if e["dia"] in DIAS_SEMANA}
         self._dias_visibles= [d for d in DIAS_SEMANA if d in dias_con_clase] or DIAS_SEMANA[:5]
@@ -519,13 +555,14 @@ class PanelHorarioSemanal(QWidget):
             self._hora_min= max(0, (min(minutos) // 60) * 60 - 30)
             self._hora_max= ((max(minutos) // 60) + 1) * 60 + 30
         else:
-            self._hora_min, self._hora_max = 7 * 60, 17 * 60
+            self._hora_min, self._hora_max= 7 * 60, 17 * 60
 
         alto_total= self.MARGEN_SUP + int((self._hora_max - self._hora_min) / 60 * self.ALTO_POR_HORA) + 14
         self.setMinimumHeight(max(300, alto_total))
         self._reconstruir_chips()
 
     def _reconstruir_chips(self):
+
         for _, chip in self._pares:
             chip.deleteLater()
         self._pares= []
@@ -545,10 +582,12 @@ class PanelHorarioSemanal(QWidget):
         self.update()
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         self._reflow()
 
     def _reflow(self):
+
         if not self._dias_visibles or self.width() <= 0:
             return
         ancho_disponible= max(60, self.width() - self.ANCHO_COL_HORA - 8)
@@ -556,6 +595,7 @@ class PanelHorarioSemanal(QWidget):
         ancho_col= ancho_disponible / n
         for e, chip in self._pares:
             try:
+
                 dia_idx= self._dias_visibles.index(e["dia"])
             except ValueError:
                 continue
@@ -571,6 +611,7 @@ class PanelHorarioSemanal(QWidget):
             chip.setGeometry(int(x) + 2, y, max(10, int(ancho_col) - 8), h)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -619,7 +660,9 @@ class PanelHorarioSemanal(QWidget):
 
 #Mis materias (solo lectura, filtrado por profesor)
 class ModuloMisMaterias(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self._tarjetas_materia= []
@@ -636,25 +679,29 @@ class ModuloMisMaterias(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Mis Materias"
         registrar_atajo(self, self.main_window, "F5", "Actualizar", self.refrescar)
 
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo). Mismo criterio usado en materias.py,
+    #estudiantes.py y banco_tareas.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo). Mismo criterio usado en materias.py,
-        estudiantes.py y banco_tareas.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #Ajusta el subtítulo y el mensaje de "sin materias" para que también
+    #mencionen los módulos técnicos cuando la institución es Politécnico —
+    #esta pantalla ya mezcla materias académicas y módulos técnicos del
+    #docente (misma consulta, sin filtrar por modelo_evaluacion), así que
+    #solo cambia el texto, igual que hace materias.py.
     def _actualizar_textos_politecnico(self):
-        """Ajusta el subtítulo y el mensaje de "sin materias" para que también
-        mencionen los módulos técnicos cuando la institución es Politécnico —
-        esta pantalla ya mezcla materias académicas y módulos técnicos del
-        docente (misma consulta, sin filtrar por modelo_evaluacion), así que
-        solo cambia el texto, igual que hace materias.py."""
+
         es_poli= self._es_politecnico()
         self.lbl_subtitulo_cabecera.setText(
             "Tus materias y módulos técnicos asignados, con tu horario de un vistazo más abajo."
@@ -667,6 +714,7 @@ class ModuloMisMaterias(QWidget):
             "aparecerá aquí automáticamente.")
 
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -749,6 +797,7 @@ class ModuloMisMaterias(QWidget):
         layout_raiz.addWidget(scroll, 1)
 
     def _mostrar_info(self):
+
         texto_materias= "las materias y módulos técnicos que impartes" if self._es_politecnico()\
             else "las materias que impartes"
         mostrar_mensaje("info", "Mis Materias",
@@ -758,17 +807,19 @@ class ModuloMisMaterias(QWidget):
             "¿Quieres anotar una clase que aún no aparece aquí? Puedes hacerlo desde el módulo "
             "Horario, en tu panel de clases locales.", self)
 
+    #Color a usar para una materia: el que personalizó el docente
+    #(guardado localmente en este equipo) si existe, o si no, el
+    #automático de siempre.
     def _color_efectiva(self, materia):
-        """Color a usar para una materia: el que personalizó el docente
-        (guardado localmente en este equipo) si existe, o si no, el
-        automático de siempre."""
+
         override= self._colores_override.get(materia)
         return (override[0] if override and override[0] else None) or _color_para_materia(materia)
 
+    #Callback del menú contextual de un chip del horario: guarda (o
+    #borra) la personalización y repinta en el acto la tarjeta de esa
+    #materia y todos sus chips, sin recargar nada de la base de datos.
     def _cambiar_color_materia(self, clave, color_hex):
-        """Callback del menú contextual de un chip del horario: guarda (o
-        borra) la personalización y repinta en el acto la tarjeta de esa
-        materia y todos sus chips, sin recargar nada de la base de datos."""
+
         if color_hex is None:
             eliminar_color_materia_local(self.main_window, clave)
             self._colores_override.pop(clave, None)
@@ -783,6 +834,7 @@ class ModuloMisMaterias(QWidget):
         self.panel_horario.actualizar_color_materia(clave, nuevo_color)
 
     def refrescar(self):
+
         profesor_id= obtener_profesor_id(self.main_window)
         conn= obtener_conexion()
         c= conn.cursor()
@@ -840,6 +892,7 @@ class ModuloMisMaterias(QWidget):
         self.pastilla_clases.poner_valor(len(entradas))
 
     def _poblar_materias(self, filas):
+
         flow= self.contenedor_materias.layout()
         for tarjeta in self._tarjetas_materia:
             flow.removeWidget(tarjeta)
@@ -862,10 +915,12 @@ class ModuloMisMaterias(QWidget):
         QTimer.singleShot(20, self._animar_entrada_materias)
 
     def _animar_entrada_materias(self):
+
         for i, tarjeta in enumerate(self._tarjetas_materia):
             _animar_entrada_geometria(tarjeta, offset_y=18, duracion=280, retraso=min(i, 10) * 40)
 
     def actualizar_tema(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None)
         if not paletas:
@@ -923,7 +978,9 @@ class ModuloMisMaterias(QWidget):
         """)
 #Copias de seguridad (vista simplificada)
 class ModuloCopiasSeguridadDocente(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self._build_ui()
@@ -935,6 +992,7 @@ class ModuloCopiasSeguridadDocente(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         #Este módulo (pese a vivir en docente.py) es exclusivo de roles gerenciales -ver main.py, que solo lo agrega al
         #menú si rol_actual está en ROLES_GERENCIALES-, así que aquí no aplica ninguna restricción de Modo Docente.
         self._titulo_modulo_atajos= "Copias de Seguridad"
@@ -942,6 +1000,7 @@ class ModuloCopiasSeguridadDocente(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+I", "Importar estudiantes y cursos",
                          self._importar_datos)
     def _build_ui(self):
+
         layout= QVBoxLayout(self)
         layout.setContentsMargins(30, 25, 30, 25)
         layout.setSpacing(14)
@@ -1006,6 +1065,7 @@ class ModuloCopiasSeguridadDocente(QWidget):
         layout.addStretch()
 
     def _mostrar_info(self):
+
         mostrar_mensaje("info", "Copias de Seguridad · Modo Docente",
             "Backup manual: crea una copia de seguridad de la base de datos desde este equipo cuando"
             "quieras. La configuración de backup automático (modo y carpeta institucional) la define "
@@ -1017,15 +1077,19 @@ class ModuloCopiasSeguridadDocente(QWidget):
             "personalizaciones se guardan aparte y NO se pierden al reimportar.", self)
 
     def _titulo_seccion(self, texto):
+
         lbl= QLabel(texto)
         lbl.setObjectName("DescModulo")
         return lbl
 
     def _importar_datos(self):
+
         importar_paquete_docente(self.main_window, self)
 
     def _crear_backup(self):
+
         try:
+
             cfg= obtener_config_backup()
             ruta= crear_backup(cfg["carpeta"] or None, tipo="Manual (Modo Docente)",
                                usuario= self.main_window.usuario_actual)
@@ -1035,12 +1099,14 @@ class ModuloCopiasSeguridadDocente(QWidget):
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo crear el backup:\n{e}", self)
     def refrescar(self):
+
         cfg= obtener_config_backup()
         texto= f"Último backup: {cfg['ultima_fecha']}" if cfg["ultima_fecha"] else "Aún no se ha creado ningún backup."
         if cfg["carpeta"]:
             texto += f"\nCarpeta adicional configurada: {cfg['carpeta']}"
         self.lbl_estado.setText(texto)
     def actualizar_tema(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None)
         if not paletas:
@@ -1076,6 +1142,7 @@ class ModuloCopiasSeguridadDocente(QWidget):
         """)
 #Placeholder "en construcción"
 def crear_modulo_en_construccion(main_window, icono, nombre, descripcion):
+
     page= QWidget()
     layout= QVBoxLayout(page)
     layout.setContentsMargins(30, 25, 30, 25)

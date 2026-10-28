@@ -1,4 +1,4 @@
-"""Control de Paginación de AcaDeXI — optimización de rendimiento."""
+#Control de Paginación de AcaDeXI — optimización de rendimiento.
 import math
 import os
 from contextlib import contextmanager
@@ -23,25 +23,25 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_te
 #`ajustar_anchos_columnas`. Evita que una sola celda con un valor larguísimo (texto pegado, observación larga,
 #etc.) acapare todo el ancho visible de la tabla — ver el docstring de esa función.
 ANCHO_MAXIMO_COLUMNA= 420
+#Deja una QTableWidget escalable, con scrollbars propias que aparecen
+#solo cuando hacen falta: vertical cuando hay muchos registros y
+#horizontal cuando el ancho del contenido (columnas) no cabe.
+#
+#IMPORTANTE: esta función es puramente ESTRUCTURAL y no toca nada visual.
+#No cambia anchos de columna, alto mínimo/máximo, modo de resize de las
+#columnas (Stretch/Interactive/Fixed que cada tabla ya tenga elegido),
+#wordWrap, colores alternos, selección, etc. — cada tabla conserva
+#exactamente el diseño que ya tenía. Solo agrega la base común que hace
+#que la tabla sea "su propia área de scroll" (igual que en estudiantes.py):
+#
+#- sizePolicy Expanding/Expanding: la tabla aprovecha el espacio que le
+#da su layout en vez de quedarse en un tamaño fijo por contenido.
+#- sizeAdjustPolicy AdjustIgnored: el tamaño de la tabla no se recalcula
+#en función de su contenido (evita que "empuje" el resto de la página).
+#- scrollbars propias (vertical/horizontal) en modo "AsNeeded": aparecen
+#solo cuando el contenido no cabe, en vez de aplastarlo o desbordarlo.
 def aplicar_estructura_tabla(tabla):
-    """Deja una QTableWidget escalable, con scrollbars propias que aparecen
-    solo cuando hacen falta: vertical cuando hay muchos registros y
-    horizontal cuando el ancho del contenido (columnas) no cabe.
 
-    IMPORTANTE: esta función es puramente ESTRUCTURAL y no toca nada visual.
-    No cambia anchos de columna, alto mínimo/máximo, modo de resize de las
-    columnas (Stretch/Interactive/Fixed que cada tabla ya tenga elegido),
-    wordWrap, colores alternos, selección, etc. — cada tabla conserva
-    exactamente el diseño que ya tenía. Solo agrega la base común que hace
-    que la tabla sea "su propia área de scroll" (igual que en estudiantes.py):
-
-    - sizePolicy Expanding/Expanding: la tabla aprovecha el espacio que le
-      da su layout en vez de quedarse en un tamaño fijo por contenido.
-    - sizeAdjustPolicy AdjustIgnored: el tamaño de la tabla no se recalcula
-      en función de su contenido (evita que "empuje" el resto de la página).
-    - scrollbars propias (vertical/horizontal) en modo "AsNeeded": aparecen
-      solo cuando el contenido no cabe, en vez de aplastarlo o desbordarlo.
-    """
     tabla.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     tabla.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustIgnored)
     tabla.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -52,14 +52,16 @@ def aplicar_estructura_tabla(tabla):
     #la celda -en columnas con `setCellWidget` (p. ej. "Categorías" en observaciones.py) ese item va vacío, así que
     #el resultado del doble clic quedaba corto y el contenido seguía recortado hasta que el usuario estiraba la
     #columna a mano.
-    #    #La corrección se difiere con QTimer.singleShot(0, ...) en vez de aplicarse directamente dentro del slot
+    ##La corrección se difiere con QTimer.singleShot(0, ...) en vez de aplicarse directamente dentro del slot
     #conectado a la señal: el ajuste nativo de Qt no siempre ha terminado de aplicarse en el mismo instante en que
     #se emite `sectionHandleDoubleClicked` (puede resolverse en un paso posterior del bucle de eventos), así que
     #corregir "en línea" podía quedar pisado otra vez por el valor incorrecto de Qt según el orden de conexión. Al
     #diferir con singleShot(0, ...), nuestra corrección corre siempre DESPUÉS de que Qt termine su propio ajuste,
     #sin importar el orden interno de señales/slots.
     def _reajustar_tras_doble_clic(indice_columna, _t=tabla):
+
         def _corregir():
+
             base_dict= getattr(_t, "_anchos_base_columnas", None)
             base= base_dict.get(indice_columna) if base_dict else None
             if base is None:
@@ -76,55 +78,55 @@ def aplicar_estructura_tabla(tabla):
     tabla.horizontalHeader().sectionHandleDoubleClicked.connect(_reajustar_tras_doble_clic)
 
 
+#Ensancha una columna de `tabla` por encima de su ancho de reposo SOLO
+#cuando algún registro de la página/tabla actual la necesita (un nombre,
+#descripción, tutor, etc. demasiado largo para caber en el ancho normal
+#de esa columna). El resto de columnas se queda en su ancho de siempre,
+#así que la tabla solo saca su barra horizontal cuando de verdad hay un
+#valor que no cabe -en vez de recortarlo en silencio, que es lo que
+#pasaba en toda la app salvo en Estudiantes antes de este cambio-.
+#
+#Es el mismo mecanismo que ya usaba (de forma privada, solo para sí
+#mismo) el módulo de Estudiantes; aquí se comparte para que cualquier
+#tabla de la app tenga la misma escalabilidad horizontal, SIN tener que
+#declarar a mano el ancho de cada columna: la PRIMERA vez que se llama
+#para una tabla dada, memoriza el ancho que cada columna (Interactive/
+#Fixed; se ignoran las columnas en modo Stretch, que ya administra Qt
+#solo) tenga EN ESE MOMENTO -que, justo antes de la primera llamada, es
+#el ancho normal/de diseño que ya traía la tabla, sin tocar- y lo usa
+#como PISO para esa columna en todas las llamadas siguientes. Así una
+#columna puede ensancharse para un registro puntual (una fila con un
+#nombre larguísimo, por ejemplo) y volver a su ancho normal en la
+#siguiente página/búsqueda si ya no hace falta.
+#
+#Debe llamarse DESPUÉS de llenar las filas de la tabla (setItem...); da
+#igual si es antes o después de un posible resizeRowsToContents(), son
+#ejes distintos (ancho de columna vs. alto de fila).
+#
+#IMPORTANTE - TECHO de ensanchado: además del piso (`base`), cada columna
+#tiene un TECHO (`ANCHO_MAXIMO_COLUMNA`). Sin un techo, un solo valor
+#extremadamente largo en una celda (por ejemplo, alguien que pega un
+#bloque de texto gigante en "Departamento" u "Observaciones") hacía que
+#`resizeColumnToContents` ensanchara esa columna sin límite, empujando
+#literalmente TODAS las demás columnas fuera de la vista -y, si en ese
+#módulo tampoco se veía la barra de scroll horizontal, el usuario se
+#quedaba viendo solo esa columna gigante sin forma de llegar a las
+#demás-. Con el techo, una celda así simplemente corta el texto (con
+#"…" via elide, que Qt ya hace solo al no caber) dentro de un ancho
+#razonable, y es la tabla la que saca su scroll horizontal para las
+#columnas que si acumuladas no quepan -en vez de que una sola celda
+#acapare todo el ancho disponible.
+#
+#`techos`: dict opcional {columna: ancho_máximo} para columnas que
+#necesitan un techo distinto del general (`ANCHO_MAXIMO_COLUMNA`). Es el
+#caso, por ejemplo, de una columna con un widget compuesto por varias
+#piezas que YA limitan su propio texto con elide (como "Categorías" en
+#observaciones.py, que puede traer varios chips): ahí el techo genérico
+#-pensado para una sola celda de texto libre sin ningún límite propio-
+#terminaba recortando el widget completo aunque ninguna pieza individual
+#fuera un texto descontrolado.
 def ajustar_anchos_columnas(tabla, techos=None):
-    """Ensancha una columna de `tabla` por encima de su ancho de reposo SOLO
-    cuando algún registro de la página/tabla actual la necesita (un nombre,
-    descripción, tutor, etc. demasiado largo para caber en el ancho normal
-    de esa columna). El resto de columnas se queda en su ancho de siempre,
-    así que la tabla solo saca su barra horizontal cuando de verdad hay un
-    valor que no cabe -en vez de recortarlo en silencio, que es lo que
-    pasaba en toda la app salvo en Estudiantes antes de este cambio-.
 
-    Es el mismo mecanismo que ya usaba (de forma privada, solo para sí
-    mismo) el módulo de Estudiantes; aquí se comparte para que cualquier
-    tabla de la app tenga la misma escalabilidad horizontal, SIN tener que
-    declarar a mano el ancho de cada columna: la PRIMERA vez que se llama
-    para una tabla dada, memoriza el ancho que cada columna (Interactive/
-    Fixed; se ignoran las columnas en modo Stretch, que ya administra Qt
-    solo) tenga EN ESE MOMENTO -que, justo antes de la primera llamada, es
-    el ancho normal/de diseño que ya traía la tabla, sin tocar- y lo usa
-    como PISO para esa columna en todas las llamadas siguientes. Así una
-    columna puede ensancharse para un registro puntual (una fila con un
-    nombre larguísimo, por ejemplo) y volver a su ancho normal en la
-    siguiente página/búsqueda si ya no hace falta.
-
-    Debe llamarse DESPUÉS de llenar las filas de la tabla (setItem...); da
-    igual si es antes o después de un posible resizeRowsToContents(), son
-    ejes distintos (ancho de columna vs. alto de fila).
-
-    IMPORTANTE - TECHO de ensanchado: además del piso (`base`), cada columna
-    tiene un TECHO (`ANCHO_MAXIMO_COLUMNA`). Sin un techo, un solo valor
-    extremadamente largo en una celda (por ejemplo, alguien que pega un
-    bloque de texto gigante en "Departamento" u "Observaciones") hacía que
-    `resizeColumnToContents` ensanchara esa columna sin límite, empujando
-    literalmente TODAS las demás columnas fuera de la vista -y, si en ese
-    módulo tampoco se veía la barra de scroll horizontal, el usuario se
-    quedaba viendo solo esa columna gigante sin forma de llegar a las
-    demás-. Con el techo, una celda así simplemente corta el texto (con
-    "…" via elide, que Qt ya hace solo al no caber) dentro de un ancho
-    razonable, y es la tabla la que saca su scroll horizontal para las
-    columnas que si acumuladas no quepan -en vez de que una sola celda
-    acapare todo el ancho disponible.
-
-    `techos`: dict opcional {columna: ancho_máximo} para columnas que
-    necesitan un techo distinto del general (`ANCHO_MAXIMO_COLUMNA`). Es el
-    caso, por ejemplo, de una columna con un widget compuesto por varias
-    piezas que YA limitan su propio texto con elide (como "Categorías" en
-    observaciones.py, que puede traer varios chips): ahí el techo genérico
-    -pensado para una sola celda de texto libre sin ningún límite propio-
-    terminaba recortando el widget completo aunque ninguna pieza individual
-    fuera un texto descontrolado.
-    """
     header= tabla.horizontalHeader()
     techos= techos or {}
     tabla._techos_columnas= techos  #usado también por el handler de doble clic en aplicar_estructura_tabla
@@ -158,22 +160,23 @@ def ajustar_anchos_columnas(tabla, techos=None):
 
 
 #OPTIMIZACIÓN: pausar la tabla mientras se llena
+#Context manager que desactiva repintado/orden/señales de una
+#QTableWidget mientras se llena con muchas filas, y lo restaura al salir.
+#
+#En equipos modestos, insertar cientos o miles de QTableWidgetItem con el
+#repintado y el ordenamiento activados dispara un layout/paint por cada
+#celda. Envolver el llenado en `with tabla_pausada(self.tabla): ...`
+#evita ese costo sin cambiar ningún dato ni comportamiento visible: el
+#contenido final es idéntico, solo se construye de forma más barata.
 @contextmanager
 def tabla_pausada(tabla):
-    """Context manager que desactiva repintado/orden/señales de una
-    QTableWidget mientras se llena con muchas filas, y lo restaura al salir.
 
-    En equipos modestos, insertar cientos o miles de QTableWidgetItem con el
-    repintado y el ordenamiento activados dispara un layout/paint por cada
-    celda. Envolver el llenado en `with tabla_pausada(self.tabla): ...`
-    evita ese costo sin cambiar ningún dato ni comportamiento visible: el
-    contenido final es idéntico, solo se construye de forma más barata.
-    """
     tenia_orden= tabla.isSortingEnabled()
     tabla.setSortingEnabled(False)
     tabla.setUpdatesEnabled(False)
     tabla.blockSignals(True)
     try:
+
         yield tabla
     finally:
         tabla.blockSignals(False)
@@ -193,21 +196,22 @@ _CACHE_PIXMAPS_LIMITE= 500  #suficiente para varias páginas de fotos distintas
 ROL_RUTA_FOTO= int(Qt.ItemDataRole.UserRole) + 1
 
 
+#Igual que recortar una foto en círculo para mostrarla en una tabla,
+#pero cacheado por (ruta, tamaño, fecha de modificación del archivo).
+#
+#Decodificar y volver a escalar/recortar un JPG/PNG cada vez que se
+#repinta o pagina una tabla es de las operaciones más caras en equipos
+#modestos. Como la foto de una persona casi nunca cambia entre un
+#refresco de tabla y el siguiente, cachear el resultado ya recortado
+#evita ese trabajo repetido. Si el archivo cambia (nueva foto), la marca
+#de tiempo cambia y la caché se renueva sola: nunca se muestra una foto
+#vieja.
 def obtener_pixmap_circular_cacheado(ruta, tamano):
-    """Igual que recortar una foto en círculo para mostrarla en una tabla,
-    pero cacheado por (ruta, tamaño, fecha de modificación del archivo).
 
-    Decodificar y volver a escalar/recortar un JPG/PNG cada vez que se
-    repinta o pagina una tabla es de las operaciones más caras en equipos
-    modestos. Como la foto de una persona casi nunca cambia entre un
-    refresco de tabla y el siguiente, cachear el resultado ya recortado
-    evita ese trabajo repetido. Si el archivo cambia (nueva foto), la marca
-    de tiempo cambia y la caché se renueva sola: nunca se muestra una foto
-    vieja.
-    """
     if not ruta or not os.path.exists(ruta):
         return None
     try:
+
         mtime= os.path.getmtime(ruta)
     except OSError:
         return None
@@ -251,15 +255,16 @@ TAMANO_FOTO_TABLA= 56
 _CACHE_PLACEHOLDER_FOTO= {}
 
 
+#Círculo gris neutro con una silueta de persona, para la columna
+#"Foto" de una tabla cuando ese registro todavía no tiene fotografía
+#guardada. Antes esa celda se dejaba completamente vacía -sin ninguna
+#decoración-, lo que en una columna angosta se veía como un hueco en
+#blanco sin ninguna intención visual; este círculo hace explícito que
+#"no hay foto" con el mismo lenguaje visual (silueta + círculo) que ya
+#usan los formularios de Estudiantes/Profesores/Personal en su botón
+#"Sin foto" antes de elegir una.
 def pixmap_placeholder_foto_tabla(tamano=TAMANO_FOTO_TABLA):
-    """Círculo gris neutro con una silueta de persona, para la columna
-    "Foto" de una tabla cuando ese registro todavía no tiene fotografía
-    guardada. Antes esa celda se dejaba completamente vacía -sin ninguna
-    decoración-, lo que en una columna angosta se veía como un hueco en
-    blanco sin ninguna intención visual; este círculo hace explícito que
-    "no hay foto" con el mismo lenguaje visual (silueta + círculo) que ya
-    usan los formularios de Estudiantes/Profesores/Personal en su botón
-    "Sin foto" antes de elegir una."""
+
     if tamano in _CACHE_PLACEHOLDER_FOTO:
         return _CACHE_PLACEHOLDER_FOTO[tamano]
     resultado= QPixmap(tamano, tamano)
@@ -283,21 +288,22 @@ def pixmap_placeholder_foto_tabla(tamano=TAMANO_FOTO_TABLA):
     return resultado
 
 
+#Dibuja la columna "Foto" (fondo de selección, hover, etc. incluidos)
+#forzando la decoración (la miniatura circular o su placeholder) a
+#quedar centrada horizontal Y verticalmente en la celda.
+#
+#Por qué hace falta: el estilo de Qt por defecto (en varias plataformas)
+#pega la decoración de un QTableWidgetItem contra el borde IZQUIERDO de
+#la celda sin importar cuán ancha sea esa celda -`item.setTextAlignment`
+#no cambia esto, porque esa propiedad solo controla el TEXTO, no la
+#decoración-. Este delegado reemplaza el pintado estándar únicamente
+#para forzar `decorationAlignment = AlignCenter`, dejando todo lo demás
+#(colores, selección, fuente...) exactamente igual porque sigue
+#delegando el dibujo real al estilo activo (`style().drawControl`).
 class _DelegadoFotoCentrada(QStyledItemDelegate):
-    """Dibuja la columna "Foto" (fondo de selección, hover, etc. incluidos)
-    forzando la decoración (la miniatura circular o su placeholder) a
-    quedar centrada horizontal Y verticalmente en la celda.
-
-    Por qué hace falta: el estilo de Qt por defecto (en varias plataformas)
-    pega la decoración de un QTableWidgetItem contra el borde IZQUIERDO de
-    la celda sin importar cuán ancha sea esa celda -`item.setTextAlignment`
-    no cambia esto, porque esa propiedad solo controla el TEXTO, no la
-    decoración-. Este delegado reemplaza el pintado estándar únicamente
-    para forzar `decorationAlignment = AlignCenter`, dejando todo lo demás
-    (colores, selección, fuente...) exactamente igual porque sigue
-    delegando el dibujo real al estilo activo (`style().drawControl`)."""
 
     def paint(self, painter, option, index):
+
         opcion= QStyleOptionViewItem(option)
         self.initStyleOption(opcion, index)
         opcion.decorationAlignment= Qt.AlignmentFlag.AlignCenter
@@ -307,34 +313,35 @@ class _DelegadoFotoCentrada(QStyledItemDelegate):
         style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opcion, painter, widget)
 
 
+#Deja la columna "Foto" de `tabla` lista para mostrar la miniatura
+#circular sin que se vea recortada ni descentrada -el problema real era
+#que, sin `setIconSize`, Qt calculaba el alto de la fila (y el recuadro
+#donde pinta la decoración) usando el tamaño de icono POR DEFECTO del
+#estilo (más chico que nuestra miniatura de `tamano`px), así que la
+#foto terminaba dibujándose más grande que el espacio reservado para
+#ella y se veía "cortada" contra el borde de la fila.
+#
+#Llamar UNA VEZ al construir la tabla (después de crear las columnas),
+#ANTES de la primera llamada a `ajustar_anchos_columnas` -normalmente
+#junto con `aplicar_estructura_tabla`, en `_build_ui`-. Fija además un
+#ancho de columna ajustado al tamaño real de la miniatura -en vez de
+#dejar que la columna "Foto" se ensanche/angoste con el resto- para que
+#el círculo quede centrado en una columna a su medida y no perdido en
+#un espacio mucho más ancho que su propio contenido.
+#
+#IMPORTANTE: a propósito NO toca `tabla._anchos_base_columnas` (el piso
+#de ancho que usa `ajustar_anchos_columnas`, ver ahí arriba). Esta
+#función se llama antes de que esa tabla exista todavía, y si la
+#creáramos aquí a mano con una sola columna, `ajustar_anchos_columnas`
+#ya no la encontraría "vacía" en su primera llamada y se saltaría por
+#completo el cálculo automático del piso para TODAS las demás columnas.
+#Dejando aquí solo el `setColumnWidth`, ese mismo ancho queda
+#disponible normalmente cuando `ajustar_anchos_columnas` arme su propio
+#piso por primera vez -antes de cargar ninguna fila-, así que la
+#columna "Foto" también queda con el piso correcto sin ningún caso
+#especial.
 def configurar_columna_foto(tabla, columna, tamano=TAMANO_FOTO_TABLA):
-    """Deja la columna "Foto" de `tabla` lista para mostrar la miniatura
-    circular sin que se vea recortada ni descentrada -el problema real era
-    que, sin `setIconSize`, Qt calculaba el alto de la fila (y el recuadro
-    donde pinta la decoración) usando el tamaño de icono POR DEFECTO del
-    estilo (más chico que nuestra miniatura de `tamano`px), así que la
-    foto terminaba dibujándose más grande que el espacio reservado para
-    ella y se veía "cortada" contra el borde de la fila.
 
-    Llamar UNA VEZ al construir la tabla (después de crear las columnas),
-    ANTES de la primera llamada a `ajustar_anchos_columnas` -normalmente
-    junto con `aplicar_estructura_tabla`, en `_build_ui`-. Fija además un
-    ancho de columna ajustado al tamaño real de la miniatura -en vez de
-    dejar que la columna "Foto" se ensanche/angoste con el resto- para que
-    el círculo quede centrado en una columna a su medida y no perdido en
-    un espacio mucho más ancho que su propio contenido.
-
-    IMPORTANTE: a propósito NO toca `tabla._anchos_base_columnas` (el piso
-    de ancho que usa `ajustar_anchos_columnas`, ver ahí arriba). Esta
-    función se llama antes de que esa tabla exista todavía, y si la
-    creáramos aquí a mano con una sola columna, `ajustar_anchos_columnas`
-    ya no la encontraría "vacía" en su primera llamada y se saltaría por
-    completo el cálculo automático del piso para TODAS las demás columnas.
-    Dejando aquí solo el `setColumnWidth`, ese mismo ancho queda
-    disponible normalmente cuando `ajustar_anchos_columnas` arme su propio
-    piso por primera vez -antes de cargar ninguna fila-, así que la
-    columna "Foto" también queda con el piso correcto sin ningún caso
-    especial."""
     tabla.setIconSize(QSize(tamano, tamano))
     tabla.setColumnWidth(columna, tamano + 22)
     item_header= tabla.horizontalHeaderItem(columna)
@@ -347,15 +354,16 @@ def configurar_columna_foto(tabla, columna, tamano=TAMANO_FOTO_TABLA):
     tabla.setItemDelegateForColumn(columna, delegado)
 
 
+#Variante 'grande' de obtener_pixmap_circular_cacheado(), pensada para
+#el encabezado del diálogo de detalle en vez de una celda de tabla: la
+#foto recortada en círculo queda un poco más chica que `diametro` para
+#dejarle espacio a un anillo de acento alrededor (el mismo tipo de
+#detalle -foto redonda con borde de color- que ya usan las tarjetas de
+#'Elegir Foto' de Estudiantes/Personal/Profesores), sin cachear -esta
+#versión grande solo se dibuja una vez por apertura de diálogo, no en
+#cada repintado de una tabla con cientos de filas.
 def _pixmap_circular_con_anillo(ruta, diametro, grosor_anillo=4, color_anillo="#6366F1"):
-    """Variante 'grande' de obtener_pixmap_circular_cacheado(), pensada para
-    el encabezado del diálogo de detalle en vez de una celda de tabla: la
-    foto recortada en círculo queda un poco más chica que `diametro` para
-    dejarle espacio a un anillo de acento alrededor (el mismo tipo de
-    detalle -foto redonda con borde de color- que ya usan las tarjetas de
-    'Elegir Foto' de Estudiantes/Personal/Profesores), sin cachear -esta
-    versión grande solo se dibuja una vez por apertura de diálogo, no en
-    cada repintado de una tabla con cientos de filas."""
+
     if not ruta or not os.path.exists(ruta):
         return None
     origen= QPixmap(ruta)
@@ -387,9 +395,11 @@ ICONO_TABLA= "tableico.ico"
 
 
 class ControlPaginacion(QWidget):
+
     cambio= Signal()
 
     def __init__(self, tamanos=None, tamano_inicial=50, parent=None):
+
         super().__init__(parent)
         self.pagina_actual= 0
         self.total_registros= 0
@@ -463,15 +473,18 @@ class ControlPaginacion(QWidget):
         self._actualizar_etiqueta()
 
     def tamano_pagina(self):
+
         return self.combo_tamano.currentData()
 
     def total_paginas(self):
+
         tam= self.tamano_pagina()
         if not tam:
             return 1
         return max(1, math.ceil(self.total_registros / tam))
 
     def rango_actual(self):
+
         tam= self.tamano_pagina()
         if not tam:
             return 0, self.total_registros
@@ -480,6 +493,7 @@ class ControlPaginacion(QWidget):
         return inicio, fin
 
     def establecer_total(self, total):
+
         self.total_registros= total
         total_paginas= self.total_paginas()
         if self.pagina_actual >= total_paginas:
@@ -487,9 +501,11 @@ class ControlPaginacion(QWidget):
         self._actualizar_etiqueta()
 
     def reiniciar(self):
+
         self.pagina_actual= 0
 
     def _actualizar_etiqueta(self):
+
         total_paginas= self.total_paginas()
         self.lbl_total.setText(f"{self.total_registros} registro(s)")
         self.lbl_info.setText(f"Página {self.pagina_actual + 1} de {total_paginas}")
@@ -499,12 +515,14 @@ class ControlPaginacion(QWidget):
         self.btn_ultima.setEnabled(self.pagina_actual < total_paginas - 1)
 
     def _ir_primera(self):
+
         if self.pagina_actual != 0:
             self.pagina_actual= 0
             self._actualizar_etiqueta()
             self.cambio.emit()
 
     def _ir_ultima(self):
+
         ultima= self.total_paginas() - 1
         if self.pagina_actual != ultima:
             self.pagina_actual= ultima
@@ -512,32 +530,36 @@ class ControlPaginacion(QWidget):
             self.cambio.emit()
 
     def _ir_anterior(self):
+
         if self.pagina_actual > 0:
             self.pagina_actual -= 1
             self._actualizar_etiqueta()
             self.cambio.emit()
 
     def _ir_siguiente(self):
+
         if self.pagina_actual < self.total_paginas() - 1:
             self.pagina_actual += 1
             self._actualizar_etiqueta()
             self.cambio.emit()
 
     def _cambio_tamano(self, _indice):
+
         self.pagina_actual= 0
         self._actualizar_etiqueta()
         self.cambio.emit()
 
 
 #DEBOUNCING - Optimización para búsquedas en tiempo real
+#Wrapper para QLineEdit que emite una señal solo después de un tiempo
+#de inactividad (debounce). Evita que se ejecuten consultas SQL en cada
+#pulsación de tecla.
 class BusquedaConDebounce(QWidget):
-    """Wrapper para QLineEdit que emite una señal solo después de un tiempo
-    de inactividad (debounce). Evita que se ejecuten consultas SQL en cada
-    pulsación de tecla."""
     
     texto_buscado= Signal(str)
     
     def __init__(self, parent=None, delay_ms=300):
+
         super().__init__(parent)
         self._delay_ms= delay_ms
         self._timer= QTimer()
@@ -554,28 +576,36 @@ class BusquedaConDebounce(QWidget):
         layout.addWidget(self.line_edit)
     
     def _on_texto_cambiado(self, texto):
+
         self._timer.stop()
         self._timer.start(self._delay_ms)
     
     def _emitir_busqueda(self):
+
         self.texto_buscado.emit(self.line_edit.text().strip())
     
     def text(self):
+
         return self.line_edit.text()
     
     def setText(self, texto):
+
         self.line_edit.setText(texto)
     
     def clear(self):
+
         self.line_edit.clear()
     
     def setPlaceholderText(self, texto):
+
         self.line_edit.setPlaceholderText(texto)
 
 
 #Detalle de registro
 class DialogoDetalleRegistro(QDialog):
+
     def __init__(self, parent, titulo, campos, extra_botones=None, foto_path=None):
+
         #Si hay una tabla en pantalla completa (diálogo modal), el detalle debe parentarse a ELLA: parentado a la
         #ventana principal quedaría por detrás del modal, invisible e inaccesible.
         super().__init__(padre_de_dialogo(parent))
@@ -648,6 +678,7 @@ class DialogoDetalleRegistro(QDialog):
 
 
 def mostrar_detalle_fila(parent, tabla, fila, titulo="Detalle del Registro", extra_botones=None):
+
     if fila < 0 or fila >= tabla.rowCount():
         return
     campos= []
@@ -695,13 +726,15 @@ def mostrar_detalle_fila(parent, tabla, fila, titulo="Detalle del Registro", ext
 
 
 def mostrar_detalle_campos(parent, titulo, campos, extra_botones=None, foto_path=None):
+
     DialogoDetalleRegistro(parent, titulo, campos, extra_botones=extra_botones, foto_path=foto_path).exec()
 
 
+#Ventana simple de solo-lectura para mostrar un texto que puede ser
+#largo (ej. la descripción completa de una tarea/calificación) sin
+#truncarlo ni forzarlo dentro de una fila de detalle.
 def mostrar_texto_largo(parent, titulo, texto):
-    """Ventana simple de solo-lectura para mostrar un texto que puede ser
-    largo (ej. la descripción completa de una tarea/calificación) sin
-    truncarlo ni forzarlo dentro de una fila de detalle."""
+
     dialogo= QDialog(padre_de_dialogo(parent))
     dialogo.setWindowTitle(titulo)
     dialogo.setWindowIcon(obtener_icono(ICONO_TABLA))
@@ -726,15 +759,17 @@ def mostrar_texto_largo(parent, titulo, texto):
     dialogo.exec()
 
 
+#proveedor_extra_botones (opcional): función que recibe la fila
+#seleccionada (índice) y devuelve una lista de (texto, callback) para
+#agregarse como botones extra dentro del diálogo de detalle.
 def agregar_boton_detalle(layout_botones, tabla, parent, titulo="Detalle del Registro", texto_boton="Ver Detalle",
                            proveedor_extra_botones= None):
-    """proveedor_extra_botones (opcional): función que recibe la fila
-    seleccionada (índice) y devuelve una lista de (texto, callback) para
-    agregarse como botones extra dentro del diálogo de detalle."""
+
     btn_detalle= QPushButton(texto_boton)
     btn_detalle.setObjectName("BtnAccionNeutro")
 
     def _abrir():
+
         fila_sel= tabla.currentRow()
         if fila_sel < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro de la tabla.", parent)
@@ -754,44 +789,47 @@ def agregar_boton_detalle(layout_botones, tabla, parent, titulo="Detalle del Reg
 _ESTADO_PANTALLA_COMPLETA= {"dialogo": None}
 
 
+#Devuelve el diálogo de pantalla completa abierto ahora mismo, o None.
+#
+#Los módulos lo usan para parentar a él cualquier ventana que abran
+#(filtros, detalle, mensajes): el diálogo de pantalla completa es MODAL,
+#así que cualquier ventana parentada a la ventana principal queda DETRÁS
+#de él e inaccesible -se ve el problema al abrir los filtros estando en
+#pantalla completa-. Mismo criterio que reportes_editor._padre_dialogo.
 def dialogo_pantalla_completa_activo():
-    """Devuelve el diálogo de pantalla completa abierto ahora mismo, o None.
 
-    Los módulos lo usan para parentar a él cualquier ventana que abran
-    (filtros, detalle, mensajes): el diálogo de pantalla completa es MODAL,
-    así que cualquier ventana parentada a la ventana principal queda DETRÁS
-    de él e inaccesible -se ve el problema al abrir los filtros estando en
-    pantalla completa-. Mismo criterio que reportes_editor._padre_dialogo."""
     return _ESTADO_PANTALLA_COMPLETA["dialogo"]
 
 
+#Devuelve el padre que debe usar un diálogo que se abre desde `parent`:
+#el diálogo de pantalla completo si hay uno activo (ver
+#`dialogo_pantalla_completa_activo`), o `parent` tal cual si no.
 def padre_de_dialogo(parent):
-    """Devuelve el padre que debe usar un diálogo que se abre desde `parent`:
-    el diálogo de pantalla completo si hay uno activo (ver
-    `dialogo_pantalla_completa_activo`), o `parent` tal cual si no."""
+
     activo= _ESTADO_PANTALLA_COMPLETA["dialogo"]
     if activo is not None and parent is not None:
         return activo
     return parent
 
 
+#Busca, recursivamente dentro de `layout` (bajando por sub-layouts
+#anidados con addLayout, p. ej. el `contenido` de TarjetaSeccion en
+#configuracion.py), el layout que contiene a `widget` DIRECTAMENTE.
+#
+#`QLayout.indexOf(widget)` -usado más abajo- NO es recursivo: solo
+#encuentra widgets agregados directamente a ESE layout, no a un
+#sub-layout suyo. Sin esto, para cualquier widget que viva dentro de un
+#layout anidado (como TarjetaSeccion.contenido, que a su vez está
+#metido dentro del layout raíz de la tarjeta), `layout.indexOf(widget)`
+#siempre da -1 y, al restaurar, el widget termina agregado al FINAL del
+#layout raíz en vez de volver a su posición real dentro del anidado
+#-reordenando visualmente el resto de la tarjeta cada vez que se sale
+#de pantalla completa-.
+#
+#Devuelve el sub-layout directo, o None si no se encuentra (p. ej. el
+#widget está suelto sin layout todavía).
 def _buscar_layout_directo(layout, widget):
-    """Busca, recursivamente dentro de `layout` (bajando por sub-layouts
-    anidados con addLayout, p. ej. el `contenido` de TarjetaSeccion en
-    configuracion.py), el layout que contiene a `widget` DIRECTAMENTE.
 
-    `QLayout.indexOf(widget)` -usado más abajo- NO es recursivo: solo
-    encuentra widgets agregados directamente a ESE layout, no a un
-    sub-layout suyo. Sin esto, para cualquier widget que viva dentro de un
-    layout anidado (como TarjetaSeccion.contenido, que a su vez está
-    metido dentro del layout raíz de la tarjeta), `layout.indexOf(widget)`
-    siempre da -1 y, al restaurar, el widget termina agregado al FINAL del
-    layout raíz en vez de volver a su posición real dentro del anidado
-    -reordenando visualmente el resto de la tarjeta cada vez que se sale
-    de pantalla completa-.
-
-    Devuelve el sub-layout directo, o None si no se encuentra (p. ej. el
-    widget está suelto sin layout todavía)."""
     if layout is None:
         return None
     if layout.indexOf(widget) >= 0:
@@ -806,23 +844,23 @@ def _buscar_layout_directo(layout, widget):
     return None
 
 
+#Diálogo maximizado que "toma prestados" temporalmente los widgets
+#reales de un módulo (filtros + tabla + paginación) en vez de duplicar
+#su lógica. Como son los MISMOS objetos -no copias-, la búsqueda, los
+#combos, los chips de filtro, la paginación y cualquier señal ya
+#conectada siguen funcionando exactamente igual dentro del diálogo, sin
+#tener que volver a cablear nada.
+#
+#Al cerrarse, cada widget vuelve a su layout y posición original -el
+#resto de la pantalla queda exactamente como estaba antes de expandir.
+#
+#Solo puede haber UNA instancia abierta en toda la app a la vez (ver
+#`_ESTADO_PANTALLA_COMPLETA`): no tendría sentido -ni cabría en la
+#pantalla- apilar una tabla en pantalla completa sobre otra.
 class _DialogoTablaCompleta(QDialog):
-    """Diálogo maximizado que \"toma prestados\" temporalmente los widgets
-    reales de un módulo (filtros + tabla + paginación) en vez de duplicar
-    su lógica. Como son los MISMOS objetos -no copias-, la búsqueda, los
-    combos, los chips de filtro, la paginación y cualquier señal ya
-    conectada siguen funcionando exactamente igual dentro del diálogo, sin
-    tener que volver a cablear nada.
-
-    Al cerrarse, cada widget vuelve a su layout y posición original -el
-    resto de la pantalla queda exactamente como estaba antes de expandir.
-
-    Solo puede haber UNA instancia abierta en toda la app a la vez (ver
-    `_ESTADO_PANTALLA_COMPLETA`): no tendría sentido -ni cabría en la
-    pantalla- apilar una tabla en pantalla completa sobre otra.
-    """
 
     def __init__(self, widgets, titulo="Tabla", parent=None):
+
         super().__init__(parent)
         self.setWindowTitle(titulo)
         self.setWindowIcon(obtener_icono(ICONO_TABLA))
@@ -910,6 +948,7 @@ class _DialogoTablaCompleta(QDialog):
             stretch= 0
             if layout_padre is not None and hasattr(layout_padre, "stretch"):
                 try:
+
                     stretch= layout_padre.stretch(indice)
                 except Exception:
                     stretch= 0
@@ -966,10 +1005,12 @@ class _DialogoTablaCompleta(QDialog):
         self._animacion.start()
 
     def _restaurar(self):
+
         #El efecto de opacidad ya cumplió su función en la entrada; si se queda puesto durante el cierre, Qt puede
         #repintar de más -se quita antes de devolver los widgets a su sitio.
         self.setGraphicsEffect(None)
         try:
+
             for tabla, tope in self._topes_alto_originales:
                 tabla.setMaximumHeight(tope)
             for objeto, fuente in self._fuentes_originales:
@@ -995,6 +1036,7 @@ class _DialogoTablaCompleta(QDialog):
                         layout_padre.addWidget(widget)
                     else:
                         try:
+
                             layout_padre.insertWidget(indice, widget, stretch=stretch)
                         except TypeError:
                             #Layout sin soporte de stretch en insertWidget (p. ej. QGridLayout): se reinserta sin él.
@@ -1009,6 +1051,7 @@ class _DialogoTablaCompleta(QDialog):
                 _ESTADO_PANTALLA_COMPLETA["dialogo"]= None
 
     def accept(self):
+
         if self._cerrando:
             return
         self._cerrando= True
@@ -1016,6 +1059,7 @@ class _DialogoTablaCompleta(QDialog):
         super().accept()
 
     def reject(self):
+
         if self._cerrando:
             return
         self._cerrando= True
@@ -1026,6 +1070,7 @@ class _DialogoTablaCompleta(QDialog):
         super().reject()
 
     def closeEvent(self, event):
+
         #La X de la barra de título: se trata EXACTAMENTE como un rechazo. NO basta con aceptar el evento: QDialog
         #cierra vía reject() y, si _cerrando ya estaba puesto, el override anterior se comía la llamada a
         #super().reject() dejando el exec() colgado para siempre.
@@ -1034,31 +1079,31 @@ class _DialogoTablaCompleta(QDialog):
             self.reject()
 
 
+#Agrega un botón cuadrado con el icono ⛶ a `layout_cabecera` (p. ej.
+#una fila QHBoxLayout puesta como encabezado de la tarjeta de la tabla)
+#que abre `widgets` -típicamente [tarjeta_filtros, tarjeta_tabla,
+#control_paginacion]- dentro de un diálogo maximizado, con búsqueda y
+#filtros funcionando exactamente igual que en la pantalla normal.
+#
+#El mismo botón sirve para entrar y para salir: si esta tabla ya está
+#en pantalla completa, volver a pulsarlo la cierra. Si hay OTRA tabla
+#en pantalla completa abierta (de otro módulo), en vez de abrir una
+#segunda instancia simplemente la trae al frente -solo puede existir
+#una a la vez en toda la app-.
+#
+#`parent` debe ser el propio módulo/página (para que el diálogo se
+#centre sobre la ventana principal); si se omite, se usa el primer
+#widget de la lista.
+#
+#Uso típico, justo después de armar tarjeta_filtros/tarjeta_tabla/pagina:
+#agregar_boton_pantalla_completa(
+#None,  #o una QHBoxLayout donde alojar el botón
+#[self.tarjeta_filtros, self.tarjeta_tabla, self.pagina],
+#titulo= "Materiales", parent=self)
+#Con layout_cabecera=None el botón ⛶ vive a la derecha del control de
+#paginación (o del primer widget si no hay paginación).
 def agregar_boton_pantalla_completa(layout_cabecera, widgets, titulo="Tabla", parent=None):
-    """Agrega un botón cuadrado con el icono ⛶ a `layout_cabecera` (p. ej.
-    una fila QHBoxLayout puesta como encabezado de la tarjeta de la tabla)
-    que abre `widgets` -típicamente [tarjeta_filtros, tarjeta_tabla,
-    control_paginacion]- dentro de un diálogo maximizado, con búsqueda y
-    filtros funcionando exactamente igual que en la pantalla normal.
 
-    El mismo botón sirve para entrar y para salir: si esta tabla ya está
-    en pantalla completa, volver a pulsarlo la cierra. Si hay OTRA tabla
-    en pantalla completa abierta (de otro módulo), en vez de abrir una
-    segunda instancia simplemente la trae al frente -solo puede existir
-    una a la vez en toda la app-.
-
-    `parent` debe ser el propio módulo/página (para que el diálogo se
-    centre sobre la ventana principal); si se omite, se usa el primer
-    widget de la lista.
-
-    Uso típico, justo después de armar tarjeta_filtros/tarjeta_tabla/pagina:
-        agregar_boton_pantalla_completa(
-            None,  #o una QHBoxLayout donde alojar el botón
-            [self.tarjeta_filtros, self.tarjeta_tabla, self.pagina],
-            titulo= "Materiales", parent=self)
-    Con layout_cabecera=None el botón ⛶ vive a la derecha del control de
-    paginación (o del primer widget si no hay paginación).
-    """
     btn= QPushButton()
     btn.setObjectName("BtnPantallaCompleta")
     btn.setIcon(icono_emoji("⛶"))
@@ -1070,6 +1115,7 @@ def agregar_boton_pantalla_completa(layout_cabecera, widgets, titulo="Tabla", pa
     estado= {"dialogo_propio": None}
 
     def _abrir():
+
         activo= _ESTADO_PANTALLA_COMPLETA["dialogo"]
         if activo is not None:
             if activo is estado["dialogo_propio"]:

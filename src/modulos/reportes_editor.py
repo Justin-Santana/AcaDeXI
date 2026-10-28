@@ -50,12 +50,15 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_te
     EMOJI_CUADRO_TEXTO)
 
 try:
+
     from src.nucleo.bd import registrar_auditoria
 except Exception:  #pragma: no cover - por si se usa este visor fuera de AcaDeXI
     def registrar_auditoria(*args, **kwargs):
+
         pass
 
 try:
+
     from src.nucleo.hilo_trabajo import WorkerHilo
 except Exception:  #pragma: no cover
     WorkerHilo= None
@@ -82,16 +85,18 @@ FUENTES_DISPONIBLES= [
 
 
 def _extension(ruta):
+
     return os.path.splitext(ruta)[1].lower().lstrip(".")
 
 
+#Estilo de scrollbar único para TODO el editor (hoja de cálculo, Word y
+#PDF): grueso y fácil de agarrar -no la delgadita por defecto del sistema,
+#fácil de pasar por alto- y sigue el tema claro/oscuro de la app. Se usa
+#en los tres modos para que se vean exactamente igual sin importar cuál
+#se esté editando. `prefijo` acota el estilo a un widget concreto (por
+#ejemplo "QTableWidget ") para no afectar sin querer otras barras.
 def _qss_scrollbar_editor(c, prefijo=""):
-    """Estilo de scrollbar único para TODO el editor (hoja de cálculo, Word y
-    PDF): grueso y fácil de agarrar -no la delgadita por defecto del sistema,
-    fácil de pasar por alto- y sigue el tema claro/oscuro de la app. Se usa
-    en los tres modos para que se vean exactamente igual sin importar cuál
-    se esté editando. `prefijo` acota el estilo a un widget concreto (por
-    ejemplo "QTableWidget ") para no afectar sin querer otras barras."""
+
     return f"""
         {prefijo}QScrollBar:horizontal {{
             height: 16px;
@@ -132,33 +137,36 @@ def _qss_scrollbar_editor(c, prefijo=""):
     """
 
 
+#0 -> 'A', 1 -> 'B', ... 26 -> 'AA' (estilo Excel), para nombrar columnas nuevas.
 def _letra_columna(indice):
-    """0 -> 'A', 1 -> 'B', ... 26 -> 'AA' (estilo Excel), para nombrar columnas nuevas."""
+
     letras= string.ascii_uppercase
     indice += 1
     resultado= ""
     while indice > 0:
-        indice, resto = divmod(indice - 1, 26)
+        indice, resto= divmod(indice - 1, 26)
         resultado= letras[resto] + resultado
     return resultado
 
 
+#Dado un color de fondo (QColor), devuelve negro o blanco -el que mejor
+#contraste ofrezca- para el texto. Así una celda con relleno claro (por
+#ejemplo blanco, típico de un Excel exportado) sigue siendo legible aunque
+#la app esté en modo oscuro -donde el texto por defecto es claro y, sobre
+#un fondo también claro, se volvería invisible- y viceversa en modo claro.
 def _color_texto_contrastado(color_fondo):
-    """Dado un color de fondo (QColor), devuelve negro o blanco -el que mejor
-    contraste ofrezca- para el texto. Así una celda con relleno claro (por
-    ejemplo blanco, típico de un Excel exportado) sigue siendo legible aunque
-    la app esté en modo oscuro -donde el texto por defecto es claro y, sobre
-    un fondo también claro, se volvería invisible- y viceversa en modo claro."""
+
     luminancia= (0.299 * color_fondo.red() + 0.587 * color_fondo.green() + 0.114 * color_fondo.blue())
     return QColor("#0F172A") if luminancia > 140 else QColor("#F8FAFC")
 
 
+#Equivalente a QColorDialog.getColor(...), pero con una instancia
+#propia (en vez del atajo estático) para poder ponerle el icono de
+#ventana correcto: toda ventana de selección de color en AcaDeXI usa
+#ICONO_COLOR ("colorico.ico"), no el icono genérico de la app -el atajo
+#estático crea su diálogo por dentro y no deja tocarlo antes de mostrarlo.
 def _elegir_color_con_icono(color_inicial, parent, titulo=""):
-    """Equivalente a QColorDialog.getColor(...), pero con una instancia
-    propia (en vez del atajo estático) para poder ponerle el icono de
-    ventana correcto: toda ventana de selección de color en AcaDeXI usa
-    ICONO_COLOR ("colorico.ico"), no el icono genérico de la app -el atajo
-    estático crea su diálogo por dentro y no deja tocarlo antes de mostrarlo."""
+
     dialogo= QColorDialog(QColor(color_inicial), parent)
     if titulo:
         dialogo.setWindowTitle(titulo)
@@ -214,24 +222,28 @@ ESQUEMAS_ENLACE_PERMITIDOS= {"http", "https", "mailto"}
 
 
 def _esquema_enlace(url_texto):
+
     try:
+
         return (QUrl(url_texto or "").scheme() or "").lower()
     except Exception:
         return ""
 
 
+#True solo si el esquema está en la lista blanca. Cualquier otra cosa
+#(file, ftp, esquemas personalizados de otras apps, o directamente sin
+#esquema reconocible) se considera no seguro para abrir automáticamente.
 def enlace_es_seguro(url_texto):
-    """True solo si el esquema está en la lista blanca. Cualquier otra cosa
-    (file, ftp, esquemas personalizados de otras apps, o directamente sin
-    esquema reconocible) se considera no seguro para abrir automáticamente."""
+
     return bool(url_texto) and _esquema_enlace(url_texto) in ESQUEMAS_ENLACE_PERMITIDOS
 
 
+#Único punto por el que este editor abre un hipervínculo con el
+#sistema operativo. Si el esquema no es seguro, NO se abre -se avisa y
+#se muestra la URL cruda para que la persona pueda decidir copiarla y
+#revisarla por su cuenta, en vez de que la app la abra a ciegas.
 def abrir_enlace_externo(url_texto, padre=None):
-    """Único punto por el que este editor abre un hipervínculo con el
-    sistema operativo. Si el esquema no es seguro, NO se abre -se avisa y
-    se muestra la URL cruda para que la persona pueda decidir copiarla y
-    revisarla por su cuenta, en vez de que la app la abra a ciegas."""
+
     if enlace_es_seguro(url_texto):
         QDesktopServices.openUrl(QUrl(url_texto))
         return True
@@ -244,45 +256,51 @@ def abrir_enlace_externo(url_texto, padre=None):
     return False
 
 
+#Representa un error de fórmula al estilo Excel (#¡DIV/0!, #¡REF!, ...).
+#Se usa tanto como excepción (para cortar la evaluación) como valor
+#(el resultado final que queda mostrado en la celda).
 class _ErrorFormulaValor(Exception):
-    """Representa un error de fórmula al estilo Excel (#¡DIV/0!, #¡REF!, ...).
-    Se usa tanto como excepción (para cortar la evaluación) como valor
-    (el resultado final que queda mostrado en la celda)."""
 
     def __init__(self, codigo):
+
         super().__init__(codigo)
         self.codigo= codigo
 
     def __str__(self):
+
         return self.codigo
 
     def __repr__(self):
+
         return self.codigo
 
 
+#'A' -> 0, 'B' -> 1, ..., 'Z' -> 25, 'AA' -> 26 ... (inverso de _letra_columna).
 def _col_index_desde_letras(letras):
-    """'A' -> 0, 'B' -> 1, ..., 'Z' -> 25, 'AA' -> 26 ... (inverso de _letra_columna)."""
+
     indice= 0
     for ch in letras.upper():
         indice= indice * 26 + (ord(ch) - ord("A") + 1)
     return indice - 1
 
 
+#'B3' (o '$B$3') -> (fila 0-indexada, columna 0-indexada). (None, None) si no es válida.
 def _celda_a_indices(ref):
-    """'B3' (o '$B$3') -> (fila 0-indexada, columna 0-indexada). (None, None) si no es válida."""
+
     m= re.match(r"^\$?([A-Za-z]{1,3})\$?(\d+)$", ref)
     if not m:
         return None, None
-    letras, numero = m.group(1), int(m.group(2))
+    letras, numero= m.group(1), int(m.group(2))
     return numero - 1, _col_index_desde_letras(letras)
 
 
+#Desplaza las referencias RELATIVAS de fila de una fórmula en `delta`
+#filas (traducción estilo Excel al reordenar). Los componentes con "$"
+#antes del número (B$2, $B$2) quedan fijos, y los literales entre comillas
+#y los nombres de función (seguidos de paréntesis, p. ej. LOG10) no se
+#tocan. `formula` incluye el "=" inicial.
 def _traducir_filas_formula(formula, delta):
-    """Desplaza las referencias RELATIVAS de fila de una fórmula en `delta`
-    filas (traducción estilo Excel al reordenar). Los componentes con "$"
-    antes del número (B$2, $B$2) quedan fijos, y los literales entre comillas
-    y los nombres de función (seguidos de paréntesis, p. ej. LOG10) no se
-    tocan. `formula` incluye el "=" inicial."""
+
     partes= formula.split('"')  #alterna fuera/dentro de literales de texto
     for i in range(0, len(partes), 2):  #solo los trozos FUERA de comillas
         partes[i]= re.sub(
@@ -295,13 +313,14 @@ def _traducir_filas_formula(formula, delta):
     return '"'.join(partes)
 
 
+#A partir del contenido "crudo" de una celda (tal como se escribió a
+#mano o se leyó del propio Excel) determina su valor ya TIPADO -número,
+#booleano, fecha o texto- y, si corresponde, qué formato de número de
+#Excel conviene aplicarle (moneda/porcentaje) para que se muestre y se
+#guarde correctamente. Las fórmulas (texto que empieza con "=") no se
+#tocan aquí: las resuelve el motor de fórmulas.
 def _analizar_crudo(crudo):
-    """A partir del contenido "crudo" de una celda (tal como se escribió a
-    mano o se leyó del propio Excel) determina su valor ya TIPADO -número,
-    booleano, fecha o texto- y, si corresponde, qué formato de número de
-    Excel conviene aplicarle (moneda/porcentaje) para que se muestre y se
-    guarde correctamente. Las fórmulas (texto que empieza con "=") no se
-    tocan aquí: las resuelve el motor de fórmulas."""
+
     if crudo is None:
         return None, None
     if isinstance(crudo, bool):
@@ -327,6 +346,7 @@ def _analizar_crudo(crudo):
     if texto.endswith("%"):
         cuerpo= texto[:-1].strip().replace(",", "")
         try:
+
             return float(cuerpo) / 100.0, "porcentaje"
         except ValueError:
             pass
@@ -335,6 +355,7 @@ def _analizar_crudo(crudo):
     if texto and texto[0] in "$€£¥":
         cuerpo= texto[1:].strip().replace(",", "")
         try:
+
             return float(cuerpo), "moneda"
         except ValueError:
             pass
@@ -342,6 +363,7 @@ def _analizar_crudo(crudo):
     #Número normal (admite separador de miles con coma)
     cuerpo= texto.replace(",", "")
     try:
+
         if re.fullmatch(r"-?\d+", cuerpo):
             return int(cuerpo), None
         return float(cuerpo), None
@@ -351,6 +373,7 @@ def _analizar_crudo(crudo):
     #Fecha (formatos habituales)
     for patron in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
         try:
+
             return datetime.strptime(texto, patron).date(), "fecha"
         except ValueError:
             continue
@@ -358,20 +381,22 @@ def _analizar_crudo(crudo):
     return texto, None
 
 
+#Intenta convertir el texto de una celda a su valor tipado (número,
+#booleano o fecha) para que las columnas numéricas de Excel se
+#mantengan usables tras editar en la grilla; si no, se guarda como
+#texto tal cual. (Se conserva esta función -usada en otros puntos del
+#módulo- como envoltorio fino sobre _analizar_crudo.)
 def _convertir_valor(texto):
-    """Intenta convertir el texto de una celda a su valor tipado (número,
-    booleano o fecha) para que las columnas numéricas de Excel se
-    mantengan usables tras editar en la grilla; si no, se guarda como
-    texto tal cual. (Se conserva esta función -usada en otros puntos del
-    módulo- como envoltorio fino sobre _analizar_crudo.)"""
-    valor, _formato = _analizar_crudo(texto)
+
+    valor, _formato= _analizar_crudo(texto)
     return valor
 
 
+#A partir del `number_format` de openpyxl (p.ej. '"$"#,##0.00',
+#'0.00%', 'dd/mm/yyyy') deduce una categoría simple: moneda, porcentaje,
+#fecha o None (formato general).
 def _clasificar_formato_excel(formato_excel):
-    """A partir del `number_format` de openpyxl (p.ej. '"$"#,##0.00',
-    '0.00%', 'dd/mm/yyyy') deduce una categoría simple: moneda, porcentaje,
-    fecha o None (formato general)."""
+
     if not formato_excel or formato_excel == "General":
         return None
     fmt= formato_excel.lower()
@@ -384,10 +409,11 @@ def _clasificar_formato_excel(formato_excel):
     return None
 
 
+#Formatea un número (sin moneda/porcentaje) con separador de miles,
+#igual que Excel en formato general: enteros sin decimales, decimales
+#recortando ceros sobrantes.
 def _formatear_numero_general(valor):
-    """Formatea un número (sin moneda/porcentaje) con separador de miles,
-    igual que Excel en formato general: enteros sin decimales, decimales
-    recortando ceros sobrantes."""
+
     if isinstance(valor, float) and valor.is_integer():
         return f"{int(valor):,}"
     if isinstance(valor, float):
@@ -396,11 +422,12 @@ def _formatear_numero_general(valor):
     return f"{valor:,}"
 
 
+#Convierte un valor ya calculado/tipado en el texto que se ve en la
+#celda, aplicando el formato de número (moneda/porcentaje/fecha) que
+#corresponda -tal como Excel muestra "$1,234.56" aunque el valor
+#guardado sea 1234.56.
 def _formatear_para_mostrar(valor, formato_num=None):
-    """Convierte un valor ya calculado/tipado en el texto que se ve en la
-    celda, aplicando el formato de número (moneda/porcentaje/fecha) que
-    corresponda -tal como Excel muestra "$1,234.56" aunque el valor
-    guardado sea 1234.56."""
+
     if isinstance(valor, _ErrorFormulaValor):
         return valor.codigo
     if valor is None:
@@ -419,9 +446,10 @@ def _formatear_para_mostrar(valor, formato_num=None):
     return str(valor)
 
 
+#Representación en texto editable de un valor crudo (lo que se ve al
+#hacer doble clic para editar la celda).
 def _texto_crudo_como_str(crudo):
-    """Representación en texto editable de un valor crudo (lo que se ve al
-    hacer doble clic para editar la celda)."""
+
     if crudo is None:
         return ""
     if isinstance(crudo, bool):
@@ -433,9 +461,10 @@ def _texto_crudo_como_str(crudo):
     return str(crudo)
 
 
+#Coacciona un valor de fórmula a número; propaga errores; lanza
+##¡VALOR! si no es convertible.
 def _num(valor):
-    """Coacciona un valor de fórmula a número; propaga errores; lanza
-    #¡VALOR! si no es convertible."""
+
     if isinstance(valor, _ErrorFormulaValor):
         raise valor
     if valor is None:
@@ -447,15 +476,16 @@ def _num(valor):
     if isinstance(valor, (datetime, date)):
         return valor.toordinal()
     if isinstance(valor, str):
-        tipado, _f = _analizar_crudo(valor)
+        tipado, _f= _analizar_crudo(valor)
         if isinstance(tipado, (int, float)) and not isinstance(tipado, bool):
             return tipado
         raise _ErrorFormulaValor("#¡VALOR!")
     raise _ErrorFormulaValor("#¡VALOR!")
 
 
+#Coacciona un valor de fórmula a texto (para & y funciones de texto).
 def _texto_formula(valor):
-    """Coacciona un valor de fórmula a texto (para & y funciones de texto)."""
+
     if isinstance(valor, _ErrorFormulaValor):
         raise valor
     if valor is None:
@@ -468,15 +498,17 @@ def _texto_formula(valor):
 
 
 def _aplicar_comparacion(op, izq, der):
+
     if isinstance(izq, _ErrorFormulaValor):
         raise izq
     if isinstance(der, _ErrorFormulaValor):
         raise der
     if isinstance(izq, str) or isinstance(der, str):
-        a, b = _texto_formula(izq).upper(), _texto_formula(der).upper()
+        a, b= _texto_formula(izq).upper(), _texto_formula(der).upper()
     else:
-        a, b = (izq if izq is not None else 0), (der if der is not None else 0)
+        a, b= (izq if izq is not None else 0), (der if der is not None else 0)
     try:
+
         if op == "=":
             return a == b
         if op == "<>":
@@ -495,6 +527,7 @@ def _aplicar_comparacion(op, izq, der):
 
 
 def _aplanar(argumentos):
+
     resultado= []
     for a in argumentos:
         if isinstance(a, list):
@@ -505,6 +538,7 @@ def _aplanar(argumentos):
 
 
 def _numeros(argumentos):
+
     numeros= []
     for v in _aplanar(argumentos):
         if isinstance(v, _ErrorFormulaValor):
@@ -517,13 +551,15 @@ def _numeros(argumentos):
 
 
 def _cumple_criterio(valor, criterio):
+
     if isinstance(criterio, str) and criterio[:2] in (">=", "<="):
-        op, resto = criterio[:2], criterio[2:]
+        op, resto= criterio[:2], criterio[2:]
     elif isinstance(criterio, str) and criterio[:1] in (">", "<"):
-        op, resto = criterio[:1], criterio[1:]
+        op, resto= criterio[:1], criterio[1:]
     else:
-        op, resto = "=", criterio
+        op, resto= "=", criterio
     try:
+
         objetivo= float(resto)
         actual= _num(valor)
     except (ValueError, TypeError, _ErrorFormulaValor):
@@ -540,10 +576,13 @@ def _cumple_criterio(valor, criterio):
     return actual == objetivo
 
 
-def _f_sum(a): return sum(_numeros(a))
+def _f_sum(a):
+
+    return sum(_numeros(a))
 
 
 def _f_product(a):
+
     numeros= _numeros(a)
     total= 1
     for n in numeros:
@@ -552,6 +591,7 @@ def _f_product(a):
 
 
 def _f_average(a):
+
     n= _numeros(a)
     if not n:
         raise _ErrorFormulaValor("#¡DIV/0!")
@@ -559,22 +599,29 @@ def _f_average(a):
 
 
 def _f_min(a):
+
     n= _numeros(a)
     return min(n) if n else 0
 
 
 def _f_max(a):
+
     n= _numeros(a)
     return max(n) if n else 0
 
 
-def _f_count(a): return len(_numeros(a))
+def _f_count(a):
+
+    return len(_numeros(a))
 
 
-def _f_counta(a): return len([v for v in _aplanar(a) if v is not None and v != ""])
+def _f_counta(a):
+
+    return len([v for v in _aplanar(a) if v is not None and v != ""])
 
 
 def _f_if(a):
+
     if not a:
         raise _ErrorFormulaValor("#¡VALOR!")
     cond= a[0]
@@ -586,6 +633,7 @@ def _f_if(a):
 
 
 def _f_round(a):
+
     if not a:
         raise _ErrorFormulaValor("#¡VALOR!")
     numero= _num(a[0])
@@ -593,60 +641,89 @@ def _f_round(a):
     return round(numero, decimales)
 
 
-def _f_abs(a): return abs(_num(a[0]))
+def _f_abs(a):
+
+    return abs(_num(a[0]))
 
 
 def _f_sqrt(a):
+
     v= _num(a[0])
     if v < 0:
         raise _ErrorFormulaValor("#¡NUM!")
     return math.sqrt(v)
 
 
-def _f_power(a): return _num(a[0]) ** _num(a[1])
+def _f_power(a):
+
+    return _num(a[0]) ** _num(a[1])
 
 
 def _f_mod(a):
+
     divisor= _num(a[1])
     if divisor == 0:
         raise _ErrorFormulaValor("#¡DIV/0!")
     return _num(a[0]) % divisor
 
 
-def _f_int(a): return math.floor(_num(a[0]))
+def _f_int(a):
+
+    return math.floor(_num(a[0]))
 
 
-def _f_concatenate(a): return "".join(_texto_formula(v) for v in _aplanar(a))
+def _f_concatenate(a):
+
+    return "".join(_texto_formula(v) for v in _aplanar(a))
 
 
-def _f_and(a): return all(bool(v) for v in _aplanar(a))
+def _f_and(a):
+
+    return all(bool(v) for v in _aplanar(a))
 
 
-def _f_or(a): return any(bool(v) for v in _aplanar(a))
+def _f_or(a):
+
+    return any(bool(v) for v in _aplanar(a))
 
 
-def _f_not(a): return not bool(a[0]) if a else True
+def _f_not(a):
+
+    return not bool(a[0]) if a else True
 
 
-def _f_today(a): return datetime.now().date()
+def _f_today(a):
+
+    return datetime.now().date()
 
 
-def _f_now(a): return datetime.now()
+def _f_now(a):
+
+    return datetime.now()
 
 
-def _f_len(a): return len(_texto_formula(a[0])) if a else 0
+def _f_len(a):
+
+    return len(_texto_formula(a[0])) if a else 0
 
 
-def _f_upper(a): return _texto_formula(a[0]).upper() if a else ""
+def _f_upper(a):
+
+    return _texto_formula(a[0]).upper() if a else ""
 
 
-def _f_lower(a): return _texto_formula(a[0]).lower() if a else ""
+def _f_lower(a):
+
+    return _texto_formula(a[0]).lower() if a else ""
 
 
-def _f_trim(a): return " ".join(_texto_formula(a[0]).split()) if a else ""
+def _f_trim(a):
+
+    return " ".join(_texto_formula(a[0]).split()) if a else ""
 
 
 def _f_iferror(a):
+
     if not a:
         return ""
     valor= a[0]
@@ -656,6 +733,7 @@ def _f_iferror(a):
 
 
 def _f_sumif(a):
+
     if len(a) < 2:
         raise _ErrorFormulaValor("#¡VALOR!")
     rango_criterio= a[0] if isinstance(a[0], list) else [a[0]]
@@ -671,6 +749,7 @@ def _f_sumif(a):
 
 
 def _f_countif(a):
+
     if len(a) < 2:
         raise _ErrorFormulaValor("#¡VALOR!")
     rango= a[0] if isinstance(a[0], list) else [a[0]]
@@ -724,8 +803,9 @@ _PATRON_TOKEN_FORMULA= re.compile(r"""
 
 
 def _tokenizar_formula(texto):
+
     tokens= []
-    pos, largo = 0, len(texto)
+    pos, largo= 0, len(texto)
     while pos < largo:
         m= _PATRON_TOKEN_FORMULA.match(texto, pos)
         if not m:
@@ -737,36 +817,42 @@ def _tokenizar_formula(texto):
     return tokens
 
 
+#Parser recursivo-descendente de expresiones de fórmula (precedencia:
+#comparación < concatenación (&) < suma/resta < mult/div < potencia).
 class _AnalizadorFormula:
-    """Parser recursivo-descendente de expresiones de fórmula (precedencia:
-    comparación < concatenación (&) < suma/resta < mult/div < potencia)."""
 
     def __init__(self, tokens, motor):
+
         self.tokens= tokens
         self.pos= 0
         self.motor= motor
 
     def _actual(self):
+
         return self.tokens[self.pos] if self.pos < len(self.tokens) else (None, None)
 
     def _avanzar(self):
+
         tok= self._actual()
         self.pos += 1
         return tok
 
     def _esperar(self, tipo):
+
         tok= self._actual()
         if tok[0] != tipo:
             raise _ErrorFormulaValor("#¡ERROR!")
         return self._avanzar()
 
     def parsear(self):
+
         valor= self.comparacion()
         if self.pos != len(self.tokens):
             raise _ErrorFormulaValor("#¡ERROR!")
         return valor
 
     def comparacion(self):
+
         izq= self.concatenacion()
         while self._actual()[0] == "OP" and self._actual()[1] in ("=", "<>", "<", "<=", ">", ">="):
             op= self._avanzar()[1]
@@ -775,6 +861,7 @@ class _AnalizadorFormula:
         return izq
 
     def concatenacion(self):
+
         izq= self.aditiva()
         while self._actual()[0] == "OP" and self._actual()[1] == "&":
             self._avanzar()
@@ -783,6 +870,7 @@ class _AnalizadorFormula:
         return izq
 
     def aditiva(self):
+
         izq= self.multiplicativa()
         while self._actual()[0] == "OP" and self._actual()[1] in ("+", "-"):
             op= self._avanzar()[1]
@@ -791,6 +879,7 @@ class _AnalizadorFormula:
         return izq
 
     def multiplicativa(self):
+
         izq= self.potencia()
         while self._actual()[0] == "OP" and self._actual()[1] in ("*", "/"):
             op= self._avanzar()[1]
@@ -805,6 +894,7 @@ class _AnalizadorFormula:
         return izq
 
     def potencia(self):
+
         base= self.unario()
         if self._actual()[0] == "OP" and self._actual()[1] == "^":
             self._avanzar()
@@ -813,6 +903,7 @@ class _AnalizadorFormula:
         return base
 
     def unario(self):
+
         if self._actual()[0] == "OP" and self._actual()[1] in ("+", "-"):
             op= self._avanzar()[1]
             valor= _num(self.unario())
@@ -820,6 +911,7 @@ class _AnalizadorFormula:
         return self.porcentaje()
 
     def porcentaje(self):
+
         valor= self.primario()
         if self._actual()[0] == "OP" and self._actual()[1] == "%":
             self._avanzar()
@@ -827,7 +919,8 @@ class _AnalizadorFormula:
         return valor
 
     def primario(self):
-        tipo, texto = self._actual()
+
+        tipo, texto= self._actual()
         if tipo == "NUM":
             self._avanzar()
             return float(texto) if "." in texto else int(texto)
@@ -867,17 +960,19 @@ class _AnalizadorFormula:
         raise _ErrorFormulaValor("#¡ERROR!")
 
 
+#Evalúa las fórmulas de una hoja, resolviendo referencias/rangos y
+#memorizando resultados para no recalcular la misma celda varias veces
+#en una misma pasada -y detectando referencias circulares.
 class _MotorFormulas:
-    """Evalúa las fórmulas de una hoja, resolviendo referencias/rangos y
-    memorizando resultados para no recalcular la misma celda varias veces
-    en una misma pasada -y detectando referencias circulares."""
 
     def __init__(self, obtener_crudo):
+
         self._obtener_crudo= obtener_crudo
         self._cache= {}
         self._en_curso= set()
 
     def valor_celda(self, r, c):
+
         clave= (r, c)
         if clave in self._cache:
             return self._cache[clave]
@@ -893,6 +988,7 @@ class _MotorFormulas:
         elif isinstance(crudo, str) and crudo.strip().startswith("=") and len(crudo.strip()) > 1:
             self._en_curso.add(clave)
             try:
+
                 valor= self._evaluar(crudo.strip()[1:])
             except _ErrorFormulaValor as err:
                 valor= err
@@ -901,24 +997,27 @@ class _MotorFormulas:
             finally:
                 self._en_curso.discard(clave)
         else:
-            valor, _formato = _analizar_crudo(crudo)
+            valor, _formato= _analizar_crudo(crudo)
         self._cache[clave]= valor
         return valor
 
     def _evaluar(self, expresion):
+
         tokens= _tokenizar_formula(expresion)
         return _AnalizadorFormula(tokens, self).parsear()
 
     def valor_referencia(self, ref_texto):
-        r, c = _celda_a_indices(ref_texto)
+
+        r, c= _celda_a_indices(ref_texto)
         if r is None:
             raise _ErrorFormulaValor("#¡REF!")
         return self.valor_celda(r, c)
 
     def valores_rango(self, rango_texto):
-        inicio, fin = rango_texto.split(":")
-        r1, c1 = _celda_a_indices(inicio)
-        r2, c2 = _celda_a_indices(fin)
+
+        inicio, fin= rango_texto.split(":")
+        r1, c1= _celda_a_indices(inicio)
+        r2, c2= _celda_a_indices(fin)
         if r1 is None or r2 is None:
             raise _ErrorFormulaValor("#¡REF!")
         valores= []
@@ -928,10 +1027,12 @@ class _MotorFormulas:
         return valores
 
     def llamar_funcion(self, nombre, argumentos):
+
         funcion= _FUNCIONES_FORMULA.get(nombre)
         if funcion is None:
             raise _ErrorFormulaValor("#¿NOMBRE?")
         try:
+
             return funcion(argumentos)
         except _ErrorFormulaValor:
             raise
@@ -941,17 +1042,18 @@ class _MotorFormulas:
             raise _ErrorFormulaValor("#¡VALOR!")
 
 
+#El cuadradito que aparece en la esquina inferior derecha de la celda/
+#rango seleccionado en la hoja de cálculo -igual que en Excel-: se
+#arrastra hacia abajo para autocompletar las celdas de debajo, copiando
+#el valor o continuando una serie (números, fechas, texto con número al
+#final...). Solo avisa a `editor` (el VisorEditorReportes) de los tres
+#eventos de mouse; toda la lógica de qué hacer vive ahí.
 class _ManijaRelleno(QWidget):
-    """El cuadradito que aparece en la esquina inferior derecha de la celda/
-    rango seleccionado en la hoja de cálculo -igual que en Excel-: se
-    arrastra hacia abajo para autocompletar las celdas de debajo, copiando
-    el valor o continuando una serie (números, fechas, texto con número al
-    final...). Solo avisa a `editor` (el VisorEditorReportes) de los tres
-    eventos de mouse; toda la lógica de qué hacer vive ahí."""
 
     TAMANO= 8
 
     def __init__(self, editor, parent=None):
+
         super().__init__(parent)
         self._editor= editor
         self.setFixedSize(self.TAMANO, self.TAMANO)
@@ -963,6 +1065,7 @@ class _ManijaRelleno(QWidget):
         self.hide()
 
     def mousePressEvent(self, evento):
+
         if evento.button() == Qt.MouseButton.LeftButton:
             self._editor._iniciar_arrastre_relleno()
             self.grabMouse()
@@ -971,10 +1074,12 @@ class _ManijaRelleno(QWidget):
         super().mousePressEvent(evento)
 
     def mouseMoveEvent(self, evento):
+
         self._editor._arrastrar_relleno(self.mapToGlobal(evento.position().toPoint()))
         evento.accept()
 
     def mouseReleaseEvent(self, evento):
+
         if evento.button() == Qt.MouseButton.LeftButton:
             self.releaseMouse()
             self._editor._soltar_relleno()
@@ -983,23 +1088,25 @@ class _ManijaRelleno(QWidget):
         super().mouseReleaseEvent(evento)
 
 
+#Al iniciar la edición de una celda muestra su contenido CRUDO -la
+#fórmula tal cual se escribió, p.ej. '=A1+B2', o el número/texto sin
+#formatear- en vez del resultado ya calculado, igual que hace Excel; así
+#se puede seguir editando la fórmula original en vez de su resultado.
+#También es el punto donde se registra el estado "antes" para deshacer
+#(ver VisorEditorReportes._registrar_deshacer_hoja): es el único momento
+#fiable en el que se sabe con certeza que el usuario está a punto de
+#cambiar una celda escribiendo directamente, antes de que el cambio
+#ocurra.
 class _DelegadoHojaCalculo(QStyledItemDelegate):
-    """Al iniciar la edición de una celda muestra su contenido CRUDO -la
-    fórmula tal cual se escribió, p.ej. '=A1+B2', o el número/texto sin
-    formatear- en vez del resultado ya calculado, igual que hace Excel; así
-    se puede seguir editando la fórmula original en vez de su resultado.
-    También es el punto donde se registra el estado "antes" para deshacer
-    (ver VisorEditorReportes._registrar_deshacer_hoja): es el único momento
-    fiable en el que se sabe con certeza que el usuario está a punto de
-    cambiar una celda escribiendo directamente, antes de que el cambio
-    ocurra."""
 
     def __init__(self, tabla, editor=None, parent=None):
+
         super().__init__(parent)
         self._tabla= tabla
         self._editor= editor
 
     def setEditorData(self, editor, index):
+
         if self._editor is not None:
             self._editor._registrar_deshacer_hoja()
         item= self._tabla.itemFromIndex(index)
@@ -1011,17 +1118,18 @@ class _DelegadoHojaCalculo(QStyledItemDelegate):
             super().setEditorData(editor, index)
 
 
+#Editor de texto con formato -negrita/cursiva/fuente/tamaño/color/
+#alineación- para reemplazar el contenido de una página de PDF (en
+#blanco o ya existente). El resultado se aplica a la página con
+#`page.insert_htmlbox(...)` de PyMuPDF, así que el HTML generado aquí
+#queda con el formato real (no es solo texto plano).
 class _DialogoEditorPaginaPDF(QDialog):
-    """Editor de texto con formato -negrita/cursiva/fuente/tamaño/color/
-    alineación- para reemplazar el contenido de una página de PDF (en
-    blanco o ya existente). El resultado se aplica a la página con
-    `page.insert_htmlbox(...)` de PyMuPDF, así que el HTML generado aquí
-    queda con el formato real (no es solo texto plano)."""
 
     _ultima_fuente= None
     _ultimo_tamano= "12"
 
     def __init__(self, parent=None, texto_inicial="", css_editor=""):
+
         super().__init__(parent)
         self.setWindowTitle("Editar página")
         aplicar_icono_ventana(self, ICONO_DOCUMENTO)
@@ -1059,34 +1167,60 @@ class _DialogoEditorPaginaPDF(QDialog):
         #relleno, radio de borde y color de resaltado al pasar el cursor, y volvía al estilo nativo de Qt -de ahí el
         #resaltado "raro" que tapaba el texto-. Usando QFont, el botón conserva íntegro el
         #estilo (incluido el hover) del resto de la barra.
-        btn_negrita= QToolButton(); btn_negrita.setText("B"); btn_negrita.setCheckable(True)
-        _f= btn_negrita.font(); _f.setBold(True); btn_negrita.setFont(_f)
-        btn_cursiva= QToolButton(); btn_cursiva.setText("I"); btn_cursiva.setCheckable(True)
-        _f= btn_cursiva.font(); _f.setItalic(True); btn_cursiva.setFont(_f)
-        btn_subrayado= QToolButton(); btn_subrayado.setText("S"); btn_subrayado.setCheckable(True)
-        _f= btn_subrayado.font(); _f.setUnderline(True); btn_subrayado.setFont(_f)
-        barra.addWidget(btn_negrita); barra.addWidget(btn_cursiva); barra.addWidget(btn_subrayado)
-        btn_color= QToolButton(); btn_color.setText("Color")
+        btn_negrita= QToolButton()
+        btn_negrita.setText("B")
+        btn_negrita.setCheckable(True)
+        _f= btn_negrita.font()
+        _f.setBold(True)
+        btn_negrita.setFont(_f)
+        btn_cursiva= QToolButton()
+        btn_cursiva.setText("I")
+        btn_cursiva.setCheckable(True)
+        _f= btn_cursiva.font()
+        _f.setItalic(True)
+        btn_cursiva.setFont(_f)
+        btn_subrayado= QToolButton()
+        btn_subrayado.setText("S")
+        btn_subrayado.setCheckable(True)
+        _f= btn_subrayado.font()
+        _f.setUnderline(True)
+        btn_subrayado.setFont(_f)
+        barra.addWidget(btn_negrita)
+        barra.addWidget(btn_cursiva)
+        barra.addWidget(btn_subrayado)
+        btn_color= QToolButton()
+        btn_color.setText("Color")
         barra.addWidget(btn_color)
         #Checkables y mutuamente excluyentes -mismo QButtonGroup exclusivo que en la cinta de opciones del editor de
         #reportes (ver self._grupo_alinear_word)-, así el botón de la alineación activa queda resaltado con el mismo
         #indicador visual (QToolButton:checked del stylesheet compartido, ver css_editor más arriba) y se desmarca solo
         #al elegir otra alineación.
-        btn_izq= QToolButton(); btn_izq.setText(""); btn_izq.setCheckable(True)
-        btn_izq.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA)); btn_izq.setIconSize(_QSize_emoji(16, 16))
+        btn_izq= QToolButton()
+        btn_izq.setText("")
+        btn_izq.setCheckable(True)
+        btn_izq.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA))
+        btn_izq.setIconSize(_QSize_emoji(16, 16))
         btn_izq.setToolTip("Alinear a la izquierda")
-        btn_centro= QToolButton(); btn_centro.setText(""); btn_centro.setCheckable(True)
-        btn_centro.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO)); btn_centro.setIconSize(_QSize_emoji(16, 16))
+        btn_centro= QToolButton()
+        btn_centro.setText("")
+        btn_centro.setCheckable(True)
+        btn_centro.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO))
+        btn_centro.setIconSize(_QSize_emoji(16, 16))
         btn_centro.setToolTip("Centrar")
-        btn_der= QToolButton(); btn_der.setText(""); btn_der.setCheckable(True)
-        btn_der.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA)); btn_der.setIconSize(_QSize_emoji(16, 16))
+        btn_der= QToolButton()
+        btn_der.setText("")
+        btn_der.setCheckable(True)
+        btn_der.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA))
+        btn_der.setIconSize(_QSize_emoji(16, 16))
         btn_der.setToolTip("Alinear a la derecha")
         self._grupo_alinear_pdf= QButtonGroup(self)
         self._grupo_alinear_pdf.setExclusive(True)
         for _b_align_pdf in (btn_izq, btn_centro, btn_der):
             self._grupo_alinear_pdf.addButton(_b_align_pdf)
         btn_izq.setChecked(True)
-        barra.addWidget(btn_izq); barra.addWidget(btn_centro); barra.addWidget(btn_der)
+        barra.addWidget(btn_izq)
+        barra.addWidget(btn_centro)
+        barra.addWidget(btn_der)
         barra.addStretch()
         layout.addLayout(barra)
 
@@ -1095,6 +1229,7 @@ class _DialogoEditorPaginaPDF(QDialog):
         self.editor.setPlainText(texto_inicial)
         _f_inicial= QFont(self.combo_fuente.currentText())
         try:
+
             _f_inicial.setPointSize(int(self.combo_tamano.currentText()))
         except ValueError:
             pass
@@ -1102,9 +1237,11 @@ class _DialogoEditorPaginaPDF(QDialog):
         layout.addWidget(self.editor, 1)
 
         def _formato_actual():
+
             return self.editor.textCursor().charFormat() if self.editor.textCursor().hasSelection() else self.editor.currentCharFormat()
 
         def _aplicar(formato):
+
             cursor= self.editor.textCursor()
             if not cursor.hasSelection():
                 self.editor.setCurrentCharFormat(formato)
@@ -1113,27 +1250,46 @@ class _DialogoEditorPaginaPDF(QDialog):
             self.editor.setTextCursor(cursor)
 
         def _cambiar_fuente(_i=None):
-            f= QTextCharFormat(); f.setFontFamilies([self.combo_fuente.currentText()]); _aplicar(f)
+
+            f= QTextCharFormat()
+            f.setFontFamilies([self.combo_fuente.currentText()])
+            _aplicar(f)
 
         def _cambiar_tamano(_i=None):
+
             try:
-                f= QTextCharFormat(); f.setFontPointSize(float(self.combo_tamano.currentText())); _aplicar(f)
+
+                f= QTextCharFormat()
+                f.setFontPointSize(float(self.combo_tamano.currentText()))
+                _aplicar(f)
             except ValueError:
                 pass
 
         def _alternar_negrita(activo):
-            f= QTextCharFormat(); f.setFontWeight(QFont.Weight.Bold if activo else QFont.Weight.Normal); _aplicar(f)
+
+            f= QTextCharFormat()
+            f.setFontWeight(QFont.Weight.Bold if activo else QFont.Weight.Normal)
+            _aplicar(f)
 
         def _alternar_cursiva(activo):
-            f= QTextCharFormat(); f.setFontItalic(activo); _aplicar(f)
+
+            f= QTextCharFormat()
+            f.setFontItalic(activo)
+            _aplicar(f)
 
         def _alternar_subrayado(activo):
-            f= QTextCharFormat(); f.setFontUnderline(activo); _aplicar(f)
+
+            f= QTextCharFormat()
+            f.setFontUnderline(activo)
+            _aplicar(f)
 
         def _elegir_color():
+
             color= _elegir_color_con_icono(QColor("#000000"), self, "Color del texto")
             if color.isValid():
-                f= QTextCharFormat(); f.setForeground(color); _aplicar(f)
+                f= QTextCharFormat()
+                f.setForeground(color)
+                _aplicar(f)
 
         self.combo_fuente.activated.connect(_cambiar_fuente)
         self.combo_tamano.activated.connect(_cambiar_tamano)
@@ -1145,10 +1301,11 @@ class _DialogoEditorPaginaPDF(QDialog):
         btn_centro.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignHCenter) if marcado else None)
         btn_der.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignRight) if marcado else None)
 
+        #Refleja en los botones la alineación del párrafo donde está el
+        #cursor ahora mismo, tal como hace _word_sincronizar_barra en la
+        #cinta de opciones.
         def _sincronizar_alineacion():
-            """Refleja en los botones la alineación del párrafo donde está el
-            cursor ahora mismo, tal como hace _word_sincronizar_barra en la
-            cinta de opciones."""
+
             alineacion= self.editor.alignment()
             for boton in (btn_izq, btn_centro, btn_der):
                 boton.blockSignals(True)
@@ -1170,6 +1327,7 @@ class _DialogoEditorPaginaPDF(QDialog):
         btn_aplicar.setIcon(icono_emoji("✅"))
         btn_aplicar.setIconSize(_QSize_emoji(16, 16))
         def _guardar_preferencias():
+
             _DialogoEditorPaginaPDF._ultima_fuente= self.combo_fuente.currentText()
             _DialogoEditorPaginaPDF._ultimo_tamano= self.combo_tamano.currentText()
             self.accept()
@@ -1181,18 +1339,20 @@ class _DialogoEditorPaginaPDF(QDialog):
 
 
     def obtener_html(self):
+
         return self.editor.toHtml()
 
 
+#QLabel de una página de PDF que permite SELECCIONAR el texto con el
+#mouse -arrastrando por encima, igual que en Microsoft Edge/el visor de
+#PDF de Windows- en vez de ser solo una imagen fija. No es edición: es
+#selección/copiado de texto real, resaltando sobre la imagen renderizada
+#las palabras que toca el arrastre, y copiando el texto al portapapeles
+#al soltar (o con clic derecho -> Copiar).
 class _EtiquetaPaginaPDFSeleccionable(QLabel):
-    """QLabel de una página de PDF que permite SELECCIONAR el texto con el
-    mouse -arrastrando por encima, igual que en Microsoft Edge/el visor de
-    PDF de Windows- en vez de ser solo una imagen fija. No es edición: es
-    selección/copiado de texto real, resaltando sobre la imagen renderizada
-    las palabras que toca el arrastre, y copiando el texto al portapapeles
-    al soltar (o con clic derecho -> Copiar)."""
 
     def __init__(self, visor, indice_pagina, palabras, parent=None):
+
         super().__init__(parent)
         self._visor= visor
         self.indice_pagina= indice_pagina
@@ -1210,17 +1370,20 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         self.customContextMenuRequested.connect(self._menu_contextual)
 
     def _enlace_en(self, punto):
+
         for rect, uri in self.enlaces:
             if rect.contains(punto):
                 return uri
         return None
 
     def _rect_seleccion(self):
+
         if self._inicio is None or self._fin is None:
             return None
         return QRect(self._inicio, self._fin).normalized()
 
     def _palabras_en_rango(self):
+
         rect= self._rect_seleccion()
         if rect is None or (rect.width() < 3 and rect.height() < 3):
             return []
@@ -1235,9 +1398,11 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         return seleccionadas
 
     def texto_seleccionado(self):
+
         return " ".join(p[4] for p in self._palabras_en_rango())
 
     def mousePressEvent(self, evento):
+
         if evento.button() == Qt.MouseButton.LeftButton:
             if evento.modifiers() & Qt.KeyboardModifier.ControlModifier:
                 enlace= self._enlace_en(evento.position().toPoint())
@@ -1250,6 +1415,7 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         super().mousePressEvent(evento)
 
     def mouseMoveEvent(self, evento):
+
         if self._inicio is not None and (evento.buttons() & Qt.MouseButton.LeftButton):
             self._fin= evento.position().toPoint()
             self.update()
@@ -1265,6 +1431,7 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         super().mouseMoveEvent(evento)
 
     def mouseReleaseEvent(self, evento):
+
         if self._inicio is not None and evento.button() == Qt.MouseButton.LeftButton:
             self._fin= evento.position().toPoint()
             texto= self.texto_seleccionado()
@@ -1275,6 +1442,7 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         super().mouseReleaseEvent(evento)
 
     def mouseDoubleClickEvent(self, evento):
+
         #Doble clic: selecciona la palabra bajo el cursor (como en Edge).
         punto= evento.position().toPoint()
         for p in self.palabras:
@@ -1291,6 +1459,7 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         super().mouseDoubleClickEvent(evento)
 
     def _menu_contextual(self, punto):
+
         menu= QMenu(self)
         accion_copiar= menu.addAction("Copiar selección")
         accion_copiar.setEnabled(bool(self.texto_seleccionado()))
@@ -1311,8 +1480,10 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
                 QApplication.clipboard().setText(texto)
         elif elegido == accion_todo:
             if self.palabras:
-                xs0= min(p[0] for p in self.palabras); ys0= min(p[1] for p in self.palabras)
-                xs1= max(p[2] for p in self.palabras); ys1= max(p[3] for p in self.palabras)
+                xs0= min(p[0] for p in self.palabras)
+                ys0= min(p[1] for p in self.palabras)
+                xs1= max(p[2] for p in self.palabras)
+                ys1= max(p[3] for p in self.palabras)
                 self._inicio= QPoint(int(xs0), int(ys0))
                 self._fin= QPoint(int(xs1), int(ys1))
                 self.update()
@@ -1325,11 +1496,13 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
             self._visor._pdf_insertar_enlace()
 
     def limpiar_seleccion(self):
+
         self._inicio= None
         self._fin= None
         self.update()
 
     def paintEvent(self, evento):
+
         super().paintEvent(evento)
         rect= self._rect_seleccion()
         if rect is None:
@@ -1342,14 +1515,15 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         painter.end()
 
 
+#Miniatura de una imagen incrustada en una celda de Excel que se puede
+#ARRASTRAR con el mouse para moverla a otra celda -tanto en la grilla
+#como en el ancla real de la imagen dentro del .xlsx (openpyxl)-. Es un
+#reposicionamiento "encajado a la cuadrícula" (a la celda más cercana),
+#no un arrastre libre a nivel de píxel como en Excel real.
 class _EtiquetaImagenArrastrable(QLabel):
-    """Miniatura de una imagen incrustada en una celda de Excel que se puede
-    ARRASTRAR con el mouse para moverla a otra celda -tanto en la grilla
-    como en el ancla real de la imagen dentro del .xlsx (openpyxl)-. Es un
-    reposicionamiento "encajado a la cuadrícula" (a la celda más cercana),
-    no un arrastre libre a nivel de píxel como en Excel real."""
 
     def __init__(self, visor, fila, col, ruta_original=None, parent=None):
+
         super().__init__(parent)
         self._visor= visor
         self.fila= fila
@@ -1366,12 +1540,14 @@ class _EtiquetaImagenArrastrable(QLabel):
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     def mousePressEvent(self, evento):
+
         if evento.button() == Qt.MouseButton.LeftButton:
             self._arrastrando= True
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
         super().mousePressEvent(evento)
 
     def mouseReleaseEvent(self, evento):
+
         if self._arrastrando and evento.button() == Qt.MouseButton.LeftButton:
             self._arrastrando= False
             self.setCursor(Qt.CursorShape.OpenHandCursor)
@@ -1379,16 +1555,18 @@ class _EtiquetaImagenArrastrable(QLabel):
         super().mouseReleaseEvent(evento)
 
     def mouseDoubleClickEvent(self, evento):
+
         #Doble clic: abre las opciones de la imagen (transparencia, quitar), igual que hacer doble clic en una imagen
         #en Word.
         self._visor._editar_opciones_imagen(self)
         super().mouseDoubleClickEvent(evento)
 
 
+#Recoge las opciones de la marca de agua de texto que se insertará en el PDF.
 class _DialogoMarcaDeAgua(QDialog):
-    """Recoge las opciones de la marca de agua de texto que se insertará en el PDF."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Insertar marca de agua")
         aplicar_icono_ventana(self, ICONO_COLOR)
@@ -1448,15 +1626,18 @@ class _DialogoMarcaDeAgua(QDialog):
 
 
     def _pintar_boton_color(self):
+
         self.btn_color.setStyleSheet(f"background-color: {self._color.name()}; min-width: 60px;")
 
     def _elegir_color(self):
+
         color= _elegir_color_con_icono(self._color, self, "Color de la marca de agua")
         if color.isValid():
             self._color= color
             self._pintar_boton_color()
 
     def valores(self):
+
         return {
             "texto": self.in_texto.text().strip() or "MARCA DE AGUA",
             "tamano": self.spin_tamano.value(),
@@ -1467,12 +1648,13 @@ class _DialogoMarcaDeAgua(QDialog):
         }
 
 
+#Diálogo tipo Word/Excel para cambiar el tamaño de una imagen ya
+#insertada en el documento: ancho/alto en píxeles con proporción
+#bloqueada por defecto, y un control de escala rápida (%).
 class _DialogoRedimensionarImagen(QDialog):
-    """Diálogo tipo Word/Excel para cambiar el tamaño de una imagen ya
-    insertada en el documento: ancho/alto en píxeles con proporción
-    bloqueada por defecto, y un control de escala rápida (%)."""
 
     def __init__(self, ancho_actual, alto_actual, ancho_natural, alto_natural, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Cambiar tamaño de la imagen")
         aplicar_icono_ventana(self, ICONO_CARGA)
@@ -1526,6 +1708,7 @@ class _DialogoRedimensionarImagen(QDialog):
 
 
     def _sincronizar_desde_ancho(self, valor):
+
         if self._actualizando:
             return
         self._actualizando= True
@@ -1536,6 +1719,7 @@ class _DialogoRedimensionarImagen(QDialog):
         self._actualizando= False
 
     def _sincronizar_desde_alto(self, valor):
+
         if self._actualizando:
             return
         self._actualizando= True
@@ -1544,6 +1728,7 @@ class _DialogoRedimensionarImagen(QDialog):
         self._actualizando= False
 
     def _aplicar_porcentaje(self, valor):
+
         if self._actualizando:
             return
         self.lbl_pct.setText(f"{valor}%")
@@ -1554,15 +1739,18 @@ class _DialogoRedimensionarImagen(QDialog):
         self._actualizando= False
 
     def valores(self):
+
         return self.spin_ancho.value(), self.spin_alto.value()
 
 
+#Lee la paleta/tema activo de la ventana principal (mismo criterio que
+#usa reportes.py) para que el editor -y en particular el recuadro que
+#aparece al escribir sobre una celda- respete el tema y el modo claro/
+#oscuro elegidos en vez de quedarse con colores fijos.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal (mismo criterio que
-    usa reportes.py) para que el editor -y en particular el recuadro que
-    aparece al escribir sobre una celda- respete el tema y el modo claro/
-    oscuro elegidos en vez de quedarse con colores fijos."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -1578,13 +1766,14 @@ def _colores_tema(main_window):
                 "txt_sec": "#64748B", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#QLabel que recorta su texto con «…» cuando no cabe en el ancho
+#disponible, en vez de dejar que un nombre de archivo largo se corte a la
+#mitad contra el siguiente botón (como pasaba antes) o empuje el ancho de
+#toda la barra. El texto completo siempre queda disponible como tooltip.
 class _LabelElidido(QLabel):
-    """QLabel que recorta su texto con «…» cuando no cabe en el ancho
-    disponible, en vez de dejar que un nombre de archivo largo se corte a la
-    mitad contra el siguiente botón (como pasaba antes) o empuje el ancho de
-    toda la barra. El texto completo siempre queda disponible como tooltip."""
 
     def __init__(self, texto="", parent=None):
+
         super().__init__(parent)
         self._texto_completo= texto
         self.setMinimumWidth(0)
@@ -1592,28 +1781,32 @@ class _LabelElidido(QLabel):
         self.poner_texto_completo(texto)
 
     def poner_texto_completo(self, texto):
+
         self._texto_completo= texto or ""
         self.setToolTip(self._texto_completo)
         self._actualizar_elidido()
 
     def _actualizar_elidido(self):
+
         metrica= self.fontMetrics()
         ancho_disponible= max(0, self.width())
         super().setText(metrica.elidedText(self._texto_completo, Qt.TextElideMode.ElideMiddle, ancho_disponible))
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         self._actualizar_elidido()
 
 
+#Ventana de nivel superior "vacía": solo sirve de contenedor cuando el
+#editor entra en modo pantalla completa. El contenido pesado del editor
+#(barra + tabla/PDF/Word) se reparenta dentro de ella temporalmente y
+#vuelve a su sitio de siempre al salir -con Esc o cerrando la ventana con
+#la X-, así que aquí no hay que reconstruir ni duplicar nada.
 class _VentanaPantallaCompletaEditor(QWidget):
-    """Ventana de nivel superior "vacía": solo sirve de contenedor cuando el
-    editor entra en modo pantalla completa. El contenido pesado del editor
-    (barra + tabla/PDF/Word) se reparenta dentro de ella temporalmente y
-    vuelve a su sitio de siempre al salir -con Esc o cerrando la ventana con
-    la X-, así que aquí no hay que reconstruir ni duplicar nada."""
 
     def __init__(self, al_cerrar, parent=None):
+
         super().__init__(parent, Qt.WindowType.Window)
         aplicar_icono_ventana(self, ICONO_DOCUMENTO)
         self._al_cerrar= al_cerrar
@@ -1622,22 +1815,24 @@ class _VentanaPantallaCompletaEditor(QWidget):
         self.layout_contenido= layout
 
     def closeEvent(self, event):
+
         #Si cierran con la X, hay que devolver el editor a su sitio original antes de dejar que Qt oculte/destruya esta
         #ventana -si no, el editor (que vive dentro de ella) desaparecería con la ventana.
         self._al_cerrar()
         event.accept()
 
     def keyPressEvent(self, event):
+
         if event.key() == Qt.Key.Key_Escape:
             self._al_cerrar()
             return
         super().keyPressEvent(event)
 
 
+#Panel de previsualización y edición avanzada de reportes exportados
+#(CSV / Excel / PDF). Autónomo: se puede insertar como una pestaña más
+#dentro de `ModuloReportes` sin que el resto del módulo dependa de él.
 class VisorEditorReportes(QWidget):
-    """Panel de previsualización y edición avanzada de reportes exportados
-    (CSV / Excel / PDF). Autónomo: se puede insertar como una pestaña más
-    dentro de `ModuloReportes` sin que el resto del módulo dependa de él."""
 
     #Se emite cuando el usuario presiona "Terminar de editar" en el panel de bienvenida: le avisa a ModuloReportes
     #(dueño real de esta instancia) que debe destruirla por completo -no solo ocultarla- para liberar de verdad la
@@ -1646,6 +1841,7 @@ class VisorEditorReportes(QWidget):
     solicitud_terminar_edicion= Signal()
 
     def __init__(self, main_window, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.ruta_actual= None
@@ -1688,6 +1884,7 @@ class VisorEditorReportes(QWidget):
 
     #Construcción de la interfaz
     def _build_ui(self):
+
         #DISEÑO: para que la pestaña del editor jamás vuelva a "deformar" el módulo entero, el contenido pesado (barras
         #de herramientas, tabla, visor de PDF, editor de Word) YA NO vive nunca dentro de esta pestaña. Aquí, en
         #`self`, solo hay un panel de bienvenida ligero y fijo (self.panel_estado). Todo lo demás vive en un widget
@@ -1711,6 +1908,7 @@ class VisorEditorReportes(QWidget):
 
     #---------------- Panel de bienvenida (siempre visible, ligero) ----------------
     def _construir_panel_estado(self):
+
         panel= QFrame()
         panel.setObjectName("TarjetaFiltros")
         panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -1789,15 +1987,16 @@ class VisorEditorReportes(QWidget):
         return panel
 
     #---------------- Contenido pesado: barra + páginas (solo vive en pantalla completa) ----------------
+    #Hoja de estilos del TEMA PROPIO del editor. Se aplica SOLO al
+    #subárbol del editor (self y editor_pesado / la ventana de pantalla
+    #completa), así que nunca toca el tema de la app. La cinta de
+    #opciones (barras, botones, combos, pestañas) adopta el modo y el
+    #color de acento —hovers, bordes, focos, selección y controles
+    #marcados, no solo los botones primarios—; el CONTENIDO (hoja de
+    #cálculo, documento Word, visor PDF) NO se tiñe del acento: fondo
+    #blanco en modo claro y casi negro en modo oscuro.
     def _css_editor(self):
-        """Hoja de estilos del TEMA PROPIO del editor. Se aplica SOLO al
-        subárbol del editor (self y editor_pesado / la ventana de pantalla
-        completa), así que nunca toca el tema de la app. La cinta de
-        opciones (barras, botones, combos, pestañas) adopta el modo y el
-        color de acento —hovers, bordes, focos, selección y controles
-        marcados, no solo los botones primarios—; el CONTENIDO (hoja de
-        cálculo, documento Word, visor PDF) NO se tiñe del acento: fondo
-        blanco en modo claro y casi negro en modo oscuro."""
+
         oscuro= self._tema_modo_editor == "oscuro"
         acento= self._tema_acento_editor
         _c_acento= QColor(acento)
@@ -1807,22 +2006,23 @@ class VisorEditorReportes(QWidget):
         acento_claro= _c_acento.lighter(115).name()
 
         def _rgba(alpha):
+
             return f"rgba({_c_acento.red()},{_c_acento.green()},{_c_acento.blue()},{alpha})"
 
         if oscuro:
-            fondo, panel, panel_alt = "#12161F", "#1C2330", "#232C3D"
-            texto, texto_suave = "#E6EAF3", "#9AA6BC"
-            sutil, borde, hover = "#26303F", "#36415A", "rgba(255,255,255,0.07)"
+            fondo, panel, panel_alt= "#12161F", "#1C2330", "#232C3D"
+            texto, texto_suave= "#E6EAF3", "#9AA6BC"
+            sutil, borde, hover= "#26303F", "#36415A", "rgba(255,255,255,0.07)"
         else:
-            fondo, panel, panel_alt = "#E9EDF5", "#FFFFFF", "#F5F7FC"
-            texto, texto_suave = "#1E293B", "#64748B"
-            sutil, borde, hover = "#EDF1F8", "#D3DCEA", "rgba(15,23,42,0.05)"
+            fondo, panel, panel_alt= "#E9EDF5", "#FFFFFF", "#F5F7FC"
+            texto, texto_suave= "#1E293B", "#64748B"
+            sutil, borde, hover= "#EDF1F8", "#D3DCEA", "rgba(15,23,42,0.05)"
         #El CONTENIDO (hoja de cálculo, documento Word, visor PDF) se mantiene SIEMPRE blanco/negro, sea cual sea el
         #modo (claro u oscuro) o el color de acento elegido -antes, en modo oscuro, se volvía "#101418" (casi negro),
         #lo que además de tapar el contraste esperado por quien edita, oscurecía celdas vacías/sin datos que antes se
         #veían blancas, dando la falsa impresión de que la hoja tenía relleno negro. Ahora el contenido no depende de
         #`oscuro`.
-        contenido_fondo, contenido_texto = "#FFFFFF", "#111827"
+        contenido_fondo, contenido_texto= "#FFFFFF", "#111827"
         css= """
         QWidget { background: @fondo; color: @texto; font-size: 12px; }
         QLabel { background: transparent; color: @texto; }
@@ -1976,17 +2176,19 @@ class VisorEditorReportes(QWidget):
             css= css.replace(clave, sustituciones[clave])
         return css
 
+    #Aplica el tema propio del editor a TODAS las raíces donde puede
+    #vivir su interfaz: el widget del módulo (self), el contenedor
+    #editor_pesado (que se re-parenta a la ventana de pantalla completa)
+    #y, si está abierta, la propia ventana. Un widget-level stylesheet
+    #solo afecta a su subárbol, por eso la app conserva su tema.
     def _aplicar_tema_editor(self):
-        """Aplica el tema propio del editor a TODAS las raíces donde puede
-        vivir su interfaz: el widget del módulo (self), el contenedor
-        editor_pesado (que se re-parenta a la ventana de pantalla completa)
-        y, si está abierta, la propia ventana. Un widget-level stylesheet
-        solo afecta a su subárbol, por eso la app conserva su tema."""
+
         self._css_editor_actual= self._css_editor()
         for widget in (self, getattr(self, "editor_pesado", None),
                        getattr(self, "_ventana_pantalla_completa", None)):
             if widget is not None:
                 try:
+
                     widget.setStyleSheet(self._css_editor_actual)
                 except RuntimeError:
                     pass  #widget C++ ya destruido (ventana cerrada)
@@ -1995,11 +2197,12 @@ class VisorEditorReportes(QWidget):
         if getattr(self, "btn_alinear_just_word", None) is not None:
             self.btn_alinear_just_word.setIcon(self._icono_alinear_justificado())
 
+    #Icono de "alinear justificado" (\uE000) adaptado al modo del
+    #editor: en modo CLARO se tiñe de negro (sobre la cinta clara el
+    #blanco no se veía), y en modo oscuro se mantiene el blanco original.
+    #El tinte se calcula UNA vez por modo y queda cacheado.
     def _icono_alinear_justificado(self):
-        """Icono de "alinear justificado" (\\uE000) adaptado al modo del
-        editor: en modo CLARO se tiñe de negro (sobre la cinta clara el
-        blanco no se veía), y en modo oscuro se mantiene el blanco original.
-        El tinte se calcula UNA vez por modo y queda cacheado."""
+
         if getattr(self, "_tema_modo_editor", "claro") != "claro":
             return icono_emoji("\uE000")
         icono= getattr(self, "_icono_just_negro_cache", None)
@@ -2017,6 +2220,7 @@ class VisorEditorReportes(QWidget):
         return icono
 
     def _construir_editor_pesado(self):
+
         contenedor= QWidget()
         contenedor.setObjectName("EditorPesadoRaiz")
 
@@ -2179,38 +2383,40 @@ class VisorEditorReportes(QWidget):
 
         return contenedor
 
+    #Atajos de teclado del editor, activos mientras el editor o
+    #cualquiera de sus widgets hijos tenga el foco (WidgetWithChildrenShortcut).
+    #Cada atajo revisa en qué pestaña (hoja/PDF/Word) está el usuario y
+    #actúa en consecuencia -no todos los atajos aplican a todas las
+    #pestañas-.
+    #
+    #IMPORTANTE -por qué se registran en `contenedor_editor` (el widget
+    #que luego se guarda como self.editor_pesado) y NO en `self`:
+    #GestorAtajos._widget_activo() (atajos.py) encuentra el módulo activo
+    #subiendo por la cadena de padres desde el widget con foco real,
+    #buscando el primer ancestro con `_atajos_registrados`. Pero
+    #`editor_pesado` se DESPARENTA de `self` y se reengancha dentro de su
+    #propia ventana de pantalla completa en cuanto se abre un archivo
+    #(ver _entrar_pantalla_completa: `self.editor_pesado.setParent(None)`
+    #y luego se reparenta en `ventana`) -así que, mientras se edita de
+    #verdad (que es prácticamente siempre: el editor se abre a pantalla
+    #completa automáticamente al cargar un archivo), `self` DEJA DE SER
+    #ANCESTRO de la tabla/Word/PDF con foco. Registrar los atajos en
+    #`self` los dejaba matemáticamente inalcanzables para esa búsqueda
+    #ascendente en cuanto el editor estaba realmente en uso -la
+    #ventanita nunca los encontraba, aunque los QShortcut sí funcionaran
+    #(esos no dependen de esta cadena de padres, solo del foco). Al
+    #registrarlos en `contenedor_editor`, que es el mismo objeto en
+    #ambos casos (embebido en `self` o reenganchado en la ventana de
+    #pantalla completa), la búsqueda ascendente SIEMPRE lo encuentra.
     def _crear_atajos_teclado(self, contenedor_editor):
-        """Atajos de teclado del editor, activos mientras el editor o
-        cualquiera de sus widgets hijos tenga el foco (WidgetWithChildrenShortcut).
-        Cada atajo revisa en qué pestaña (hoja/PDF/Word) está el usuario y
-        actúa en consecuencia -no todos los atajos aplican a todas las
-        pestañas-.
 
-        IMPORTANTE -por qué se registran en `contenedor_editor` (el widget
-        que luego se guarda como self.editor_pesado) y NO en `self`:
-        GestorAtajos._widget_activo() (atajos.py) encuentra el módulo activo
-        subiendo por la cadena de padres desde el widget con foco real,
-        buscando el primer ancestro con `_atajos_registrados`. Pero
-        `editor_pesado` se DESPARENTA de `self` y se reengancha dentro de su
-        propia ventana de pantalla completa en cuanto se abre un archivo
-        (ver _entrar_pantalla_completa: `self.editor_pesado.setParent(None)`
-        y luego se reparenta en `ventana`) -así que, mientras se edita de
-        verdad (que es prácticamente siempre: el editor se abre a pantalla
-        completa automáticamente al cargar un archivo), `self` DEJA DE SER
-        ANCESTRO de la tabla/Word/PDF con foco. Registrar los atajos en
-        `self` los dejaba matemáticamente inalcanzables para esa búsqueda
-        ascendente en cuanto el editor estaba realmente en uso -la
-        ventanita nunca los encontraba, aunque los QShortcut sí funcionaran
-        (esos no dependen de esta cadena de padres, solo del foco). Al
-        registrarlos en `contenedor_editor`, que es el mismo objeto en
-        ambos casos (embebido en `self` o reenganchado en la ventana de
-        pantalla completa), la búsqueda ascendente SIEMPRE lo encuentra."""
         #Título que mostrará la ventanita flotante de ayuda (Alt mantenido, ver atajos.py) mientras el editor tenga el
         #foco.
         contenedor_editor._titulo_modulo_atajos= "Editor de reportes"
         self._contenedor_atajos_editor= contenedor_editor  #ver _mostrar_atajos_disponibles
 
         def _atajo(secuencia, funcion, descripcion=""):
+
             #Usa registrar_atajo (atajos.py) en vez de un QShortcut suelto:
             #así, además de crear el atajo de verdad, queda anotado en contenedor_editor._atajos_registrados y la ventanita
             #de ayuda (mantener presionada Alt) puede mostrarlo -mismo mecanismo que ya usan estudiantes.py, personal.py,
@@ -2218,9 +2424,11 @@ class VisorEditorReportes(QWidget):
             return registrar_atajo(contenedor_editor, self.main_window, secuencia, descripcion, funcion)
 
         def _pagina_actual():
+
             return {0: "vacio", 1: "hoja", 2: "pdf", 3: "word"}.get(self.stack.currentIndex())
 
         def _negrita():
+
             pagina= _pagina_actual()
             if pagina == "hoja":
                 self._alternar_negrita()
@@ -2228,6 +2436,7 @@ class VisorEditorReportes(QWidget):
                 self.editor_word.setFontWeight(QFont.Weight.Bold if not self.editor_word.fontWeight() == QFont.Weight.Bold else QFont.Weight.Normal)
 
         def _cursiva():
+
             pagina= _pagina_actual()
             if pagina == "hoja":
                 self._alternar_cursiva()
@@ -2235,6 +2444,7 @@ class VisorEditorReportes(QWidget):
                 self.editor_word.setFontItalic(not self.editor_word.fontItalic())
 
         def _subrayado():
+
             pagina= _pagina_actual()
             if pagina == "hoja":
                 self._alternar_subrayado()
@@ -2242,6 +2452,7 @@ class VisorEditorReportes(QWidget):
                 self.editor_word.setFontUnderline(not self.editor_word.fontUnderline())
 
         def _buscar():
+
             pagina= _pagina_actual()
             if pagina == "hoja":
                 self.in_buscar_celda.setFocus()
@@ -2253,10 +2464,12 @@ class VisorEditorReportes(QWidget):
                 self.btn_texto_pdf.setChecked(True)
 
         def _copiar_seleccion_pdf():
+
             if _pagina_actual() == "pdf":
                 self._pdf_copiar_seleccion()
 
         def _borrar():
+
             pagina= _pagina_actual()
             if pagina == "hoja":
                 self._borrar_contenido_celdas_seleccionadas()
@@ -2266,6 +2479,7 @@ class VisorEditorReportes(QWidget):
                     cursor.removeSelectedText()
 
         def _seleccionar_todo():
+
             pagina= _pagina_actual()
             if pagina == "hoja":
                 self.tabla_editor.selectAll()
@@ -2286,6 +2500,7 @@ class VisorEditorReportes(QWidget):
         #visible-. Ctrl+K: insertar/editar hipervínculo -en la hoja aplica a la celda actual, en Word al texto
         #seleccionado/bajo el cursor-.
         def _insertar_enlace_segun_pagina():
+
             indice= self.stack.currentIndex()
             if indice == 1:
                 self._hoja_insertar_enlace()
@@ -2319,11 +2534,13 @@ class VisorEditorReportes(QWidget):
         #Atajos propios de la hoja de cálculo (grupos "Filas y columnas" y "Datos" de la cinta): antes solo eran
         #accesibles con el mouse. Todos revisan que la pestaña "hoja" esté activa antes de actuar -igual que el resto
         #de funciones de este método-, así que no interfieren con Word ni con el visor de PDF.
+        #Envuelve `funcion` para que solo se ejecute con la pestaña
+        #de hoja de cálculo visible -evita, por ejemplo, insertar una
+        #fila "fantasma" si el atajo se dispara estando en Word/PDF.
         def _si_hoja(funcion):
-            """Envuelve `funcion` para que solo se ejecute con la pestaña
-            de hoja de cálculo visible -evita, por ejemplo, insertar una
-            fila "fantasma" si el atajo se dispara estando en Word/PDF."""
+
             def _envoltura():
+
                 if _pagina_actual() == "hoja":
                     funcion()
             return _envoltura
@@ -2347,23 +2564,25 @@ class VisorEditorReportes(QWidget):
         #Autoajustar el ancho de las columnas -mismo botón "Autoajustar" de la cinta-.
         _atajo("Ctrl+Shift+W", _si_hoja(self._autoajustar_columnas), "Autoajustar columnas (hoja)")
 
+    #Devuelve [(secuencia, descripción), ...] con TODOS los atajos de
+    #este editor. Ahora es solo un envoltorio sobre atajos_de(self):
+    #cada atajo ya quedó anotado por registrar_atajo() al crearse (ver
+    #_crear_atajos_teclado), así que no hace falta mantener esta lista
+    #a mano por separado -antes se podía desincronizar de los atajos
+    #reales-. Se conserva el método por compatibilidad con quien ya lo
+    #llamaba. Lee de `self._contenedor_atajos_editor` (el widget real
+    #donde se registraron, ver _crear_atajos_teclado) y no de `self`,
+    #que ya no los tiene anotados.
     def _mostrar_atajos_disponibles(self):
-        """Devuelve [(secuencia, descripción), ...] con TODOS los atajos de
-        este editor. Ahora es solo un envoltorio sobre atajos_de(self):
-        cada atajo ya quedó anotado por registrar_atajo() al crearse (ver
-        _crear_atajos_teclado), así que no hace falta mantener esta lista
-        a mano por separado -antes se podía desincronizar de los atajos
-        reales-. Se conserva el método por compatibilidad con quien ya lo
-        llamaba. Lee de `self._contenedor_atajos_editor` (el widget real
-        donde se registraron, ver _crear_atajos_teclado) y no de `self`,
-        que ya no los tiene anotados."""
+
         widget= getattr(self, "_contenedor_atajos_editor", self)
         return atajos_de(widget)
 
+    #Deshacer -botón circular de la barra superior o Ctrl+Z-: aplica
+    #al modo que esté visible en ese momento (hoja/PDF/Word), cada uno
+    #con su propio historial independiente.
     def _deshacer_global(self):
-        """Deshacer -botón circular de la barra superior o Ctrl+Z-: aplica
-        al modo que esté visible en ese momento (hoja/PDF/Word), cada uno
-        con su propio historial independiente."""
+
         if self._cerrando:
             return
         pagina= {0: "vacio", 1: "hoja", 2: "pdf", 3: "word"}.get(self.stack.currentIndex())
@@ -2376,6 +2595,7 @@ class VisorEditorReportes(QWidget):
         self._actualizar_botones_deshacer()
 
     def _rehacer_global(self):
+
         if self._cerrando:
             return
         pagina= {0: "vacio", 1: "hoja", 2: "pdf", 3: "word"}.get(self.stack.currentIndex())
@@ -2387,11 +2607,12 @@ class VisorEditorReportes(QWidget):
             self.editor_word.redo()
         self._actualizar_botones_deshacer()
 
+    #Habilita/deshabilita los dos botones circulares según si hay algo
+    #que deshacer/rehacer EN EL MODO ACTUAL -se llama después de
+    #cualquier acción que modifique el historial (registrar, deshacer,
+    #rehacer, cambiar de pestaña, abrir un archivo nuevo...).
     def _actualizar_botones_deshacer(self):
-        """Habilita/deshabilita los dos botones circulares según si hay algo
-        que deshacer/rehacer EN EL MODO ACTUAL -se llama después de
-        cualquier acción que modifique el historial (registrar, deshacer,
-        rehacer, cambiar de pestaña, abrir un archivo nuevo...)."""
+
         if not hasattr(self, "btn_deshacer"):
             return
         pagina= {0: "vacio", 1: "hoja", 2: "pdf", 3: "word"}.get(self.stack.currentIndex())
@@ -2409,6 +2630,7 @@ class VisorEditorReportes(QWidget):
             self.btn_rehacer.setEnabled(False)
 
     def _zoom_acercar_pagina_actual(self):
+
         pagina= {0: "vacio", 1: "hoja", 2: "pdf", 3: "word"}.get(self.stack.currentIndex())
         if pagina == "pdf":
             self._pdf_zoom(0.2)
@@ -2418,6 +2640,7 @@ class VisorEditorReportes(QWidget):
             self._word_zoom(20)
 
     def _zoom_alejar_pagina_actual(self):
+
         pagina= {0: "vacio", 1: "hoja", 2: "pdf", 3: "word"}.get(self.stack.currentIndex())
         if pagina == "pdf":
             self._pdf_zoom(-0.2)
@@ -2427,6 +2650,7 @@ class VisorEditorReportes(QWidget):
             self._word_zoom(-20)
 
     def _zoom_restablecer_pagina_actual(self):
+
         pagina= {0: "vacio", 1: "hoja", 2: "pdf", 3: "word"}.get(self.stack.currentIndex())
         if pagina == "pdf":
             self._pdf_ajustar_zoom_al_ancho()
@@ -2435,15 +2659,16 @@ class VisorEditorReportes(QWidget):
         elif pagina == "word":
             self._word_ajustar_zoom_al_ancho()
 
+    #Envuelve una barra de herramientas (QFrame con muchos botones en fila)
+    #en un QScrollArea horizontal, con flechas "‹ ›" visibles a los lados
+    #-antes solo había una barrita de scroll delgada y fácil de pasar por
+    #alto, así que cuando la barra no cabía (ventana angosta, muchos
+    #botones) los últimos botones quedaban cortados sin que se notara que
+    #había más contenido con solo desplazarse-. Las flechas se habilitan/
+    #deshabilitan solas según si realmente hay más contenido hacia ese
+    #lado, y quedan ocultas del todo si todo cabe sin scroll.
     def _barra_desplazable(self, frame):
-        """Envuelve una barra de herramientas (QFrame con muchos botones en fila)
-        en un QScrollArea horizontal, con flechas "‹ ›" visibles a los lados
-        -antes solo había una barrita de scroll delgada y fácil de pasar por
-        alto, así que cuando la barra no cabía (ventana angosta, muchos
-        botones) los últimos botones quedaban cortados sin que se notara que
-        había más contenido con solo desplazarse-. Las flechas se habilitan/
-        deshabilitan solas según si realmente hay más contenido hacia ese
-        lado, y quedan ocultas del todo si todo cabe sin scroll."""
+
         contenedor= QScrollArea()
         #OJO tema oscuro: esta clase (QScrollArea) también la usa el visor de PDF (self.scroll_pdf) para envolver
         #CONTENIDO -que siempre debe verse blanco/negro plano, nunca teñido-. Como el QSS no puede distinguir "este
@@ -2488,6 +2713,7 @@ class VisorEditorReportes(QWidget):
         btn_der.clicked.connect(lambda: barra_scroll.setValue(barra_scroll.value() + 120))
 
         def _actualizar_flechas(*_args):
+
             hay_overflow= barra_scroll.maximum() > 0
             btn_izq.setVisible(hay_overflow)
             btn_der.setVisible(hay_overflow)
@@ -2504,11 +2730,12 @@ class VisorEditorReportes(QWidget):
         self._barras_desplazables.append((contenedor, frame))
         return envoltura
 
+    #Vuelve a medir cada barra de herramientas envuelta por
+    #_barra_desplazable() ahora que ya tiene el QSS del tema puesto, para
+    #que la altura reservada sea la real (con su padding/borde) y no se
+    #corten ni el texto de los botones ni el de los combos.
     def _recalcular_barras_desplazables(self):
-        """Vuelve a medir cada barra de herramientas envuelta por
-        _barra_desplazable() ahora que ya tiene el QSS del tema puesto, para
-        que la altura reservada sea la real (con su padding/borde) y no se
-        corten ni el texto de los botones ni el de los combos."""
+
         for contenedor, frame in self._barras_desplazables:
             frame.style().unpolish(frame)
             frame.style().polish(frame)
@@ -2516,24 +2743,26 @@ class VisorEditorReportes(QWidget):
             contenedor.setFixedHeight(frame.sizeHint().height() + 14)
 
     #---------------- Helpers de diseño de la cinta de opciones ----------------
+    #Sombra suave (elevación tipo "tarjeta flotante") para que la
+    #cinta de opciones y la barra superior se despeguen visualmente del
+    #fondo en vez de verse pegadas/planas contra él.
     def _aplicar_sombra(self, widget, blur=22, y=4, alpha=32):
-        """Sombra suave (elevación tipo "tarjeta flotante") para que la
-        cinta de opciones y la barra superior se despeguen visualmente del
-        fondo en vez de verse pegadas/planas contra él."""
+
         efecto= QGraphicsDropShadowEffect(widget)
         efecto.setBlurRadius(blur)
         efecto.setOffset(0, y)
         efecto.setColor(QColor(15, 23, 42, alpha))
         widget.setGraphicsEffect(efecto)
 
+    #Línea vertical delgada que marca dónde termina un grupo de la
+    #cinta de opciones y empieza el siguiente -mismo lenguaje visual que
+    #usa Word/Excel real para separar "Fuente" de "Alineación", etc.-.
+    #Antes la línea se pegaba directo a los botones de ambos lados (sin
+    #margen), así que dos grupos consecutivos como Fuente/Alinear se
+    #veían fundidos en una sola caja. Ahora va envuelta en un contenedor
+    #con margen horizontal para que quede un respiro real a cada lado.
     def _separador_ribbon(self):
-        """Línea vertical delgada que marca dónde termina un grupo de la
-        cinta de opciones y empieza el siguiente -mismo lenguaje visual que
-        usa Word/Excel real para separar "Fuente" de "Alineación", etc.-.
-        Antes la línea se pegaba directo a los botones de ambos lados (sin
-        margen), así que dos grupos consecutivos como Fuente/Alinear se
-        veían fundidos en una sola caja. Ahora va envuelta en un contenedor
-        con margen horizontal para que quede un respiro real a cada lado."""
+
         contenedor= QWidget()
         contenedor.setObjectName("ContenedorSeparadorRibbon")
         lay= QHBoxLayout(contenedor)
@@ -2546,14 +2775,15 @@ class VisorEditorReportes(QWidget):
         lay.addWidget(linea)
         return contenedor
 
+    #Crea un "grupo" de la cinta de opciones: una fila de controles
+    #arriba y una etiqueta pequeña centrada debajo (p. ej. "FUENTE",
+    #"ALINEAR"), igual que los grupos de Word/Excel. Antes todos los
+    #botones de la barra iban sueltos uno tras otro -sin más separación
+    #que un hueco en blanco cada tanto-, lo que hacía difícil distinguir
+    #de un vistazo qué botones estaban relacionados entre sí. Devuelve
+    #(widget_del_grupo, layout_horizontal_donde_agregar_los_controles).
     def _crear_grupo_ribbon(self, titulo):
-        """Crea un "grupo" de la cinta de opciones: una fila de controles
-        arriba y una etiqueta pequeña centrada debajo (p. ej. "FUENTE",
-        "ALINEAR"), igual que los grupos de Word/Excel. Antes todos los
-        botones de la barra iban sueltos uno tras otro -sin más separación
-        que un hueco en blanco cada tanto-, lo que hacía difícil distinguir
-        de un vistazo qué botones estaban relacionados entre sí. Devuelve
-        (widget_del_grupo, layout_horizontal_donde_agregar_los_controles)."""
+
         contenedor= QWidget()
         contenedor.setObjectName("GrupoRibbon")
         v= QVBoxLayout(contenedor)
@@ -2568,12 +2798,13 @@ class VisorEditorReportes(QWidget):
         v.addWidget(etiqueta)
         return contenedor, fila
 
+    #Control de zoom "−  100%  +" compacto, con los tres controles
+    #compartiendo un único borde redondeado en vez de verse como tres
+    #piezas sueltas flotando en la barra. Devuelve (widget, campo_texto)
+    #-el campo se guarda tal cual lo esperaba el resto del código
+    #(self.in_zoom_hoja / self.in_zoom_pdf / self.in_zoom_word)-.
     def _crear_pill_zoom(self, valor_inicial, al_restar, al_sumar, al_fijar, tooltip_campo):
-        """Control de zoom "−  100%  +" compacto, con los tres controles
-        compartiendo un único borde redondeado en vez de verse como tres
-        piezas sueltas flotando en la barra. Devuelve (widget, campo_texto)
-        -el campo se guarda tal cual lo esperaba el resto del código
-        (self.in_zoom_hoja / self.in_zoom_pdf / self.in_zoom_word)-."""
+
         pill= QWidget()
         pill.setObjectName("PillZoom")
         pl= QHBoxLayout(pill)
@@ -2607,6 +2838,7 @@ class VisorEditorReportes(QWidget):
         return pill, campo
 
     def _pagina_vacia(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.addStretch()
@@ -2627,6 +2859,7 @@ class VisorEditorReportes(QWidget):
 
     #---------------- Página de hoja de cálculo (CSV / XLSX) ----------------
     def _pagina_hoja_calculo(self):
+
         w= QWidget()
         w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         l= QVBoxLayout(w)
@@ -2672,6 +2905,7 @@ class VisorEditorReportes(QWidget):
         TAM_BOTON_CUADRADO= 32
 
         def _boton(fila, texto, tooltip, callback, ancho=None):
+
             btn= QToolButton()
             btn.setText(texto)
             btn.setToolTip(tooltip)
@@ -2684,20 +2918,24 @@ class VisorEditorReportes(QWidget):
 
         #Grupo "Filas y columnas": iconos vectoriales propios (EMOJI_*_FILA/COLUMNA) con cuadrícula + disco verde
         #"+"/rojo "−", en vez de los botones de texto "Fila"/"Columna" indistinguibles.
-        g_filas, f_filas = self._crear_grupo_ribbon("Filas y columnas")
+        g_filas, f_filas= self._crear_grupo_ribbon("Filas y columnas")
         _b_ins_fila= _boton(f_filas, "", "Insertar fila debajo de la selección", self._insertar_fila)
-        _b_ins_fila.setIcon(icono_emoji(EMOJI_INSERTAR_FILA)); _b_ins_fila.setIconSize(_QSize_emoji(16, 16))
+        _b_ins_fila.setIcon(icono_emoji(EMOJI_INSERTAR_FILA))
+        _b_ins_fila.setIconSize(_QSize_emoji(16, 16))
         _b_eli_fila= _boton(f_filas, "", "Eliminar fila(s) seleccionada(s)", self._eliminar_fila)
-        _b_eli_fila.setIcon(icono_emoji(EMOJI_ELIMINAR_FILA)); _b_eli_fila.setIconSize(_QSize_emoji(16, 16))
+        _b_eli_fila.setIcon(icono_emoji(EMOJI_ELIMINAR_FILA))
+        _b_eli_fila.setIconSize(_QSize_emoji(16, 16))
         _b_ins_col= _boton(f_filas, "", "Insertar columna a la derecha de la selección", self._insertar_columna)
-        _b_ins_col.setIcon(icono_emoji(EMOJI_INSERTAR_COLUMNA)); _b_ins_col.setIconSize(_QSize_emoji(16, 16))
+        _b_ins_col.setIcon(icono_emoji(EMOJI_INSERTAR_COLUMNA))
+        _b_ins_col.setIconSize(_QSize_emoji(16, 16))
         _b_eli_col= _boton(f_filas, "", "Eliminar columna(s) seleccionada(s)", self._eliminar_columna)
-        _b_eli_col.setIcon(icono_emoji(EMOJI_ELIMINAR_COLUMNA)); _b_eli_col.setIconSize(_QSize_emoji(16, 16))
+        _b_eli_col.setIcon(icono_emoji(EMOJI_ELIMINAR_COLUMNA))
+        _b_eli_col.setIconSize(_QSize_emoji(16, 16))
         tb.addWidget(g_filas)
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Fuente": tipografía, negrita/cursiva/subrayado, relleno y color de texto.
-        g_fuente, f_fuente = self._crear_grupo_ribbon("Fuente")
+        g_fuente, f_fuente= self._crear_grupo_ribbon("Fuente")
         self.combo_fuente_hoja= QComboBox()
         self.combo_fuente_hoja.addItems(FUENTES_DISPONIBLES)
         self.combo_fuente_hoja.setEditable(False)
@@ -2716,34 +2954,46 @@ class VisorEditorReportes(QWidget):
         #widget con el heredado del padre), dejándolo sin el relleno/radio/resaltado del resto de la barra y con el
         #resaltado nativo de Qt al pasar el cursor, que es justo lo que tapaba el texto.
         self.btn_negrita= _boton(f_fuente, "B", "Negrita", self._alternar_negrita)
-        _f= self.btn_negrita.font(); _f.setBold(True); self.btn_negrita.setFont(_f)
+        _f= self.btn_negrita.font()
+        _f.setBold(True)
+        self.btn_negrita.setFont(_f)
         self.btn_cursiva= _boton(f_fuente, "I", "Cursiva", self._alternar_cursiva)
-        _f= self.btn_cursiva.font(); _f.setItalic(True); self.btn_cursiva.setFont(_f)
+        _f= self.btn_cursiva.font()
+        _f.setItalic(True)
+        self.btn_cursiva.setFont(_f)
         self.btn_subrayado= _boton(f_fuente, "U", "Subrayado", self._alternar_subrayado)
-        _f= self.btn_subrayado.font(); _f.setUnderline(True); self.btn_subrayado.setFont(_f)
+        _f= self.btn_subrayado.font()
+        _f.setUnderline(True)
+        self.btn_subrayado.setFont(_f)
         f_fuente.addSpacing(8)
         _b_relleno= _boton(f_fuente, "", "Color de relleno de las celdas seleccionadas",
                              self._elegir_color_relleno)
-        _b_relleno.setIcon(icono_emoji("🎨")); _b_relleno.setIconSize(_QSize_emoji(16, 16))
+        _b_relleno.setIcon(icono_emoji("🎨"))
+        _b_relleno.setIconSize(_QSize_emoji(16, 16))
         _b_color_texto= _boton(f_fuente, "Aa", "Color de la letra de las celdas seleccionadas",
                                  self._elegir_color_texto)
-        _f= _b_color_texto.font(); _f.setBold(True); _b_color_texto.setFont(_f)
+        _f= _b_color_texto.font()
+        _f.setBold(True)
+        _b_color_texto.setFont(_f)
         tb.addWidget(g_fuente)
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Alinear"
-        g_alinear, f_alinear = self._crear_grupo_ribbon("Alinear")
+        g_alinear, f_alinear= self._crear_grupo_ribbon("Alinear")
         _b_alinear_izq= _boton(f_alinear, "", "Alinear a la izquierda", lambda: self._alinear(Qt.AlignmentFlag.AlignLeft))
-        _b_alinear_izq.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA)); _b_alinear_izq.setIconSize(_QSize_emoji(16, 16))
+        _b_alinear_izq.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA))
+        _b_alinear_izq.setIconSize(_QSize_emoji(16, 16))
         _b_alinear_centro= _boton(f_alinear, "", "Centrar", lambda: self._alinear(Qt.AlignmentFlag.AlignHCenter))
-        _b_alinear_centro.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO)); _b_alinear_centro.setIconSize(_QSize_emoji(16, 16))
+        _b_alinear_centro.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO))
+        _b_alinear_centro.setIconSize(_QSize_emoji(16, 16))
         _b_alinear_der= _boton(f_alinear, "", "Alinear a la derecha", lambda: self._alinear(Qt.AlignmentFlag.AlignRight))
-        _b_alinear_der.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA)); _b_alinear_der.setIconSize(_QSize_emoji(16, 16))
+        _b_alinear_der.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA))
+        _b_alinear_der.setIconSize(_QSize_emoji(16, 16))
         tb.addWidget(g_alinear)
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Datos"
-        g_datos, f_datos = self._crear_grupo_ribbon("Datos")
+        g_datos, f_datos= self._crear_grupo_ribbon("Datos")
         _boton(f_datos, "AZ", "Ordenar ascendente por la columna seleccionada", lambda: self._ordenar(Qt.SortOrder.AscendingOrder))
         _boton(f_datos, "ZA", "Ordenar descendente por la columna seleccionada", lambda: self._ordenar(Qt.SortOrder.DescendingOrder))
         _boton(f_datos, "Autoajustar", "Autoajustar el ancho de las columnas", self._autoajustar_columnas)
@@ -2753,7 +3003,7 @@ class VisorEditorReportes(QWidget):
         #Grupo "Calcular": operaciones rápidas -tipo "Autosuma" de Excel-:
         #se selecciona un rango de celdas y, sin escribir ninguna fórmula a mano, se inserta el resultado (como fórmula
         #real, recalculable) justo debajo/al lado de la selección.
-        g_calcular, f_calcular = self._crear_grupo_ribbon("Calcular")
+        g_calcular, f_calcular= self._crear_grupo_ribbon("Calcular")
         btn_operacion= QToolButton()
         btn_operacion.setText("∑ Operación")
         btn_operacion.setToolTip("Selecciona un rango de celdas y aplica una operación automáticamente")
@@ -2777,18 +3027,19 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Insertar"
-        g_insertar, f_insertar = self._crear_grupo_ribbon("Insertar")
+        g_insertar, f_insertar= self._crear_grupo_ribbon("Insertar")
         _boton(f_insertar, "Imagen", "Insertar una imagen en la celda seleccionada", self._insertar_imagen_hoja)
         _boton(f_insertar, "Enlace", "Insertar o editar un hipervínculo en la celda seleccionada", lambda: self._hoja_insertar_enlace())
         _boton(f_insertar, "Gráfico", "Crear un gráfico nativo de Excel a partir de los datos seleccionados", self._insertar_grafico_hoja)
         _b_cuadro= _boton(f_insertar, "Cuadro de texto", "Insertar un cuadro de texto (celda con borde y relleno) en la posición seleccionada", self._insertar_cuadro_texto_hoja)
-        _b_cuadro.setIcon(icono_emoji(EMOJI_CUADRO_TEXTO)); _b_cuadro.setIconSize(_QSize_emoji(16, 16))
+        _b_cuadro.setIcon(icono_emoji(EMOJI_CUADRO_TEXTO))
+        _b_cuadro.setIconSize(_QSize_emoji(16, 16))
         tb.addWidget(g_insertar)
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Vista": zoom en píldora compacta
-        g_vista, f_vista = self._crear_grupo_ribbon("Vista")
-        pill_zoom, self.in_zoom_hoja = self._crear_pill_zoom(
+        g_vista, f_vista= self._crear_grupo_ribbon("Vista")
+        pill_zoom, self.in_zoom_hoja= self._crear_pill_zoom(
             "100%",
             lambda: self._zoom_hoja_cambiar(-10),
             lambda: self._zoom_hoja_cambiar(10),
@@ -2884,6 +3135,7 @@ class VisorEditorReportes(QWidget):
 
     #---------------- Página de PDF ----------------
     def _pagina_pdf(self):
+
         w= QWidget()
         w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         l= QVBoxLayout(w)
@@ -2896,6 +3148,7 @@ class VisorEditorReportes(QWidget):
         tb.setSpacing(6)
 
         def _boton(fila, texto, tooltip, callback):
+
             btn= QToolButton()
             btn.setText(texto)
             btn.setToolTip(tooltip)
@@ -2905,7 +3158,7 @@ class VisorEditorReportes(QWidget):
             return btn
 
         #Grupo "Navegación"
-        g_nav, f_nav = self._crear_grupo_ribbon("Navegación")
+        g_nav, f_nav= self._crear_grupo_ribbon("Navegación")
         _boton(f_nav, "⏮", "Primera página", self._pdf_primera)
         _boton(f_nav, "◀", "Página anterior", self._pdf_anterior)
         self.spin_pagina_pdf= QSpinBox()
@@ -2920,8 +3173,8 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Vista": zoom en píldora compacta
-        g_vista, f_vista = self._crear_grupo_ribbon("Vista")
-        pill_zoom_pdf, self.in_zoom_pdf = self._crear_pill_zoom(
+        g_vista, f_vista= self._crear_grupo_ribbon("Vista")
+        pill_zoom_pdf, self.in_zoom_pdf= self._crear_pill_zoom(
             "140%",
             lambda: self._pdf_zoom(-0.2),
             lambda: self._pdf_zoom(0.2),
@@ -2933,7 +3186,7 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Página"
-        g_pagina, f_pagina = self._crear_grupo_ribbon("Página")
+        g_pagina, f_pagina= self._crear_grupo_ribbon("Página")
         _boton(f_pagina, "Rotar", "Rotar la página actual 90°", self._pdf_rotar)
         _boton(f_pagina, "Eliminar", "Eliminar la página actual", self._pdf_eliminar_pagina)
         _boton(f_pagina, "Insertar", "Insertar una página en blanco después de esta", self._pdf_insertar_pagina)
@@ -2941,14 +3194,16 @@ class VisorEditorReportes(QWidget):
                                      "(sirve tanto para páginas en blanco como para reemplazar el contenido de una existente)",
                self._pdf_editar_pagina_actual)
         btn_mover_arriba= _boton(f_pagina, "", "Mover la página actual hacia arriba", self._pdf_mover_arriba)
-        btn_mover_arriba.setIcon(icono_emoji("↑")); btn_mover_arriba.setIconSize(_QSize_emoji(16, 16))
+        btn_mover_arriba.setIcon(icono_emoji("↑"))
+        btn_mover_arriba.setIconSize(_QSize_emoji(16, 16))
         btn_mover_abajo= _boton(f_pagina, "", "Mover la página actual hacia abajo", self._pdf_mover_abajo)
-        btn_mover_abajo.setIcon(icono_emoji("↓")); btn_mover_abajo.setIconSize(_QSize_emoji(16, 16))
+        btn_mover_abajo.setIcon(icono_emoji("↓"))
+        btn_mover_abajo.setIconSize(_QSize_emoji(16, 16))
         tb.addWidget(g_pagina)
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Seleccionar"
-        g_sel, f_sel = self._crear_grupo_ribbon("Seleccionar")
+        g_sel, f_sel= self._crear_grupo_ribbon("Seleccionar")
         _boton(f_sel, "Copiar selección", "Copia al portapapeles el texto que hayas seleccionado arrastrando "
                                        "el mouse sobre la página (como en Edge)", self._pdf_copiar_seleccion)
         _boton(f_sel, "Enlace", "Convierte el texto seleccionado (arrastrando el mouse) en un hipervínculo",
@@ -3055,6 +3310,7 @@ class VisorEditorReportes(QWidget):
 
     #---------------- Página de Word (.docx) ----------------
     def _pagina_word(self):
+
         w= QWidget()
         w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         l= QVBoxLayout(w)
@@ -3067,6 +3323,7 @@ class VisorEditorReportes(QWidget):
         tb.setSpacing(6)
 
         def _boton(fila, texto, tooltip, callback, checable=False):
+
             btn= QToolButton()
             btn.setText(texto)
             btn.setToolTip(tooltip)
@@ -3085,7 +3342,7 @@ class VisorEditorReportes(QWidget):
         #uno, aunque eso implique que este grupo (y por lo tanto la cinta completa) ocupe más ancho -la barra ya es
         #desplazable (ver _barra_desplazable más abajo), así que no hay problema en que crezca-.
         _ESTILO_PADDING= "padding: 6px 16px;"
-        g_estilo, f_estilo = self._crear_grupo_ribbon("Estilo")
+        g_estilo, f_estilo= self._crear_grupo_ribbon("Estilo")
         f_estilo.setSpacing(22)
         self.combo_estilo_word= QComboBox()
         self.combo_estilo_word.addItems(["Normal", "Título 1", "Título 2", "Título 3"])
@@ -3121,20 +3378,26 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Formato"
-        g_formato, f_formato = self._crear_grupo_ribbon("Formato")
+        g_formato, f_formato= self._crear_grupo_ribbon("Formato")
         #NOTA: igual que en la hoja de cálculo, la tipografía del glifo (B/I/U) se marca con QFont y NO con
         #setStyleSheet() local -un QSS propio en el botón anula por completo el de la cinta para ese botón (relleno,
         #radio, color de fondo al pasar el cursor y al estar marcado/"checked"), dejándolo con el resaltado nativo de
         #Qt, que es lo que se veía "raro" y tapaba el texto en los modos PDF y Word.
         self.btn_negrita_word= _boton(f_formato, "B", "Negrita", self._word_alternar_negrita, checable=True)
         self.btn_negrita_word.setMinimumWidth(30)
-        _f= self.btn_negrita_word.font(); _f.setBold(True); self.btn_negrita_word.setFont(_f)
+        _f= self.btn_negrita_word.font()
+        _f.setBold(True)
+        self.btn_negrita_word.setFont(_f)
         self.btn_cursiva_word= _boton(f_formato, "I", "Cursiva", self._word_alternar_cursiva, checable=True)
         self.btn_cursiva_word.setMinimumWidth(30)
-        _f= self.btn_cursiva_word.font(); _f.setItalic(True); self.btn_cursiva_word.setFont(_f)
+        _f= self.btn_cursiva_word.font()
+        _f.setItalic(True)
+        self.btn_cursiva_word.setFont(_f)
         self.btn_subrayado_word= _boton(f_formato, "U", "Subrayado", self._word_alternar_subrayado, checable=True)
         self.btn_subrayado_word.setMinimumWidth(30)
-        _f= self.btn_subrayado_word.font(); _f.setUnderline(True); self.btn_subrayado_word.setFont(_f)
+        _f= self.btn_subrayado_word.font()
+        _f.setUnderline(True)
+        self.btn_subrayado_word.setFont(_f)
         _boton(f_formato, "Texto", "Color del texto", self._word_elegir_color_texto)
         _boton(f_formato, "Resaltado", "Color de resaltado del texto seleccionado", self._word_elegir_color_resaltado)
         tb.addWidget(g_formato)
@@ -3146,15 +3409,19 @@ class VisorEditorReportes(QWidget):
         #y el callback solo actúa cuando el botón pasa a estado "marcado" (evita que el des-marcado del botón anterior
         #dispare de nuevo su propia alineación y "pise" la que se acaba de elegir, que era la causa de que la
         #alineación vieja pareciera "mantenerse").
-        g_alinear_w, f_alinear_w = self._crear_grupo_ribbon("Alinear")
+        g_alinear_w, f_alinear_w= self._crear_grupo_ribbon("Alinear")
         self.btn_alinear_izq_word= _boton(f_alinear_w, "", "Alinear a la izquierda", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignLeft) if marcado else None, checable=True)
-        self.btn_alinear_izq_word.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA)); self.btn_alinear_izq_word.setIconSize(_QSize_emoji(16, 16))
+        self.btn_alinear_izq_word.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA))
+        self.btn_alinear_izq_word.setIconSize(_QSize_emoji(16, 16))
         self.btn_alinear_centro_word= _boton(f_alinear_w, "", "Centrar", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignHCenter) if marcado else None, checable=True)
-        self.btn_alinear_centro_word.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO)); self.btn_alinear_centro_word.setIconSize(_QSize_emoji(16, 16))
+        self.btn_alinear_centro_word.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO))
+        self.btn_alinear_centro_word.setIconSize(_QSize_emoji(16, 16))
         self.btn_alinear_der_word= _boton(f_alinear_w, "", "Alinear a la derecha", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignRight) if marcado else None, checable=True)
-        self.btn_alinear_der_word.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA)); self.btn_alinear_der_word.setIconSize(_QSize_emoji(16, 16))
+        self.btn_alinear_der_word.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA))
+        self.btn_alinear_der_word.setIconSize(_QSize_emoji(16, 16))
         self.btn_alinear_just_word= _boton(f_alinear_w, "", "Justificar", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignJustify) if marcado else None, checable=True)
-        self.btn_alinear_just_word.setIcon(self._icono_alinear_justificado()); self.btn_alinear_just_word.setIconSize(_QSize_emoji(16, 16))
+        self.btn_alinear_just_word.setIcon(self._icono_alinear_justificado())
+        self.btn_alinear_just_word.setIconSize(_QSize_emoji(16, 16))
         self._grupo_alinear_word= QButtonGroup(self)
         self._grupo_alinear_word.setExclusive(True)
         for _b_align in (self.btn_alinear_izq_word, self.btn_alinear_centro_word,
@@ -3164,14 +3431,14 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Listas"
-        g_listas, f_listas = self._crear_grupo_ribbon("Listas")
+        g_listas, f_listas= self._crear_grupo_ribbon("Listas")
         _boton(f_listas, "• Lista", "Lista con viñetas", self._word_lista_vinetas)
         _boton(f_listas, "1. Lista", "Lista numerada", self._word_lista_numerada)
         tb.addWidget(g_listas)
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Insertar"
-        g_insertar_w, f_insertar_w = self._crear_grupo_ribbon("Insertar")
+        g_insertar_w, f_insertar_w= self._crear_grupo_ribbon("Insertar")
         _boton(f_insertar_w, "Imagen", "Insertar una imagen en el punto del cursor", self._word_insertar_imagen)
         _boton(f_insertar_w, "Enlace", "Insertar o editar un hipervínculo", self._word_insertar_enlace)
         tb.addWidget(g_insertar_w)
@@ -3180,7 +3447,7 @@ class VisorEditorReportes(QWidget):
         #Grupo "Herramientas": equivalente a la barra "HERRAMIENTAS DE DOCUMENTO" del modo PDF (marca de agua,
         #combinar, exportar imagen, ver texto), pero adaptado a lo que tiene sentido en un documento de Word editable.
         #Los botones viven dentro de un menú desplegable para no ocupar espacio permanente en la cinta.
-        g_herr_w, f_herr_w = self._crear_grupo_ribbon("Herramientas")
+        g_herr_w, f_herr_w= self._crear_grupo_ribbon("Herramientas")
         self._marca_agua_word= None
         btn_herr_word= QToolButton()
         btn_herr_word.setText("Herramientas")
@@ -3220,8 +3487,8 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(self._separador_ribbon())
 
         #Grupo "Vista": zoom en píldora compacta
-        g_vista_w, f_vista_w = self._crear_grupo_ribbon("Vista")
-        pill_zoom_word, self.in_zoom_word = self._crear_pill_zoom(
+        g_vista_w, f_vista_w= self._crear_grupo_ribbon("Vista")
+        pill_zoom_word, self.in_zoom_word= self._crear_pill_zoom(
             "100%",
             lambda: self._word_zoom(-20),
             lambda: self._word_zoom(20),
@@ -3321,6 +3588,7 @@ class VisorEditorReportes(QWidget):
         return w
 
     def _mostrar_pagina(self, nombre):
+
         indice= {"vacio": 0, "hoja": 1, "pdf": 2, "word": 3}.get(nombre, 0)
         self.stack.setCurrentIndex(indice)
         self._actualizar_botones_deshacer()
@@ -3336,16 +3604,17 @@ class VisorEditorReportes(QWidget):
         self._anim_pagina= anim
 
     #TEMA (claro/oscuro)
+    #Vuelve a pintar SOLO la "cinta de opciones" (ribbon/toolbar) del
+    #editor pesado, adaptada al tema claro/oscuro activo -el CONTENIDO
+    #(la grilla de Excel, el lienzo de Word) se deja siempre en blanco/
+    #colores planos, como una hoja de Excel o Word real, y NO seaplica
+    #el tema de la app ahí: antes se tintaba de oscuro el fondo de toda
+    #la zona de contenido (#EditorPesadoRaiz) y eso hacía que los
+    #colores de celda que sí trae el propio archivo (rellenos, texto)
+    #se vieran mal/con poco contraste encima de un fondo que no es el
+    #que el archivo espera.
     def actualizar_tema(self):
-        """Vuelve a pintar SOLO la "cinta de opciones" (ribbon/toolbar) del
-        editor pesado, adaptada al tema claro/oscuro activo -el CONTENIDO
-        (la grilla de Excel, el lienzo de Word) se deja siempre en blanco/
-        colores planos, como una hoja de Excel o Word real, y NO seaplica
-        el tema de la app ahí: antes se tintaba de oscuro el fondo de toda
-        la zona de contenido (#EditorPesadoRaiz) y eso hacía que los
-        colores de celda que sí trae el propio archivo (rellenos, texto)
-        se vieran mal/con poco contraste encima de un fondo que no es el
-        que el archivo espera."""
+
         c= _colores_tema(self.main_window)
         self._c_tema_editor= c
         self.tabla_editor.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -3398,24 +3667,27 @@ class VisorEditorReportes(QWidget):
         #app ya haya cambiado.
         if self._ventana_pantalla_completa is not None:
             try:
+
                 self._ventana_pantalla_completa.setStyleSheet(self.window().styleSheet())
             except Exception:
                 pass
         self._recalcular_barras_desplazables()
 
     #Pantalla completa (única forma de editar: se activa sola al abrir un archivo)
+    #Con qué widget hay que parentar los diálogos (QFileDialog, mensajes,
+    #etc.). Mientras el editor está en pantalla completa, ese contenido vive
+    #en una ventana de nivel superior aparte (self._ventana_pantalla_completa);
+    #si los diálogos se parentaran a `self` -que sigue viviendo dentro de la
+    #ventana principal, aunque esté oculta detrás- el gestor de ventanas
+    #terminaba trayendo al frente la ventana principal en vez de quedarse
+    #sobre la de pantalla completa, muy molesto para el usuario. Parentando
+    #siempre a la ventana que esté realmente visible se evita ese salto.
     def _padre_dialogo(self):
-        """Con qué widget hay que parentar los diálogos (QFileDialog, mensajes,
-        etc.). Mientras el editor está en pantalla completa, ese contenido vive
-        en una ventana de nivel superior aparte (self._ventana_pantalla_completa);
-        si los diálogos se parentaran a `self` -que sigue viviendo dentro de la
-        ventana principal, aunque esté oculta detrás- el gestor de ventanas
-        terminaba trayendo al frente la ventana principal en vez de quedarse
-        sobre la de pantalla completa, muy molesto para el usuario. Parentando
-        siempre a la ventana que esté realmente visible se evita ese salto."""
+
         return self._ventana_pantalla_completa if self._ventana_pantalla_completa is not None else self
 
     def _entrar_pantalla_completa(self):
+
         if self._ventana_pantalla_completa is not None:
             #Ya hay una ventana de edición abierta (p. ej. el usuario le dio a "Continuar editando" con el editor ya
             #abierto en segundo plano, o volvió a hacer clic por accidente): en vez de no hacer nada -que dejaba al usuario
@@ -3423,6 +3695,7 @@ class VisorEditorReportes(QWidget):
             #traemos al frente y le damos el foco, restaurándola primero si estaba minimizada.
             ventana= self._ventana_pantalla_completa
             try:
+
                 if ventana.isMinimized():
                     ventana.showNormal()
                 ventana.raise_()
@@ -3449,6 +3722,7 @@ class VisorEditorReportes(QWidget):
         #de la app. Copiamos el mismo QSS tal cual para que se vea -y se comporte con el tema- exactamente igual que el
         #resto de AcaDeXI.
         try:
+
             ventana.setStyleSheet(ventana_app.styleSheet())
         except Exception:
             pass
@@ -3483,6 +3757,7 @@ class VisorEditorReportes(QWidget):
         ventana._anim_entrada= anim
 
     def _salir_pantalla_completa(self):
+
         ventana= self._ventana_pantalla_completa
         if ventana is None:
             return
@@ -3491,19 +3766,21 @@ class VisorEditorReportes(QWidget):
         self.editor_pesado.hide()
         ventana.deleteLater()
 
+    #Botón "Terminar de editar" del panel de bienvenida: a diferencia
+    #de simplemente salir de pantalla completa (que deja todo el
+    #archivo -workbook, PDF abierto, contenido de Word- vivo en
+    #memoria por si el usuario quiere "Continuar editando"), esto
+    #cierra el editor de verdad. Libera lo que se pueda liberar desde
+    #acá mismo (documento PDF abierto, principalmente) y luego avisa
+    #a ModuloReportes -vía la señal- para que destruya esta instancia
+    #completa y vuelva a dejar la pestaña en su estado liviano
+    #original, sin gastar recursos en segundo plano.
     def _terminar_de_editar(self):
-        """Botón "Terminar de editar" del panel de bienvenida: a diferencia
-        de simplemente salir de pantalla completa (que deja todo el
-        archivo -workbook, PDF abierto, contenido de Word- vivo en
-        memoria por si el usuario quiere "Continuar editando"), esto
-        cierra el editor de verdad. Libera lo que se pueda liberar desde
-        acá mismo (documento PDF abierto, principalmente) y luego avisa
-        a ModuloReportes -vía la señal- para que destruya esta instancia
-        completa y vuelva a dejar la pestaña en su estado liviano
-        original, sin gastar recursos en segundo plano."""
+
         if self._ventana_pantalla_completa is not None:
             self._salir_pantalla_completa()
         try:
+
             if self._doc_pdf is not None:
                 self._doc_pdf.close()
                 self._doc_pdf= None
@@ -3512,9 +3789,10 @@ class VisorEditorReportes(QWidget):
         self.solicitud_terminar_edicion.emit()
 
     #RECIENTES / APERTURA
+    #Otras pestañas de Reportes llaman aquí justo después de exportar
+    #un archivo, para que quede disponible de inmediato en este visor.
     def agregar_reciente(self, ruta):
-        """Otras pestañas de Reportes llaman aquí justo después de exportar
-        un archivo, para que quede disponible de inmediato en este visor."""
+
         if not ruta or not os.path.exists(ruta):
             return
         self._recientes= [(r, e) for r, e in self._recientes if r != ruta]
@@ -3530,22 +3808,26 @@ class VisorEditorReportes(QWidget):
         self.combo_recientes.blockSignals(False)
 
     def _seleccionar_reciente(self, indice):
+
         ruta= self.combo_recientes.itemData(indice)
         if ruta:
             self.abrir_archivo(ruta)
 
     def _abrir_dialogo(self):
-        ruta, _ = QFileDialog.getOpenFileName(self._padre_dialogo(), "Abrir reporte", "", FILTRO_ABRIR)
+
+        ruta, _= QFileDialog.getOpenFileName(self._padre_dialogo(), "Abrir reporte", "", FILTRO_ABRIR)
         if ruta:
             self.abrir_archivo(ruta)
 
     def abrir_archivo(self, ruta):
+
         ext= _extension(ruta)
         if ext not in EXTENSIONES_SOPORTADAS:
             mostrar_mensaje("advertencia", "Formato no soportado",
                            "Solo se pueden previsualizar/editar archivos .csv, .xlsx, .docx y .pdf.", self._padre_dialogo())
             return
         try:
+
             if ext == "csv":
                 self._abrir_csv(ruta)
             elif ext == "xlsx":
@@ -3576,7 +3858,9 @@ class VisorEditorReportes(QWidget):
 
     #CSV
     def _detectar_delimitador(self, ruta):
+
         try:
+
             with open(ruta, "r", encoding="utf-8-sig", newline="") as f:
                 muestra= f.read(4096)
             return csv.Sniffer().sniff(muestra, delimiters=",;\t|").delimiter
@@ -3584,6 +3868,7 @@ class VisorEditorReportes(QWidget):
             return ","
 
     def _abrir_csv(self, ruta):
+
         self._wb= None
         self._wb_valores_cache= None
         self._pila_deshacer_hoja.clear()
@@ -3599,14 +3884,14 @@ class VisorEditorReportes(QWidget):
         self.chk_justificar_auto_word.setVisible(False)
         self._mostrar_pagina("hoja")
 
+    #Carga CSV en dos pasadas para no duplicar un archivo grande en RAM.
+    #
+    #La primera solo obtiene las dimensiones; la segunda crea los items
+    #directamente en la grilla. Antes ``list(csv.reader(...))`` mantenía
+    #todas las filas además de todos los QTableWidgetItem ya creados, una
+    #duplicación que podía agotar la memoria con exportaciones extensas.
     def _poblar_csv_desde_archivo(self, ruta):
-        """Carga CSV en dos pasadas para no duplicar un archivo grande en RAM.
 
-        La primera solo obtiene las dimensiones; la segunda crea los items
-        directamente en la grilla. Antes ``list(csv.reader(...))`` mantenía
-        todas las filas además de todos los QTableWidgetItem ya creados, una
-        duplicación que podía agotar la memoria con exportaciones extensas.
-        """
         n_filas= n_columnas= 0
         with open(ruta, "r", encoding="utf-8-sig", newline="") as f:
             for fila in csv.reader(f, delimiter=self._delimitador_csv):
@@ -3619,6 +3904,7 @@ class VisorEditorReportes(QWidget):
         self.tabla_editor.blockSignals(True)
         hay_formulas= False
         try:
+
             self.tabla_editor.setRowCount(n_filas)
             self.tabla_editor.setColumnCount(n_columnas)
             self.tabla_editor.setHorizontalHeaderLabels([_letra_columna(i) for i in range(n_columnas)])
@@ -3642,6 +3928,7 @@ class VisorEditorReportes(QWidget):
         self.lbl_celdas.setText(f"{n_filas} filas × {n_columnas} columnas")
 
     def _guardar_csv(self, ruta):
+
         filas= self._extraer_filas_de_tabla()
         with open(ruta, "w", newline="", encoding="utf-8") as f:
             writer= csv.writer(f, delimiter=self._delimitador_csv)
@@ -3649,7 +3936,9 @@ class VisorEditorReportes(QWidget):
 
     #XLSX
     def _cargar_openpyxl(self):
+
         try:
+
             import openpyxl
             return openpyxl
         except ImportError:
@@ -3657,11 +3946,12 @@ class VisorEditorReportes(QWidget):
                            "No se pudo abrir el editor de Excel en este equipo. Contacta a soporte técnico.", self._padre_dialogo())
             return None
 
+    #Diálogo pequeño y discreto (se abre solo si se pulsa el botón
+    #"ⓘ", nunca solo/automático) con lo que sí y lo que no se puede
+    #hacer editando un Excel aquí -antes esto se mostraba como un
+    #banner permanente encima de la hoja, ocupando espacio siempre.
     def _mostrar_info_limitaciones_excel(self):
-        """Diálogo pequeño y discreto (se abre solo si se pulsa el botón
-        "ⓘ", nunca solo/automático) con lo que sí y lo que no se puede
-        hacer editando un Excel aquí -antes esto se mostraba como un
-        banner permanente encima de la hoja, ocupando espacio siempre."""
+
         dialogo= QDialog(self._padre_dialogo())
         dialogo.setWindowTitle("Sobre editar Excel aquí")
         aplicar_icono_ventana(dialogo, ICONO_DOCUMENTO)
@@ -3693,20 +3983,22 @@ class VisorEditorReportes(QWidget):
         layout.addLayout(fila)
         dialogo.exec()
 
+    #Lee xl/theme/theme1.xml directamente del .xlsx (es un zip) y
+    #devuelve los 10 colores de la paleta de tema del libro, EN EL ORDEN
+    #REAL que usa Excel para los índices de color de tema (0-9) -que no
+    #es el orden en que aparecen en el XML: Excel intercambia lt1↔dk1 y
+    #lt2↔dk2 por compatibilidad histórica con versiones antiguas de
+    #Office-. openpyxl expone qué índice de tema tiene una celda, pero
+    #NO resuelve el color real: por eso antes los colores de tema del
+    #archivo original se perdían/ignoraban por completo. Devuelve una
+    #lista de 10 strings "RRGGBB" (o None si no se pudo leer nada, p.ej.
+    #un archivo .xlsx dañado o sin tema).
     def _extraer_tema_colores(self, ruta):
-        """Lee xl/theme/theme1.xml directamente del .xlsx (es un zip) y
-        devuelve los 10 colores de la paleta de tema del libro, EN EL ORDEN
-        REAL que usa Excel para los índices de color de tema (0-9) -que no
-        es el orden en que aparecen en el XML: Excel intercambia lt1↔dk1 y
-        lt2↔dk2 por compatibilidad histórica con versiones antiguas de
-        Office-. openpyxl expone qué índice de tema tiene una celda, pero
-        NO resuelve el color real: por eso antes los colores de tema del
-        archivo original se perdían/ignoraban por completo. Devuelve una
-        lista de 10 strings "RRGGBB" (o None si no se pudo leer nada, p.ej.
-        un archivo .xlsx dañado o sin tema)."""
+
         import zipfile
         import re as _re
         try:
+
             with zipfile.ZipFile(ruta) as z:
                 xml= z.read("xl/theme/theme1.xml").decode("utf-8", errors="ignore")
         except Exception:
@@ -3729,34 +4021,36 @@ class VisorEditorReportes(QWidget):
                           "accent3", "accent4", "accent5", "accent6"]
         return [crudos.get(n, "FFFFFF") for n in orden_indices]
 
+    #Aplica el mismo ajuste de "tint" (más claro/oscuro) que Excel le
+    #aplica a un color de tema -Excel guarda el color BASE del tema más
+    #un tint por celda (p.ej. "Azul, énfasis 1, más claro 40%"), y sin
+    #aplicar esta fórmula el color se ve del tono base equivocado.
     def _aplicar_tinte_excel(self, hex_rgb, tint):
-        """Aplica el mismo ajuste de "tint" (más claro/oscuro) que Excel le
-        aplica a un color de tema -Excel guarda el color BASE del tema más
-        un tint por celda (p.ej. "Azul, énfasis 1, más claro 40%"), y sin
-        aplicar esta fórmula el color se ve del tono base equivocado."""
+
         if not tint:
             return hex_rgb
         import colorsys
         r= int(hex_rgb[0:2], 16) / 255.0
         g= int(hex_rgb[2:4], 16) / 255.0
         b= int(hex_rgb[4:6], 16) / 255.0
-        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        h, l, s= colorsys.rgb_to_hls(r, g, b)
         if tint < 0:
             l= l * (1.0 + tint)
         else:
             l= l * (1.0 - tint) + tint
         l= max(0.0, min(1.0, l))
-        r2, g2, b2 = colorsys.hls_to_rgb(h, l, s)
+        r2, g2, b2= colorsys.hls_to_rgb(h, l, s)
         return f"{int(round(r2*255)):02X}{int(round(g2*255)):02X}{int(round(b2*255)):02X}"
 
+    #Devuelve el color "RRGGBB" real de un PatternFill sólido de
+    #openpyxl -incluyendo colores de TEMA (resolviendo índice+tint contra
+    #el theme1.xml real del archivo) e INDEXADOS (paleta heredada de
+    #Excel 97-2003)- o None si de verdad no hay relleno/no se pudo
+    #resolver con confianza. Antes solo se leía fgColor.rgb tal cual, que
+    #openpyxl únicamente rellena para colores RGB directos -los de tema e
+    #indexados quedaban sin detectar-.
     def _resolver_color_relleno(self, fill):
-        """Devuelve el color "RRGGBB" real de un PatternFill sólido de
-        openpyxl -incluyendo colores de TEMA (resolviendo índice+tint contra
-        el theme1.xml real del archivo) e INDEXADOS (paleta heredada de
-        Excel 97-2003)- o None si de verdad no hay relleno/no se pudo
-        resolver con confianza. Antes solo se leía fgColor.rgb tal cual, que
-        openpyxl únicamente rellena para colores RGB directos -los de tema e
-        indexados quedaban sin detectar-."""
+
         if not fill or getattr(fill, "patternType", None) != "solid" or not fill.fgColor:
             return None
         fg= fill.fgColor
@@ -3774,6 +4068,7 @@ class VisorEditorReportes(QWidget):
             return None
         if tipo == "indexed" and getattr(fg, "indexed", None) is not None:
             try:
+
                 from openpyxl.styles.colors import COLOR_INDEX
                 argb= COLOR_INDEX[fg.indexed]
                 if argb and len(argb) >= 6:
@@ -3782,14 +4077,15 @@ class VisorEditorReportes(QWidget):
                 return None
         return None
 
+    #Devuelve el color 'RRGGBB' real del color de fuente (texto) de
+    #una celda openpyxl, o None si no hay color explícito o no se puede
+    #resolver. Usa la misma estrategia de tres niveles que
+    #_resolver_color_relleno (RGB directo → tema+tint → indexado).
+    #El negro automático (openpyxl rellena 'FF000000' como valor por
+    #defecto cuando no hay color real asignado) se descarta para no
+    #sobreescribir el color de texto del tema del editor.
     def _resolver_color_fuente(self, color_obj):
-        """Devuelve el color 'RRGGBB' real del color de fuente (texto) de
-        una celda openpyxl, o None si no hay color explícito o no se puede
-        resolver. Usa la misma estrategia de tres niveles que
-        _resolver_color_relleno (RGB directo → tema+tint → indexado).
-        El negro automático (openpyxl rellena 'FF000000' como valor por
-        defecto cuando no hay color real asignado) se descarta para no
-        sobreescribir el color de texto del tema del editor."""
+
         if color_obj is None:
             return None
         tipo= getattr(color_obj, "type", None)
@@ -3809,6 +4105,7 @@ class VisorEditorReportes(QWidget):
             return None
         if tipo == "indexed" and getattr(color_obj, "indexed", None) is not None:
             try:
+
                 from openpyxl.styles.colors import COLOR_INDEX
                 argb= COLOR_INDEX[color_obj.indexed]
                 if argb and len(argb) >= 6:
@@ -3818,6 +4115,7 @@ class VisorEditorReportes(QWidget):
         return None
 
     def _abrir_xlsx(self, ruta):
+
         openpyxl= self._cargar_openpyxl()
         if openpyxl is None:
             raise RuntimeError("openpyxl no disponible")
@@ -3827,8 +4125,10 @@ class VisorEditorReportes(QWidget):
         if WorkerHilo is not None:
             self._bloquear_controles_xlsx(True)
             def _tarea_io():
+
                 wb= openpyxl.load_workbook(ruta)
                 try:
+
                     wb_cache= openpyxl.load_workbook(ruta, data_only=True)
                 except Exception:
                     wb_cache= None
@@ -3848,15 +4148,17 @@ class VisorEditorReportes(QWidget):
             #Fallback síncrono si WorkerHilo no está disponible
             self._wb= openpyxl.load_workbook(ruta)
             try:
+
                 self._wb_valores_cache= openpyxl.load_workbook(ruta, data_only=True)
             except Exception:
                 self._wb_valores_cache= None
             self._tema_colores_excel= self._extraer_tema_colores(ruta)
             self._on_xlsx_cargado(self._wb, self._wb_valores_cache, self._tema_colores_excel)
 
+    #Slot que se ejecuta en el hilo principal cuando openpyxl terminó
+    #de cargar el workbook en segundo plano. Actualiza todos los widgets Qt.
     def _on_xlsx_cargado(self, wb, wb_cache, tema):
-        """Slot que se ejecuta en el hilo principal cuando openpyxl terminó
-        de cargar el workbook en segundo plano. Actualiza todos los widgets Qt."""
+
         self._wb= wb
         self._wb_valores_cache= wb_cache
         self._tema_colores_excel= tema
@@ -3875,10 +4177,11 @@ class VisorEditorReportes(QWidget):
         self._cargar_hoja(self._hoja_actual)
         self._mostrar_pagina("hoja")
 
+    #Deshabilita/habilita los controles del editor mientras una operación
+    #de I/O de Excel corre en segundo plano, para evitar dobles aperturas
+    #o guardados concurrentes que corrompan el workbook.
     def _bloquear_controles_xlsx(self, bloqueado):
-        """Deshabilita/habilita los controles del editor mientras una operación
-        de I/O de Excel corre en segundo plano, para evitar dobles aperturas
-        o guardados concurrentes que corrompan el workbook."""
+
         cursor= Qt.CursorShape.WaitCursor if bloqueado else Qt.CursorShape.ArrowCursor
         QApplication.setOverrideCursor(cursor) if bloqueado else QApplication.restoreOverrideCursor()
         for w in (getattr(self, "btn_exportar", None),
@@ -3888,6 +4191,7 @@ class VisorEditorReportes(QWidget):
                 w.setEnabled(not bloqueado)
 
     def _cargar_hoja(self, nombre_hoja):
+
         if not nombre_hoja or self._wb is None:
             return
         self._pila_deshacer_hoja.clear()
@@ -3946,7 +4250,7 @@ class VisorEditorReportes(QWidget):
                 #formateado. En libros grandes de datos esto elimina un recorrido completo por la grilla y miles de cambios de
                 #QTableWidgetItem.
                 if not es_formula:
-                    valor, formato_sugerido = _analizar_crudo(crudo)
+                    valor, formato_sugerido= _analizar_crudo(crudo)
                     formato_mostrar= formato_celda or formato_sugerido
                     item.setText(_formatear_para_mostrar(valor, formato_mostrar))
                     es_numero= isinstance(valor, (int, float)) and not isinstance(valor, bool)
@@ -3995,12 +4299,15 @@ class VisorEditorReportes(QWidget):
                         and enlace_es_seguro(enlace_celda.target)):
                     item.setData(ROL_HIPERVINCULO, enlace_celda.target)
                     item.setForeground(QColor("#2563EB"))
-                    f= item.font(); f.setUnderline(True); item.setFont(f)
+                    f= item.font()
+                    f.setUnderline(True)
+                    item.setFont(f)
                 self.tabla_editor.setItem(r - 1, c - 1, item)
                 #Respaldo: si la celda es una fórmula y trae un resultado ya calculado en caché (de la copia data_only), lo
                 #guardamos aparte para poder usarlo si nuestro motor no la soporta.
                 if fila_valores is not None and getattr(celda, "data_type", None) == "f":
                     try:
+
                         item.setData(ROL_VALOR_CACHE, fila_valores[c - 1].value)
                     except Exception:
                         pass
@@ -4020,17 +4327,19 @@ class VisorEditorReportes(QWidget):
         self._hoja_actual= nombre_hoja
         self.lbl_celdas.setText(f"{filas} filas × {columnas} columnas")
 
+    #openpyxl mantiene las imágenes incrustadas de la hoja aparte de las
+    #celdas (en ws._images), así que aunque los VALORES de las celdas se
+    #lean bien, las imágenes no aparecían en la tabla. Aquí las mostramos
+    #como una miniatura anclada a su celda de origen -y como nunca tocamos
+    #ws._images al guardar (solo reescribimos valores/formato de celdas),
+    #se conservan intactas al guardar sin que haga falta nada más.
     def _mostrar_imagenes_xlsx(self, ws):
-        """openpyxl mantiene las imágenes incrustadas de la hoja aparte de las
-        celdas (en ws._images), así que aunque los VALORES de las celdas se
-        lean bien, las imágenes no aparecían en la tabla. Aquí las mostramos
-        como una miniatura anclada a su celda de origen -y como nunca tocamos
-        ws._images al guardar (solo reescribimos valores/formato de celdas),
-        se conservan intactas al guardar sin que haga falta nada más."""
+
         imagenes= list(getattr(ws, "_images", None) or [])
         for img in imagenes:
             try:
-                fila, col = self._anchor_imagen_xlsx(img)
+
+                fila, col= self._anchor_imagen_xlsx(img)
                 if fila is None or col is None:
                     continue
                 datos= img._data()
@@ -4055,8 +4364,9 @@ class VisorEditorReportes(QWidget):
             except Exception:
                 continue
 
+    #Fila/columna (0-indexadas) donde openpyxl ancló la imagen.
     def _anchor_imagen_xlsx(self, img):
-        """Fila/columna (0-indexadas) donde openpyxl ancló la imagen."""
+
         ancla= getattr(img, "anchor", None)
         #Una imagen recién agregada en esta misma sesión con
         #ws.add_image(img, "D1") guarda el ancla como texto plano ("D1")
@@ -4064,51 +4374,58 @@ class VisorEditorReportes(QWidget):
         #que hay que admitir también ese caso además del objeto ya "resuelto".
         if isinstance(ancla, str):
             try:
+
                 from openpyxl.utils.cell import coordinate_to_tuple
-                fila, col = coordinate_to_tuple(ancla)
+                fila, col= coordinate_to_tuple(ancla)
                 return fila - 1, col - 1
             except Exception:
                 return None, None
         try:
+
             desde= ancla._from
             return desde.row, desde.col
         except Exception:
             pass
         try:
+
             from openpyxl.utils.cell import coordinate_to_tuple
-            fila, col = coordinate_to_tuple(img.ref)
+            fila, col= coordinate_to_tuple(img.ref)
             return fila - 1, col - 1
         except Exception:
             return None, None
 
+    #Igual que _anchor_imagen_xlsx pero para un gráfico (ws._charts):
+    #devuelve la (fila, columna) donde está anclado, o (None, None) si no
+    #se pudo determinar.
     def _anchor_grafico_xlsx(self, grafico):
-        """Igual que _anchor_imagen_xlsx pero para un gráfico (ws._charts):
-        devuelve la (fila, columna) donde está anclado, o (None, None) si no
-        se pudo determinar."""
+
         ancla= getattr(grafico, "anchor", None)
-        fila, col = None, None
+        fila, col= None, None
         if ancla is not None:
             try:
+
                 desde= ancla._from
-                fila, col = desde.row, desde.col
+                fila, col= desde.row, desde.col
             except Exception:
                 pass
             if fila is None:
                 try:
+
                     from openpyxl.utils.cell import coordinate_to_tuple
-                    fila, col = coordinate_to_tuple(str(ancla))
+                    fila, col= coordinate_to_tuple(str(ancla))
                     fila -= 1
                     col -= 1
                 except Exception:
                     pass
         return fila, col
 
+    #Muestra marcadores visuales para los gráficos incrustados en la
+    #hoja (ws._charts). openpyxl puede leer los metadatos del gráfico
+    #(tipo, título, anclaje) pero no puede renderizarlo como imagen sin
+    #librerías externas, así que se muestra un placeholder con icono 📊
+    #y el tipo/título del gráfico en la celda de anclaje del gráfico.
     def _mostrar_graficos_xlsx(self, ws):
-        """Muestra marcadores visuales para los gráficos incrustados en la
-        hoja (ws._charts). openpyxl puede leer los metadatos del gráfico
-        (tipo, título, anclaje) pero no puede renderizarlo como imagen sin
-        librerías externas, así que se muestra un placeholder con icono 📊
-        y el tipo/título del gráfico en la celda de anclaje del gráfico."""
+
         graficos= list(getattr(ws, "_charts", None) or [])
         if not graficos:
             return
@@ -4121,7 +4438,8 @@ class VisorEditorReportes(QWidget):
         }
         for grafico in graficos:
             try:
-                fila, col = self._anchor_grafico_xlsx(grafico)
+
+                fila, col= self._anchor_grafico_xlsx(grafico)
                 if fila is None or col is None:
                     continue
                 #Nombre amigable del tipo de gráfico
@@ -4136,6 +4454,7 @@ class VisorEditorReportes(QWidget):
                 #texto de verdad, y si no se puede, simplemente se omite el título en vez de mostrar basura.
                 titulo= ""
                 try:
+
                     t= grafico.title
                     if isinstance(t, str):
                         titulo= t.strip()
@@ -4184,48 +4503,53 @@ class VisorEditorReportes(QWidget):
                 continue
 
     def _celda_actual_o_primera_seleccion(self):
-        fila, col = self.tabla_editor.currentRow(), self.tabla_editor.currentColumn()
+
+        fila, col= self.tabla_editor.currentRow(), self.tabla_editor.currentColumn()
         if fila < 0 or col < 0:
             rangos= self.tabla_editor.selectedRanges()
             if rangos:
-                fila, col = rangos[0].topRow(), rangos[0].leftColumn()
+                fila, col= rangos[0].topRow(), rangos[0].leftColumn()
             else:
-                fila, col = 0, 0
+                fila, col= 0, 0
         return fila, col
 
+    #(fila_inicio, fila_fin, col_inicio, col_fin) -0-indexado, ambos
+    #extremos incluidos- del primer rango seleccionado en la grilla, o
+    #None si no hay nada seleccionado.
     def _rango_seleccionado(self):
-        """(fila_inicio, fila_fin, col_inicio, col_fin) -0-indexado, ambos
-        extremos incluidos- del primer rango seleccionado en la grilla, o
-        None si no hay nada seleccionado."""
+
         rangos= self.tabla_editor.selectedRanges()
         if not rangos:
             return None
         r= rangos[0]
         return r.topRow(), r.bottomRow(), r.leftColumn(), r.rightColumn()
 
+    #Inserta una imagen en la hoja de Excel, anclada a la celda
+    #seleccionada -incrustada con openpyxl (imagen real dentro del
+    #.xlsx) y visible/arrastrable de inmediato en la grilla (encajada a
+    #la celda más cercana al soltarla).
     def _insertar_imagen_hoja(self):
-        """Inserta una imagen en la hoja de Excel, anclada a la celda
-        seleccionada -incrustada con openpyxl (imagen real dentro del
-        .xlsx) y visible/arrastrable de inmediato en la grilla (encajada a
-        la celda más cercana al soltarla)."""
+
         if self._wb is None:
             mostrar_mensaje("advertencia", "Solo disponible en Excel",
                            "Insertar imágenes en la hoja solo está disponible al editar un archivo .xlsx (no en CSV).",
                            self._padre_dialogo())
             return
-        ruta, _filtro = QFileDialog.getOpenFileName(
+        ruta, _filtro= QFileDialog.getOpenFileName(
             self._padre_dialogo(), "Insertar imagen", "", "Imágenes (*.png *.jpg *.jpeg *.bmp *.gif)")
         if not ruta:
             return
-        fila, col = self._celda_actual_o_primera_seleccion()
+        fila, col= self._celda_actual_o_primera_seleccion()
         self._insertar_imagen_openpyxl(fila, col, ruta)
 
+    #Imagen incrustada REAL en el .xlsx (openpyxl la conserva junto con
+    #el resto de imágenes de la hoja, ver _mostrar_imagenes_xlsx) y
+    #visible/arrastrable de inmediato en la grilla (encajada a la celda
+    #más cercana al soltarla).
     def _insertar_imagen_openpyxl(self, fila, col, ruta):
-        """Imagen incrustada REAL en el .xlsx (openpyxl la conserva junto con
-        el resto de imágenes de la hoja, ver _mostrar_imagenes_xlsx) y
-        visible/arrastrable de inmediato en la grilla (encajada a la celda
-        más cercana al soltarla)."""
+
         try:
+
             from openpyxl.drawing.image import Image as ImagenExcel
             img_excel= ImagenExcel(ruta)
             ANCHO_MAX= 220
@@ -4253,20 +4577,22 @@ class VisorEditorReportes(QWidget):
         mostrar_mensaje("exito", "Imagen insertada",
                        "La imagen se agregó a la hoja; quedará guardada al presionar Guardar.", self._padre_dialogo())
 
+    #Se llama una sola vez, justo antes de que la aplicación termine
+    #de verdad (conectado a QApplication.aboutToQuit en __init__). Es la
+    #limpieza real: al ser un widget EMBEBIDO dentro de la pestaña de
+    #Reportes (no una ventana propia), este editor nunca recibe su
+    #propio closeEvent -por eso no alcanza con overridear closeEvent
+    #aquí; aboutToQuit es el único punto garantizado que se dispara
+    #siempre, sin importar si el usuario cerró primero el editor,
+    #primero la ventana principal, o directamente le dio a "Salir"
+    #desde el icono de la bandeja del sistema con todo de fondo.
     def _limpiar_antes_de_salir(self):
-        """Se llama una sola vez, justo antes de que la aplicación termine
-        de verdad (conectado a QApplication.aboutToQuit en __init__). Es la
-        limpieza real: al ser un widget EMBEBIDO dentro de la pestaña de
-        Reportes (no una ventana propia), este editor nunca recibe su
-        propio closeEvent -por eso no alcanza con overridear closeEvent
-        aquí; aboutToQuit es el único punto garantizado que se dispara
-        siempre, sin importar si el usuario cerró primero el editor,
-        primero la ventana principal, o directamente le dio a \"Salir\"
-        desde el icono de la bandeja del sistema con todo de fondo."""
+
         if self._cerrando:
             return
         self._cerrando= True
         try:
+
             if hasattr(self, "tabla_editor"):
                 self.tabla_editor.removeEventFilter(self)
                 self.tabla_editor.viewport().removeEventFilter(self)
@@ -4275,6 +4601,7 @@ class VisorEditorReportes(QWidget):
         except RuntimeError:
             pass  #el widget ya podría estar en proceso de destruirse
         try:
+
             if self._doc_pdf is not None:
                 self._doc_pdf.close()
                 self._doc_pdf= None
@@ -4289,6 +4616,7 @@ class VisorEditorReportes(QWidget):
             if hilo is None:
                 continue
             try:
+
                 #hilo.isRunning() también puede fallar: gracias al
                 #finished.connect(self.deleteLater) de WorkerHilo, el
                 #objeto C++ puede haberse destruido solo ya (hilo terminado y recolectado) entre que se guardó la referencia y
@@ -4301,49 +4629,52 @@ class VisorEditorReportes(QWidget):
             except Exception:
                 pass
 
+    #Punto de entrada real de Qt. Delega todo el trabajo a
+    #_eventFilter_impl() envuelto en un try/except: durante el cierre de
+    #la aplicación (sobre todo si el usuario cierra AcaDeXI completo
+    #desde el icono de la bandeja del sistema, con este editor todavía
+    #vivo en segundo plano) Qt puede seguir entregando eventos ya
+    #encoladas después de que el lado C++ de algún widget (típicamente
+    #editor_word) se haya destruido. Sin esta protección, PySide lanza
+    #un RuntimeError ('... already deleted') dentro de un eventFilter, y
+    #Qt no sabe qué hacer con una excepción ahí -el resultado es el
+    #traceback en cascada de 'Error calling Python override of
+    #QObject::eventFilter()' repetido decenas de veces que se ve en la
+    #terminal al cerrar. Atajarlo aquí y devolver False dice
+    #simplemente 'seguí con el procesamiento normal', que es
+    #inofensivo porque la app se está cerrando de todas formas.
     def eventFilter(self, obj, evento):
-        """Punto de entrada real de Qt. Delega todo el trabajo a
-        _eventFilter_impl() envuelto en un try/except: durante el cierre de
-        la aplicación (sobre todo si el usuario cierra AcaDeXI completo
-        desde el icono de la bandeja del sistema, con este editor todavía
-        vivo en segundo plano) Qt puede seguir entregando eventos ya
-        encoladas después de que el lado C++ de algún widget (típicamente
-        editor_word) se haya destruido. Sin esta protección, PySide lanza
-        un RuntimeError ('... already deleted') dentro de un eventFilter, y
-        Qt no sabe qué hacer con una excepción ahí -el resultado es el
-        traceback en cascada de 'Error calling Python override of
-        QObject::eventFilter()' repetido decenas de veces que se ve en la
-        terminal al cerrar. Atajarlo aquí y devolver False dice
-        simplemente 'seguí con el procesamiento normal', que es
-        inofensivo porque la app se está cerrando de todas formas."""
+
         try:
+
             return self._eventFilter_impl(obj, evento)
         except RuntimeError:
             return False
 
+    #Tres cosas distintas se filtran aquí (unificado en un solo
+    #método: tener dos `def eventFilter` en la misma clase es un bug de
+    #Python -el segundo pisa por completo al primero-, así que la
+    #detección de doble clic sobre una imagen de Word se había quedado
+    #sin funcionar de hecho hasta esta fusión):
+    #
+    #1) Doble clic sobre una imagen del editor de Word -abre el diálogo
+    #de tamaño-.
+    #2) ShortcutOverride -causa real de que "algunos atajos no
+    #funcionaran"-: QTextEdit y QTableWidget interceptan por defecto
+    #muchas combinaciones Ctrl+letra ANTES de que le lleguen al
+    #QShortcut registrado en _crear_atajos_teclado -es un
+    #comportamiento defensivo estándar de Qt en widgets de edición,
+    #para proteger sus propios atajos internos (copiar/pegar/
+    #deshacer)-, así que Ctrl+B/I/U/F, por ejemplo, nunca llegaban a
+    #disparar nuestra función mientras el foco estaba DENTRO del
+    #editor de texto o de la tabla. Aquí se detecta ese evento para
+    #nuestras combinaciones específicas y se llama a evento.ignore()
+    #-le dice a Qt "este widget no lo va a manejar él mismo"-, lo que
+    #hace que el QShortcut sí se dispare con normalidad.
+    #3) Arrastre de "cuadro de texto" sobre el viewport de la tabla (ver
+    #_mover_cuadro_texto).
     def _eventFilter_impl(self, obj, evento):
-        """Tres cosas distintas se filtran aquí (unificado en un solo
-        método: tener dos `def eventFilter` en la misma clase es un bug de
-        Python -el segundo pisa por completo al primero-, así que la
-        detección de doble clic sobre una imagen de Word se había quedado
-        sin funcionar de hecho hasta esta fusión):
 
-        1) Doble clic sobre una imagen del editor de Word -abre el diálogo
-           de tamaño-.
-        2) ShortcutOverride -causa real de que "algunos atajos no
-           funcionaran"-: QTextEdit y QTableWidget interceptan por defecto
-           muchas combinaciones Ctrl+letra ANTES de que le lleguen al
-           QShortcut registrado en _crear_atajos_teclado -es un
-           comportamiento defensivo estándar de Qt en widgets de edición,
-           para proteger sus propios atajos internos (copiar/pegar/
-           deshacer)-, así que Ctrl+B/I/U/F, por ejemplo, nunca llegaban a
-           disparar nuestra función mientras el foco estaba DENTRO del
-           editor de texto o de la tabla. Aquí se detecta ese evento para
-           nuestras combinaciones específicas y se llama a evento.ignore()
-           -le dice a Qt "este widget no lo va a manejar él mismo"-, lo que
-           hace que el QShortcut sí se dispare con normalidad.
-        3) Arrastre de "cuadro de texto" sobre el viewport de la tabla (ver
-           _mover_cuadro_texto)."""
         if self._cerrando:
             return False
         if (hasattr(self, "editor_word") and obj is self.editor_word.viewport()
@@ -4430,15 +4761,16 @@ class VisorEditorReportes(QWidget):
                     return True
         return super().eventFilter(obj, evento)
 
+    #Mueve el contenido/formato de un "cuadro de texto" de la celda
+    #`origen` a la celda `destino` -copia todo lo relevante y limpia el
+    #origen, ya que no es un widget aparte sino una celda normal con
+    #estilo especial.
     def _mover_cuadro_texto(self, origen, destino):
-        """Mueve el contenido/formato de un "cuadro de texto" de la celda
-        `origen` a la celda `destino` -copia todo lo relevante y limpia el
-        origen, ya que no es un widget aparte sino una celda normal con
-        estilo especial."""
+
         if origen == destino:
             return
-        fila_o, col_o = origen
-        fila_d, col_d = destino
+        fila_o, col_o= origen
+        fila_d, col_d= destino
         item_o= self.tabla_editor.item(fila_o, col_o)
         if item_o is None or not item_o.data(ROL_ES_CUADRO_TEXTO):
             return
@@ -4470,31 +4802,34 @@ class VisorEditorReportes(QWidget):
         item_o.setData(ROL_ES_CUADRO_TEXTO, None)
         item_o.setBackground(QBrush())
         item_o.setForeground(QBrush())
-        f= item_o.font(); f.setItalic(False); item_o.setFont(f)
+        f= item_o.font()
+        f.setItalic(False)
+        item_o.setFont(f)
         item_o.setText("")
         item_o.setToolTip("")
         self._sincronizando= False
 
+    #Al soltar una imagen arrastrada (_EtiquetaImagenArrastrable),
+    #la mueve a la celda de la grilla que quedó bajo el cursor -tanto
+    #visualmente como el ancla real de la imagen dentro del .xlsx-.
+    #
+    #CRASH ARREGLADO AQUÍ DE VERDAD (la causa real de "la app se
+    #crashea al arrastrar"): `QTableWidget.removeCellWidget()` SIEMPRE
+    #programa la destrucción (`deleteLater()`) del widget que hubiera en
+    #esa celda -sin importar desde dónde se lo llame-. El intento
+    #anterior (diferir todo con QTimer) no arreglaba el problema de
+    #fondo porque, dentro de ese mismo bloque diferido, se seguía
+    #REUTILIZANDO el mismo objeto `etiqueta` después de llamar a
+    #removeCellWidget() sobre él -tarde o temprano Qt procesa esa
+    #eliminación programada y destruye el objeto C++ mientras Python
+    #todavía lo tiene "puesto" en la celda nueva, provocando el crash
+    #("Internal C++ object already deleted") apenas se vuelve a tocar.
+    #La solución correcta es no reutilizar NUNCA un widget después de
+    #quitarlo de una celda con removeCellWidget(): aquí se guarda su
+    #contenido (pixmap o texto, tooltip, opacidad) ANTES de quitarlo, se
+    #quita, y se crea una etiqueta NUEVA para la celda de destino.
     def _soltar_imagen_arrastrada(self, etiqueta, punto_global):
-        """Al soltar una imagen arrastrada (_EtiquetaImagenArrastrable),
-        la mueve a la celda de la grilla que quedó bajo el cursor -tanto
-        visualmente como el ancla real de la imagen dentro del .xlsx-.
 
-        CRASH ARREGLADO AQUÍ DE VERDAD (la causa real de "la app se
-        crashea al arrastrar"): `QTableWidget.removeCellWidget()` SIEMPRE
-        programa la destrucción (`deleteLater()`) del widget que hubiera en
-        esa celda -sin importar desde dónde se lo llame-. El intento
-        anterior (diferir todo con QTimer) no arreglaba el problema de
-        fondo porque, dentro de ese mismo bloque diferido, se seguía
-        REUTILIZANDO el mismo objeto `etiqueta` después de llamar a
-        removeCellWidget() sobre él -tarde o temprano Qt procesa esa
-        eliminación programada y destruye el objeto C++ mientras Python
-        todavía lo tiene "puesto" en la celda nueva, provocando el crash
-        ("Internal C++ object already deleted") apenas se vuelve a tocar.
-        La solución correcta es no reutilizar NUNCA un widget después de
-        quitarlo de una celda con removeCellWidget(): aquí se guarda su
-        contenido (pixmap o texto, tooltip, opacidad) ANTES de quitarlo, se
-        quita, y se crea una etiqueta NUEVA para la celda de destino."""
         tabla= self.tabla_editor
         punto_tabla= tabla.viewport().mapFromGlobal(punto_global)
         fila_destino= tabla.rowAt(punto_tabla.y())
@@ -4507,7 +4842,7 @@ class VisorEditorReportes(QWidget):
             mostrar_mensaje("advertencia", "Celda ocupada",
                            "Ya hay otra imagen en esa celda; suelta en una celda libre.", self._padre_dialogo())
             return
-        fila_origen, col_origen = etiqueta.fila, etiqueta.col
+        fila_origen, col_origen= etiqueta.fila, etiqueta.col
         #Se copia TODO el contenido/estado visual antes de tocar nada.
         pixmap_original= etiqueta.pixmap()
         texto_original= etiqueta.text()
@@ -4516,6 +4851,7 @@ class VisorEditorReportes(QWidget):
         ruta_original= etiqueta.ruta_original
 
         def _mover_de_verdad():
+
             if self._cerrando:
                 return
             tabla.removeCellWidget(fila_origen, col_origen)  #destruye la etiqueta VIEJA; no se vuelve a tocar
@@ -4553,7 +4889,7 @@ class VisorEditorReportes(QWidget):
                 ws= self._wb[self._hoja_actual]
                 nueva_celda= f"{_letra_columna(col_destino)}{fila_destino + 1}"
                 for img in list(getattr(ws, "_images", None) or []):
-                    fila_img, col_img = self._anchor_imagen_xlsx(img)
+                    fila_img, col_img= self._anchor_imagen_xlsx(img)
                     if (fila_img, col_img) == (fila_origen, col_origen):
                         img.anchor= nueva_celda
                         break
@@ -4561,20 +4897,21 @@ class VisorEditorReportes(QWidget):
                 #arrastrar un gráfico a otra celda solo se veía "movido" en pantalla, y al guardar el archivo el gráfico real
                 #volvía a aparecer en su celda original.
                 for grafico in list(getattr(ws, "_charts", None) or []):
-                    fila_g, col_g = self._anchor_grafico_xlsx(grafico)
+                    fila_g, col_g= self._anchor_grafico_xlsx(grafico)
                     if (fila_g, col_g) == (fila_origen, col_origen):
                         grafico.anchor= nueva_celda
                         break
 
         QTimer.singleShot(0, _mover_de_verdad)
 
+    #Panel de opciones al hacer doble clic sobre una imagen insertada
+    #en la hoja: transparencia (como en Word) y quitar la imagen. La
+    #opacidad se aplica tanto a la vista previa (QGraphicsOpacityEffect)
+    #como -al guardar- al PNG real incrustado en el .xlsx, mezclando el
+    #canal alfa con PIL para que se conserve al abrir el archivo en
+    #Excel/LibreOffice.
     def _editar_opciones_imagen(self, etiqueta):
-        """Panel de opciones al hacer doble clic sobre una imagen insertada
-        en la hoja: transparencia (como en Word) y quitar la imagen. La
-        opacidad se aplica tanto a la vista previa (QGraphicsOpacityEffect)
-        como -al guardar- al PNG real incrustado en el .xlsx, mezclando el
-        canal alfa con PIL para que se conserve al abrir el archivo en
-        Excel/LibreOffice."""
+
         #Si la etiqueta no tiene un pixmap real (por ejemplo el marcador de un gráfico, que solo tiene texto), no tiene
         #sentido mostrarle un control de "transparencia" -eso solo aplica a imágenes de verdad-; en ese caso el diálogo
         #se reduce a poder quitarlo.
@@ -4616,6 +4953,7 @@ class VisorEditorReportes(QWidget):
         layout.addLayout(botones)
 
         def _aplicar():
+
             porcentaje_transparencia= slider.value()
             etiqueta.opacidad= 1.0 - (porcentaje_transparencia / 100.0)
             efecto= QGraphicsOpacityEffect(etiqueta)
@@ -4626,18 +4964,19 @@ class VisorEditorReportes(QWidget):
             dialogo.accept()
 
         def _quitar():
+
             self.tabla_editor.removeCellWidget(etiqueta.fila, etiqueta.col)
             if self._wb is not None and self._hoja_actual in self._wb.sheetnames:
                 ws= self._wb[self._hoja_actual]
                 for img in list(getattr(ws, "_images", None) or []):
-                    fila_img, col_img = self._anchor_imagen_xlsx(img)
+                    fila_img, col_img= self._anchor_imagen_xlsx(img)
                     if (fila_img, col_img) == (etiqueta.fila, etiqueta.col):
                         ws._images.remove(img)
                         break
                 #Los gráficos (ver _anchor_grafico_xlsx) viven en una lista aparte de las imágenes -sin esto, "Quitar gráfico"
                 #solo lo quitaba de la vista pero seguía guardándose en el Excel-.
                 for grafico in list(getattr(ws, "_charts", None) or []):
-                    fila_g, col_g = self._anchor_grafico_xlsx(grafico)
+                    fila_g, col_g= self._anchor_grafico_xlsx(grafico)
                     if (fila_g, col_g) == (etiqueta.fila, etiqueta.col):
                         ws._charts.remove(grafico)
                         break
@@ -4649,12 +4988,13 @@ class VisorEditorReportes(QWidget):
         btn_cerrar.clicked.connect(dialogo.reject)
         dialogo.exec()
 
+    #Punto de entrada del botón "📊 Gráfico": crea un gráfico NATIVO
+    #de Excel con openpyxl.chart -totalmente editable al abrir el
+    #archivo en Excel/LibreOffice, con sus datos vivos-, y muestra un
+    #marcador en la grilla (Qt no puede renderizar un gráfico de Excel
+    #dentro de la tabla).
     def _insertar_grafico_hoja(self):
-        """Punto de entrada del botón "📊 Gráfico": crea un gráfico NATIVO
-        de Excel con openpyxl.chart -totalmente editable al abrir el
-        archivo en Excel/LibreOffice, con sus datos vivos-, y muestra un
-        marcador en la grilla (Qt no puede renderizar un gráfico de Excel
-        dentro de la tabla)."""
+
         if self._wb is None:
             mostrar_mensaje("advertencia", "Solo disponible en Excel",
                            "Insertar gráficos solo está disponible al editar un archivo .xlsx (no en CSV).",
@@ -4667,25 +5007,26 @@ class VisorEditorReportes(QWidget):
                            "(idealmente con encabezados en la primera fila y las categorías en la primera columna).",
                            self._padre_dialogo())
             return
-        r1, r2, c1, c2 = rango
+        r1, r2, c1, c2= rango
         if r1 == r2 and c1 == c2:
             mostrar_mensaje("advertencia", "Selecciona más de una celda",
                            "Selecciona un rango con al menos una columna de categorías y una de datos.",
                            self._padre_dialogo())
             return
-        tipo, ok = QInputDialog.getItem(
+        tipo, ok= QInputDialog.getItem(
             self._padre_dialogo(), "Tipo de gráfico", "Elige el tipo de gráfico:",
             ["Barras", "Líneas", "Circular"], 0, False)
         if not ok:
             return
         self._insertar_grafico_openpyxl(tipo, rango)
 
+    #Gráfico NATIVO de Excel creado con openpyxl.chart -totalmente
+    #editable al abrir el archivo en Excel/LibreOffice, con sus datos
+    #vivos-. Como Qt no puede renderizar un gráfico de Excel dentro de
+    #la grilla, se muestra un marcador en su lugar.
     def _insertar_grafico_openpyxl(self, tipo, rango):
-        """Gráfico NATIVO de Excel creado con openpyxl.chart -totalmente
-        editable al abrir el archivo en Excel/LibreOffice, con sus datos
-        vivos-. Como Qt no puede renderizar un gráfico de Excel dentro de
-        la grilla, se muestra un marcador en su lugar."""
-        r1, r2, c1, c2 = rango
+
+        r1, r2, c1, c2= rango
         #Se sincronizan primero los valores actuales de la grilla hacia la hoja de openpyxl -el gráfico se arma sobre
         #esos datos-.
         self._sincronizar_grid_a_hoja(self._hoja_actual)
@@ -4694,7 +5035,7 @@ class VisorEditorReportes(QWidget):
         clase_grafico= {"Barras": BarChart, "Líneas": LineChart, "Circular": PieChart}.get(tipo, BarChart)
         grafico= clase_grafico()
         grafico.title= "Gráfico"
-        grafico.height, grafico.width = 8, 14
+        grafico.height, grafico.width= 8, 14
         #Se asume -como en el "gráfico rápido" de Excel- que la primera columna del rango son las categorías y el resto
         #son las series de datos, con los nombres de cada serie en la primera fila. Si solo se seleccionó una columna,
         #esa misma columna se usa como única
@@ -4732,24 +5073,26 @@ class VisorEditorReportes(QWidget):
                        "al presionar Guardar y se verá -y podrá seguir editando- con todo detalle en Excel.",
                        self._padre_dialogo())
 
+    #Punto de entrada del botón "🔲 Cuadro de texto": como openpyxl no
+    #puede crear ni editar formas flotantes de manera confiable, se usa
+    #la alternativa práctica -una celda con relleno y borde propio-.
     def _insertar_cuadro_texto_hoja(self):
-        """Punto de entrada del botón "🔲 Cuadro de texto": como openpyxl no
-        puede crear ni editar formas flotantes de manera confiable, se usa
-        la alternativa práctica -una celda con relleno y borde propio-."""
+
         if not self._seleccion_valida():
             return
-        fila, col = self._celda_actual_o_primera_seleccion()
-        texto, ok = QInputDialog.getMultiLineText(
+        fila, col= self._celda_actual_o_primera_seleccion()
+        texto, ok= QInputDialog.getMultiLineText(
             self._padre_dialogo(), "Cuadro de texto", "Escribe el contenido del cuadro de texto:")
         if not ok or not texto.strip():
             return
         self._insertar_cuadro_texto_openpyxl(fila, col, texto)
 
+    #Como openpyxl no puede crear ni editar formas flotantes de forma
+    #confiable, se usa una alternativa práctica y 100% compatible: una
+    #celda con relleno y borde propio para texto libre, que se comporta
+    #visualmente como un cuadro de texto.
     def _insertar_cuadro_texto_openpyxl(self, fila, col, texto):
-        """Como openpyxl no puede crear ni editar formas flotantes de forma
-        confiable, se usa una alternativa práctica y 100% compatible: una
-        celda con relleno y borde propio para texto libre, que se comporta
-        visualmente como un cuadro de texto."""
+
         item= self.tabla_editor.item(fila, col)
         if item is None:
             item= QTableWidgetItem("")
@@ -4761,36 +5104,40 @@ class VisorEditorReportes(QWidget):
         color_fondo= QColor("#FEF9C3")
         item.setBackground(color_fondo)
         item.setForeground(_color_texto_contrastado(color_fondo))
-        f= item.font(); f.setItalic(True); item.setFont(f)
+        f= item.font()
+        f.setItalic(True)
+        item.setFont(f)
         item.setText(texto)
         item.setToolTip("Cuadro de texto (celda con relleno y borde: openpyxl no puede crear formas flotantes "
                         "reales). Se puede arrastrar con clic sostenido a otra celda, igual que una imagen.")
         self._sincronizando= False
         self.tabla_editor.setRowHeight(fila, max(self.tabla_editor.rowHeight(fila), 20 * (texto.count("\n") + 2)))
 
+    #Autosuma-como-en-Excel: toma el rango seleccionado y, sin que la
+    #persona escriba ninguna fórmula, inserta el resultado -como una
+    #fórmula real y recalculable- justo debajo (si la selección es más
+    #alta que ancha) o a la derecha (si es más ancha que alta) de ella.
     def _insertar_operacion_rapida(self, funcion_excel):
-        """Autosuma-como-en-Excel: toma el rango seleccionado y, sin que la
-        persona escriba ninguna fórmula, inserta el resultado -como una
-        fórmula real y recalculable- justo debajo (si la selección es más
-        alta que ancha) o a la derecha (si es más ancha que alta) de ella."""
+
         rango= self._rango_seleccionado()
         if rango is None:
             mostrar_mensaje("advertencia", "Selecciona un rango",
                            "Selecciona primero las celdas (una fila o columna, por ejemplo) sobre las que "
                            "quieres calcular la operación.", self._padre_dialogo())
             return
-        r1, r2, c1, c2 = rango
+        r1, r2, c1, c2= rango
         inicio= f"{_letra_columna(c1)}{r1 + 1}"
         fin= f"{_letra_columna(c2)}{r2 + 1}"
         formula= f"={funcion_excel}({inicio}:{fin})" if (r1, c1) != (r2, c2) else f"={funcion_excel}({inicio})"
         self._colocar_resultado_operacion(rango, formula)
 
+    #Restar/Dividir no tienen una función nativa de Excel que acepte un
+    #rango entero (a diferencia de SUMA o PRODUCTO), así que se arma una
+    #fórmula explícita encadenando cada celda del rango con el operador,
+    #p.ej. "=A1-A2-A3" o "=A1/A2/A3" -100% compatible con Excel real,
+    #sin inventar ninguna función que Excel no reconocería-.
     def _insertar_operacion_encadenada(self, operador):
-        """Restar/Dividir no tienen una función nativa de Excel que acepte un
-        rango entero (a diferencia de SUMA o PRODUCTO), así que se arma una
-        fórmula explícita encadenando cada celda del rango con el operador,
-        p.ej. "=A1-A2-A3" o "=A1/A2/A3" -100% compatible con Excel real,
-        sin inventar ninguna función que Excel no reconocería-."""
+
         rango= self._rango_seleccionado()
         if rango is None:
             mostrar_mensaje("advertencia", "Selecciona un rango",
@@ -4798,7 +5145,7 @@ class VisorEditorReportes(QWidget):
                            "(el resultado se calcula en el orden en que aparecen: la primera menos/entre las demás).",
                            self._padre_dialogo())
             return
-        r1, r2, c1, c2 = rango
+        r1, r2, c1, c2= rango
         referencias= []
         for r in range(r1, r2 + 1):
             for c in range(c1, c2 + 1):
@@ -4811,24 +5158,26 @@ class VisorEditorReportes(QWidget):
         formula= "=" + f" {operador} ".join(referencias).replace(" ", "")
         self._colocar_resultado_operacion(rango, formula)
 
+    #Inserta `formula` en una celda nueva justo debajo (selección más
+    #alta que ancha) o a la derecha (más ancha que alta) del `rango`
+    #dado, agregando una fila/columna si hace falta para no pisar datos
+    #existentes -igual que hace Excel con el botón de Autosuma-.
     def _colocar_resultado_operacion(self, rango, formula):
-        """Inserta `formula` en una celda nueva justo debajo (selección más
-        alta que ancha) o a la derecha (más ancha que alta) del `rango`
-        dado, agregando una fila/columna si hace falta para no pisar datos
-        existentes -igual que hace Excel con el botón de Autosuma-."""
+
         self._registrar_deshacer_hoja()
-        r1, r2, c1, c2 = rango
+        r1, r2, c1, c2= rango
         vertical= (r2 - r1) >= (c2 - c1)
 
         self._sincronizando= True
         try:
+
             if vertical:
                 fila_destino= r2 + 1
                 if fila_destino >= self.tabla_editor.rowCount() or self._celda_ocupada(fila_destino, c1):
                     self.tabla_editor.insertRow(fila_destino)
                     for c in range(self.tabla_editor.columnCount()):
                         self.tabla_editor.setItem(fila_destino, c, QTableWidgetItem(""))
-                destino_r, destino_c = fila_destino, c1
+                destino_r, destino_c= fila_destino, c1
             else:
                 col_destino= c2 + 1
                 if col_destino >= self.tabla_editor.columnCount() or self._celda_ocupada(r1, col_destino):
@@ -4837,7 +5186,7 @@ class VisorEditorReportes(QWidget):
                         [_letra_columna(i) for i in range(self.tabla_editor.columnCount())])
                     for r in range(self.tabla_editor.rowCount()):
                         self.tabla_editor.setItem(r, col_destino, QTableWidgetItem(""))
-                destino_r, destino_c = r1, col_destino
+                destino_r, destino_c= r1, col_destino
 
             item_destino= self.tabla_editor.item(destino_r, destino_c)
             if item_destino is None:
@@ -4853,12 +5202,14 @@ class VisorEditorReportes(QWidget):
         self.tabla_editor.scrollToItem(item_destino)
 
     def _celda_ocupada(self, fila, col):
+
         if fila < 0 or col < 0 or fila >= self.tabla_editor.rowCount() or col >= self.tabla_editor.columnCount():
             return False
         item= self.tabla_editor.item(fila, col)
         return item is not None and item.text().strip() != ""
 
     def _cambiar_hoja(self, nombre_hoja):
+
         if self._wb is None or not nombre_hoja or self._sincronizando:
             return
         if self._hoja_actual and self._hoja_actual in self._wb.sheetnames:
@@ -4873,11 +5224,12 @@ class VisorEditorReportes(QWidget):
         "fecha": "dd/mm/yyyy",
     }
 
+    #Vuelca lo que hay en la tabla visible sobre la hoja de openpyxl en
+    #memoria: valores/fórmulas con su TIPO real (número, fecha, booleano,
+    #fórmula) -no como texto plano-, su formato de número (moneda,
+    #porcentaje, fecha) y el formato básico (negrita/cursiva/relleno).
     def _sincronizar_grid_a_hoja(self, nombre_hoja):
-        """Vuelca lo que hay en la tabla visible sobre la hoja de openpyxl en
-        memoria: valores/fórmulas con su TIPO real (número, fecha, booleano,
-        fórmula) -no como texto plano-, su formato de número (moneda,
-        porcentaje, fecha) y el formato básico (negrita/cursiva/relleno)."""
+
         if self._wb is None or nombre_hoja not in self._wb.sheetnames:
             return
         from openpyxl.styles import Font, PatternFill
@@ -4900,7 +5252,7 @@ class VisorEditorReportes(QWidget):
                     #el archivo en Excel/Sheets/LibreOffice.
                     celda.value= crudo.strip()
                 else:
-                    valor_tipado, formato_sugerido = _analizar_crudo(crudo)
+                    valor_tipado, formato_sugerido= _analizar_crudo(crudo)
                     celda.value= valor_tipado
                     formato_cat= formato_cat or formato_sugerido
                 if formato_cat in self._FORMATOS_NUMERO_EXCEL:
@@ -4959,6 +5311,7 @@ class VisorEditorReportes(QWidget):
 
     #Utilidades comunes de la tabla (CSV y XLSX comparten grilla)
     def _poblar_tabla(self, filas):
+
         self._sincronizando= True
         self.tabla_editor.clear()
         n_filas= len(filas)
@@ -4987,10 +5340,11 @@ class VisorEditorReportes(QWidget):
         self._sincronizando= False
         self.lbl_celdas.setText(f"{n_filas} filas × {n_columnas} columnas")
 
+    #Filas con el texto TAL COMO SE VE en la grilla (valores ya
+    #calculados/formateados) -lo que corresponde al exportar a CSV, que
+    #no admite fórmulas ni tipos propios.
     def _extraer_filas_de_tabla(self):
-        """Filas con el texto TAL COMO SE VE en la grilla (valores ya
-        calculados/formateados) -lo que corresponde al exportar a CSV, que
-        no admite fórmulas ni tipos propios."""
+
         filas= []
         for r in range(self.tabla_editor.rowCount()):
             fila= []
@@ -5000,9 +5354,10 @@ class VisorEditorReportes(QWidget):
             filas.append(fila)
         return filas
 
+    #Filas con el contenido CRUDO de cada celda (fórmulas incluidas,
+    #valores ya tipados) -lo que corresponde al exportar/guardar a Excel.
     def _extraer_filas_crudas_de_tabla(self):
-        """Filas con el contenido CRUDO de cada celda (fórmulas incluidas,
-        valores ya tipados) -lo que corresponde al exportar/guardar a Excel."""
+
         filas= []
         for r in range(self.tabla_editor.rowCount()):
             fila= []
@@ -5016,6 +5371,7 @@ class VisorEditorReportes(QWidget):
         return filas
 
     def _on_celda_editada(self, item):
+
         if self._sincronizando or self._recalculando:
             return
         #El delegado de edición (_DelegadoHojaCalculo) deja en item.text() justo lo que la persona escribió (fórmula o
@@ -5027,7 +5383,7 @@ class VisorEditorReportes(QWidget):
         #traiga una marca de formato explícita distinta (p.ej. escribir "$50" en una celda que era porcentaje). Así, si
         #al editar una celda en "18%" se confirma sin tocar nada (o cambiando solo el número), la celda vuelve a
         #mostrarse como porcentaje en vez de quedar "pelada".
-        valor_tipado, formato_sugerido = _analizar_crudo(nuevo_crudo)
+        valor_tipado, formato_sugerido= _analizar_crudo(nuevo_crudo)
         #CASO ESPECIAL -porcentaje-: a diferencia de la moneda (que solo antepone "$" sin tocar el valor), el formato
         #porcentaje SÍ reescala el valor mostrado (x100). Si la celda ya era porcentaje y se escribió un número
         #"pelado" (sin el símbolo %), hay que tratarlo tal como lo haría Excel: escribir "50" sobre una celda
@@ -5042,11 +5398,12 @@ class VisorEditorReportes(QWidget):
         item.setData(ROL_FORMATO_NUM, formato_sugerido or formato_anterior)
         self._recalcular_hoja()
 
+    #Recorre toda la grilla, evalúa las fórmulas con el motor propio
+    #(_MotorFormulas) y actualiza el texto visible de cada celda con el
+    #resultado ya formateado (moneda/porcentaje/fecha/número/texto).
+    #Es el corazón de "que las operaciones matemáticas se efectúen".
     def _recalcular_hoja(self):
-        """Recorre toda la grilla, evalúa las fórmulas con el motor propio
-        (_MotorFormulas) y actualiza el texto visible de cada celda con el
-        resultado ya formateado (moneda/porcentaje/fecha/número/texto).
-        Es el corazón de "que las operaciones matemáticas se efectúen"."""
+
         self._recalculando= True
         #OPTIMIZACIÓN: esta función se llama en CADA edición de celda (una hoja grande puede tener miles de celdas), y
         #antes no bloqueaba señales ni el repintado -cada item.setText() disparaba un
@@ -5057,10 +5414,12 @@ class VisorEditorReportes(QWidget):
         self.tabla_editor.blockSignals(True)
         self.tabla_editor.setUpdatesEnabled(False)
         try:
+
             filas= self.tabla_editor.rowCount()
             columnas= self.tabla_editor.columnCount()
 
             def obtener_crudo(r, c):
+
                 if r < 0 or c < 0 or r >= filas or c >= columnas:
                     return None
                 it= self.tabla_editor.item(r, c)
@@ -5102,7 +5461,7 @@ class VisorEditorReportes(QWidget):
                             if respaldo is not None:
                                 valor= respaldo
                     else:
-                        valor, formato_sugerido = _analizar_crudo(crudo)
+                        valor, formato_sugerido= _analizar_crudo(crudo)
                         if formato_cat is None and formato_sugerido is not None:
                             formato_cat= formato_sugerido
                             item.setData(ROL_FORMATO_NUM, formato_cat)
@@ -5118,12 +5477,14 @@ class VisorEditorReportes(QWidget):
             self._recalculando= False
 
     def _seleccion_valida(self):
+
         if self.tabla_editor.rowCount() == 0 or self.tabla_editor.columnCount() == 0:
             mostrar_mensaje("advertencia", "Sin datos", "Abre primero un archivo con contenido.", self._padre_dialogo())
             return False
         return True
 
     def _insertar_fila(self):
+
         if not self._seleccion_valida():
             return
         self._registrar_deshacer_hoja()
@@ -5139,6 +5500,7 @@ class VisorEditorReportes(QWidget):
         self._recalcular_hoja()
 
     def _eliminar_fila(self):
+
         filas= sorted({i.row() for i in self.tabla_editor.selectedIndexes()}, reverse=True)
         if not filas:
             mostrar_mensaje("advertencia", "Selecciona una fila", "Selecciona primero la(s) fila(s) a eliminar.", self._padre_dialogo())
@@ -5150,6 +5512,7 @@ class VisorEditorReportes(QWidget):
         self._recalcular_hoja()
 
     def _insertar_columna(self):
+
         if not self._seleccion_valida():
             return
         self._registrar_deshacer_hoja()
@@ -5163,6 +5526,7 @@ class VisorEditorReportes(QWidget):
         self._recalcular_hoja()
 
     def _eliminar_columna(self):
+
         columnas= sorted({i.column() for i in self.tabla_editor.selectedIndexes()}, reverse=True)
         if not columnas:
             mostrar_mensaje("advertencia", "Selecciona una columna", "Selecciona primero la(s) columna(s) a eliminar.", self._padre_dialogo())
@@ -5174,12 +5538,13 @@ class VisorEditorReportes(QWidget):
             [_letra_columna(i) for i in range(self.tabla_editor.columnCount())])
         self._recalcular_hoja()
 
+    #Comportamiento de la tecla Delete en Excel real: borra el VALOR
+    #de las celdas seleccionadas, pero conserva su formato (color,
+    #negrita, etc.) -a propósito no usa _celdas_seleccionadas() porque
+    #esa muestra un aviso si no hay selección, y aquí eso sería molesto
+    #(la tecla Delete puede presionarse sin querer sin nada seleccionado).
     def _borrar_contenido_celdas_seleccionadas(self):
-        """Comportamiento de la tecla Delete en Excel real: borra el VALOR
-        de las celdas seleccionadas, pero conserva su formato (color,
-        negrita, etc.) -a propósito no usa _celdas_seleccionadas() porque
-        esa muestra un aviso si no hay selección, y aquí eso sería molesto
-        (la tecla Delete puede presionarse sin querer sin nada seleccionado)."""
+
         items= self.tabla_editor.selectedItems()
         if not items:
             return
@@ -5194,6 +5559,7 @@ class VisorEditorReportes(QWidget):
         self._recalcular_hoja()
 
     def _celdas_seleccionadas(self):
+
         tabla= self.tabla_editor
         rangos= tabla.selectedRanges()
         if not rangos:
@@ -5226,7 +5592,8 @@ class VisorEditorReportes(QWidget):
     LIMITE_DESHACER_HOJA= 50
 
     def _capturar_snapshot_hoja(self):
-        filas, columnas = self.tabla_editor.rowCount(), self.tabla_editor.columnCount()
+
+        filas, columnas= self.tabla_editor.rowCount(), self.tabla_editor.columnCount()
         datos= []
         for r in range(filas):
             fila= []
@@ -5250,6 +5617,7 @@ class VisorEditorReportes(QWidget):
         return {"filas": filas, "columnas": columnas, "datos": datos}
 
     def _restaurar_snapshot_hoja(self, snap):
+
         self._sincronizando= True
         self.tabla_editor.setRowCount(snap["filas"])
         self.tabla_editor.setColumnCount(snap["columnas"])
@@ -5282,10 +5650,11 @@ class VisorEditorReportes(QWidget):
         self._recalcular_hoja()
         self._actualizar_manija_relleno()
 
+    #Guarda el estado ACTUAL de la hoja en la pila de deshacer, antes
+    #de aplicar un cambio -se llama al INICIO de cada acción que
+    #modifica la hoja, antes de que el cambio ocurra.
     def _registrar_deshacer_hoja(self):
-        """Guarda el estado ACTUAL de la hoja en la pila de deshacer, antes
-        de aplicar un cambio -se llama al INICIO de cada acción que
-        modifica la hoja, antes de que el cambio ocurra."""
+
         self._pila_deshacer_hoja.append(self._capturar_snapshot_hoja())
         if len(self._pila_deshacer_hoja) > self.LIMITE_DESHACER_HOJA:
             self._pila_deshacer_hoja.pop(0)
@@ -5293,6 +5662,7 @@ class VisorEditorReportes(QWidget):
         self._actualizar_botones_deshacer()
 
     def _deshacer_hoja(self):
+
         if not self._pila_deshacer_hoja:
             return
         self._pila_rehacer_hoja.append(self._capturar_snapshot_hoja())
@@ -5300,6 +5670,7 @@ class VisorEditorReportes(QWidget):
         self._actualizar_botones_deshacer()
 
     def _rehacer_hoja(self):
+
         if not self._pila_rehacer_hoja:
             return
         self._pila_deshacer_hoja.append(self._capturar_snapshot_hoja())
@@ -5307,12 +5678,14 @@ class VisorEditorReportes(QWidget):
         self._actualizar_botones_deshacer()
 
     def _color_acento_actual(self):
+
         return _colores_tema(self.main_window)["accent"]
 
+    #Snapshot completo (valor + formato de número + estilo) de un
+    #rango de celdas, para poder pegarlo tal cual -no solo el texto- en
+    #otro lugar de la hoja.
     def _extraer_bloque_hoja(self, fila_ini, fila_fin, col_ini, col_fin):
-        """Snapshot completo (valor + formato de número + estilo) de un
-        rango de celdas, para poder pegarlo tal cual -no solo el texto- en
-        otro lugar de la hoja."""
+
         bloque= []
         for r in range(fila_ini, fila_fin + 1):
             fila= []
@@ -5334,10 +5707,11 @@ class VisorEditorReportes(QWidget):
             bloque.append(fila)
         return bloque
 
+    #Igual que copia Excel al portapapeles del sistema: valores
+    #separados por tabulaciones/saltos de línea, para poder pegar hacia
+    #otra hoja externa (o pegar aquí lo copiado desde una externa).
     def _bloque_a_texto_plano(self, bloque):
-        """Igual que copia Excel al portapapeles del sistema: valores
-        separados por tabulaciones/saltos de línea, para poder pegar hacia
-        otra hoja externa (o pegar aquí lo copiado desde una externa)."""
+
         filas_txt= []
         for fila in bloque:
             celdas= []
@@ -5348,16 +5722,18 @@ class VisorEditorReportes(QWidget):
         return "\n".join(filas_txt)
 
     def _hoja_copiar_seleccion(self):
+
         rango= self._rango_seleccionado()
         if rango is None:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una o varias celdas primero.", self._padre_dialogo())
             return
-        fila_ini, fila_fin, col_ini, col_fin = rango
+        fila_ini, fila_fin, col_ini, col_fin= rango
         bloque= self._extraer_bloque_hoja(fila_ini, fila_fin, col_ini, col_fin)
         self._portapapeles_hoja= bloque
         QApplication.clipboard().setText(self._bloque_a_texto_plano(bloque))
 
     def _hoja_cortar_seleccion(self):
+
         rango= self._rango_seleccionado()
         if rango is None:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una o varias celdas primero.", self._padre_dialogo())
@@ -5365,19 +5741,21 @@ class VisorEditorReportes(QWidget):
         self._hoja_copiar_seleccion()
         self._borrar_contenido_celdas_seleccionadas()
 
+    #'Pegado especial > Operación' de Excel: en vez de reemplazar el
+    #valor de la celda destino, lo combina matemáticamente con el
+    #pegado. Si cualquiera de los dos no es un número, se pega tal cual
+    #(no tiene sentido "sumar" texto).
     def _combinar_operacion(self, crudo_actual, crudo_pegado, operacion):
-        """'Pegado especial > Operación' de Excel: en vez de reemplazar el
-        valor de la celda destino, lo combina matemáticamente con el
-        pegado. Si cualquiera de los dos no es un número, se pega tal cual
-        (no tiene sentido "sumar" texto)."""
-        actual, _ = _analizar_crudo(crudo_actual)
-        pegado, _ = _analizar_crudo(crudo_pegado)
+
+        actual, _= _analizar_crudo(crudo_actual)
+        pegado, _= _analizar_crudo(crudo_pegado)
         try:
+
             if actual is None:
                 actual= 0.0
             if pegado is None:
                 return crudo_pegado
-            actual, pegado = float(actual), float(pegado)
+            actual, pegado= float(actual), float(pegado)
         except (TypeError, ValueError):
             return crudo_pegado
         if operacion == "sumar":
@@ -5390,9 +5768,10 @@ class VisorEditorReportes(QWidget):
             return actual / pegado if pegado != 0 else actual
         return pegado
 
+    #Pega `bloque` con su esquina superior izquierda en (fila_destino,
+    #col_destino), agregando filas/columnas a la hoja si hace falta.
     def _pegar_bloque_en(self, fila_destino, col_destino, bloque, operacion=None):
-        """Pega `bloque` con su esquina superior izquierda en (fila_destino,
-        col_destino), agregando filas/columnas a la hoja si hace falta."""
+
         if not bloque or not bloque[0]:
             return
         self._registrar_deshacer_hoja()
@@ -5405,7 +5784,7 @@ class VisorEditorReportes(QWidget):
         self._sincronizando= True
         for dr, fila in enumerate(bloque):
             for dc, celda in enumerate(fila):
-                r, c = fila_destino + dr, col_destino + dc
+                r, c= fila_destino + dr, col_destino + dc
                 item= self.tabla_editor.item(r, c)
                 if item is None:
                     item= QTableWidgetItem("")
@@ -5431,7 +5810,8 @@ class VisorEditorReportes(QWidget):
         self._recalcular_hoja()
 
     def _hoja_pegar_seleccion(self, operacion=None):
-        fila_destino, col_destino = self._celda_actual_o_primera_seleccion()
+
+        fila_destino, col_destino= self._celda_actual_o_primera_seleccion()
         bloque= getattr(self, "_portapapeles_hoja", None)
         if bloque is None:
             #Nada copiado dentro del editor: se intenta con el portapapeles del sistema (texto separado por tabulaciones,
@@ -5446,10 +5826,11 @@ class VisorEditorReportes(QWidget):
                       for i in range(ancho)] for f in filas]
         self._pegar_bloque_en(fila_destino, col_destino, bloque, operacion)
 
+    #Menú de clic derecho sobre la hoja: cortar/copiar/pegar/pegado
+    #especial (operación)/∑ Operación (autosuma y similares)/eliminar
+    #contenido.
     def _mostrar_menu_contextual_hoja(self, punto):
-        """Menú de clic derecho sobre la hoja: cortar/copiar/pegar/pegado
-        especial (operación)/∑ Operación (autosuma y similares)/eliminar
-        contenido."""
+
         indice= self.tabla_editor.indexAt(punto)
         if indice.isValid() and not self.tabla_editor.selectionModel().isSelected(indice):
             self.tabla_editor.setCurrentCell(indice.row(), indice.column())
@@ -5525,13 +5906,15 @@ class VisorEditorReportes(QWidget):
     _RE_TEXTO_NUM_FINAL= re.compile(r"^(.*?)(\d+)(\D*)$")
     _RE_REF_CELDA_FORMULA= re.compile(r"(\$?)([A-Za-z]{1,3})(\$?)(\d+)")
 
+    #Ajusta las referencias de FILA de una fórmula al copiarla hacia
+    #abajo -'=A5+B5' arrastrada una fila hacia abajo pasa a '=A6+B6'-,
+    #respetando las referencias absolutas ($A$5 o A$5 no se mueven),
+    #igual que Excel al arrastrar el relleno.
     def _desplazar_referencias_formula(self, formula, delta_fila):
-        """Ajusta las referencias de FILA de una fórmula al copiarla hacia
-        abajo -'=A5+B5' arrastrada una fila hacia abajo pasa a '=A6+B6'-,
-        respetando las referencias absolutas ($A$5 o A$5 no se mueven),
-        igual que Excel al arrastrar el relleno."""
+
         def reemplazar(m):
-            abs_col, letras, abs_fila, numero = m.groups()
+
+            abs_col, letras, abs_fila, numero= m.groups()
             if abs_fila == "$":
                 return m.group(0)
             nuevo= int(numero) + delta_fila
@@ -5540,9 +5923,10 @@ class VisorEditorReportes(QWidget):
             return f"{abs_col}{letras}{abs_fila}{nuevo}"
         return self._RE_REF_CELDA_FORMULA.sub(reemplazar, formula)
 
+    #Reposiciona (o esconde) el cuadradito de relleno según la
+    #selección actual -esquina inferior derecha del rango seleccionado.
     def _actualizar_manija_relleno(self):
-        """Reposiciona (o esconde) el cuadradito de relleno según la
-        selección actual -esquina inferior derecha del rango seleccionado."""
+
         if getattr(self, "_arrastrando_relleno", False):
             return
         if self.stack.currentIndex() != 1:  #solo aplica en la pestaña de hoja
@@ -5552,7 +5936,7 @@ class VisorEditorReportes(QWidget):
         if rango is None:
             self._manija_relleno.hide()
             return
-        _fi, fila_fin, _ci, col_fin = rango
+        _fi, fila_fin, _ci, col_fin= rango
         rect= self.tabla_editor.visualRect(self.tabla_editor.model().index(fila_fin, col_fin))
         if not rect.isValid() or rect.isEmpty():
             self._manija_relleno.hide()
@@ -5563,6 +5947,7 @@ class VisorEditorReportes(QWidget):
         self._manija_relleno.raise_()
 
     def _iniciar_arrastre_relleno(self):
+
         rango= self._rango_seleccionado()
         if rango is None:
             return
@@ -5571,9 +5956,10 @@ class VisorEditorReportes(QWidget):
         self._relleno_fila_hasta= rango[1]
 
     def _arrastrar_relleno(self, punto_global):
+
         if not getattr(self, "_arrastrando_relleno", False) or self._relleno_origen is None:
             return
-        fila_ini, fila_fin, col_ini, col_fin = self._relleno_origen
+        fila_ini, fila_fin, col_ini, col_fin= self._relleno_origen
         punto_local= self.tabla_editor.viewport().mapFromGlobal(punto_global)
         fila_bajo_cursor= self.tabla_editor.rowAt(punto_local.y())
         if fila_bajo_cursor == -1:
@@ -5606,6 +5992,7 @@ class VisorEditorReportes(QWidget):
             self._manija_relleno.move(rect.right() - mitad + 1, rect.bottom() - mitad + 1)
 
     def _soltar_relleno(self):
+
         origen= self._relleno_origen
         fila_hasta= self._relleno_fila_hasta
         self._arrastrando_relleno= False
@@ -5615,19 +6002,20 @@ class VisorEditorReportes(QWidget):
             self._aplicar_relleno(*origen, fila_hasta)
         self._actualizar_manija_relleno()
 
+    #Autocompleta hacia abajo desde el patrón (fila_ini..fila_fin) de
+    #cada columna del rango:
+    #- Si el patrón son puras fórmulas, las copia ajustando referencias.
+    #- Si es una secuencia numérica (2+ filas con el mismo "paso" entre
+    #ellas, ej. 1,2 o 5,10), continúa la progresión.
+    #- Si es una sola celda de texto terminado en número (ej. "Fila 1"),
+    #incrementa el número.
+    #- En cualquier otro caso, repite el patrón en ciclo (como hace
+    #Excel con un patrón de varias filas sin secuencia detectable).
+    #El formato/estilo de cada celda rellenada siempre se copia del
+    #patrón (cíclicamente), sin importar cuál de los casos anteriores
+    #aplique.
     def _aplicar_relleno(self, fila_ini, fila_fin, col_ini, col_fin, fila_hasta):
-        """Autocompleta hacia abajo desde el patrón (fila_ini..fila_fin) de
-        cada columna del rango:
-        - Si el patrón son puras fórmulas, las copia ajustando referencias.
-        - Si es una secuencia numérica (2+ filas con el mismo "paso" entre
-          ellas, ej. 1,2 o 5,10), continúa la progresión.
-        - Si es una sola celda de texto terminado en número (ej. "Fila 1"),
-          incrementa el número.
-        - En cualquier otro caso, repite el patrón en ciclo (como hace
-          Excel con un patrón de varias filas sin secuencia detectable).
-        El formato/estilo de cada celda rellenada siempre se copia del
-        patrón (cíclicamente), sin importar cuál de los casos anteriores
-        aplique."""
+
         self._registrar_deshacer_hoja()
         if fila_hasta >= self.tabla_editor.rowCount():
             self.tabla_editor.setRowCount(fila_hasta + 1)
@@ -5647,9 +6035,9 @@ class VisorEditorReportes(QWidget):
             son_formulas= bool(no_vacios) and all(
                 isinstance(cr, str) and cr.strip().startswith("=") for cr in no_vacios)
 
-            valores_num, son_numeros = [], True
+            valores_num, son_numeros= [], True
             for cr in crudos:
-                val, _ = _analizar_crudo(cr)
+                val, _= _analizar_crudo(cr)
                 if isinstance(val, bool) or not isinstance(val, (int, float)):
                     son_numeros= False
                     break
@@ -5679,7 +6067,7 @@ class VisorEditorReportes(QWidget):
                 elif paso is not None:
                     nuevo_crudo= valores_num[0] + paso * (r - fila_ini)
                 elif texto_incremental is not None:
-                    prefijo, numero, sufijo = texto_incremental.groups()
+                    prefijo, numero, sufijo= texto_incremental.groups()
                     nuevo_crudo= f"{prefijo}{int(numero) + (r - fila_fin)}{sufijo}"
                 else:
                     nuevo_crudo= crudo_patron
@@ -5699,15 +6087,16 @@ class VisorEditorReportes(QWidget):
         self._sincronizando= False
         self._recalcular_hoja()
 
+    #Refleja en el combo 'Fuente' la tipografía real de la celda activa
+    #cada vez que cambia la selección. Antes el combo se quedaba fijo en
+    #el primer valor de la lista (Calibri) sin importar qué celda se
+    #seleccionara, porque solo estaba conectado en el sentido
+    #combo -> celdas y nunca al revés (celda -> combo), a diferencia del
+    #editor Word que sí hace este mismo ajuste (ver _word_actualizar_
+    #controles_formato). Se bloquean las señales para no disparar
+    #_cambiar_fuente_hoja al fijar el texto aquí.
     def _sincronizar_combo_fuente_hoja(self):
-        """Refleja en el combo 'Fuente' la tipografía real de la celda activa
-        cada vez que cambia la selección. Antes el combo se quedaba fijo en
-        el primer valor de la lista (Calibri) sin importar qué celda se
-        seleccionara, porque solo estaba conectado en el sentido
-        combo -> celdas y nunca al revés (celda -> combo), a diferencia del
-        editor Word que sí hace este mismo ajuste (ver _word_actualizar_
-        controles_formato). Se bloquean las señales para no disparar
-        _cambiar_fuente_hoja al fijar el texto aquí."""
+
         if getattr(self, "_sincronizando", False):
             return
         items= self._celdas_seleccionadas()
@@ -5726,6 +6115,7 @@ class VisorEditorReportes(QWidget):
         self.combo_fuente_hoja.blockSignals(False)
 
     def _cambiar_fuente_hoja(self, _indice=None):
+
         items= self._celdas_seleccionadas()
         if not items:
             return
@@ -5733,10 +6123,13 @@ class VisorEditorReportes(QWidget):
         familia= self.combo_fuente_hoja.currentText()
         self._sincronizando= True
         for item in items:
-            f= item.font(); f.setFamily(familia); item.setFont(f)
+            f= item.font()
+            f.setFamily(familia)
+            item.setFont(f)
         self._sincronizando= False
 
     def _alternar_negrita(self):
+
         items= self._celdas_seleccionadas()
         if not items:
             return
@@ -5747,10 +6140,13 @@ class VisorEditorReportes(QWidget):
         #cualquier fórmula que hubiera en la celda-.
         self._sincronizando= True
         for item in items:
-            f= item.font(); f.setBold(activar); item.setFont(f)
+            f= item.font()
+            f.setBold(activar)
+            item.setFont(f)
         self._sincronizando= False
 
     def _alternar_cursiva(self):
+
         items= self._celdas_seleccionadas()
         if not items:
             return
@@ -5758,10 +6154,13 @@ class VisorEditorReportes(QWidget):
         activar= not items[0].font().italic()
         self._sincronizando= True
         for item in items:
-            f= item.font(); f.setItalic(activar); item.setFont(f)
+            f= item.font()
+            f.setItalic(activar)
+            item.setFont(f)
         self._sincronizando= False
 
     def _alternar_subrayado(self):
+
         items= self._celdas_seleccionadas()
         if not items:
             return
@@ -5769,10 +6168,13 @@ class VisorEditorReportes(QWidget):
         activar= not items[0].font().underline()
         self._sincronizando= True
         for item in items:
-            f= item.font(); f.setUnderline(activar); item.setFont(f)
+            f= item.font()
+            f.setUnderline(activar)
+            item.setFont(f)
         self._sincronizando= False
 
     def _elegir_color_relleno(self):
+
         items= self._celdas_seleccionadas()
         if not items:
             return
@@ -5789,6 +6191,7 @@ class VisorEditorReportes(QWidget):
             self._sincronizando= False
 
     def _elegir_color_texto(self):
+
         items= self._celdas_seleccionadas()
         if not items:
             return
@@ -5800,24 +6203,25 @@ class VisorEditorReportes(QWidget):
                 item.setForeground(color)
             self._sincronizando= False
 
+    #Inserta o edita el hipervínculo de una celda -mismo flujo que en
+    #Word (Ctrl+K): si ya tiene uno, se precarga la URL para editarla;
+    #si no, se pregunta. Solo aplica a UNA celda a la vez -a diferencia
+    #del resto del formato, un enlace no tiene sentido "repetido" igual
+    #en varias celdas seleccionadas-.
     def _hoja_insertar_enlace(self, item=None):
-        """Inserta o edita el hipervínculo de una celda -mismo flujo que en
-        Word (Ctrl+K): si ya tiene uno, se precarga la URL para editarla;
-        si no, se pregunta. Solo aplica a UNA celda a la vez -a diferencia
-        del resto del formato, un enlace no tiene sentido "repetido" igual
-        en varias celdas seleccionadas-."""
+
         if not isinstance(item, QTableWidgetItem):
             #Si esta función se conecta directamente a una señal Qt (p.ej. QToolButton.clicked), Qt puede pasar como primer
             #argumento un
             #bool ("checked") en vez de una celda real -se ignora y se
             #resuelve la celda actual, igual que si item=None-.
-            fila, col = self._celda_actual_o_primera_seleccion()
+            fila, col= self._celda_actual_o_primera_seleccion()
             item= self.tabla_editor.item(fila, col)
             if item is None:
                 item= QTableWidgetItem("")
                 self.tabla_editor.setItem(fila, col, item)
         url_actual= item.data(ROL_HIPERVINCULO) or ""
-        url, ok = QInputDialog.getText(
+        url, ok= QInputDialog.getText(
             self._padre_dialogo(), "Insertar hipervínculo",
             "Dirección del enlace (URL) -déjalo vacío para quitar el enlace-:", text=url_actual)
         if not ok:
@@ -5836,27 +6240,35 @@ class VisorEditorReportes(QWidget):
         if url:
             item.setData(ROL_HIPERVINCULO, url)
             item.setForeground(QColor("#2563EB"))
-            f= item.font(); f.setUnderline(True); item.setFont(f)
+            f= item.font()
+            f.setUnderline(True)
+            item.setFont(f)
             if not item.text().strip():
                 item.setText(url)
                 item.setData(ROL_CRUDO, url)
         else:
             item.setData(ROL_HIPERVINCULO, None)
             item.setForeground(QColor("#0F172A"))
-            f= item.font(); f.setUnderline(False); item.setFont(f)
+            f= item.font()
+            f.setUnderline(False)
+            item.setFont(f)
         self._sincronizando= False
 
     def _hoja_quitar_enlace(self, item):
+
         if item is None or not item.data(ROL_HIPERVINCULO):
             return
         self._registrar_deshacer_hoja()
         self._sincronizando= True
         item.setData(ROL_HIPERVINCULO, None)
         item.setForeground(QColor("#0F172A"))
-        f= item.font(); f.setUnderline(False); item.setFont(f)
+        f= item.font()
+        f.setUnderline(False)
+        item.setFont(f)
         self._sincronizando= False
 
     def _alinear(self, alineacion):
+
         items= self._celdas_seleccionadas()
         if not items:
             return
@@ -5867,6 +6279,7 @@ class VisorEditorReportes(QWidget):
         self._sincronizando= False
 
     def _ordenar(self, orden):
+
         if not self._seleccion_valida():
             return
         self._registrar_deshacer_hoja()
@@ -5883,7 +6296,7 @@ class VisorEditorReportes(QWidget):
         #divisiones por cero/celdas equivocadas, e incluso "#¡CIRC!"
         #falsos cuando la referencia vieja coincidía con su nueva propia posición. Las referencias ancladas con "$" (p.
         #ej. B$2 o $B$2) NO se mueven, igual que en Excel.
-        #        #OPTIMIZACIÓN / CORRECCIÓN DE FONDO: antes el bloqueo de señales
+        ##OPTIMIZACIÓN / CORRECCIÓN DE FONDO: antes el bloqueo de señales
         #(self._sincronizando = True) se activaba recién DESPUÉS de este
         #primer bucle de etiquetado. Cada item.setData(ROL_FILA_ORIGEN, r)
         #disparaba itemChanged -> _on_celda_editada, que -al no estar
@@ -5896,6 +6309,7 @@ class VisorEditorReportes(QWidget):
         tabla.blockSignals(True)
         tabla.setUpdatesEnabled(False)
         try:
+
             for r in range(filas):
                 for c in range(columnas):
                     item= tabla.item(r, c)
@@ -5922,19 +6336,20 @@ class VisorEditorReportes(QWidget):
         #recalcula la hoja UNA SOLA VEZ (no una vez por celda) para que lo que se ve siga siendo consistente.
         self._recalcular_hoja()
 
+    #Autoajuste REAL del ancho de columnas, medido a mano.
+    #
+    #Se reemplazó `resizeColumnsToContents()` porque NO funcionaba igual
+    #en todos los archivos: con `wordWrap` activo (el default de
+    #QTableWidget), el sizeHint de los items NO incluye el ancho completo
+    #del texto (Qt lo "envuelve" al medir), así que las columnas con
+    #textos largos quedaban estrechas como si el ajuste no hiciera nada.
+    #Aquí se mide el texto mostrado de cada celda con las métricas de SU
+    #propia fuente (respeta negrita/cursiva, la fuente elegida y el zoom
+    #de la hoja), con tope en `maximo` px para que una celda con un
+    #párrafo entero no se coma la pantalla —mismo criterio que Excel,
+    #que también corta el autoajuste en un máximo razonable-.
     def _autoajustar_columnas(self, maximo=380):
-        """Autoajuste REAL del ancho de columnas, medido a mano.
 
-        Se reemplazó `resizeColumnsToContents()` porque NO funcionaba igual
-        en todos los archivos: con `wordWrap` activo (el default de
-        QTableWidget), el sizeHint de los items NO incluye el ancho completo
-        del texto (Qt lo "envuelve" al medir), así que las columnas con
-        textos largos quedaban estrechas como si el ajuste no hiciera nada.
-        Aquí se mide el texto mostrado de cada celda con las métricas de SU
-        propia fuente (respeta negrita/cursiva, la fuente elegida y el zoom
-        de la hoja), con tope en `maximo` px para que una celda con un
-        párrafo entero no se coma la pantalla —mismo criterio que Excel,
-        que también corta el autoajuste en un máximo razonable-."""
         #Cuando se llama desde el botón de la toolbar, clicked() inyecta su `checked` (False) como primer argumento
         #posicional: se normaliza para que un False/True no termine siendo un tope de 0/1 px.
         if maximo is True or maximo is False or not isinstance(maximo, int) or maximo < 40:
@@ -5971,11 +6386,12 @@ class VisorEditorReportes(QWidget):
                     break  #ya tocó el tope: nada más que medir en esta columna
             tabla.setColumnWidth(col, int(max(60, min(ancho, maximo))))
 
+    #Acerca/aleja la hoja completa -tamaño de letra y alto de fila-,
+    #igual que el control de zoom de la esquina de Excel. El tamaño
+    #"real" (100%) de cada celda se guarda aparte (ROL_TAMANO_BASE) para
+    #poder escalarlo proporcionalmente sin perder negrita/cursiva.
     def _zoom_hoja_cambiar(self, delta):
-        """Acerca/aleja la hoja completa -tamaño de letra y alto de fila-,
-        igual que el control de zoom de la esquina de Excel. El tamaño
-        "real" (100%) de cada celda se guarda aparte (ROL_TAMANO_BASE) para
-        poder escalarlo proporcionalmente sin perder negrita/cursiva."""
+
         nuevo= max(10, min(400, self._zoom_hoja + delta))
         if nuevo == self._zoom_hoja:
             return
@@ -6004,12 +6420,14 @@ class VisorEditorReportes(QWidget):
         self._sincronizando= False
         self._autoajustar_columnas()
 
+    #Aplica el zoom de la hoja desde un texto escrito a mano (p. ej.
+    #'250' o '250%'). Valida el rango 10–400 y restaura el texto si el
+    #valor es inválido o no cambió.
     def _zoom_hoja_set(self, texto):
-        """Aplica el zoom de la hoja desde un texto escrito a mano (p. ej.
-        '250' o '250%'). Valida el rango 10–400 y restaura el texto si el
-        valor es inválido o no cambió."""
+
         texto= texto.strip().rstrip("%").strip()
         try:
+
             valor= int(float(texto))
         except (ValueError, TypeError):
             #Texto inválido: restaurar el valor actual sin disparar de nuevo
@@ -6020,6 +6438,7 @@ class VisorEditorReportes(QWidget):
         self._zoom_hoja_cambiar(valor - self._zoom_hoja)
 
     def _buscar_en_hoja(self):
+
         texto= self.in_buscar_celda.text().strip().lower()
         if not texto:
             return
@@ -6034,6 +6453,7 @@ class VisorEditorReportes(QWidget):
                        else "No se encontraron coincidencias.", self._padre_dialogo())
 
     def _reemplazar_en_hoja(self):
+
         buscar= self.in_buscar_celda.text()
         reemplazo= self.in_reemplazar_celda.text()
         if not buscar:
@@ -6062,10 +6482,12 @@ class VisorEditorReportes(QWidget):
 
     #GUARDAR (CSV / XLSX)
     def _guardar(self):
+
         if not self.ruta_actual:
             return
         if self.tipo_actual == "pdf":
             try:
+
                 self._guardar_pdf(self.ruta_actual)
             except Exception as e:
                 import traceback
@@ -6073,6 +6495,7 @@ class VisorEditorReportes(QWidget):
                 mostrar_mensaje("error", "No se pudo guardar", str(e), self._padre_dialogo())
             return
         try:
+
             if self.tipo_actual == "csv":
                 self._guardar_csv(self.ruta_actual)
                 registrar_auditoria("Reportes", f"Editó y guardó el archivo {os.path.basename(self.ruta_actual)}",
@@ -6087,6 +6510,7 @@ class VisorEditorReportes(QWidget):
                 if WorkerHilo is not None:
                     self._poner_btn_guardando(True)
                     def _guardar_io():
+
                         wb.save(ruta)
                     self._hilo_guardado= WorkerHilo(_guardar_io)
                     self._hilo_guardado.terminado.connect(lambda _: (
@@ -6117,8 +6541,9 @@ class VisorEditorReportes(QWidget):
             self._poner_btn_guardando(False)
             mostrar_mensaje("error", "No se pudo guardar", str(e), self._padre_dialogo())
 
+    #Cambia el texto/estado del botón Guardar para indicar progreso.
     def _poner_btn_guardando(self, guardando):
-        """Cambia el texto/estado del botón Guardar para indicar progreso."""
+
         btn= getattr(self, "btn_guardar", None)
         if btn is None:
             return
@@ -6130,14 +6555,16 @@ class VisorEditorReportes(QWidget):
             btn.setEnabled(True)
 
     def _guardar_como(self):
+
         try:
+
             if self.tipo_actual == "csv":
-                ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "reporte.csv", "CSV (*.csv)")
+                ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "reporte.csv", "CSV (*.csv)")
                 if not ruta:
                     return
                 self._guardar_csv(ruta)
             elif self.tipo_actual == "xlsx":
-                ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "reporte.xlsx", "Excel (*.xlsx)")
+                ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "reporte.xlsx", "Excel (*.xlsx)")
                 if not ruta:
                     return
                 self._sincronizar_grid_a_hoja(self._hoja_actual)
@@ -6145,9 +6572,11 @@ class VisorEditorReportes(QWidget):
                 if WorkerHilo is not None:
                     self._poner_btn_guardando(True)
                     def _guardar_como_io():
+
                         wb.save(ruta)
                     self._hilo_guardado_como= WorkerHilo(_guardar_como_io)
                     def _on_ok(_):
+
                         self._poner_btn_guardando(False)
                         self.ruta_actual= ruta
                         self.lbl_archivo_actual.poner_texto_completo(
@@ -6168,12 +6597,12 @@ class VisorEditorReportes(QWidget):
                 else:
                     wb.save(ruta)
             elif self.tipo_actual == "docx":
-                ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "documento.docx", "Word (*.docx)")
+                ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "documento.docx", "Word (*.docx)")
                 if not ruta:
                     return
                 self._guardar_docx(ruta)
             elif self.tipo_actual == "pdf":
-                ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "reporte.pdf", "PDF (*.pdf)")
+                ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Guardar como", "reporte.pdf", "PDF (*.pdf)")
                 if not ruta:
                     return
                 self._guardar_pdf(ruta, es_nuevo_archivo=True)
@@ -6200,7 +6629,9 @@ class VisorEditorReportes(QWidget):
 
     #WORD (.docx)
     def _cargar_docx_lib(self):
+
         try:
+
             import docx
             return docx
         except ImportError:
@@ -6209,6 +6640,7 @@ class VisorEditorReportes(QWidget):
             return None
 
     def _abrir_docx(self, ruta):
+
         docx= self._cargar_docx_lib()
         if docx is None:
             raise RuntimeError("python-docx no disponible")
@@ -6232,14 +6664,15 @@ class VisorEditorReportes(QWidget):
             self._vista_word.horizontalScrollBar().setValue(0),
             self._vista_word.verticalScrollBar().setValue(0)))
 
+    #Convierte el contenido del .docx a un HTML sencillo que QTextEdit
+    #pueda mostrar y editar. No intenta replicar el formato exacto de Word
+    #-tablas o estilos personalizados quedan fuera de alcance-, pero sí
+    #conserva lo esencial para leer y corregir un reporte: texto,
+    #negrita/cursiva/subrayado, color, alineación, párrafos de título e
+    #IMÁGENES incrustadas (se insertan como datos embebidos en el propio
+    #HTML, así viajan con el documento sin depender de archivos externos).
     def _docx_a_html(self, documento, docx):
-        """Convierte el contenido del .docx a un HTML sencillo que QTextEdit
-        pueda mostrar y editar. No intenta replicar el formato exacto de Word
-        -tablas o estilos personalizados quedan fuera de alcance-, pero sí
-        conserva lo esencial para leer y corregir un reporte: texto,
-        negrita/cursiva/subrayado, color, alineación, párrafos de título e
-        IMÁGENES incrustadas (se insertan como datos embebidos en el propio
-        HTML, así viajan con el documento sin depender de archivos externos)."""
+
         from docx.enum.text import WD_ALIGN_PARAGRAPH
         from docx.oxml.ns import qn
         alineaciones= {
@@ -6265,6 +6698,7 @@ class VisorEditorReportes(QWidget):
                     if not rid:
                         continue
                     try:
+
                         parte= documento.part.related_parts[rid]
                         b64= base64.b64encode(parte.blob).decode("ascii")
                         mime= parte.content_type or "image/png"
@@ -6283,6 +6717,7 @@ class VisorEditorReportes(QWidget):
                 if run.underline:
                     estilos_run.append("text-decoration:underline")
                 try:
+
                     if run.font.size:
                         estilos_run.append(f"font-size:{run.font.size.pt}pt")
                     elif estilo in tamanos_titulo:
@@ -6290,6 +6725,7 @@ class VisorEditorReportes(QWidget):
                 except Exception:
                     pass
                 try:
+
                     if run.font.color and run.font.color.rgb:
                         estilos_run.append(f"color:#{run.font.color.rgb}")
                 except Exception:
@@ -6307,6 +6743,7 @@ class VisorEditorReportes(QWidget):
         return "".join(partes)
 
     def _guardar_docx(self, ruta):
+
         docx= self._cargar_docx_lib()
         if docx is None:
             raise RuntimeError("python-docx no disponible")
@@ -6340,7 +6777,8 @@ class VisorEditorReportes(QWidget):
                         nombre= formato_img.name()
                         if nombre.startswith("data:") and ";base64," in nombre:
                             try:
-                                _, b64data = nombre.split(";base64,", 1)
+
+                                _, b64data= nombre.split(";base64,", 1)
                                 datos_imagen= base64.b64decode(b64data)
                                 ancho= None
                                 if formato_img.width() > 0:
@@ -6357,11 +6795,13 @@ class VisorEditorReportes(QWidget):
                         run.italic= formato.fontItalic()
                         run.underline= formato.fontUnderline()
                         try:
+
                             if formato.fontPointSize():
                                 run.font.size= Pt(formato.fontPointSize())
                         except Exception:
                             pass
                         try:
+
                             color= formato.foreground().color()
                             if color.isValid() and color.name().lower() != "#000000":
                                 run.font.color.rgb= RGBColor(color.red(), color.green(), color.blue())
@@ -6397,12 +6837,14 @@ class VisorEditorReportes(QWidget):
 
         documento.save(ruta)
 
+    #Inserta el número de página (campo PAGE, no un valor fijo) centrado
+    #en el pie de página de la primera sección del documento.
     def _agregar_numeracion_paginas_docx(self, documento, docx):
-        """Inserta el número de página (campo PAGE, no un valor fijo) centrado
-        en el pie de página de la primera sección del documento."""
+
         from docx.oxml.ns import qn
         from docx.oxml import OxmlElement
         try:
+
             seccion= documento.sections[0]
             pie= seccion.footer
             pie.is_linked_to_previous= False
@@ -6429,10 +6871,11 @@ class VisorEditorReportes(QWidget):
     #agua                -> se estampa en el .docx al guardar • Combinar con otro PDF        -> insertar contenido
     #de otro documento • Exportar página como imagen  -> exportar la hoja como imagen • Ver texto de la página     
     #-> estadísticas del documento (el contenido ya es texto editable, así que lo útil son las cifras)
+    #Define (o quita) la marca de agua que se estampa al guardar .docx.
     def _word_marca_de_agua(self):
-        """Define (o quita) la marca de agua que se estampa al guardar .docx."""
+
         texto_actual= getattr(self, "_marca_agua_word", None) or ""
-        texto, ok = QInputDialog.getText(
+        texto, ok= QInputDialog.getText(
             self._padre_dialogo(), "Marca de agua",
             "Texto de la marca de agua (déjalo vacío para quitarla):",
             text= texto_actual)
@@ -6447,8 +6890,9 @@ class VisorEditorReportes(QWidget):
                 f"La marca de agua «{texto}» se aplicará en diagonal, detrás del texto, "
                 "cuando guardes el documento (.docx).", self._padre_dialogo())
 
+    #Refleja en el menú si hay una marca de agua pendiente por aplicar.
     def _refrescar_accion_marca_agua_word(self):
-        """Refleja en el menú si hay una marca de agua pendiente por aplicar."""
+
         accion= getattr(self, "_accion_marca_agua_word", None)
         if accion is None:
             return
@@ -6458,10 +6902,11 @@ class VisorEditorReportes(QWidget):
         else:
             accion.setText("Marca de agua…")
 
+    #Versión Word de «Combinar con otro PDF»: agrega al final del
+    #documento el texto de otro archivo (.docx, .txt o .html).
     def _word_insertar_documento_externo(self):
-        """Versión Word de «Combinar con otro PDF»: agrega al final del
-        documento el texto de otro archivo (.docx, .txt o .html)."""
-        ruta, _ = QFileDialog.getOpenFileName(
+
+        ruta, _= QFileDialog.getOpenFileName(
             self._padre_dialogo(), "Insertar contenido de otro documento", "",
             "Documentos (*.docx *.txt *.html *.htm);;Word (*.docx);;"
             "Texto (*.txt);;HTML (*.html *.htm)")
@@ -6470,6 +6915,7 @@ class VisorEditorReportes(QWidget):
         ext= ruta.rsplit(".", 1)[-1].lower()
         texto= ""
         try:
+
             if ext == "docx":
                 docx= self._cargar_docx_lib()
                 if docx is None:
@@ -6507,10 +6953,11 @@ class VisorEditorReportes(QWidget):
                         f"Se insertó el contenido de «{os.path.basename(ruta)}» al final del documento.",
                         self._padre_dialogo())
 
+    #Versión Word de «Exportar página como imagen»: guarda la hoja
+    #del documento (con su formato) como imagen PNG.
     def _word_exportar_imagen(self):
-        """Versión Word de «Exportar página como imagen»: guarda la hoja
-        del documento (con su formato) como imagen PNG."""
-        ruta, _ = QFileDialog.getSaveFileName(
+
+        ruta, _= QFileDialog.getSaveFileName(
             self._padre_dialogo(), "Exportar hoja como imagen", "documento.png",
             "Imagen PNG (*.png)")
         if not ruta:
@@ -6526,9 +6973,10 @@ class VisorEditorReportes(QWidget):
             mostrar_mensaje("error", "No se pudo exportar",
                             "Ocurrió un problema al generar la imagen.", self._padre_dialogo())
 
+    #Versión Word de «Ver texto de la página»: en vez de duplicar el
+    #texto (que aquí ya es editable), muestra las cifras del documento.
     def _word_estadisticas(self):
-        """Versión Word de «Ver texto de la página»: en vez de duplicar el
-        texto (que aquí ya es editable), muestra las cifras del documento."""
+
         documento= self.editor_word.document()
         texto= self.editor_word.toPlainText()
         palabras= len([p for p in texto.split() if p.strip()])
@@ -6550,12 +6998,14 @@ class VisorEditorReportes(QWidget):
             f"Imágenes: {imagenes}",
             self._padre_dialogo())
 
+    #Estampa una marca de agua de texto (diagonal, gris claro, detrás
+    #del contenido) en la cabecera del .docx, igual que la que inserta
+    #Word desde Diseño → Marca de agua. Es un "extra": si la estructura
+    #del documento impide insertarla, no debe impedir guardar el resto.
     def _agregar_marca_agua_docx(self, documento, docx, texto):
-        """Estampa una marca de agua de texto (diagonal, gris claro, detrás
-        del contenido) en la cabecera del .docx, igual que la que inserta
-        Word desde Diseño → Marca de agua. Es un "extra": si la estructura
-        del documento impide insertarla, no debe impedir guardar el resto."""
+
         try:
+
             from docx.oxml.ns import qn
             from docx.oxml import OxmlElement
             from xml.sax.saxutils import escape
@@ -6591,14 +7041,16 @@ class VisorEditorReportes(QWidget):
             pass
 
     def _word_marcar_editado(self):
+
         pass  #(reservado por si en el futuro se quiere marcar "cambios sin guardar")
 
+    #Igual que _pdf_ajustar_zoom_al_ancho: calcula el zoom para que la
+    #página de 816px quepa completa en el ancho disponible del panel, en
+    #vez de arrancar siempre a un 100% fijo que en una ventana angosta
+    #no cabría (apareciendo una barra horizontal en vez de verse
+    #completa y centrada, como pasaba con el 140% fijo del PDF).
     def _word_ajustar_zoom_al_ancho(self):
-        """Igual que _pdf_ajustar_zoom_al_ancho: calcula el zoom para que la
-        página de 816px quepa completa en el ancho disponible del panel, en
-        vez de arrancar siempre a un 100% fijo que en una ventana angosta
-        no cabría (apareciendo una barra horizontal en vez de verse
-        completa y centrada, como pasaba con el 140% fijo del PDF)."""
+
         if self._cerrando:
             return
         ancho_disponible= self._vista_word.viewport().width() - 20
@@ -6612,22 +7064,25 @@ class VisorEditorReportes(QWidget):
         self.in_zoom_word.setText(f"{self._zoom_word}%")
         self.in_zoom_word.blockSignals(False)
 
+    #Si el cursor de texto queda fuera del área visible, desplaza la
+    #vista para seguirlo. QTextEdit ya no puede hacer esto solo -se le
+    #apagó su scroll propio en __init__ porque ahora _vista_word es
+    #quien controla el desplazamiento, igual que scroll_pdf hace con
+    #las páginas del PDF.
     def _word_seguir_cursor(self):
-        """Si el cursor de texto queda fuera del área visible, desplaza la
-        vista para seguirlo. QTextEdit ya no puede hacer esto solo -se le
-        apagó su scroll propio en __init__ porque ahora _vista_word es
-        quien controla el desplazamiento, igual que scroll_pdf hace con
-        las páginas del PDF."""
+
         rect_escena= self._proxy_word.mapRectToScene(QRectF(self.editor_word.cursorRect()))
         self._vista_word.ensureVisible(rect_escena, 20, 40)
 
     #---------------- Imágenes dentro del documento (estilo Word) ----------------
     def _word_insertar_imagen(self):
-        ruta, _ = QFileDialog.getOpenFileName(self._padre_dialogo(), "Insertar imagen", "",
+
+        ruta, _= QFileDialog.getOpenFileName(self._padre_dialogo(), "Insertar imagen", "",
                                               "Imágenes (*.png *.jpg *.jpeg *.bmp *.gif)")
         if not ruta:
             return
         try:
+
             with open(ruta, "rb") as f:
                 datos= f.read()
         except Exception as e:
@@ -6657,9 +7112,10 @@ class VisorEditorReportes(QWidget):
         cursor.insertImage(formato)
         self.editor_word.setTextCursor(cursor)
 
+    #Si `punto` (coordenadas del viewport del editor) cae sobre una
+    #imagen, devuelve un cursor con esa imagen seleccionada; si no, None.
     def _word_cursor_sobre_imagen(self, punto):
-        """Si `punto` (coordenadas del viewport del editor) cae sobre una
-        imagen, devuelve un cursor con esa imagen seleccionada; si no, None."""
+
         base= self.editor_word.cursorForPosition(punto)
         for offset in (0, -1):
             posicion= base.position() + offset
@@ -6673,7 +7129,9 @@ class VisorEditorReportes(QWidget):
         return None
 
     def _word_tamano_natural_imagen(self, nombre_recurso):
+
         try:
+
             recurso= self.editor_word.document().resource(QTextDocument.ResourceType.ImageResource, QUrl(nombre_recurso))
         except Exception:
             recurso= None
@@ -6688,6 +7146,7 @@ class VisorEditorReportes(QWidget):
         return None if imagen.isNull() else imagen.size()
 
     def _word_redimensionar_imagen_en(self, cursor):
+
         formato= cursor.charFormat().toImageFormat()
         tam_natural= self._word_tamano_natural_imagen(formato.name())
         ancho_natural= tam_natural.width() if tam_natural else (formato.width() or 200)
@@ -6696,13 +7155,14 @@ class VisorEditorReportes(QWidget):
                                               ancho_natural, alto_natural, self._padre_dialogo())
         if dialogo.exec() != QDialog.DialogCode.Accepted:
             return
-        ancho, alto = dialogo.valores()
+        ancho, alto= dialogo.valores()
         nuevo= QTextImageFormat(formato)
         nuevo.setWidth(ancho)
         nuevo.setHeight(alto)
         cursor.setCharFormat(nuevo)
 
     def _word_escalar_imagen(self, cursor, factor):
+
         formato= cursor.charFormat().toImageFormat()
         tam_natural= self._word_tamano_natural_imagen(formato.name())
         ancho_base= tam_natural.width() if tam_natural else (formato.width() or 200)
@@ -6713,6 +7173,7 @@ class VisorEditorReportes(QWidget):
         cursor.setCharFormat(nuevo)
 
     def _word_ajustar_imagen_a_pagina(self, cursor):
+
         formato= cursor.charFormat().toImageFormat()
         tam_natural= self._word_tamano_natural_imagen(formato.name())
         ancho_disponible= max(100, self.editor_word.viewport().width() - 80)
@@ -6728,18 +7189,20 @@ class VisorEditorReportes(QWidget):
         cursor.setCharFormat(nuevo)
 
     def _word_eliminar_imagen(self, cursor):
+
         cursor.removeSelectedText()
 
+    #Transparencia REAL (no simulada): a diferencia de la hoja de
+    #Excel -donde la "imagen" es un QWidget aparte y hay que fingir la
+    #opacidad con QGraphicsOpacityEffect-, aquí la imagen es un recurso
+    #QImage embebido en el documento; QTextEdit sí respeta su canal
+    #alfa al dibujarla. Se multiplica el canal alfa de cada píxel por el
+    #porcentaje elegido, se registra el resultado como un recurso NUEVO
+    #(nombre distinto, para no pisar el original por si se quiere
+    #volver a 100%), y se actualiza el formato en esa posición del
+    #cursor para que apunte al nuevo recurso.
     def _word_transparencia_imagen(self, cursor):
-        """Transparencia REAL (no simulada): a diferencia de la hoja de
-        Excel -donde la "imagen" es un QWidget aparte y hay que fingir la
-        opacidad con QGraphicsOpacityEffect-, aquí la imagen es un recurso
-        QImage embebido en el documento; QTextEdit sí respeta su canal
-        alfa al dibujarla. Se multiplica el canal alfa de cada píxel por el
-        porcentaje elegido, se registra el resultado como un recurso NUEVO
-        (nombre distinto, para no pisar el original por si se quiere
-        volver a 100%), y se actualiza el formato en esa posición del
-        cursor para que apunte al nuevo recurso."""
+
         formato= cursor.charFormat().toImageFormat()
         recurso= self.editor_word.document().resource(QTextDocument.ResourceType.ImageResource, QUrl(formato.name()))
         imagen= recurso if isinstance(recurso, QImage) else (recurso.toImage() if isinstance(recurso, QPixmap) else QImage(recurso))
@@ -6768,7 +7231,9 @@ class VisorEditorReportes(QWidget):
         btn_aplicar= QPushButton("Aplicar")
         btn_aplicar.setIcon(icono_emoji("✅"))
         btn_aplicar.setIconSize(_QSize_emoji(16, 16))
-        botones.addStretch(); botones.addWidget(btn_cancelar); botones.addWidget(btn_aplicar)
+        botones.addStretch()
+        botones.addWidget(btn_cancelar)
+        botones.addWidget(btn_aplicar)
         layout.addLayout(botones)
         btn_cancelar.clicked.connect(dialogo.reject)
         btn_aplicar.clicked.connect(dialogo.accept)
@@ -6798,6 +7263,7 @@ class VisorEditorReportes(QWidget):
         cursor.setCharFormat(nuevo)
 
     def _word_menu_contextual(self, punto):
+
         menu= self.editor_word.createStandardContextMenu()
         cursor_img= self._word_cursor_sobre_imagen(punto)
         if cursor_img is not None:
@@ -6825,11 +7291,12 @@ class VisorEditorReportes(QWidget):
             accion_quitar.triggered.connect(lambda: self._word_quitar_enlace(punto))
         menu.exec(self.editor_word.viewport().mapToGlobal(punto))
 
+    #Cursor posicionado sobre el hipervínculo bajo `punto` (o la
+    #posición actual del cursor de edición si no se da ninguno), con la
+    #selección expandida para cubrir el enlace completo. None si no hay
+    #ningún enlace ahí.
     def _word_cursor_sobre_enlace(self, punto=None):
-        """Cursor posicionado sobre el hipervínculo bajo `punto` (o la
-        posición actual del cursor de edición si no se da ninguno), con la
-        selección expandida para cubrir el enlace completo. None si no hay
-        ningún enlace ahí."""
+
         if punto is not None:
             cursor= self.editor_word.cursorForPosition(punto)
         else:
@@ -6862,6 +7329,7 @@ class VisorEditorReportes(QWidget):
         return resultado
 
     def _word_quitar_enlace(self, punto=None):
+
         cursor= self._word_cursor_sobre_enlace(punto)
         if cursor is None:
             return
@@ -6872,11 +7340,12 @@ class VisorEditorReportes(QWidget):
         formato_normal.setFontUnderline(False)
         cursor.mergeCharFormat(formato_normal)
 
+    #Inserta un hipervínculo nuevo en el texto seleccionado (o
+    #pregunta qué texto mostrar si no hay selección), o edita uno ya
+    #existente si el cursor está sobre un enlace -mismo flujo que
+    #Word/Office real (Ctrl+K).
     def _word_insertar_enlace(self, punto=None):
-        """Inserta un hipervínculo nuevo en el texto seleccionado (o
-        pregunta qué texto mostrar si no hay selección), o edita uno ya
-        existente si el cursor está sobre un enlace -mismo flujo que
-        Word/Office real (Ctrl+K)."""
+
         cursor_enlace= self._word_cursor_sobre_enlace(punto)
         if cursor_enlace is not None:
             cursor= cursor_enlace
@@ -6887,13 +7356,13 @@ class VisorEditorReportes(QWidget):
         texto_seleccionado= cursor.selectedText()
 
         if not texto_seleccionado:
-            texto_nuevo, ok = QInputDialog.getText(
+            texto_nuevo, ok= QInputDialog.getText(
                 self._padre_dialogo(), "Insertar hipervínculo", "Texto que se va a mostrar:")
             if not ok or not texto_nuevo.strip():
                 return
             texto_seleccionado= texto_nuevo.strip()
 
-        url, ok = QInputDialog.getText(
+        url, ok= QInputDialog.getText(
             self._padre_dialogo(), "Insertar hipervínculo",
             "Dirección del enlace (URL) -déjalo vacío para quitar el enlace-:", text=url_actual)
         if not ok:
@@ -6932,9 +7401,11 @@ class VisorEditorReportes(QWidget):
         self.editor_word.setTextCursor(cursor)
 
     def _word_formato_actual(self):
+
         return self.editor_word.textCursor().charFormat()
 
     def _word_aplicar_formato(self, formato):
+
         cursor= self.editor_word.textCursor()
         if not cursor.hasSelection():
             cursor.select(QTextCursor.SelectionType.WordUnderCursor)
@@ -6942,21 +7413,25 @@ class VisorEditorReportes(QWidget):
         self.editor_word.mergeCurrentCharFormat(formato)
 
     def _word_alternar_negrita(self, activo):
+
         formato= QTextCharFormat()
         formato.setFontWeight(QFont.Weight.Bold if activo else QFont.Weight.Normal)
         self._word_aplicar_formato(formato)
 
     def _word_alternar_cursiva(self, activo):
+
         formato= QTextCharFormat()
         formato.setFontItalic(activo)
         self._word_aplicar_formato(formato)
 
     def _word_alternar_subrayado(self, activo):
+
         formato= QTextCharFormat()
         formato.setFontUnderline(activo)
         self._word_aplicar_formato(formato)
 
     def _word_elegir_color_texto(self):
+
         color= _elegir_color_con_icono(QColor("#0F172A"), self._padre_dialogo(), "Color del texto")
         if color.isValid():
             formato= QTextCharFormat()
@@ -6964,6 +7439,7 @@ class VisorEditorReportes(QWidget):
             self._word_aplicar_formato(formato)
 
     def _word_elegir_color_resaltado(self):
+
         color= _elegir_color_con_icono(QColor("#FEF08A"), self._padre_dialogo(), "Color de resaltado")
         if color.isValid():
             formato= QTextCharFormat()
@@ -6971,15 +7447,17 @@ class VisorEditorReportes(QWidget):
             self._word_aplicar_formato(formato)
 
     def _word_alinear(self, alineacion):
+
         self.editor_word.setAlignment(alineacion)
 
+    #Acerca/aleja la PÁGINA como tal -no solo el texto-, exactamente
+    #igual que el zoom del PDF: la hoja completa (texto, márgenes, todo)
+    #se agranda o achica como una sola unidad visual, escalando la vista
+    #que envuelve la página (ver _vista_word/_escena_word), en vez de
+    #solo aumentar el tamaño de la fuente. Mismo rango y mismo paso que
+    #el PDF (10%-400%, de 20 en 20).
     def _word_zoom(self, delta_porcentaje):
-        """Acerca/aleja la PÁGINA como tal -no solo el texto-, exactamente
-        igual que el zoom del PDF: la hoja completa (texto, márgenes, todo)
-        se agranda o achica como una sola unidad visual, escalando la vista
-        que envuelve la página (ver _vista_word/_escena_word), en vez de
-        solo aumentar el tamaño de la fuente. Mismo rango y mismo paso que
-        el PDF (10%-400%, de 20 en 20)."""
+
         nuevo= max(10, min(400, self._zoom_word + delta_porcentaje))
         if nuevo == self._zoom_word:
             return
@@ -6991,11 +7469,13 @@ class VisorEditorReportes(QWidget):
         self.in_zoom_word.setText(f"{nuevo}%")
         self.in_zoom_word.blockSignals(False)
 
+    #Aplica el zoom del editor Word desde un texto escrito a mano
+    #(p. ej. '150' o '150%'). Valida el rango y restaura si inválido.
     def _word_zoom_set(self, texto):
-        """Aplica el zoom del editor Word desde un texto escrito a mano
-        (p. ej. '150' o '150%'). Valida el rango y restaura si inválido."""
+
         texto= texto.strip().rstrip("%").strip()
         try:
+
             valor= int(float(texto))
         except (ValueError, TypeError):
             self.in_zoom_word.blockSignals(True)
@@ -7004,12 +7484,13 @@ class VisorEditorReportes(QWidget):
             return
         self._word_zoom(valor - self._zoom_word)
 
+    #Estilo de la página de Word. El escalado por zoom lo hace la
+    #vista que la envuelve (ver _word_zoom), así que aquí el margen de
+    #página es siempre el mismo -al igual que una página de PDF no
+    #redefine sus propios márgenes según el zoom, sino que toda la
+    #imagen se escala junta-.
     def _aplicar_estilo_editor_word(self):
-        """Estilo de la página de Word. El escalado por zoom lo hace la
-        vista que la envuelve (ver _word_zoom), así que aquí el margen de
-        página es siempre el mismo -al igual que una página de PDF no
-        redefine sus propios márgenes según el zoom, sino que toda la
-        imagen se escala junta-."""
+
         c= getattr(self, "_c_tema_editor", None) or _colores_tema(self.main_window)
         self.editor_word.setStyleSheet(f"""
             QTextEdit {{
@@ -7023,18 +7504,21 @@ class VisorEditorReportes(QWidget):
         """)
         self._vista_word.setStyleSheet(_qss_scrollbar_editor(c, "QGraphicsView "))
 
+    #La 'página' de Word crece de alto sola a medida que escribes -ni
+    #más ni menos, como una hoja real que va llenándose-, en vez de
+    #tener scroll propio (el scroll ahora lo maneja _vista_word, igual
+    #que scroll_pdf hace con las páginas del PDF).
     def _word_ajustar_alto_pagina(self):
-        """La 'página' de Word crece de alto sola a medida que escribes -ni
-        más ni menos, como una hoja real que va llenándose-, en vez de
-        tener scroll propio (el scroll ahora lo maneja _vista_word, igual
-        que scroll_pdf hace con las páginas del PDF)."""
+
         alto_contenido= max(1056, int(self.editor_word.document().size().height()) + 4)
         if self.editor_word.height() != alto_contenido:
             self.editor_word.setFixedHeight(alto_contenido)
         self._escena_word.setSceneRect(self._proxy_word.boundingRect())
 
     def _word_cambiar_tamano(self, _indice=None):
+
         try:
+
             tamano= float(self.combo_tamano_word.currentText())
         except ValueError:
             return
@@ -7043,6 +7527,7 @@ class VisorEditorReportes(QWidget):
         self._word_aplicar_formato(formato)
 
     def _word_cambiar_fuente(self, _indice=None):
+
         familia= self.combo_fuente_word.currentText()
         if not familia:
             return
@@ -7051,6 +7536,7 @@ class VisorEditorReportes(QWidget):
         self._word_aplicar_formato(formato)
 
     def _word_aplicar_estilo(self, indice):
+
         tamanos= {0: 11, 1: 20, 2: 16, 3: 13}
         tamano= tamanos.get(indice, 11)
         formato= QTextCharFormat()
@@ -7064,17 +7550,20 @@ class VisorEditorReportes(QWidget):
         self.combo_tamano_word.setCurrentText(str(tamano))
 
     def _word_lista_vinetas(self):
+
         cursor= self.editor_word.textCursor()
         cursor.createList(QTextListFormat.Style.ListDisc)
 
     def _word_lista_numerada(self):
+
         cursor= self.editor_word.textCursor()
         cursor.createList(QTextListFormat.Style.ListDecimal)
 
+    #Refleja en la barra de herramientas (negrita/cursiva/subrayado,
+    #alineación, tamaño) el formato del texto donde está el cursor ahora
+    #mismo, tal como se espera de cualquier editor de texto enriquecido.
     def _word_sincronizar_barra(self):
-        """Refleja en la barra de herramientas (negrita/cursiva/subrayado,
-        alineación, tamaño) el formato del texto donde está el cursor ahora
-        mismo, tal como se espera de cualquier editor de texto enriquecido."""
+
         formato= self._word_formato_actual()
         for boton in (self.btn_negrita_word, self.btn_cursiva_word, self.btn_subrayado_word,
                       self.btn_alinear_izq_word, self.btn_alinear_centro_word,
@@ -7111,6 +7600,7 @@ class VisorEditorReportes(QWidget):
             self.combo_fuente_word.blockSignals(False)
 
     def _word_buscar_siguiente(self):
+
         texto= self.in_buscar_word.text()
         if not texto:
             return
@@ -7124,6 +7614,7 @@ class VisorEditorReportes(QWidget):
                 mostrar_mensaje("info", "Sin resultados", f"No se encontró «{texto}» en el documento.", self._padre_dialogo())
 
     def _word_reemplazar_todo(self):
+
         buscar= self.in_buscar_word.text()
         reemplazo= self.in_reemplazar_word.text()
         if not buscar:
@@ -7147,7 +7638,9 @@ class VisorEditorReportes(QWidget):
 
     #PDF
     def _cargar_fitz(self):
+
         try:
+
             import fitz
             return fitz
         except ImportError:
@@ -7156,11 +7649,13 @@ class VisorEditorReportes(QWidget):
             return None
 
     def _abrir_pdf(self, ruta):
+
         fitz= self._cargar_fitz()
         if fitz is None:
             raise RuntimeError("PyMuPDF no disponible")
         if self._doc_pdf is not None:
             try:
+
                 self._doc_pdf.close()
             except Exception:
                 pass
@@ -7188,20 +7683,21 @@ class VisorEditorReportes(QWidget):
         #mediríamos un ancho incorrecto.
         QTimer.singleShot(0, self._pdf_ajustar_zoom_al_ancho)
 
+    #Renderiza (o vuelve a renderizar, tras un zoom/edición estructural)
+    #el documento completo como una columna de páginas dentro del scroll,
+    #y deja la vista en la página en la que estábamos.
+    #
+    #OPTIMIZACIÓN: para un PDF largo, rasterizar TODAS las páginas de
+    #golpe (una por una, de forma síncrona) podía congelar la app varios
+    #segundos con documentos de decenas de páginas. Ahora se crea de
+    #inmediato un marcador del TAMAÑO correcto para cada página -así el
+    #scroll y el salto a una página funcionan bien desde el primer
+    #instante-, y el contenido real (imagen + texto seleccionable) se
+    #rasteriza en tandas pequeñas con QTimer, cediendo el hilo principal
+    #entre tanda y tanda para que la interfaz no se congele. La página
+    #que se está viendo se prioriza para que aparezca primero.
     def _renderizar_todas_paginas(self):
-        """Renderiza (o vuelve a renderizar, tras un zoom/edición estructural)
-        el documento completo como una columna de páginas dentro del scroll,
-        y deja la vista en la página en la que estábamos.
 
-        OPTIMIZACIÓN: para un PDF largo, rasterizar TODAS las páginas de
-        golpe (una por una, de forma síncrona) podía congelar la app varios
-        segundos con documentos de decenas de páginas. Ahora se crea de
-        inmediato un marcador del TAMAÑO correcto para cada página -así el
-        scroll y el salto a una página funcionan bien desde el primer
-        instante-, y el contenido real (imagen + texto seleccionable) se
-        rasteriza en tandas pequeñas con QTimer, cediendo el hilo principal
-        entre tanda y tanda para que la interfaz no se congele. La página
-        que se está viendo se prioriza para que aparezca primero."""
         self._render_en_progreso= True
         while self._layout_paginas_pdf.count():
             item= self._layout_paginas_pdf.takeAt(0)
@@ -7239,14 +7735,15 @@ class VisorEditorReportes(QWidget):
             self._actualizar_panel_texto_pdf()
         QTimer.singleShot(0, lambda: self._pdf_desplazar_a_pagina(self._indice_pagina_pdf))
 
+    #Rasteriza hasta `tamano_tanda` páginas de la cola pendiente y se
+    #reprograma a sí misma con QTimer.singleShot(0, ...) hasta terminar
+    #-cediendo el control al bucle de eventos entre tanda y tanda para
+    #que la ventana siga respondiendo. `token` evita que una tanda vieja
+    #(de un render que ya se reemplazó, p.ej. cambiaste de página o de
+    #zoom de nuevo antes de terminar) siga escribiendo sobre labels que
+    #ya no corresponden.
     def _continuar_render_pdf_por_tandas(self, token, tamano_tanda=4):
-        """Rasteriza hasta `tamano_tanda` páginas de la cola pendiente y se
-        reprograma a sí misma con QTimer.singleShot(0, ...) hasta terminar
-        -cediendo el control al bucle de eventos entre tanda y tanda para
-        que la ventana siga respondiendo. `token` evita que una tanda vieja
-        (de un render que ya se reemplazó, p.ej. cambiaste de página o de
-        zoom de nuevo antes de terminar) siga escribiendo sobre labels que
-        ya no corresponden."""
+
         if self._cerrando or token != getattr(self, "_token_render_pdf", None) or self._doc_pdf is None:
             return
         import fitz
@@ -7260,16 +7757,19 @@ class VisorEditorReportes(QWidget):
                 continue
             lbl= self._labels_paginas_pdf[i]
             try:
+
                 pagina= self._doc_pdf[i]
                 pix= pagina.get_pixmap(matrix=fitz.Matrix(sx, sx), alpha=False)
                 imagen= QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format.Format_RGB888).copy()
                 try:
+
                     palabras_crudas= pagina.get_text("words")
                 except Exception:
                     palabras_crudas= []
                 lbl.palabras= [(x0 * sx, y0 * sx, x1 * sx, y1 * sx, texto, bloque, linea, num)
                                 for (x0, y0, x1, y1, texto, bloque, linea, num) in palabras_crudas]
                 try:
+
                     enlaces_crudos= pagina.get_links()
                 except Exception:
                     enlaces_crudos= []
@@ -7295,11 +7795,12 @@ class VisorEditorReportes(QWidget):
         else:
             self._render_en_progreso= False
 
+    #Copia al portapapeles el texto seleccionado (arrastrando el mouse)
+    #en la página actualmente visible -equivalente en botón, para quien
+    #prefiera no usar el clic derecho, a lo que ya hace soltar el mouse
+    #sobre una selección.
     def _pdf_copiar_seleccion(self):
-        """Copia al portapapeles el texto seleccionado (arrastrando el mouse)
-        en la página actualmente visible -equivalente en botón, para quien
-        prefiera no usar el clic derecho, a lo que ya hace soltar el mouse
-        sobre una selección."""
+
         if not self._labels_paginas_pdf or not (0 <= self._indice_pagina_pdf < len(self._labels_paginas_pdf)):
             return
         lbl= self._labels_paginas_pdf[self._indice_pagina_pdf]
@@ -7312,13 +7813,14 @@ class VisorEditorReportes(QWidget):
         QApplication.clipboard().setText(texto)
         mostrar_mensaje("exito", "Copiado", "El texto seleccionado se copió al portapapeles.", self._padre_dialogo())
 
+    #Convierte el texto seleccionado (arrastrando el mouse sobre la
+    #página, igual que para copiar) en un hipervínculo real del PDF: el
+    #rectángulo de selección -en píxeles de la página YA renderizada al
+    #zoom actual- se convierte de vuelta a coordenadas de PDF (puntos,
+    #dividiendo por el mismo factor de zoom con el que se dibujó) y se
+    #inserta ahí un enlace con PyMuPDF.
     def _pdf_insertar_enlace(self):
-        """Convierte el texto seleccionado (arrastrando el mouse sobre la
-        página, igual que para copiar) en un hipervínculo real del PDF: el
-        rectángulo de selección -en píxeles de la página YA renderizada al
-        zoom actual- se convierte de vuelta a coordenadas de PDF (puntos,
-        dividiendo por el mismo factor de zoom con el que se dibujó) y se
-        inserta ahí un enlace con PyMuPDF."""
+
         if not self._pdf_listo():
             return
         if not self._labels_paginas_pdf or not (0 <= self._indice_pagina_pdf < len(self._labels_paginas_pdf)):
@@ -7330,7 +7832,7 @@ class VisorEditorReportes(QWidget):
                            "Primero arrastra el mouse sobre el texto o la zona de la página que "
                            "quieres convertir en enlace.", self._padre_dialogo())
             return
-        url, ok = QInputDialog.getText(self._padre_dialogo(), "Insertar hipervínculo",
+        url, ok= QInputDialog.getText(self._padre_dialogo(), "Insertar hipervínculo",
                                        "Dirección del enlace (URL):")
         if not ok or not url.strip():
             return
@@ -7355,19 +7857,21 @@ class VisorEditorReportes(QWidget):
         self._renderizar_todas_paginas()
         mostrar_mensaje("exito", "Enlace insertado", "El hipervínculo se agregó a la página.", self._padre_dialogo())
 
+    #Mueve la barra de scroll hasta el inicio de la página `indice`
+    #(esto es lo que hacen ⏮/◀/▶/⏭ y el spinbox: ya no hace falta un
+    #re-render, solo desplazar la vista continua).
     def _pdf_desplazar_a_pagina(self, indice):
-        """Mueve la barra de scroll hasta el inicio de la página `indice`
-        (esto es lo que hacen ⏮/◀/▶/⏭ y el spinbox: ya no hace falta un
-        re-render, solo desplazar la vista continua)."""
+
         if self._cerrando or not self._labels_paginas_pdf or not (0 <= indice < len(self._labels_paginas_pdf)):
             return
         lbl= self._labels_paginas_pdf[indice]
         self.scroll_pdf.verticalScrollBar().setValue(lbl.geometry().y())
 
+    #Detecta, según la posición del scroll, qué página está centrada en
+    #la vista -esto es lo que permite «pasar de página» simplemente
+    #deslizando la barra o con la rueda del ratón, sin usar los botones.
     def _pdf_pagina_por_scroll(self, valor):
-        """Detecta, según la posición del scroll, qué página está centrada en
-        la vista -esto es lo que permite «pasar de página» simplemente
-        deslizando la barra o con la rueda del ratón, sin usar los botones."""
+
         if self._render_en_progreso or not self._labels_paginas_pdf:
             return
         centro= valor + self.scroll_pdf.viewport().height() / 2
@@ -7387,13 +7891,15 @@ class VisorEditorReportes(QWidget):
                 pagina= self._doc_pdf[nueva]
                 self.panel_texto_pdf.setPlainText(pagina.get_text() or "(Esta página no contiene texto extraíble.)")
 
+    #Actualiza el panel lateral de texto extraíble con el contenido
+    #de la página actual. Solo hace algo si el panel está visible y hay
+    #un documento PDF abierto.
     def _actualizar_panel_texto_pdf(self):
-        """Actualiza el panel lateral de texto extraíble con el contenido
-        de la página actual. Solo hace algo si el panel está visible y hay
-        un documento PDF abierto."""
+
         if self._doc_pdf is None or not self.panel_texto_pdf.isVisible():
             return
         try:
+
             pagina= self._doc_pdf[self._indice_pagina_pdf]
             self.panel_texto_pdf.setPlainText(
                 pagina.get_text() or "(Esta página no contiene texto extraíble.)"
@@ -7402,12 +7908,14 @@ class VisorEditorReportes(QWidget):
             pass
 
     def _pdf_listo(self):
+
         if self._doc_pdf is None:
             mostrar_mensaje("advertencia", "Sin PDF abierto", "Abre primero un archivo PDF.", self._padre_dialogo())
             return False
         return True
 
     def _pdf_primera(self):
+
         if not self._pdf_listo():
             return
         self._indice_pagina_pdf= 0
@@ -7417,6 +7925,7 @@ class VisorEditorReportes(QWidget):
         self._pdf_desplazar_a_pagina(0)
 
     def _pdf_ultima(self):
+
         if not self._pdf_listo():
             return
         self._indice_pagina_pdf= len(self._doc_pdf) - 1
@@ -7426,6 +7935,7 @@ class VisorEditorReportes(QWidget):
         self._pdf_desplazar_a_pagina(self._indice_pagina_pdf)
 
     def _pdf_anterior(self):
+
         if not self._pdf_listo():
             return
         if self._indice_pagina_pdf > 0:
@@ -7436,6 +7946,7 @@ class VisorEditorReportes(QWidget):
             self._pdf_desplazar_a_pagina(self._indice_pagina_pdf)
 
     def _pdf_siguiente(self):
+
         if not self._pdf_listo():
             return
         if self._indice_pagina_pdf < len(self._doc_pdf) - 1:
@@ -7446,6 +7957,7 @@ class VisorEditorReportes(QWidget):
             self._pdf_desplazar_a_pagina(self._indice_pagina_pdf)
 
     def _pdf_ir_a_pagina(self, numero):
+
         if self._doc_pdf is None:
             return
         objetivo= numero - 1
@@ -7454,6 +7966,7 @@ class VisorEditorReportes(QWidget):
             self._pdf_desplazar_a_pagina(objetivo)
 
     def _pdf_zoom(self, delta):
+
         if not self._pdf_listo():
             return
         self._zoom_pdf= max(0.1, min(4.0, self._zoom_pdf + delta))
@@ -7462,11 +7975,13 @@ class VisorEditorReportes(QWidget):
         self.in_zoom_pdf.blockSignals(False)
         self._renderizar_todas_paginas()
 
+    #Aplica el zoom del PDF desde un texto escrito a mano
+    #(p. ej. '200' o '200%'). Rango 10–400. Restaura si inválido.
     def _pdf_zoom_set(self, texto):
-        """Aplica el zoom del PDF desde un texto escrito a mano
-        (p. ej. '200' o '200%'). Rango 10–400. Restaura si inválido."""
+
         texto= texto.strip().rstrip("%").strip()
         try:
+
             valor= int(float(texto))
         except (ValueError, TypeError):
             self.in_zoom_pdf.blockSignals(True)
@@ -7487,13 +8002,14 @@ class VisorEditorReportes(QWidget):
         if self._pdf_listo():
             self._renderizar_todas_paginas()
 
+    #Calcula el zoom para que la página quepa exactamente en el ancho
+    #disponible del panel -así el documento se ve completo y centrado de
+    #verdad al abrirlo, sin importar el tamaño de la ventana ni el de la
+    #página (antes, con el 140% fijo, una página tamaño carta en una
+    #ventana normal no cabía: aparecía una barra horizontal y la página
+    #quedaba pegada a la izquierda en vez de centrada).
     def _pdf_ajustar_zoom_al_ancho(self):
-        """Calcula el zoom para que la página quepa exactamente en el ancho
-        disponible del panel -así el documento se ve completo y centrado de
-        verdad al abrirlo, sin importar el tamaño de la ventana ni el de la
-        página (antes, con el 140% fijo, una página tamaño carta en una
-        ventana normal no cabía: aparecía una barra horizontal y la página
-        quedaba pegada a la izquierda en vez de centrada)."""
+
         if self._cerrando or not self._pdf_listo():
             return
         ancho_disponible= self.scroll_pdf.viewport().width() - 20  #los 10px de margen de cada lado
@@ -7515,6 +8031,7 @@ class VisorEditorReportes(QWidget):
     LIMITE_DESHACER_PDF= 20
 
     def _registrar_deshacer_pdf(self):
+
         if self._doc_pdf is None:
             return
         self._pila_deshacer_pdf.append((self._doc_pdf.tobytes(), self._indice_pagina_pdf))
@@ -7524,8 +8041,9 @@ class VisorEditorReportes(QWidget):
         self._actualizar_botones_deshacer()
 
     def _restaurar_snapshot_pdf(self, snap):
+
         import fitz
-        datos, indice_pagina = snap
+        datos, indice_pagina= snap
         self._doc_pdf.close()
         self._doc_pdf= fitz.open(stream=datos, filetype="pdf")
         self._indice_pagina_pdf= min(indice_pagina, len(self._doc_pdf) - 1)
@@ -7537,6 +8055,7 @@ class VisorEditorReportes(QWidget):
         self._renderizar_todas_paginas()
 
     def _deshacer_pdf(self):
+
         if not self._pila_deshacer_pdf or self._doc_pdf is None:
             return
         self._pila_rehacer_pdf.append((self._doc_pdf.tobytes(), self._indice_pagina_pdf))
@@ -7544,6 +8063,7 @@ class VisorEditorReportes(QWidget):
         self._actualizar_botones_deshacer()
 
     def _rehacer_pdf(self):
+
         if not self._pila_rehacer_pdf or self._doc_pdf is None:
             return
         self._pila_deshacer_pdf.append((self._doc_pdf.tobytes(), self._indice_pagina_pdf))
@@ -7551,6 +8071,7 @@ class VisorEditorReportes(QWidget):
         self._actualizar_botones_deshacer()
 
     def _pdf_rotar(self):
+
         if not self._pdf_listo():
             return
         self._registrar_deshacer_pdf()
@@ -7559,6 +8080,7 @@ class VisorEditorReportes(QWidget):
         self._renderizar_todas_paginas()
 
     def _pdf_eliminar_pagina(self):
+
         if not self._pdf_listo():
             return
         if len(self._doc_pdf) <= 1:
@@ -7577,6 +8099,7 @@ class VisorEditorReportes(QWidget):
         self._renderizar_todas_paginas()
 
     def _pdf_insertar_pagina(self):
+
         if not self._pdf_listo():
             return
         self._registrar_deshacer_pdf()
@@ -7594,6 +8117,7 @@ class VisorEditorReportes(QWidget):
         self._renderizar_todas_paginas()
 
     def _pdf_mover_arriba(self):
+
         if not self._pdf_listo() or self._indice_pagina_pdf == 0:
             return
         self._registrar_deshacer_pdf()
@@ -7602,6 +8126,7 @@ class VisorEditorReportes(QWidget):
         self._renderizar_todas_paginas()
 
     def _pdf_mover_abajo(self):
+
         if not self._pdf_listo() or self._indice_pagina_pdf >= len(self._doc_pdf) - 1:
             return
         self._registrar_deshacer_pdf()
@@ -7610,22 +8135,24 @@ class VisorEditorReportes(QWidget):
         self._renderizar_todas_paginas()
 
     def _pdf_alternar_panel_texto(self, visible):
+
         self.panel_texto_pdf.setVisible(visible)
         self.btn_copiar_texto_pdf.setVisible(visible)
         if visible and self._doc_pdf is not None:
             pagina= self._doc_pdf[self._indice_pagina_pdf]
             self.panel_texto_pdf.setPlainText(pagina.get_text() or "(Esta página no contiene texto extraíble.)")
 
+    #Escribe texto con formato (negrita/cursiva/fuente/tamaño/color/
+    #alineación) en una página -SOLO si es una página en blanco que el
+    #propio usuario insertó con "➕ Insertar" (o cualquier página que ya
+    #esté vacía de por sí). No se permite "editar" una página que ya
+    #traía contenido del PDF original: no existe forma de reescribirla
+    #conservando el diseño exacto, y hacerlo igual -como pasaba antes-
+    #significaba borrar/estropear esa página. Para páginas con
+    #contenido, se puede usar en su lugar la selección/copia de texto
+    #(arrastrando el mouse) o insertar una marca de agua/anotación.
     def _pdf_editar_pagina_actual(self):
-        """Escribe texto con formato (negrita/cursiva/fuente/tamaño/color/
-        alineación) en una página -SOLO si es una página en blanco que el
-        propio usuario insertó con "➕ Insertar" (o cualquier página que ya
-        esté vacía de por sí). No se permite "editar" una página que ya
-        traía contenido del PDF original: no existe forma de reescribirla
-        conservando el diseño exacto, y hacerlo igual -como pasaba antes-
-        significaba borrar/estropear esa página. Para páginas con
-        contenido, se puede usar en su lugar la selección/copia de texto
-        (arrastrando el mouse) o insertar una marca de agua/anotación."""
+
         if not self._pdf_listo():
             return
         pagina= self._doc_pdf[self._indice_pagina_pdf]
@@ -7657,11 +8184,13 @@ class VisorEditorReportes(QWidget):
             #página-. Se borra primero el contenido previo (una redacción sin texto de reemplazo) antes de escribir el
             #texto actualizado.
             try:
+
                 pagina.add_redact_annot(area)
                 pagina.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
             except Exception:
                 pass
         try:
+
             pagina.insert_htmlbox(area, html, overlay=True)
         except Exception as e:
             mostrar_mensaje("error", "No se pudo aplicar", f"No se pudo escribir el contenido en la página: {e}",
@@ -7672,6 +8201,7 @@ class VisorEditorReportes(QWidget):
         mostrar_mensaje("exito", "Página actualizada", "Se aplicó el contenido a la página.", self._padre_dialogo())
 
     def _pdf_marca_de_agua(self):
+
         if not self._pdf_listo():
             return
         dialogo= _DialogoMarcaDeAgua(self._padre_dialogo())
@@ -7691,14 +8221,16 @@ class VisorEditorReportes(QWidget):
                        "Recuerda usar «Guardar» o «Guardar como…» para conservar el cambio.", self._padre_dialogo())
 
     def _pdf_combinar(self):
+
         if not self._pdf_listo():
             return
-        ruta, _ = QFileDialog.getOpenFileName(self._padre_dialogo(), "Combinar con otro PDF", "", "PDF (*.pdf)")
+        ruta, _= QFileDialog.getOpenFileName(self._padre_dialogo(), "Combinar con otro PDF", "", "PDF (*.pdf)")
         if not ruta:
             return
         self._registrar_deshacer_pdf()
         import fitz
         try:
+
             otro= fitz.open(ruta)
             self._doc_pdf.insert_pdf(otro)
             otro.close()
@@ -7714,9 +8246,10 @@ class VisorEditorReportes(QWidget):
                        "Recuerda guardar para conservar el cambio.", self._padre_dialogo())
 
     def _pdf_exportar_imagen(self):
+
         if not self._pdf_listo():
             return
-        ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar página como imagen",
+        ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar página como imagen",
                                               f"pagina_{self._indice_pagina_pdf + 1}.png", "PNG (*.png)")
         if not ruta:
             return
@@ -7727,9 +8260,11 @@ class VisorEditorReportes(QWidget):
         mostrar_mensaje("exito", "Imagen exportada", f"Página exportada en:\n{ruta}", self._padre_dialogo())
 
     def _guardar_pdf(self, ruta, es_nuevo_archivo=False):
+
         if self._doc_pdf is None:
             return
         try:
+
             if es_nuevo_archivo:
                 self._doc_pdf.save(ruta, garbage=4, deflate=True)
             else:
@@ -7753,9 +8288,10 @@ class VisorEditorReportes(QWidget):
         mostrar_mensaje("exito", "Guardado", f"Los cambios se guardaron en:\n{ruta}", self._padre_dialogo())
 
     def _pdf_exportar_texto(self):
+
         if not self._pdf_listo():
             return
-        ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar texto de la página",
+        ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar texto de la página",
                                               f"pagina_{self._indice_pagina_pdf + 1}.txt", "Texto (*.txt)")
         if not ruta:
             return
@@ -7766,9 +8302,11 @@ class VisorEditorReportes(QWidget):
 
     #IMPRESIÓN (directamente desde el editor, sin exportar antes)
     def _imprimir(self):
+
         if self.tipo_actual is None:
             return
         try:
+
             from PySide6.QtPrintSupport import QPrinter, QPrintDialog
         except ImportError:
             mostrar_mensaje("error", "Impresión no disponible",
@@ -7780,11 +8318,13 @@ class VisorEditorReportes(QWidget):
         if dialogo.exec() != QDialog.DialogCode.Accepted:
             return
         try:
+
             self._renderizar_para_impresion(printer)
         except Exception as e:
             mostrar_mensaje("error", "No se pudo imprimir", str(e), self._padre_dialogo())
 
     def _renderizar_para_impresion(self, printer):
+
         if self.tipo_actual == "docx":
             self.editor_word.document().print_(printer)
         elif self.tipo_actual == "pdf":
@@ -7793,6 +8333,7 @@ class VisorEditorReportes(QWidget):
             self._imprimir_tabla_en(printer)
 
     def _tabla_a_html(self):
+
         filas= self.tabla_editor.rowCount()
         cols= self.tabla_editor.columnCount()
         partes= ["<html><body><table border='1' cellspacing='0' cellpadding='5' "
@@ -7811,11 +8352,13 @@ class VisorEditorReportes(QWidget):
         return "".join(partes)
 
     def _imprimir_tabla_en(self, printer):
+
         doc= QTextDocument()
         doc.setHtml(self._tabla_a_html())
         doc.print_(printer)
 
     def _imprimir_pdf_en(self, printer):
+
         if self._doc_pdf is None:
             return
         import fitz
@@ -7828,7 +8371,7 @@ class VisorEditorReportes(QWidget):
             pix= pagina.get_pixmap(matrix=fitz.Matrix(2.5, 2.5), alpha=False)
             imagen= QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format.Format_RGB888).copy()
             escala= min(rect_pagina.width() / imagen.width(), rect_pagina.height() / imagen.height())
-            ancho, alto = imagen.width() * escala, imagen.height() * escala
+            ancho, alto= imagen.width() * escala, imagen.height() * escala
             x= rect_pagina.x() + (rect_pagina.width() - ancho) / 2
             y= rect_pagina.y() + (rect_pagina.height() - alto) / 2
             painter.drawImage(QRectF(x, y, ancho, alto), imagen)
@@ -7836,6 +8379,7 @@ class VisorEditorReportes(QWidget):
 
     #Exportar a otros formatos
     def _actualizar_menu_exportar(self):
+
         self.menu_exportar.clear()
         opciones= []
         if self.tipo_actual == "csv":
@@ -7855,7 +8399,9 @@ class VisorEditorReportes(QWidget):
         self.btn_exportar.setEnabled(bool(opciones))
 
     def _exportar(self, formato):
+
         try:
+
             if self.tipo_actual in ("csv", "xlsx"):
                 self._exportar_desde_hoja(formato)
             elif self.tipo_actual == "docx":
@@ -7869,9 +8415,10 @@ class VisorEditorReportes(QWidget):
             mostrar_mensaje("error", "No se pudo exportar", str(e), self._padre_dialogo())
 
     def _exportar_desde_hoja(self, formato):
+
         nombre_base= os.path.splitext(os.path.basename(self.ruta_actual or "reporte"))[0]
         if formato == "csv":
-            ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a CSV", f"{nombre_base}.csv", "CSV (*.csv)")
+            ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a CSV", f"{nombre_base}.csv", "CSV (*.csv)")
             if not ruta:
                 return
             self._guardar_csv(ruta)
@@ -7880,7 +8427,7 @@ class VisorEditorReportes(QWidget):
             openpyxl= self._cargar_openpyxl()
             if openpyxl is None:
                 return
-            ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a Excel", f"{nombre_base}.xlsx", "Excel (*.xlsx)")
+            ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a Excel", f"{nombre_base}.xlsx", "Excel (*.xlsx)")
             if not ruta:
                 return
             #Extraer datos de la grilla en el hilo principal (toca widgets Qt), luego wb.save() en hilo secundario (I/O
@@ -7893,12 +8440,13 @@ class VisorEditorReportes(QWidget):
                     if isinstance(crudo, str) and crudo.strip().startswith("=") and len(crudo.strip()) > 1:
                         fila_valores.append(crudo.strip())
                     else:
-                        valor, _formato = _analizar_crudo(crudo)
+                        valor, _formato= _analizar_crudo(crudo)
                         fila_valores.append(valor)
                 hoja.append(fila_valores)
             if WorkerHilo is not None:
                 QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
                 def _xlsx_io():
+
                     wb.save(ruta)
                 self._hilo_exportar_xlsx= WorkerHilo(_xlsx_io)
                 self._hilo_exportar_xlsx.terminado.connect(lambda _: (
@@ -7914,7 +8462,7 @@ class VisorEditorReportes(QWidget):
                 wb.save(ruta)
                 mostrar_mensaje("exito", "Exportado", "El archivo se exportó correctamente.", self._padre_dialogo())
         elif formato == "pdf":
-            ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a PDF", f"{nombre_base}.pdf", "PDF (*.pdf)")
+            ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a PDF", f"{nombre_base}.pdf", "PDF (*.pdf)")
             if not ruta:
                 return
             #_exportar_html_a_pdf ya es asíncrono (emite su propio toast al terminar)
@@ -7923,7 +8471,7 @@ class VisorEditorReportes(QWidget):
             docx= self._cargar_docx_lib()
             if docx is None:
                 return
-            ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a Word", f"{nombre_base}.docx", "Word (*.docx)")
+            ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a Word", f"{nombre_base}.docx", "Word (*.docx)")
             if not ruta:
                 return
             #Construir documento en hilo principal (accede a datos de tabla),
@@ -7944,6 +8492,7 @@ class VisorEditorReportes(QWidget):
             if WorkerHilo is not None:
                 QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
                 def _docx_io():
+
                     documento.save(ruta)
                 self._hilo_exportar_docx= WorkerHilo(_docx_io)
                 self._hilo_exportar_docx.terminado.connect(lambda _: (
@@ -7962,15 +8511,16 @@ class VisorEditorReportes(QWidget):
             return
 
     def _exportar_desde_docx(self, formato):
+
         nombre_base= os.path.splitext(os.path.basename(self.ruta_actual or "documento"))[0]
         if formato == "pdf":
-            ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a PDF", f"{nombre_base}.pdf", "PDF (*.pdf)")
+            ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a PDF", f"{nombre_base}.pdf", "PDF (*.pdf)")
             if not ruta:
                 return
             html= self.editor_word.toHtml()   #leer HTML en hilo principal
             self._exportar_html_a_pdf(html, ruta)
         elif formato == "xml":
-            ruta, _ = QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a XML", f"{nombre_base}.xml", "XML (*.xml)")
+            ruta, _= QFileDialog.getSaveFileName(self._padre_dialogo(), "Exportar a XML", f"{nombre_base}.xml", "XML (*.xml)")
             if not ruta:
                 return
             import tempfile, zipfile
@@ -7985,18 +8535,20 @@ class VisorEditorReportes(QWidget):
             return
         mostrar_mensaje("exito", "Exportado", "El archivo se exportó correctamente.", self._padre_dialogo())
 
+    #Genera un PDF a partir de HTML (usado tanto para exportar la hoja
+    #de cálculo como para exportar el documento Word) usando el propio
+    #motor de impresión de Qt.
+    #QPrinter + QTextDocument + doc.print_() son seguros en hilo
+    #secundario porque no hacen paint en pantalla: solo escriben al
+    #archivo de salida. Se ejecutan en un WorkerHilo para no bloquear
+    #la UI durante la impresión (puede tardar varios segundos en
+    #documentos grandes).
     def _exportar_html_a_pdf(self, html, ruta):
-        """Genera un PDF a partir de HTML (usado tanto para exportar la hoja
-        de cálculo como para exportar el documento Word) usando el propio
-        motor de impresión de Qt.
-        QPrinter + QTextDocument + doc.print_() son seguros en hilo
-        secundario porque no hacen paint en pantalla: solo escriben al
-        archivo de salida. Se ejecutan en un WorkerHilo para no bloquear
-        la UI durante la impresión (puede tardar varios segundos en
-        documentos grandes)."""
+
         if WorkerHilo is not None:
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             def _tarea_pdf():
+
                 from PySide6.QtPrintSupport import QPrinter
                 printer= QPrinter(QPrinter.PrinterMode.HighResolution)
                 printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat)

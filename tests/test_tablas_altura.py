@@ -1,5 +1,5 @@
-"""Regla: ninguna tabla de la app (salvo el editor de reportes) puede tener un tope
-de altura fijo, y toda tabla que se añade a un layout debe poder estirarse."""
+#Regla: ninguna tabla de la app (salvo el editor de reportes) puede tener un tope
+#de altura fijo, y toda tabla que se añade a un layout debe poder estirarse.
 import re
 from pathlib import Path
 
@@ -8,6 +8,7 @@ ARCHIVOS= [p for p in (RAIZ / "src").rglob("*.py")
             if p.name not in ("reportes_editor.py", "paginacion.py")]
 
 def test_sin_topes_de_altura_en_tablas():
+
     malos= []
     for p in ARCHIVOS:
         for i, linea in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
@@ -16,6 +17,7 @@ def test_sin_topes_de_altura_en_tablas():
     assert not malos, "topes de altura en tablas: " + ", ".join(malos)
 
 def test_tablas_se_añaden_con_estiramiento():
+
     malos= []
     for p in ARCHIVOS:
         for i, linea in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):

@@ -1,9 +1,8 @@
-"""Utilidades compartidas para el manejo de fotografías en AcaDeXI:
-- VisorFotoDialog: muestra la foto ampliada en una ventana emergente.
-- DialogoRecorteFoto: permite seleccionar y recortar una región de la imagen antes de guardarla.
-- seleccionar_y_recortar_foto(): flujo completo (elegir archivo -> recortar -> guardar) reutilizable
-  desde cualquier módulo (Estudiantes, Configuración/Logotipo, etc.).
-"""
+#Utilidades compartidas para el manejo de fotografías en AcaDeXI:
+#- VisorFotoDialog: muestra la foto ampliada en una ventana emergente.
+#- DialogoRecorteFoto: permite seleccionar y recortar una región de la imagen antes de guardarla.
+#- seleccionar_y_recortar_foto(): flujo completo (elegir archivo -> recortar -> guardar) reutilizable
+#desde cualquier módulo (Estudiantes, Configuración/Logotipo, etc.).
 import os
 import uuid
 
@@ -17,10 +16,11 @@ from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
 
 
+#Ventana emergente que muestra una fotografía ampliada.
 class VisorFotoDialog(QDialog):
-    """Ventana emergente que muestra una fotografía ampliada."""
 
     def __init__(self, ruta_imagen, parent=None, titulo="Fotografía"):
+
         super().__init__(parent)
         self.setWindowTitle(titulo)
         aplicar_icono_ventana(self, ICONO_RECORTE)
@@ -49,13 +49,14 @@ class VisorFotoDialog(QDialog):
         centrar_y_al_frente(self, parent)
 
 
+#Permite seleccionar (arrastrando el mouse) una región rectangular de la imagen
+#y devuelve la imagen recortada en self.imagen_recortada (QImage) si se acepta.
 class DialogoRecorteFoto(QDialog):
-    """Permite seleccionar (arrastrando el mouse) una región rectangular de la imagen
-    y devuelve la imagen recortada en self.imagen_recortada (QImage) si se acepta."""
 
     LADO_MAXIMO= 480
 
     def __init__(self, ruta_imagen, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Recortar Fotografía")
         aplicar_icono_ventana(self, ICONO_RECORTE)
@@ -114,10 +115,12 @@ class DialogoRecorteFoto(QDialog):
         centrar_y_al_frente(self, parent)
 
     def _quitar_seleccion(self):
+
         self._rect_seleccion= QRect()
         self.rubber_band.hide()
 
     def eventFilter(self, obj, event):
+
         if obj is self.lbl_imagen:
             if event.type() == event.Type.MouseButtonPress:
                 self.origen_seleccion= event.position().toPoint() if hasattr(event, "position") else event.pos()
@@ -134,6 +137,7 @@ class DialogoRecorteFoto(QDialog):
         return super().eventFilter(obj, event)
 
     def _confirmar(self):
+
         if self._rect_seleccion.isValid() and self._rect_seleccion.width() > 10 and self._rect_seleccion.height() > 10:
             factor_x= self.imagen_original.width() / self.pixmap_mostrado.width()
             factor_y= self.imagen_original.height() / self.pixmap_mostrado.height()
@@ -153,15 +157,17 @@ class DialogoRecorteFoto(QDialog):
         self.accept()
 
 
+#Flujo completo: abre selector de archivo -> diálogo de recorte -> guarda en carpeta_destino.
+#Devuelve la ruta del archivo guardado, o None si el usuario cancela.
 def seleccionar_y_recortar_foto(parent, carpeta_destino, prefijo="foto"):
-    """Flujo completo: abre selector de archivo -> diálogo de recorte -> guarda en carpeta_destino.
-    Devuelve la ruta del archivo guardado, o None si el usuario cancela."""
-    ruta_origen, _ = QFileDialog.getOpenFileName(
+
+    ruta_origen, _= QFileDialog.getOpenFileName(
         parent, "Seleccionar Fotografía", "", "Imágenes (*.png *.jpg *.jpeg *.bmp)")
     if not ruta_origen:
         return None
 
     try:
+
         dialogo= DialogoRecorteFoto(ruta_origen, parent)
         if dialogo.exec() != QDialog.DialogCode.Accepted:
             return None

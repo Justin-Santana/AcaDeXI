@@ -82,13 +82,14 @@ _cache_fabricas_modulos= {}
 _cache_fabricas_modulos_single_teacher= {}
 
 
+#Resuelve y memoriza la clase de una página de navegación. Ramifica
+#por edición ANTES que nada: "Configuración" es la única excepción
+#compartida por full/docentes/side_stepper (usa siempre
+#ModuloConfiguracion institucional), pero Single Teacher tiene su propia
+#"Configuración" también -así que ese caso especial se resuelve primero
+#dentro de la rama single_teacher, no fuera de ella.
 def _obtener_fabrica_modulo(nombre):
-    """Resuelve y memoriza la clase de una página de navegación. Ramifica
-    por edición ANTES que nada: "Configuración" es la única excepción
-    compartida por full/docentes/side_stepper (usa siempre
-    ModuloConfiguracion institucional), pero Single Teacher tiene su propia
-    "Configuración" también -así que ese caso especial se resuelve primero
-    dentro de la rama single_teacher, no fuera de ella."""
+
     if edicion_actual() == "single_teacher":
         fabrica= _cache_fabricas_modulos_single_teacher.get(nombre)
         if fabrica is not None:
@@ -96,7 +97,7 @@ def _obtener_fabrica_modulo(nombre):
         especificacion= _FABRICAS_MODULOS_SINGLE_TEACHER.get(nombre)
         if especificacion is None:
             return None
-        modulo, clase = especificacion
+        modulo, clase= especificacion
         fabrica= getattr(import_module(modulo), clase)
         _cache_fabricas_modulos_single_teacher[nombre]= fabrica
         return fabrica
@@ -108,7 +109,7 @@ def _obtener_fabrica_modulo(nombre):
     especificacion= _FABRICAS_MODULOS.get(nombre)
     if especificacion is None:
         return None
-    modulo, clase = especificacion
+    modulo, clase= especificacion
     fabrica= getattr(import_module(modulo), clase)
     _cache_fabricas_modulos[nombre]= fabrica
     return fabrica
@@ -129,10 +130,11 @@ def _obtener_fabrica_modulo(nombre):
 _ID_INSTANCIA_UNICA= "AcaDeXI-instancia-unica-a3f9c2"
 
 
+#Garantiza que solo haya un proceso de AcaDeXI corriendo a la vez.
 class GuardaInstanciaUnica:
-    """Garantiza que solo haya un proceso de AcaDeXI corriendo a la vez."""
 
     def __init__(self):
+
         self.shared_memory= QSharedMemory(_ID_INSTANCIA_UNICA)
         self.local_server= None
         self._on_segunda_instancia= None
@@ -146,9 +148,10 @@ class GuardaInstanciaUnica:
 
         self.es_primera_instancia= self.shared_memory.create(1)
 
+    #Le pide a la instancia ya corriendo que se restaure. Devuelve
+    #True si logró contactarla.
     def avisar_instancia_existente(self):
-        """Le pide a la instancia ya corriendo que se restaure. Devuelve
-        True si logró contactarla."""
+
         socket= QLocalSocket()
         socket.connectToServer(_ID_INSTANCIA_UNICA)
         conectado= socket.waitForConnected(500)
@@ -158,10 +161,11 @@ class GuardaInstanciaUnica:
             socket.disconnectFromServer()
         return conectado
 
+    #Levanta un servidor local para que, si alguien más intenta
+    #abrir la app, esta instancia (la única viva) reciba el aviso y
+    #se restaure en primer plano.
     def escuchar_segundas_instancias(self, callback_restaurar):
-        """Levanta un servidor local para que, si alguien más intenta
-        abrir la app, esta instancia (la única viva) reciba el aviso y
-        se restaure en primer plano."""
+
         self._on_segunda_instancia= callback_restaurar
         #Por si quedó un servidor huérfano de una ejecución anterior que terminó mal (crash) sin poder cerrarlo
         #correctamente.
@@ -171,6 +175,7 @@ class GuardaInstanciaUnica:
         self.local_server.listen(_ID_INSTANCIA_UNICA)
 
     def _manejar_conexion(self):
+
         socket= self.local_server.nextPendingConnection()
         if socket is None:
             return
@@ -178,21 +183,24 @@ class GuardaInstanciaUnica:
         socket.disconnected.connect(socket.deleteLater)
 
     def _leer_y_restaurar(self, socket):
+
         socket.readAll()
         if callable(self._on_segunda_instancia):
             self._on_segunda_instancia()
 
 
 def _hex_a_rgba(hex_color, alpha):
+
     hex_color= hex_color.lstrip("#")
-    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Punto circular animado (respira) que indica sesión activa.
 class PuntoEstado(QWidget):
-    """Punto circular animado (respira) que indica sesión activa."""
 
     def __init__(self, color="#22C55E", diametro=10, parent=None):
+
         super().__init__(parent)
         self._color= QColor(color)
         self._diametro= diametro
@@ -218,23 +226,27 @@ class PuntoEstado(QWidget):
         self._anim.start()
 
     def poner_color(self, color):
+
         self._color= QColor(color)
         self.update()
 
+    #Detiene la animación de 'respiración'. Se usa cuando la ventana
+    #está oculta (minimizada a la bandeja) para que Qt deje de recalcular
+    #opacidad y repintar este widget ~2 veces por segundo indefinidamente
+    #en segundo plano: es CPU/GPU gastada en algo que nadie puede ver.
     def pausar(self):
-        """Detiene la animación de 'respiración'. Se usa cuando la ventana
-        está oculta (minimizada a la bandeja) para que Qt deje de recalcular
-        opacidad y repintar este widget ~2 veces por segundo indefinidamente
-        en segundo plano: es CPU/GPU gastada en algo que nadie puede ver."""
+
         if self._anim.state() == QSequentialAnimationGroup.State.Running:
             self._anim.pause()
 
+    #Reactiva la animación al volver a mostrar la ventana.
     def reanudar(self):
-        """Reactiva la animación al volver a mostrar la ventana."""
+
         if self._anim.state() == QSequentialAnimationGroup.State.Paused:
             self._anim.resume()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(Qt.PenStyle.NoPen)
@@ -242,12 +254,13 @@ class PuntoEstado(QWidget):
         painter.drawEllipse(0, 0, self._diametro, self._diametro)
 
 
+#Interruptor deslizante ☀️/🌙 hecho a mano, con animación de arrastre.
 class InterruptorTema(QWidget):
-    """Interruptor deslizante ☀️/🌙 hecho a mano, con animación de arrastre."""
 
     clicked= Signal()
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(56, 28)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -260,15 +273,18 @@ class InterruptorTema(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _leer_pos_knob(self):
+
         return self._pos_knob
 
     def _poner_pos_knob(self, valor):
+
         self._pos_knob= valor
         self.update()
 
     posKnob= Property(float, _leer_pos_knob, _poner_pos_knob)
 
     def poner_encendido(self, encendido, animar=True):
+
         self._encendido= encendido
         destino= 31.0 if encendido else 3.0
         if animar:
@@ -280,11 +296,13 @@ class InterruptorTema(QWidget):
             self._poner_pos_knob(destino)
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mousePressEvent(event)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -308,6 +326,7 @@ class InterruptorTema(QWidget):
             self._dibujar_sol(painter, centro_x, centro_y, "#F59E0B")
 
     def _dibujar_sol(self, painter, cx, cy, color):
+
         radio_nucleo= 5.0
         painter.setBrush(QBrush(QColor(color)))
         painter.drawEllipse(QRectF(cx - radio_nucleo, cy - radio_nucleo, radio_nucleo * 2, radio_nucleo * 2))
@@ -315,7 +334,7 @@ class InterruptorTema(QWidget):
         pen.setWidth(2)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
-        radio_interno, radio_externo = 7.0, 9.5
+        radio_interno, radio_externo= 7.0, 9.5
         for i in range(8):
             angulo= (math.pi / 4) * i
             x1= cx + radio_interno * math.cos(angulo)
@@ -325,6 +344,7 @@ class InterruptorTema(QWidget):
             painter.drawLine(int(x1), int(y1), int(x2), int(y2))
 
     def _dibujar_luna(self, painter, cx, cy, color):
+
         radio= 7.5
         path_luna= QPainterPath()
         path_luna.addEllipse(QRectF(cx - radio, cy - radio, radio * 2, radio * 2))
@@ -337,12 +357,13 @@ class InterruptorTema(QWidget):
         painter.drawPath(path_creciente)
 
 
+#Fila de navegación con chip de icono, texto y encabezado de sección opcional.
 class ModuloNavItem(QWidget):
-    """Fila de navegación con chip de icono, texto y encabezado de sección opcional."""
 
     activado= Signal(int)
 
     def __init__(self, indice, icono, nombre, eyebrow=None, parent=None):
+
         super().__init__(parent)
         self.indice= indice
         self.nombre= nombre
@@ -397,6 +418,7 @@ class ModuloNavItem(QWidget):
         self.setLayout(raiz)
 
     def poner_activo(self, activo):
+
         self._activo= activo
         self.lbl_icono.setProperty("activo", activo)
         self.lbl_texto.setProperty("activo", activo)
@@ -405,62 +427,68 @@ class ModuloNavItem(QWidget):
             w.style().polish(w)
 
     def poner_colapsado(self, colapsado):
+
         self.lbl_texto.setVisible(not colapsado)
         if self.lbl_eyebrow is not None:
             self.lbl_eyebrow.setVisible(not colapsado)
         self.setToolTip(self.nombre if colapsado else "")
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.activado.emit(self.indice)
         super().mousePressEvent(event)
 
 
+#QStackedWidget normal, pero con una corrección a un comportamiento
+#poco conocido de Qt: por defecto, sizeHint()/minimumSizeHint() de un
+#QStackedWidget se calculan como el máximo entre TODAS las páginas que
+#alguna vez se agregaron al stack, no solo la que está visible. Como
+#main.py carga los módulos de forma perezosa (ver
+#`_asegurar_modulo_cargado`), la primera vez que se entra a un módulo
+#con un contenido ancho (p. ej. un formulario con varios combos), ese
+#módulo se inserta al stack y desde ese momento su ancho mínimo queda
+#"contaminando" el ancho mínimo de TODA la ventana —incluida la
+#sidebar— aunque luego se navegue a otro módulo más angosto. Eso es lo
+#que producía el desajuste de resolución reportado al entrar a Banco de
+#Tareas.
+#Esta subclase hace que el tamaño reportado dependa únicamente de la
+#página actualmente visible, y se refresca (updateGeometry) cada vez
+#que cambia de página.
 class StackedWidgetTamanoActual(QStackedWidget):
-    """QStackedWidget normal, pero con una corrección a un comportamiento
-    poco conocido de Qt: por defecto, sizeHint()/minimumSizeHint() de un
-    QStackedWidget se calculan como el máximo entre TODAS las páginas que
-    alguna vez se agregaron al stack, no solo la que está visible. Como
-    main.py carga los módulos de forma perezosa (ver
-    `_asegurar_modulo_cargado`), la primera vez que se entra a un módulo
-    con un contenido ancho (p. ej. un formulario con varios combos), ese
-    módulo se inserta al stack y desde ese momento su ancho mínimo queda
-    "contaminando" el ancho mínimo de TODA la ventana —incluida la
-    sidebar— aunque luego se navegue a otro módulo más angosto. Eso es lo
-    que producía el desajuste de resolución reportado al entrar a Banco de
-    Tareas.
-    Esta subclase hace que el tamaño reportado dependa únicamente de la
-    página actualmente visible, y se refresca (updateGeometry) cada vez
-    que cambia de página."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.currentChanged.connect(lambda _i: self.updateGeometry())
 
     def sizeHint(self):
+
         w= self.currentWidget()
         return w.sizeHint() if w is not None else super().sizeHint()
 
     def minimumSizeHint(self):
+
         w= self.currentWidget()
         return w.minimumSizeHint() if w is not None else super().minimumSizeHint()
 
 
+#Spinner circular animado, dibujado a mano con QPainter (sin depender
+#de ningún ícono/gif externo), que se usa como contenido de los
+#placeholders "Cargando…" de módulos y pestañas perezosas.
+#
+#La animación sigue el patrón "Material Design" de progreso indeterminado:
+#el arco no gira con largo fijo, sino que crece y encoge mientras rota
+#-se ve vivo/pulido en vez de un simple manecilla dando vueltas-. Quien
+#lo use debe llamar a `.detener()` justo antes de reemplazarlo/descartarlo.
 class IndicadorCargaGiratorio(QWidget):
-    """Spinner circular animado, dibujado a mano con QPainter (sin depender
-    de ningún ícono/gif externo), que se usa como contenido de los
-    placeholders "Cargando…" de módulos y pestañas perezosas.
-
-    La animación sigue el patrón "Material Design" de progreso indeterminado:
-    el arco no gira con largo fijo, sino que crece y encoge mientras rota
-    -se ve vivo/pulido en vez de un simple manecilla dando vueltas-. Quien
-    lo use debe llamar a `.detener()` justo antes de reemplazarlo/descartarlo."""
 
     _DURACION_CICLO_MS= 1400  #una vuelta completa de "crece + encoge"
     _LARGO_MIN= 22   #grados
     _LARGO_MAX= 300  #grados
 
     def __init__(self, texto="Cargando…", color="#4F8EF7", color_texto="#8A94A6", parent=None):
+
         super().__init__(parent)
         self._color= QColor(color)
         self._color_texto= QColor(color_texto)
@@ -472,24 +500,29 @@ class IndicadorCargaGiratorio(QWidget):
         self._timer.start(16)  #~60 fps
 
     def detener(self):
+
         self._timer.stop()
 
     def hideEvent(self, event):
+
         #Si el widget queda oculto (p. ej. otra pestaña al frente) no hace falta seguir gastando CPU animando algo que
         #nadie ve.
         self._timer.stop()
         super().hideEvent(event)
 
     def showEvent(self, event):
+
         if not self._timer.isActive():
             self._timer.start(16)
         super().showEvent(event)
 
     def _avanzar(self):
+
         self._transcurrido_ms= (self._transcurrido_ms + 16) % self._DURACION_CICLO_MS
         self.update()
 
     def paintEvent(self, event):
+
         fase= (self._transcurrido_ms / self._DURACION_CICLO_MS) * 2 * math.pi
 
         #Rotación base: dos vueltas completas por ciclo, para que se sienta ágil y no lento/pesado.
@@ -532,9 +565,11 @@ class IndicadorCargaGiratorio(QWidget):
 
 
 class MainWindow(QMainWindow):
+
     VERSION= "1.0.0"
     
     def __init__(self):
+
         super().__init__()
         self.version= self.VERSION
         self.setWindowTitle("AcaDeXI - Sistema Escolar")
@@ -865,10 +900,11 @@ class MainWindow(QMainWindow):
         self._configurar_atajos_teclado()
 
     #Atajos de teclado — instalación global (ver atajos.py)
+    #Instala el vigía de la tecla "mantener para ver atajos" (Alt por
+    #defecto, configurable en Configuración) y los atajos globales de la
+    #ventana principal, disponibles sin importar el módulo abierto.
     def _configurar_atajos_teclado(self):
-        """Instala el vigía de la tecla "mantener para ver atajos" (Alt por
-        defecto, configurable en Configuración) y los atajos globales de la
-        ventana principal, disponibles sin importar el módulo abierto."""
+
         self._gestor_atajos= GestorAtajos(self)
         QApplication.instance().installEventFilter(self._gestor_atajos)
         #Retroalimentación visual de clic (ver atajos.py): un solo filtro global para TODOS los botones de la app, en
@@ -894,11 +930,12 @@ class MainWindow(QMainWindow):
                          self.alternar_sidebar, contexto=Qt.ShortcutContext.ApplicationShortcut)
 
     #Bandeja del sistema (System Tray)
+    #Crea el icono en la bandeja del sistema y su menú contextual.
+    #Con esto la 'X' de la ventana solo la oculta (ver closeEvent);
+    #la app sigue viva en segundo plano hasta que el usuario elige
+    #'Salir' explícitamente desde este icono.
     def _configurar_bandeja_sistema(self):
-        """Crea el icono en la bandeja del sistema y su menú contextual.
-        Con esto la 'X' de la ventana solo la oculta (ver closeEvent);
-        la app sigue viva en segundo plano hasta que el usuario elige
-        'Salir' explícitamente desde este icono."""
+
         if not QSystemTrayIcon.isSystemTrayAvailable():
             #En algunos entornos (p. ej. ciertas distros Linux sin bandeja, o pruebas headless) puede no haber bandeja
             #disponible; en ese caso la 'X' simplemente cierra la app con normalidad.
@@ -912,12 +949,13 @@ class MainWindow(QMainWindow):
         self.tray_icon.activated.connect(self._al_activar_icono_bandeja)
         self.tray_icon.show()
 
+    #Icono de la app con un PUNTO de estado en la esquina inferior
+    #derecha, para saber de un vistazo (sin abrir el menú) qué pasará al
+    #cerrar la ventana principal:
+    #- AZUL  (#3B82F6): la app seguirá en segundo plano (bandeja).
+    #- ROJO  (#EF4444): la app se cerrará del todo.
     def _icono_bandeja_con_estado(self):
-        """Icono de la app con un PUNTO de estado en la esquina inferior
-        derecha, para saber de un vistazo (sin abrir el menú) qué pasará al
-        cerrar la ventana principal:
-          - AZUL  (#3B82F6): la app seguirá en segundo plano (bandeja).
-          - ROJO  (#EF4444): la app se cerrará del todo."""
+
         base= icono_app().pixmap(64, 64)
         p= QPainter(base)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -931,10 +969,11 @@ class MainWindow(QMainWindow):
         p.end()
         return QIcon(base)
 
+    #Punto de estado AZUL/ROJO solo (mismo color que el badge del icono
+    #de la bandeja), para teñir el icono de la acción 'Ejecutar en segundo
+    #plano al cerrar' del menú según el estado actual.
     def _punto_estado_bandeja(self, size=18):
-        """Punto de estado AZUL/ROJO solo (mismo color que el badge del icono
-        de la bandeja), para teñir el icono de la acción 'Ejecutar en segundo
-        plano al cerrar' del menú según el estado actual."""
+
         pm= QPixmap(size, size)
         pm.fill(Qt.GlobalColor.transparent)
         p= QPainter(pm)
@@ -947,10 +986,11 @@ class MainWindow(QMainWindow):
         p.end()
         return QIcon(pm)
 
+    #Repinta el icono de la bandeja (y su tooltip) según el estado de
+    #'minimizar_a_bandeja'. Se llama al crear la bandeja y cada vez que
+    #cambia la preferencia (menú de la bandeja o Configuración).
     def _actualizar_icono_bandeja(self):
-        """Repinta el icono de la bandeja (y su tooltip) según el estado de
-        'minimizar_a_bandeja'. Se llama al crear la bandeja y cada vez que
-        cambia la preferencia (menú de la bandeja o Configuración)."""
+
         if getattr(self, "tray_icon", None) is None:
             return
         self.tray_icon.setIcon(self._icono_bandeja_con_estado())
@@ -964,14 +1004,15 @@ class MainWindow(QMainWindow):
         if getattr(self, "_accion_bandeja_toggle", None) is not None:
             self._accion_bandeja_toggle.setIcon(self._punto_estado_bandeja())
 
+    #Reconstruye por completo el menú contextual del icono de bandeja:
+    #encabezado con el usuario conectado (avatar/iniciales, nombre y rol),
+    #estilo acorde al tema/modo actual de la app e iconos en cada acción.
+    #Se llama al arrancar la bandeja y cada vez que cambia algo que afecta
+    #lo que ese menú debe mostrar: iniciar sesión, cerrar sesión, o cambiar
+    #de tema/modo claro-oscuro (aplicar_tema), para que nunca quede
+    #desactualizado ni con los colores del tema anterior.
     def _reconstruir_menu_bandeja(self):
-        """Reconstruye por completo el menú contextual del icono de bandeja:
-        encabezado con el usuario conectado (avatar/iniciales, nombre y rol),
-        estilo acorde al tema/modo actual de la app e iconos en cada acción.
-        Se llama al arrancar la bandeja y cada vez que cambia algo que afecta
-        lo que ese menú debe mostrar: iniciar sesión, cerrar sesión, o cambiar
-        de tema/modo claro-oscuro (aplicar_tema), para que nunca quede
-        desactualizado ni con los colores del tema anterior."""
+
         if getattr(self, "tray_icon", None) is None:
             return
 
@@ -1079,14 +1120,16 @@ class MainWindow(QMainWindow):
 
         self.tray_icon.setContextMenu(menu_bandeja)
 
+    #Restaura la ventana antes de cerrar sesión desde el menú de la
+    #bandeja: el diálogo de confirmación y el login que siguen necesitan
+    #una ventana visible en primer plano, no minimizada/oculta.
     def _cerrar_sesion_desde_bandeja(self):
-        """Restaura la ventana antes de cerrar sesión desde el menú de la
-        bandeja: el diálogo de confirmación y el login que siguen necesitan
-        una ventana visible en primer plano, no minimizada/oculta."""
+
         self._restaurar_desde_bandeja()
         self.cerrar_sesion()
 
     def _al_activar_icono_bandeja(self, razon):
+
         #Doble clic (o clic simple, según plataforma) sobre el icono restaura la ventana. El clic derecho lo maneja el
         #propio QMenu asignado con setContextMenu.
         if razon in (QSystemTrayIcon.ActivationReason.DoubleClick,
@@ -1094,16 +1137,18 @@ class MainWindow(QMainWindow):
             self._restaurar_desde_bandeja()
 
     def _restaurar_desde_bandeja(self):
+
         if self.isMinimized():
             self.showNormal()
         self.show()
         self.raise_()
         self.activateWindow()
 
+    #Único punto que cambia la preferencia 'minimizar_a_bandeja', ya sea
+    #desde el propio menú de la bandeja o desde Configuración ▸ Apariencia,
+    #para que ambos lugares queden siempre sincronizados entre sí.
     def _establecer_minimizar_a_bandeja(self, activo):
-        """Único punto que cambia la preferencia 'minimizar_a_bandeja', ya sea
-        desde el propio menú de la bandeja o desde Configuración ▸ Apariencia,
-        para que ambos lugares queden siempre sincronizados entre sí."""
+
         self.minimizar_a_bandeja= bool(activo)
         self.guardar_configuracion()
         self._actualizar_icono_bandeja()
@@ -1115,8 +1160,9 @@ class MainWindow(QMainWindow):
                 self._accion_bandeja_toggle.setChecked(self.minimizar_a_bandeja)
                 self._accion_bandeja_toggle.blockSignals(False)
 
+    #Único punto por el que la aplicación termina realmente.
     def _salir_de_verdad(self):
-        """Único punto por el que la aplicación termina realmente."""
+
         self._saliendo_de_verdad= True
         if getattr(self, "tray_icon", None) is not None:
             self.tray_icon.hide()
@@ -1131,7 +1177,9 @@ class MainWindow(QMainWindow):
 
     #Módulos dinámicos según tipo de institución
     def _tipo_institucion(self):
+
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT tipo_institucion, modulos_personalizados FROM configuracion WHERE id=1")
@@ -1160,9 +1208,11 @@ class MainWindow(QMainWindow):
     }
 
     def _seccion_de(self, nombre):
+
         return self._SECCIONES.get(nombre, "PRINCIPAL")
 
     def _construir_modulos_info(self):
+
         if edicion_actual() == "single_teacher":
             #Menú fijo y conocido de antemano (Pieza 3): sin tipo de institución que consultar, sin RBAC, sin "Mis
             #Materias"/"Mis Estudiantes" institucionales -aquí el docente es dueño directo.
@@ -1187,7 +1237,7 @@ class MainWindow(QMainWindow):
             self.nav_list.blockSignals(False)
             self._pildora_nav.lower()
             return
-        tipo, modulos_personalizados = self._tipo_institucion()
+        tipo, modulos_personalizados= self._tipo_institucion()
         #Los caracteres aquí son solo el ÚLTIMO respaldo (ver ModuloNavItem):
         #primero se intenta el PNG de sidebar_icons/, y si tampoco existe, el icono vectorial coherente de
         #iconos_auto.py. Esta lista casi nunca llega a mostrarse tal cual, pero se mantiene con un emoji sensato por
@@ -1249,6 +1299,7 @@ class MainWindow(QMainWindow):
         self._pildora_nav.lower()
 
     def _construir_stack(self):
+
         self._modulos_cargados= set()
 
         while self.stacked_widget.count():
@@ -1262,6 +1313,7 @@ class MainWindow(QMainWindow):
             self.stacked_widget.addWidget(page)
 
     def recargar_modulos_dinamicos(self):
+
         #IMPORTANTE: se guarda el NOMBRE del módulo actual, no su índice. Al reconstruir modulos_info (p. ej. tras
         #cambiar el tipo de institución en Configuración) la cantidad y el orden de módulos puede cambiar, así que el
         #mismo índice puede terminar apuntando a otro módulo distinto (por eso, al guardar en Configuración, a veces se
@@ -1277,12 +1329,14 @@ class MainWindow(QMainWindow):
         self.nav_list.setCurrentRow(nueva_fila)
         self._aplicar_permisos_por_rol()
 
+    #Accent + color de texto secundario del tema ACTUAL, para que el
+    #spinner de carga combine con el resto de la app (y no un azul fijo
+    #que desentona en algún tema/oscuro). Con un respaldo seguro por si
+    #se llama antes de que el tema esté completamente inicializado.
     def _colores_carga(self):
-        """Accent + color de texto secundario del tema ACTUAL, para que el
-        spinner de carga combine con el resto de la app (y no un azul fijo
-        que desentona en algún tema/oscuro). Con un respaldo seguro por si
-        se llama antes de que el tema esté completamente inicializado."""
+
         try:
+
             paleta= self.theme_palettes[self.tema_actual]
             idx= 1 if self.modo_oscuro else 0
             return paleta["btn_op_bg"][idx], paleta["text_secondary"][idx]
@@ -1290,10 +1344,11 @@ class MainWindow(QMainWindow):
             return "#4F8EF7", "#8A94A6"
 
     def _crear_placeholder(self, nombre_modulo):
+
         page= QWidget()
         page_layout= QVBoxLayout(page)
         page_layout.setContentsMargins(40, 40, 40, 40)
-        accent, txt_sec = self._colores_carga()
+        accent, txt_sec= self._colores_carga()
         spinner= IndicadorCargaGiratorio(f"Cargando {nombre_modulo}…", color=accent, color_texto=txt_sec)
         page.spinner= spinner  #referencia para poder detenerlo antes de descartar la página
         page_layout.addStretch()
@@ -1301,8 +1356,9 @@ class MainWindow(QMainWindow):
         page_layout.addStretch()
         return page
 
+    #Carga el módulo bajo demanda (lazy loading) si no está cargado.
     def _asegurar_modulo_cargado(self, index):
-        """Carga el módulo bajo demanda (lazy loading) si no está cargado."""
+
         if index < 0 or index >= len(self.modulos):
             return
         if index in self._modulos_cargados:
@@ -1339,6 +1395,7 @@ class MainWindow(QMainWindow):
             _fundido_entrada(pagina_real)
 
     def cambiar_vista(self, index):
+
         if index < 0 or index >= len(self.modulos):
             return
         ya_cargado= index in self._modulos_cargados
@@ -1367,11 +1424,13 @@ class MainWindow(QMainWindow):
             #solo frame se percibe como un parpadeo/glitch, no como una carga.
             QTimer.singleShot(120, lambda: self._cargar_modulo_diferido(index))
 
+    #Construye el módulo real un instante después de mostrar el
+    #placeholder «Cargando…» (ver cambiar_vista) y lo deja en su lugar
+    #dentro del stack.
     def _cargar_modulo_diferido(self, index):
-        """Construye el módulo real un instante después de mostrar el
-        placeholder «Cargando…» (ver cambiar_vista) y lo deja en su lugar
-        dentro del stack."""
+
         try:
+
             self._asegurar_modulo_cargado(index)
         except Exception:
             import traceback
@@ -1385,6 +1444,7 @@ class MainWindow(QMainWindow):
                 QTimer.singleShot(10, pagina.refrescar)
 
     def _mover_pildora_nav(self, index, animar=True):
+
         if index < 0 or index >= self.nav_list.count():
             return
         item= self.nav_list.item(index)
@@ -1404,6 +1464,7 @@ class MainWindow(QMainWindow):
         self._pildora_nav.lower()
 
     def alternar_sidebar(self):
+
         self.sidebar_colapsado= not self.sidebar_colapsado
         ancho_destino= self.sidebar_ancho_colapsado if self.sidebar_colapsado else self.sidebar_ancho_normal
 
@@ -1429,6 +1490,7 @@ class MainWindow(QMainWindow):
             fila.poner_colapsado(self.sidebar_colapsado)
 
     def abrir_buscador_global(self):
+
         #Ctrl+F (o Enter en la píldora de búsqueda) actúa como interruptor:
         #si el diálogo ya está abierto, esta misma tecla lo cierra en vez de intentar abrir uno nuevo encima. Se guarda
         #la referencia en self._dialogo_busqueda_global para poder consultarla la próxima vez que se dispare el atajo,
@@ -1447,6 +1509,7 @@ class MainWindow(QMainWindow):
         self.in_busqueda_global.clear()
 
     def _aplicar_permisos_por_rol(self):
+
         for i, nombre in enumerate(self.modulos):
             item= self.nav_list.item(i)
             visible= modulo_visible(self.rol_actual, nombre)
@@ -1488,19 +1551,20 @@ class MainWindow(QMainWindow):
         self._mover_pildora_nav(self.nav_list.currentRow(), animar=False)
 
     #TEMA
+    #Fundido de opacidad al cambiar de modo claro/oscuro: baja a un
+    #nivel translúcido (55%, se sigue viendo la ventana de fondo pero
+    #atenuada -look "cristal"-), aplica el tema con la ventana en ese
+    #estado, y vuelve a subir a 100%. Usa QPropertyAnimation con easing
+    #(igual que abrir_con_fundido y el resto de animaciones de la app)
+    #en vez de un QTimer a mano recalculando el alpha paso a paso:
+    #además de quedar más suave -la curva de aceleración/desaceleración
+    #se nota, ya no es un fundido lineal a saltos de 15ms-, Qt puede
+    #fusionar sus updates con el ciclo normal de refresco de pantalla en
+    #vez de competir con él, así que no cuesta recursos extra.
+    #Duraciones cortas (100ms bajada / 140ms subida) para que se sienta
+    #instantáneo sin perder el efecto translúcido.
     def animar_cambio_tema(self):
-        """Fundido de opacidad al cambiar de modo claro/oscuro: baja a un
-        nivel translúcido (55%, se sigue viendo la ventana de fondo pero
-        atenuada -look "cristal"-), aplica el tema con la ventana en ese
-        estado, y vuelve a subir a 100%. Usa QPropertyAnimation con easing
-        (igual que abrir_con_fundido y el resto de animaciones de la app)
-        en vez de un QTimer a mano recalculando el alpha paso a paso:
-        además de quedar más suave -la curva de aceleración/desaceleración
-        se nota, ya no es un fundido lineal a saltos de 15ms-, Qt puede
-        fusionar sus updates con el ciclo normal de refresco de pantalla en
-        vez de competir con él, así que no cuesta recursos extra.
-        Duraciones cortas (100ms bajada / 140ms subida) para que se sienta
-        instantáneo sin perder el efecto translúcido."""
+
         #Si ya hay un cambio de tema en curso (fundido de bajada, aplicación por páginas en segundo plano, o fundido de
         #subida), se ignora el nuevo toggle en vez de arrancar una segunda pasada encima: la aplicación por páginas
         #ahora es asíncrona (ver _refrescar_paginas_tema_async) y dos pasadas superpuestas podrían dejar páginas a
@@ -1524,6 +1588,7 @@ class MainWindow(QMainWindow):
         anim_bajada.start()
 
     def _a_mitad_cambio_tema(self):
+
         self.modo_oscuro= self.modo_oscuro_futuro
         self.btn_tema.poner_encendido(self.modo_oscuro)
         self.lbl_tema_texto.setText("Modo oscuro" if self.modo_oscuro else "Modo claro")
@@ -1538,47 +1603,48 @@ class MainWindow(QMainWindow):
         #para considerar que la app se colgó.
         QTimer.singleShot(0, self._terminar_cambio_tema)
 
+    #Segunda mitad de animar_cambio_tema(): el trabajo pesado real
+    #se ejecuta acá, con la ventana ya atenuada al 55% y en un ciclo del
+    #bucle de eventos aparte del que disparó el fundido -ver el
+    #comentario en _a_mitad_cambio_tema()-.
+    #
+    #A diferencia de antes, NO se llama a self.aplicar_tema() (esa
+    #versión recorre las páginas de forma síncrona, solo con
+    #QApplication.processEvents() como respiro entre una y otra -ver
+    #_refrescar_paginas_tema_sincrono-, y sigue siendo un único tramo
+    #ininterrumpido de trabajo Python; processEvents() NO le devuelve
+    #el control al sistema operativo entre medio, solo bombea la cola
+    #de eventos de Qt desde dentro de la misma llamada, así que si una
+    #sola página pesada (p. ej. el editor de reportes con una hoja
+    #grande) tarda más de un par de segundos ella sola, Windows igual
+    #marca la ventana como "No responde" aunque el resto del bucle
+    #tenga sus respiros).
+    #
+    #PERO trocear el bucle de páginas (_refrescar_paginas_tema_async)
+    #NO ALCANZA por sí solo: el congelamiento real no viene de ahí, sino
+    #de self.setStyleSheet(qss) -dentro de _aplicar_estilos_globales_tema-
+    #aplicado sobre `self` (la ventana principal). Qt repule TODO el
+    #árbol de widgets descendiente de forma SÍNCRONA E ININTERRUMPIBLE
+    #dentro de ESA MISMA llamada en C++ -no hay ningún QTimer ni
+    #processEvents de Python que pueda partir esa llamada en pedazos,
+    #porque el trabajo pesado ocurre entero antes de que la función le
+    #devuelva el control a Python-. Con varios módulos ya visitados en
+    #la sesión (cada uno con sus propias tablas/tarjetas/etc., visibles
+    #o no), ese árbol puede ser enorme, y ESE único repulido -no el
+    #bucle de actualizar_tema()- es la causa real de que la ventana
+    #siguiera colgándose aunque el bucle ya estuviera troceado.
+    #
+    #La solución: antes de tocar el stylesheet, _preparar_paginas_para_tema()
+    #saca temporalmente del árbol todas las páginas YA CONSTRUIDAS que no
+    #sean la que está visible ahora mismo (se reemplazan por un QWidget
+    #vacío en su mismo lugar -sin destruir nada, sin perder ningún
+    #estado-), así el repulido de setStyleSheet queda acotado a una sola
+    #página en vez de a todas las que se hayan visitado en la sesión.
+    #Esas páginas se reinsertan una por una, DESPUÉS del fundido de
+    #vuelta, con _restaurar_paginas_ocultadas_por_tema -ver ahí por qué
+    #eso sí puede trocearse sin problema.
     def _terminar_cambio_tema(self):
-        """Segunda mitad de animar_cambio_tema(): el trabajo pesado real
-        se ejecuta acá, con la ventana ya atenuada al 55% y en un ciclo del
-        bucle de eventos aparte del que disparó el fundido -ver el
-        comentario en _a_mitad_cambio_tema()-.
 
-        A diferencia de antes, NO se llama a self.aplicar_tema() (esa
-        versión recorre las páginas de forma síncrona, solo con
-        QApplication.processEvents() como respiro entre una y otra -ver
-        _refrescar_paginas_tema_sincrono-, y sigue siendo un único tramo
-        ininterrumpido de trabajo Python; processEvents() NO le devuelve
-        el control al sistema operativo entre medio, solo bombea la cola
-        de eventos de Qt desde dentro de la misma llamada, así que si una
-        sola página pesada (p. ej. el editor de reportes con una hoja
-        grande) tarda más de un par de segundos ella sola, Windows igual
-        marca la ventana como "No responde" aunque el resto del bucle
-        tenga sus respiros).
-
-        PERO trocear el bucle de páginas (_refrescar_paginas_tema_async)
-        NO ALCANZA por sí solo: el congelamiento real no viene de ahí, sino
-        de self.setStyleSheet(qss) -dentro de _aplicar_estilos_globales_tema-
-        aplicado sobre `self` (la ventana principal). Qt repule TODO el
-        árbol de widgets descendiente de forma SÍNCRONA E ININTERRUMPIBLE
-        dentro de ESA MISMA llamada en C++ -no hay ningún QTimer ni
-        processEvents de Python que pueda partir esa llamada en pedazos,
-        porque el trabajo pesado ocurre entero antes de que la función le
-        devuelva el control a Python-. Con varios módulos ya visitados en
-        la sesión (cada uno con sus propias tablas/tarjetas/etc., visibles
-        o no), ese árbol puede ser enorme, y ESE único repulido -no el
-        bucle de actualizar_tema()- es la causa real de que la ventana
-        siguiera colgándose aunque el bucle ya estuviera troceado.
-
-        La solución: antes de tocar el stylesheet, _preparar_paginas_para_tema()
-        saca temporalmente del árbol todas las páginas YA CONSTRUIDAS que no
-        sean la que está visible ahora mismo (se reemplazan por un QWidget
-        vacío en su mismo lugar -sin destruir nada, sin perder ningún
-        estado-), así el repulido de setStyleSheet queda acotado a una sola
-        página en vez de a todas las que se hayan visitado en la sesión.
-        Esas páginas se reinsertan una por una, DESPUÉS del fundido de
-        vuelta, con _restaurar_paginas_ocultadas_por_tema -ver ahí por qué
-        eso sí puede trocearse sin problema."""
         #Mismo candado de reentrancia que ya usaba aplicar_tema(): mientras esté en True, cualquier llamada a
         #aplicar_tema() desde otro lado (p. ej. si algo dispara un refresco de tema por su cuenta durante este tramo)
         #no hace nada, en vez de competir por las mismas páginas a medio actualizar.
@@ -1587,28 +1653,29 @@ class MainWindow(QMainWindow):
         self._aplicar_estilos_globales_tema()
         self._refrescar_paginas_tema_async(al_terminar=self._fade_subida_tema)
 
+    #Saca temporalmente del árbol de widgets todas las páginas ya
+    #construidas (self._modulos_cargados) SALVO la que está visible en
+    #este momento, reemplazando cada una por un QWidget vacío EN SU
+    #MISMO ÍNDICE dentro de self.stacked_widget -mismo truco de
+    #índice-estable que ya usa _asegurar_modulo_cargado() para
+    #reemplazar un placeholder "Cargando…" por el módulo real (y
+    #viceversa aquí): el conteo y el orden del stack no cambian, así
+    #que cambiar_vista()/_asegurar_modulo_cargado() siguen funcionando
+    #con total normalidad mientras dura el cambio de tema.
+    #
+    #La página visible NUNCA se saca del stack: permanece intacta en su
+    #índice para que el usuario nunca sea enviado a otro módulo ni vea
+    #parpadeos. El setStyleSheet() posterior solo afecta a esa página
+    #visible y a la estructura base de la ventana, completándose en
+    #fracción de segundo.
+    #
+    #Las páginas secundarias reales NO se destruyen (no hay deleteLater
+    #aquí): se guardan tal cual, con todo su estado intacto, en
+    #self._paginas_ocultadas_tema, para reinsertarlas después de que el
+    #fundido de vuelta ya haya terminado -ver
+    #_restaurar_paginas_ocultadas_por_tema.
     def _preparar_paginas_para_tema(self):
-        """Saca temporalmente del árbol de widgets todas las páginas ya
-        construidas (self._modulos_cargados) SALVO la que está visible en
-        este momento, reemplazando cada una por un QWidget vacío EN SU
-        MISMO ÍNDICE dentro de self.stacked_widget -mismo truco de
-        índice-estable que ya usa _asegurar_modulo_cargado() para
-        reemplazar un placeholder "Cargando…" por el módulo real (y
-        viceversa aquí): el conteo y el orden del stack no cambian, así
-        que cambiar_vista()/_asegurar_modulo_cargado() siguen funcionando
-        con total normalidad mientras dura el cambio de tema.
 
-        La página visible NUNCA se saca del stack: permanece intacta en su
-        índice para que el usuario nunca sea enviado a otro módulo ni vea
-        parpadeos. El setStyleSheet() posterior solo afecta a esa página
-        visible y a la estructura base de la ventana, completándose en
-        fracción de segundo.
-
-        Las páginas secundarias reales NO se destruyen (no hay deleteLater
-        aquí): se guardan tal cual, con todo su estado intacto, en
-        self._paginas_ocultadas_tema, para reinsertarlas después de que el
-        fundido de vuelta ya haya terminado -ver
-        _restaurar_paginas_ocultadas_por_tema."""
         actual= self.stacked_widget.currentIndex()
         self._indice_modulo_tema= actual
         self._paginas_ocultadas_tema= {}
@@ -1625,21 +1692,22 @@ class MainWindow(QMainWindow):
         if 0 <= actual < self.stacked_widget.count():
             self.stacked_widget.setCurrentIndex(actual)
 
+    #Reinserta -una página por vuelta del bucle de eventos, con
+    #QTimer.singleShot(0, ...)- las páginas que _preparar_paginas_para_tema()
+    #sacó temporalmente del árbol. A diferencia del setStyleSheet() de
+    #arriba, ESTO SÍ se puede trocear sin problema: cuando un widget ya
+    #construido se reinserta en un padre que ya tiene stylesheet, Qt
+    #solo repule el subárbol de ESE widget recién insertado -no vuelve a
+    #tocar el resto del árbol-, así que el costo de cada vuelta queda
+    #acotado a una sola página en vez de a todas juntas.
+    #
+    #Se llama recién cuando el fundido de vuelta a opacidad completa ya
+    #terminó (ver _fade_subida_tema): el usuario ve la ventana
+    #respondiendo con normalidad desde el primer instante, y estas
+    #páginas -invisibles hasta que se navegue a ellas- se ponen al día
+    #en segundo plano sin que se note.
     def _restaurar_paginas_ocultadas_por_tema(self):
-        """Reinserta -una página por vuelta del bucle de eventos, con
-        QTimer.singleShot(0, ...)- las páginas que _preparar_paginas_para_tema()
-        sacó temporalmente del árbol. A diferencia del setStyleSheet() de
-        arriba, ESTO SÍ se puede trocear sin problema: cuando un widget ya
-        construido se reinserta en un padre que ya tiene stylesheet, Qt
-        solo repule el subárbol de ESE widget recién insertado -no vuelve a
-        tocar el resto del árbol-, así que el costo de cada vuelta queda
-        acotado a una sola página en vez de a todas juntas.
 
-        Se llama recién cuando el fundido de vuelta a opacidad completa ya
-        terminó (ver _fade_subida_tema): el usuario ve la ventana
-        respondiendo con normalidad desde el primer instante, y estas
-        páginas -invisibles hasta que se navegue a ellas- se ponen al día
-        en segundo plano sin que se note."""
         pendientes= getattr(self, "_paginas_ocultadas_tema", None)
         actual= getattr(self, "_indice_modulo_tema", self.stacked_widget.currentIndex())
         if not pendientes:
@@ -1667,13 +1735,14 @@ class MainWindow(QMainWindow):
             pagina.actualizar_tema()
         QTimer.singleShot(0, self._restaurar_paginas_ocultadas_por_tema)
 
+    #Última parte del cambio de tema: ya con la página visible
+    #actualizada, guarda la configuración y sube la opacidad de vuelta
+    #a 100%. Al terminar ese fundido, arranca la restauración en
+    #segundo plano de las demás páginas (ver
+    #_restaurar_paginas_ocultadas_por_tema): para entonces la ventana
+    #ya se ve completamente cambiada y respondiendo con normalidad.
     def _fade_subida_tema(self):
-        """Última parte del cambio de tema: ya con la página visible
-        actualizada, guarda la configuración y sube la opacidad de vuelta
-        a 100%. Al terminar ese fundido, arranca la restauración en
-        segundo plano de las demás páginas (ver
-        _restaurar_paginas_ocultadas_por_tema): para entonces la ventana
-        ya se ve completamente cambiada y respondiendo con normalidad."""
+
         self.guardar_configuracion()
         actual= getattr(self, "_indice_modulo_tema", self.stacked_widget.currentIndex())
         if 0 <= actual < self.stacked_widget.count():
@@ -1689,20 +1758,21 @@ class MainWindow(QMainWindow):
         self._anim_tema= anim_subida
         anim_subida.start()
 
+    #Igual que el tramo final de _aplicar_tema_impl (recorrer
+    #self.stacked_widget llamando actualizar_tema() en cada página, y
+    #reconstruir el menú de la bandeja al final), pero troceado: cada
+    #página se procesa en su propia vuelta del bucle de eventos
+    #(QTimer.singleShot(0, ...)) en vez de todas seguidas con
+    #processEvents() de por medio. La diferencia importa: processEvents()
+    #bombea eventos SIN que esta función termine de ejecutarse -sigue
+    #siendo una sola llamada larga desde el punto de vista del sistema
+    #operativo-, mientras que aquí la función realmente retorna entre
+    #una página y la siguiente, dejando que Qt/Windows procesen mensajes
+    #con toda normalidad. Eso es lo único que garantiza que la ventana
+    #NUNCA se marque como "No responde", sin importar cuántas páginas
+    #haya ni cuán pesada sea alguna en particular.
     def _refrescar_paginas_tema_async(self, indice=0, al_terminar=None):
-        """Igual que el tramo final de _aplicar_tema_impl (recorrer
-        self.stacked_widget llamando actualizar_tema() en cada página, y
-        reconstruir el menú de la bandeja al final), pero troceado: cada
-        página se procesa en su propia vuelta del bucle de eventos
-        (QTimer.singleShot(0, ...)) en vez de todas seguidas con
-        processEvents() de por medio. La diferencia importa: processEvents()
-        bombea eventos SIN que esta función termine de ejecutarse -sigue
-        siendo una sola llamada larga desde el punto de vista del sistema
-        operativo-, mientras que aquí la función realmente retorna entre
-        una página y la siguiente, dejando que Qt/Windows procesen mensajes
-        con toda normalidad. Eso es lo único que garantiza que la ventana
-        NUNCA se marque como "No responde", sin importar cuántas páginas
-        haya ni cuán pesada sea alguna en particular."""
+
         total= self.stacked_widget.count()
         if indice >= total:
             self._reconstruir_menu_bandeja()
@@ -1722,6 +1792,7 @@ class MainWindow(QMainWindow):
 
 
     def aplicar_tema(self):
+
         #Candado de reentrancia: aplicar_tema() bombea el bucle de eventos (ver más abajo) mientras recorre páginas; si
         #por lo que sea algo disparado durante ese respiro terminara llamando aplicar_tema() de
         #nuevo (p. ej. una señal de cambio de tema reentrante), sin este
@@ -1730,23 +1801,26 @@ class MainWindow(QMainWindow):
             return
         self._aplicando_tema= True
         try:
+
             self._aplicar_tema_impl()
         finally:
             self._aplicando_tema= False
 
+    #Versión síncrona completa (estilos globales + recorrido de
+    #páginas con processEvents() como respiro). La usan el arranque de
+    #la app y cualquier otro llamador de aplicar_tema() que no pase por
+    #la animación de fundido (animar_cambio_tema), y se deja intacta
+    #para no cambiarles el comportamiento. El propio toggle de modo
+    #claro/oscuro YA NO pasa por aquí -ver _terminar_cambio_tema-, que
+    #usa la versión troceada (_refrescar_paginas_tema_async) para
+    #garantizar que la ventana nunca se congele.
     def _aplicar_tema_impl(self):
-        """Versión síncrona completa (estilos globales + recorrido de
-        páginas con processEvents() como respiro). La usan el arranque de
-        la app y cualquier otro llamador de aplicar_tema() que no pase por
-        la animación de fundido (animar_cambio_tema), y se deja intacta
-        para no cambiarles el comportamiento. El propio toggle de modo
-        claro/oscuro YA NO pasa por aquí -ver _terminar_cambio_tema-, que
-        usa la versión troceada (_refrescar_paginas_tema_async) para
-        garantizar que la ventana nunca se congele."""
+
         self._aplicar_estilos_globales_tema()
         self._refrescar_paginas_tema_sincrono()
 
     def _aplicar_estilos_globales_tema(self):
+
         #Antes que nada: algunos íconos (p. ej. el de "Filtros") usan un gris neutro pensado para fondo claro y se
         #vuelven casi invisibles en modo oscuro. Esto refresca esos pocos íconos -y dejará refrescados también los que
         #se pidan de ahora en adelante-.
@@ -1772,7 +1846,7 @@ class MainWindow(QMainWindow):
         sidebar_borde= _hex_a_rgba(bg_sidebar_btn, 0.60)
 
         #------------------------------------------------------------
-        # ETIQUETAS CON RECUADRO (Configuración › Apariencia › Accesibilidad visual). Por defecto, TODAS las etiquetas
+        #ETIQUETAS CON RECUADRO (Configuración › Apariencia › Accesibilidad visual). Por defecto, TODAS las etiquetas
         #"planas" de TODOS los
         #módulos (las que no tienen su propio objectName/estilo — p. ej.
         #"Curso:", "Sección:", "Fecha:") se ven de forma normal: color de acento del tema y sin ningún fondo detrás del
@@ -1806,7 +1880,7 @@ class MainWindow(QMainWindow):
         qss_labels_accesibilidad= f"QLabel {{ color: {color_etiqueta_plana}; {fondo_etiqueta} }}"
 
         #------------------------------------------------------------
-        # TEXTO MÁS GRANDE (Configuración › Apariencia › Accesibilidad visual). Desactivado por defecto. Al activarse,
+        #TEXTO MÁS GRANDE (Configuración › Apariencia › Accesibilidad visual). Desactivado por defecto. Al activarse,
         #sube el tamaño de letra base de los controles de texto más comunes (etiquetas, botones, campos, pestañas) en
         #TODA la app, para quienes necesiten una fuente más grande para leer cómodamente. Como es una regla genérica
         #por tipo de widget (sin "#objectName"), cualquier control que ya tenga su propio tamaño de fuente explícito en
@@ -1820,17 +1894,17 @@ class MainWindow(QMainWindow):
 
         es_colorful= self.tema_actual == "Colorful (Multicolor)"
         if es_colorful:
-            color_agregar, color_agregar_hv = "#22C55E", "#16A34A"
-            color_editar, color_editar_hv = "#3B82F6", "#2563EB"
-            color_ajustar, color_ajustar_hv = "#F97316", "#EA580C"
-            color_eliminar, color_eliminar_hv = "#EF4444", "#DC2626"
-            color_neutro, color_neutro_hv = "#475569", "#334155"
+            color_agregar, color_agregar_hv= "#22C55E", "#16A34A"
+            color_editar, color_editar_hv= "#3B82F6", "#2563EB"
+            color_ajustar, color_ajustar_hv= "#F97316", "#EA580C"
+            color_eliminar, color_eliminar_hv= "#EF4444", "#DC2626"
+            color_neutro, color_neutro_hv= "#475569", "#334155"
         else:
-            color_agregar, color_agregar_hv = accent, hv_accent
-            color_editar, color_editar_hv = accent, hv_accent
-            color_ajustar, color_ajustar_hv = accent, hv_accent
-            color_eliminar, color_eliminar_hv = accent, hv_accent
-            color_neutro, color_neutro_hv = accent, hv_accent
+            color_agregar, color_agregar_hv= accent, hv_accent
+            color_editar, color_editar_hv= accent, hv_accent
+            color_ajustar, color_ajustar_hv= accent, hv_accent
+            color_eliminar, color_eliminar_hv= accent, hv_accent
+            color_neutro, color_neutro_hv= accent, hv_accent
 
         qss= f"""
             QToolTip {{
@@ -2219,14 +2293,15 @@ class MainWindow(QMainWindow):
                 paleta_app.setColor(grupo, QPalette.ColorRole.ToolTipText, QColor(txt_prim))
             app.setPalette(paleta_app)
 
+    #Recorrido síncrono de páginas (con processEvents() como respiro
+    #entre una y otra) para la versión completa de aplicar_tema() -ver
+    #_aplicar_tema_impl-. NO la usa el toggle animado de modo
+    #claro/oscuro: para ese caso está _refrescar_paginas_tema_async, que
+    #troza el trabajo con QTimer.singleShot(0, ...) en vez de
+    #processEvents() -ver el porqué en el docstring de
+    #_terminar_cambio_tema-.
     def _refrescar_paginas_tema_sincrono(self):
-        """Recorrido síncrono de páginas (con processEvents() como respiro
-        entre una y otra) para la versión completa de aplicar_tema() -ver
-        _aplicar_tema_impl-. NO la usa el toggle animado de modo
-        claro/oscuro: para ese caso está _refrescar_paginas_tema_async, que
-        troza el trabajo con QTimer.singleShot(0, ...) en vez de
-        processEvents() -ver el porqué en el docstring de
-        _terminar_cambio_tema-."""
+
         for i in range(self.stacked_widget.count()):
             pagina= self.stacked_widget.widget(i)
             if hasattr(pagina, "actualizar_tema"):
@@ -2254,6 +2329,7 @@ class MainWindow(QMainWindow):
 
     #LOGIN
     def mostrar_login(self):
+
         login= LoginWindow(self)
         resultado= login.exec()
 
@@ -2270,7 +2346,7 @@ class MainWindow(QMainWindow):
             #asume que trabajar con módulos técnicos es la norma, no la excepción — así que se activa automáticamente para
             #todos los docentes, hayan tocado o no el checkbox. Esto no pisa ni borra la preferencia guardada del usuario:
             #si la institución deja de ser Politécnico, vuelve a mandar lo que el docente eligió manualmente.
-            tipo_inst_login, personalizados_inst_login = self._tipo_institucion()
+            tipo_inst_login, personalizados_inst_login= self._tipo_institucion()
             es_politecnico_inst= (tipo_inst_login == "Politécnico"
                                     or (tipo_inst_login == "Personalizado"
                                         and "Politécnico" in personalizados_inst_login))
@@ -2304,10 +2380,11 @@ class MainWindow(QMainWindow):
             return True
         return False
 
+    #Muestra la ventana principal maximizada con una aparición suave
+    #(fundido de opacidad), como cierre natural de la animación de
+    #bienvenida en vez de un salto brusco a la pantalla completa.
     def abrir_con_fundido(self):
-        """Muestra la ventana principal maximizada con una aparición suave
-        (fundido de opacidad), como cierre natural de la animación de
-        bienvenida en vez de un salto brusco a la pantalla completa."""
+
         self.setWindowOpacity(0.0)
         self.showMaximized()
         self._anim_apertura= QPropertyAnimation(self, b"windowOpacity")
@@ -2318,6 +2395,7 @@ class MainWindow(QMainWindow):
         self._anim_apertura.start()
 
     def cerrar_sesion(self):
+
         resp= mostrar_mensaje("pregunta", "Cerrar Sesión",
                                f"¿Está seguro de cerrar la sesión de {self.usuario_actual}?", self)
         if resp != QMessageBox.StandardButton.Yes:
@@ -2351,6 +2429,7 @@ class MainWindow(QMainWindow):
 
     #Avatar de perfil (foto o iniciales)
     def _abrir_menu_avatar(self, event=None):
+
         if not self.id_usuario_actual:
             return
         menu= QMenu(self)
@@ -2359,6 +2438,7 @@ class MainWindow(QMainWindow):
         menu.exec(self.lbl_avatar.mapToGlobal(self.lbl_avatar.rect().bottomLeft()))
 
     def _cambiar_foto_avatar(self):
+
         destino_dir= os.path.join(get_app_data_dir(), "fotos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="usr")
         if not destino:
@@ -2372,6 +2452,7 @@ class MainWindow(QMainWindow):
         self._actualizar_avatar_visual()
 
     def _quitar_foto_avatar(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("UPDATE usuarios SET foto=? WHERE id=?", ("", self.id_usuario_actual))
@@ -2380,6 +2461,7 @@ class MainWindow(QMainWindow):
         self._actualizar_avatar_visual()
 
     def _generar_pixmap_circular(self, ruta, tamano=38):
+
         origen= QPixmap(ruta)
         if origen.isNull():
             return None
@@ -2400,6 +2482,7 @@ class MainWindow(QMainWindow):
         return resultado
 
     def _actualizar_avatar_visual(self):
+
         foto= ""
         if self.id_usuario_actual:
             conn= obtener_conexion()
@@ -2422,7 +2505,9 @@ class MainWindow(QMainWindow):
 
     #CONFIGURACIÓN JSON
     def cargar_configuracion(self):
+
         try:
+
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 cfg= json.load(f)
                 self.tema_actual= cfg.get("theme", "Colorful (Multicolor)")
@@ -2464,6 +2549,7 @@ class MainWindow(QMainWindow):
             self.tecla_atajos= TECLA_ATAJO_POR_DEFECTO
 
     def guardar_configuracion(self):
+
         cfg= {
             "theme": self.tema_actual,
             "modo_oscuro": self.modo_oscuro,
@@ -2484,12 +2570,14 @@ class MainWindow(QMainWindow):
             "tecla_atajos": getattr(self, 'tecla_atajos', TECLA_ATAJO_POR_DEFECTO),
         }
         try:
+
             with open(CONFIG_PATH, "w", encoding="utf-8") as f:
                 json.dump(cfg, f, ensure_ascii=False, indent=4)
         except OSError as e:
             print(f"Error al guardar configuración: {e}")
 
     def showEvent(self, event):
+
         super().showEvent(event)
         QTimer.singleShot(0, lambda: self._mover_pildora_nav(self.nav_list.currentRow(), animar=False))
         #Al volver desde la bandeja, reactivamos lo que pausamos en
@@ -2499,6 +2587,7 @@ class MainWindow(QMainWindow):
         self._pausar_reanudar_modulos_en_segundo_plano(pausar=False)
 
     def hideEvent(self, event):
+
         super().hideEvent(event)
         #Cuando "Ejecutar en segundo plano al cerrar" está activo, closeEvent llama a self.hide() en vez de destruir la
         #ventana: la app sigue viva pero sin nada visible. Sin este pausar(), el punto verde de "sesión activa"
@@ -2508,17 +2597,17 @@ class MainWindow(QMainWindow):
             self.punto_estado.pausar()
         self._pausar_reanudar_modulos_en_segundo_plano(pausar=True)
 
+    #Recorre todas las páginas ya creadas del stacked widget (Dashboard,
+    #y cualquier otro módulo futuro) y detiene/reactiva sus temporizadores
+    #de refresco automático (relojes en vivo, autorefresh periódico,
+    #etc.) cuando la ventana se oculta/reaparece desde la bandeja.
+    #
+    #Usamos duck typing (pausar_actualizaciones/reanudar_actualizaciones)
+    #en vez de importar cada módulo aquí, para no acoplar main.py a la
+    #lista de módulos: cualquier módulo que defina esos dos métodos queda
+    #cubierto automáticamente, sin tener que tocar este archivo de nuevo.
     def _pausar_reanudar_modulos_en_segundo_plano(self, pausar):
-        """Recorre todas las páginas ya creadas del stacked widget (Dashboard,
-        y cualquier otro módulo futuro) y detiene/reactiva sus temporizadores
-        de refresco automático (relojes en vivo, autorefresh periódico,
-        etc.) cuando la ventana se oculta/reaparece desde la bandeja.
 
-        Usamos duck typing (pausar_actualizaciones/reanudar_actualizaciones)
-        en vez de importar cada módulo aquí, para no acoplar main.py a la
-        lista de módulos: cualquier módulo que defina esos dos métodos queda
-        cubierto automáticamente, sin tener que tocar este archivo de nuevo.
-        """
         if not hasattr(self, "stacked_widget"):
             return
         metodo= "pausar_actualizaciones" if pausar else "reanudar_actualizaciones"
@@ -2527,11 +2616,13 @@ class MainWindow(QMainWindow):
             funcion= getattr(pagina, metodo, None)
             if callable(funcion):
                 try:
+
                     funcion()
                 except Exception as e:
                     print(f"No se pudo {'pausar' if pausar else 'reanudar'} actualizaciones de {pagina}: {e}")
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         if hasattr(self, "nav_list"):
             self._mover_pildora_nav(self.nav_list.currentRow(), animar=False)
@@ -2539,6 +2630,7 @@ class MainWindow(QMainWindow):
             self.motor_alarmas.reposicionar()
 
     def closeEvent(self, event):
+
         if hasattr(self, "motor_alarmas"):
             self.motor_alarmas.detener_motor()
         #Si hay bandeja de sistema disponible, el usuario tiene activada la preferencia "Ejecutar en segundo plano al
@@ -2562,6 +2654,7 @@ class MainWindow(QMainWindow):
             return
 
         try:
+
             ejecutar_backup_al_cerrar()
         except Exception as e:
             print(f"Backup al cerrar fallido: {e}")
@@ -2575,13 +2668,16 @@ class MainWindow(QMainWindow):
 
 
 def wizard_completado():
+
     if edicion_actual() == "single_teacher":
         try:
+
             from src.nucleo import bd_single_teacher
             return bd_single_teacher.wizard_completado()
         except Exception:
             return False
     try:
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT wizard_completado FROM configuracion WHERE id=1")
@@ -2592,36 +2688,37 @@ def wizard_completado():
         return False
 
 
+#Corrige un problema de caché de estilo del propio Qt: el widget
+#QToolTip es UNO SOLO, compartido por toda la aplicación y reutilizado
+#para cada tooltip que se muestra. Cuando el mouse pasa RÁPIDO de un
+#widget con tooltip a otro (p. ej. entre varios combos seguidos), Qt
+#encadena el siguiente tooltip de forma "instantánea" (sin el pequeño
+#retraso inicial) reutilizando ese mismo widget/label sin darle tiempo a
+#repintarse con el QSS del tema actual -a veces se queda pintado con el
+#estilo nativo de Qt (fondo blanco, texto negro) en vez del oscuro/claro
+#de AcaDeXI, que es justo lo que se reportó: tooltips que "no se ven
+#mal" pero no son el que queremos, y que dependen de la velocidad con la
+#que se mueve el mouse, no de qué pantalla o widget se trate.
+#
+#OJO: Qt reenvía QEvent.Type.ToolTip repetidamente MIENTRAS el cursor
+#sigue sobre el MISMO widget (cada vez que se mueve un pixel dentro de
+#él), no solo la primera vez. Por eso NO se puede llamar
+#QToolTip.hideText() en cada evento sin condición: eso cierra el
+#tooltip contra el propio widget en el que el cursor sigue quieto,
+#dándole apenas un parpadeo en vez de dejarlo abierto. Solo hace falta
+#"limpiar" el tooltip anterior cuando el widget que lo pide CAMBIÓ
+#respecto al último evento -es decir, justo al saltar de un elemento a
+#otro-, que es el único momento en el que Qt reutiliza el widget
+#reciclado sin repintarlo.
 class _FiltroTooltipsFrescos(QObject):
-    """Corrige un problema de caché de estilo del propio Qt: el widget
-    QToolTip es UNO SOLO, compartido por toda la aplicación y reutilizado
-    para cada tooltip que se muestra. Cuando el mouse pasa RÁPIDO de un
-    widget con tooltip a otro (p. ej. entre varios combos seguidos), Qt
-    encadena el siguiente tooltip de forma "instantánea" (sin el pequeño
-    retraso inicial) reutilizando ese mismo widget/label sin darle tiempo a
-    repintarse con el QSS del tema actual -a veces se queda pintado con el
-    estilo nativo de Qt (fondo blanco, texto negro) en vez del oscuro/claro
-    de AcaDeXI, que es justo lo que se reportó: tooltips que "no se ven
-    mal" pero no son el que queremos, y que dependen de la velocidad con la
-    que se mueve el mouse, no de qué pantalla o widget se trate.
-
-    OJO: Qt reenvía QEvent.Type.ToolTip repetidamente MIENTRAS el cursor
-    sigue sobre el MISMO widget (cada vez que se mueve un pixel dentro de
-    él), no solo la primera vez. Por eso NO se puede llamar
-    QToolTip.hideText() en cada evento sin condición: eso cierra el
-    tooltip contra el propio widget en el que el cursor sigue quieto,
-    dándole apenas un parpadeo en vez de dejarlo abierto. Solo hace falta
-    "limpiar" el tooltip anterior cuando el widget que lo pide CAMBIÓ
-    respecto al último evento -es decir, justo al saltar de un elemento a
-    otro-, que es el único momento en el que Qt reutiliza el widget
-    reciclado sin repintarlo.
-    """
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._ultimo_widget= None
 
     def eventFilter(self, watched, event):
+
         if event.type() == QEvent.Type.ToolTip:
             if watched is not self._ultimo_widget and QToolTip.isVisible():
                 #OJO: NO se puede llamar QToolTip.hideText() aquí mismo, de forma síncrona, dentro del propio manejo del evento
@@ -2642,19 +2739,20 @@ class _FiltroTooltipsFrescos(QObject):
         return False
 
 
+#Punto de entrada de la aplicación (lo invoca el main.py de la raíz).
 def main():
-    """Punto de entrada de la aplicación (lo invoca el main.py de la raíz)."""
+
+    #Silencia únicamente el aviso de Windows "Unable to set geometry"
+    #que Qt imprime cuando, al reposicionar/centrar un diálogo (por
+    #ejemplo el recorte de foto), el sistema ajusta la ventana 1-2px
+    #para respetar el tamaño mínimo que Windows exige para su marco.
+    #Es un aviso puramente cosmético -no cambia el comportamiento ni
+    #el tamaño real visible del diálogo-, así que en vez de dejarlo
+    #ensuciar la consola en cada cierre se descarta aquí. Cualquier
+    #otro mensaje de Qt (advertencias/errores que sí importan) se
+    #sigue imprimiendo con normalidad.
     def _filtrar_avisos_qt_inofensivos(tipo_msg, contexto, mensaje):
-        """Silencia únicamente el aviso de Windows "Unable to set geometry"
-        que Qt imprime cuando, al reposicionar/centrar un diálogo (por
-        ejemplo el recorte de foto), el sistema ajusta la ventana 1-2px
-        para respetar el tamaño mínimo que Windows exige para su marco.
-        Es un aviso puramente cosmético -no cambia el comportamiento ni
-        el tamaño real visible del diálogo-, así que en vez de dejarlo
-        ensuciar la consola en cada cierre se descarta aquí. Cualquier
-        otro mensaje de Qt (advertencias/errores que sí importan) se
-        sigue imprimiendo con normalidad.
-        """
+
         if "Unable to set geometry" in mensaje and "QWindowsWindow" in mensaje:
             return
         if tipo_msg == QtMsgType.QtDebugMsg:
@@ -2746,6 +2844,7 @@ def main():
         ofrecer_tutoriales_tras_login(window)
 
     try:
+
         ejecutar_backup_automatico_al_iniciar()
     except Exception as e:
         print(f"Backup automático fallido: {e}")

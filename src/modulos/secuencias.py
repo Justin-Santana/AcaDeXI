@@ -31,6 +31,7 @@ def _materias_disponibles(main_window):
     conn= obtener_conexion()
 
     try:
+
         filas= conn.execute("SELECT id, nombre FROM materias WHERE COALESCE(estado,'Activa')='Activa' "
                             "ORDER BY nombre").fetchall()
 
@@ -257,6 +258,7 @@ class EditorSecuencia(QDialog):
         conn= obtener_conexion()
 
         try:
+
             filas= conn.execute("SELECT id, nombre, anio_academico FROM periodos ORDER BY anio_academico DESC, orden")
 
             for fila in filas:
@@ -283,6 +285,7 @@ class EditorSecuencia(QDialog):
             conn= obtener_conexion()
 
             try:
+
                 grados= [dict(fila) for fila in conn.execute("SELECT id, nombre FROM grados ORDER BY orden, nombre")]
 
             finally:
@@ -307,6 +310,7 @@ class EditorSecuencia(QDialog):
             conn= obtener_conexion()
 
             try:
+
                 for fila in conn.execute("SELECT id, nombre FROM secciones WHERE grado_id=? ORDER BY nombre", (grado_id,)):
                     self.combo_seccion.addItem(fila["nombre"], fila["id"])
 
@@ -491,6 +495,7 @@ class EditorSecuencia(QDialog):
         conn= obtener_conexion()
 
         try:
+
             fila= conn.execute("SELECT profesor_id FROM materias WHERE id=?", (materia_id,)).fetchone()
 
         finally:
@@ -501,6 +506,7 @@ class EditorSecuencia(QDialog):
     def _guardar(self):
 
         try:
+
             self.secuencia_id= logica.guardar_secuencia(
                 self._datos(),
                 competencias_ids=self._marcados(self.lista_competencias),
@@ -814,7 +820,7 @@ class ModuloSecuenciasDidacticas(QWidget):
         #el título se vuelve un nombre de archivo válido: lo que no es letra, número, espacio, _ o - pasa a _
         nombre_sugerido= "".join(letra if letra.isalnum() or letra in " _-" else "_" for letra in secuencia["titulo"]).strip() or "secuencia"
 
-        ruta, _ = QFileDialog.getSaveFileName(
+        ruta, _= QFileDialog.getSaveFileName(
             self, "Exportar secuencia", os.path.join(os.path.expanduser("~"), nombre_sugerido + ".docx"),
             "Documento de Word (*.docx)")
 
@@ -825,6 +831,7 @@ class ModuloSecuenciasDidacticas(QWidget):
             ruta += ".docx"
 
         try:
+
             logica.exportar_docx(secuencia_id, ruta)
 
         except Exception as error:

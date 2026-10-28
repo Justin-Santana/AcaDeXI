@@ -1,33 +1,31 @@
-"""
-sync_docente.py
-================
-Exporta/importa el paquete de "Estudiantes y Cursos" que Dirección/Coordinación/
-Administración configuran, para que los profesores puedan traerlo a su propia
-instalación en Modo Docente (sin poder ellos mismos elegir qué estudiantes
-pertenecen a cada curso/sección, ni crear materias).
-
-Formato del paquete: un único archivo Excel (.xlsx) con una hoja "Info" y una
-hoja por tabla (Grados, Especialidades, Aulas, Secciones, Materias, Estudiantes,
-Asignaciones, Horarios). Es el mismo formato Excel/CSV que se usa en el resto
-de la app (p. ej. Estudiantes ▸ Importar Excel/CSV), así Dirección puede
-incluso abrir el archivo y revisarlo antes de compartirlo.
-
-Dos modos de exportación:
-    - Paquete institucional completo (profesor_id=None): todo lo configurado.
-    - Paquete individual de un profesor (profesor_id=<id>): solo los grados,
-      secciones, materias, estudiantes, aulas, especialidades y horarios que
-      le corresponden a ESE profesor -- ya sea porque es el titular de la
-      materia (materias.profesor_id) o porque fue asignado como co-docente en
-      materia_profesores (p. ej. "Auxiliar", "Suplente", etc. -- ver la pestaña
-      Co-Docentes del módulo Materias).
-
-Importa (en la instalación del docente):
-    - Hace INSERT OR REPLACE por id en cada tabla, preservando el resto de la
-      base de datos del profesor (sus observaciones, calificaciones, etc.)
-    - Todo dentro de una transacción; si algo falla se revierte por completo.
-    - Por compatibilidad, también puede leer paquetes antiguos en .json
-      generados por versiones previas de AcaDeXI.
-"""
+#sync_docente.py
+#================
+#Exporta/importa el paquete de "Estudiantes y Cursos" que Dirección/Coordinación/
+#Administración configuran, para que los profesores puedan traerlo a su propia
+#instalación en Modo Docente (sin poder ellos mismos elegir qué estudiantes
+#pertenecen a cada curso/sección, ni crear materias).
+#
+#Formato del paquete: un único archivo Excel (.xlsx) con una hoja "Info" y una
+#hoja por tabla (Grados, Especialidades, Aulas, Secciones, Materias, Estudiantes,
+#Asignaciones, Horarios). Es el mismo formato Excel/CSV que se usa en el resto
+#de la app (p. ej. Estudiantes ▸ Importar Excel/CSV), así Dirección puede
+#incluso abrir el archivo y revisarlo antes de compartirlo.
+#
+#Dos modos de exportación:
+#- Paquete institucional completo (profesor_id=None): todo lo configurado.
+#- Paquete individual de un profesor (profesor_id=<id>): solo los grados,
+#secciones, materias, estudiantes, aulas, especialidades y horarios que
+#le corresponden a ESE profesor -- ya sea porque es el titular de la
+#materia (materias.profesor_id) o porque fue asignado como co-docente en
+#materia_profesores (p. ej. "Auxiliar", "Suplente", etc. -- ver la pestaña
+#Co-Docentes del módulo Materias).
+#
+#Importa (en la instalación del docente):
+#- Hace INSERT OR REPLACE por id en cada tabla, preservando el resto de la
+#base de datos del profesor (sus observaciones, calificaciones, etc.)
+#- Todo dentro de una transacción; si algo falla se revierte por completo.
+#- Por compatibilidad, también puede leer paquetes antiguos en .json
+#generados por versiones previas de AcaDeXI.
 import json
 from datetime import datetime
 from PySide6.QtWidgets import QFileDialog
@@ -72,13 +70,14 @@ COLUMNAS= {
 }
 
 
+#IDs de materias/secciones/grados/aulas/especialidades relacionados con un
+#profesor específico (como titular o como co-docente vía materia_profesores),
+#para poder generar un paquete acotado solo a lo que ese profesor imparte.
 def _calcular_alcance_profesor(conn, profesor_id):
-    """IDs de materias/secciones/grados/aulas/especialidades relacionados con un
-    profesor específico (como titular o como co-docente vía materia_profesores),
-    para poder generar un paquete acotado solo a lo que ese profesor imparte."""
+
     c= conn.cursor()
-    materia_ids, seccion_ids = set(), set()
-    grado_ids, aula_ids, especialidad_ids = set(), set(), set()
+    materia_ids, seccion_ids= set(), set()
+    grado_ids, aula_ids, especialidad_ids= set(), set(), set()
 
     c.execute("SELECT id, especialidad_id FROM materias WHERE profesor_id=?", (profesor_id,))
     for r in c.fetchall():
@@ -128,9 +127,10 @@ def _calcular_alcance_profesor(conn, profesor_id):
     }
 
 
+#Ejecuta el SELECT de una tabla del paquete, acotado al alcance del
+#profesor cuando corresponde (profesor_id no es None).
 def _filas_tabla(c, tabla, columnas, profesor_id, alcance):
-    """Ejecuta el SELECT de una tabla del paquete, acotado al alcance del
-    profesor cuando corresponde (profesor_id no es None)."""
+
     if profesor_id is None:
         c.execute(f"SELECT {', '.join(columnas)} FROM {tabla}")
         return c.fetchall()
@@ -163,19 +163,21 @@ def _filas_tabla(c, tabla, columnas, profesor_id, alcance):
     return c.fetchall()
 
 
+#Genera el archivo .xlsx con estudiantes/cursos para que los docentes lo importen.
+#Solo debe invocarse desde roles gerenciales (Admin/Director/Coordinador).
+#
+#Si profesor_id es None, exporta el paquete institucional completo (todo lo
+#configurado). Si se indica un profesor_id, exporta un paquete acotado solo
+#a las materias/secciones/estudiantes/horarios de ESE profesor (como titular
+#o como co-docente asignado en materia_profesores).
 def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profesor_nombre=None):
-    """Genera el archivo .xlsx con estudiantes/cursos para que los docentes lo importen.
-    Solo debe invocarse desde roles gerenciales (Admin/Director/Coordinador).
 
-    Si profesor_id es None, exporta el paquete institucional completo (todo lo
-    configurado). Si se indica un profesor_id, exporta un paquete acotado solo
-    a las materias/secciones/estudiantes/horarios de ESE profesor (como titular
-    o como co-docente asignado en materia_profesores)."""
     if es_profesor_restringido(main_window) or not puede_editar(main_window):
         mostrar_mensaje("advertencia", "Sin permisos",
                         "Solo Dirección/Coordinación/Administración pueden exportar este paquete.", parent)
         return
     try:
+
         import openpyxl
     except ImportError:
         mostrar_mensaje("error", "Falta un componente",
@@ -188,7 +190,7 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
         sufijo= f"_{limpio}"
     nombre_sugerido= f"acadexi_docente{sufijo}_{datetime.now().strftime('%Y%m%d')}.xlsx"
 
-    ruta, _ = QFileDialog.getSaveFileName(
+    ruta, _= QFileDialog.getSaveFileName(
         parent, "Exportar Estudiantes y Cursos (Modo Docente)",
         nombre_sugerido, "Excel para Modo Docente (*.xlsx)")
     if not ruta:
@@ -200,6 +202,7 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
     c= conn.cursor()
     total_filas= 0
     try:
+
         alcance= _calcular_alcance_profesor(conn, profesor_id) if profesor_id is not None else None
 
         if profesor_id is not None and alcance is not None and not alcance["materias"]:
@@ -223,6 +226,7 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
             hoja= wb.create_sheet(HOJAS[tabla])
             hoja.append(columnas)
             try:
+
                 filas= _filas_tabla(c, tabla, columnas, profesor_id, alcance)
             except Exception:
                 #La tabla/columna puede no existir según el tipo de institución; se omite.
@@ -256,16 +260,18 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
                        "Importar Estudiantes y Cursos.", parent)
 
 
+#Importa un paquete de estudiantes/cursos (.xlsx) generado por un rol gerencial.
+#Pensado para usarse desde el Modo Docente. También acepta, por compatibilidad,
+#paquetes antiguos en formato .json.
 def importar_paquete_docente(main_window, parent=None):
-    """Importa un paquete de estudiantes/cursos (.xlsx) generado por un rol gerencial.
-    Pensado para usarse desde el Modo Docente. También acepta, por compatibilidad,
-    paquetes antiguos en formato .json."""
-    ruta, _ = QFileDialog.getOpenFileName(
+
+    ruta, _= QFileDialog.getOpenFileName(
         parent, "Importar Estudiantes y Cursos (Modo Docente)", "",
         "Excel para Modo Docente (*.xlsx);;Paquete antiguo AcaDeXI (*.json)")
     if not ruta:
         return
     try:
+
         if ruta.lower().endswith(".json"):
             tablas= _leer_paquete_json(ruta)
         else:
@@ -281,6 +287,7 @@ def importar_paquete_docente(main_window, parent=None):
     c= conn.cursor()
     total_filas= 0
     try:
+
         #Orden que respeta dependencias (grados/especialidades/aulas -> secciones ->
         #materias -> estudiantes -> resto)
         for tabla in TABLAS_PAQUETE:
@@ -293,6 +300,7 @@ def importar_paquete_docente(main_window, parent=None):
             for reg in registros:
                 valores= tuple(reg.get(col) for col in columnas)
                 try:
+
                     c.execute(sql, valores)
                     total_filas += 1
                 except Exception:
@@ -316,12 +324,16 @@ def importar_paquete_docente(main_window, parent=None):
         main_window.refrescar_modulo_actual()
 
 
+#El archivo seleccionado no es un paquete de Estudiantes/Cursos válido.
 class _PaqueteInvalido(Exception):
-    """El archivo seleccionado no es un paquete de Estudiantes/Cursos válido."""
+
+    pass
 
 
 def _leer_paquete_xlsx(ruta):
+
     try:
+
         import openpyxl
     except ImportError:
         raise RuntimeError("Instala 'openpyxl' (pip install openpyxl) para importar paquetes en Excel.")
@@ -363,9 +375,10 @@ def _leer_paquete_xlsx(ruta):
     return tablas
 
 
+#Compatibilidad con paquetes generados por versiones antiguas de AcaDeXI (.json).
+#Los paquetes antiguos no incluían 'aulas' ni 'especialidades'; se omiten sin error.
 def _leer_paquete_json(ruta):
-    """Compatibilidad con paquetes generados por versiones antiguas de AcaDeXI (.json).
-    Los paquetes antiguos no incluían 'aulas' ni 'especialidades'; se omiten sin error."""
+
     with open(ruta, "r", encoding="utf-8") as f:
         paquete= json.load(f)
     if paquete.get("tipo") != TIPO_PAQUETE:

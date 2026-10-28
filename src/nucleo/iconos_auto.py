@@ -1,33 +1,32 @@
-"""iconos_auto.py — Iconización AUTOMÁTICA y coherente de toda la app.
-
-Problema que resuelve
----------------------
-Los iconos vectoriales de `iconos_emoji.py` se asignan a mano, llamada por
-llamada. Eso inevitablemente deja huecos: botones creados dinámicamente,
-diálogos sin icono de ventana, pestañas sin icono, módulos nuevos que se
-olvidan de llamar a `icono_emoji`... y mapas de palabras duplicados por
-archivo que derivan en iconos INCOHERENTES entre módulos (el mismo botón
-"Exportar" con dibujos distintos según la ventana).
-
-Solución
---------
-Un único filtro de eventos instalado sobre la QApplication. Cada vez que un
-widget se pule (evento Polish/Show) o cambia su texto, se le asigna el icono
-que corresponde según SU TEXTO, usando UN SOLO mapa semántico compartido por
-toda la app. Así:
-
-  - No existe botón, pestaña o diálogo sin icono (cobertura total).
-  - "Guardar" se ve IGUAL en todos los módulos (coherencia total).
-  - Los módulos nuevos quedan iconizados sin escribir ni una línea.
-
-Uso (desde main.py, una sola vez):
-    from iconos_auto import instalar_iconos_automaticos
-    instalar_iconos_automaticos(app)
-
-Las llamadas explícitas a `icono_emoji(...)` de los módulos siguen teniendo
-prioridad visual: el filtro NUNCA sobreescribe un icono ya asignado (solo
-rellena los que están vacíos).
-"""
+#iconos_auto.py — Iconización AUTOMÁTICA y coherente de toda la app.
+#
+#Problema que resuelve
+# -----------------------------------------
+# los iconos vectoriales de `iconos_emoji.py` se asignan a mano, llamada por
+# -----------------------------------------
+#llamada. Eso inevitablemente deja huecos: botones creados dinámicamente,
+#diálogos sin icono de ventana, pestañas sin icono, módulos nuevos que se
+#olvidan de llamar a `icono_emoji`... y mapas de palabras duplicados por
+#archivo que derivan en iconos INCOHERENTES entre módulos (el mismo botón
+#"Exportar" con dibujos distintos según la ventana).
+#
+#Solución
+#Un único filtro de eventos instalado sobre la QApplication. Cada vez que un
+#widget se pule (evento Polish/Show) o cambia su texto, se le asigna el icono
+#que corresponde según SU TEXTO, usando UN SOLO mapa semántico compartido por
+#toda la app. Así:
+#
+#- No existe botón, pestaña o diálogo sin icono (cobertura total).
+#- "Guardar" se ve IGUAL en todos los módulos (coherencia total).
+#- Los módulos nuevos quedan iconizados sin escribir ni una línea.
+#
+#Uso (desde main.py, una sola vez):
+#from iconos_auto import instalar_iconos_automaticos
+#instalar_iconos_automaticos(app)
+#
+#Las llamadas explícitas a `icono_emoji(...)` de los módulos siguen teniendo
+#prioridad visual: el filtro NUNCA sobreescribe un icono ya asignado (solo
+#rellena los que están vacíos).
 import re
 import unicodedata
 
@@ -152,8 +151,9 @@ _MAPA= [
 ]
 
 
+#Minúsculas y sin tildes, para que 'Cálcular' == 'calcular'.
 def _normalizar(texto):
-    """Minúsculas y sin tildes, para que 'Cálcular' == 'calcular'."""
+
     texto= texto.strip().lower()
     texto= unicodedata.normalize('NFD', texto)
     return ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
@@ -176,13 +176,14 @@ _PATRONES_EXCEPCION= {
 }
 
 
+#Compila (con cache) el patrón para `kw`: coincide solo si `kw`
+#empieza en un límite de palabra -así 'area' NO coincide dentro de
+#'tareas', ni 'rol' dentro de 'control', ni 'tema' dentro de 'sistema'-,
+#pero SÍ permite que la palabra siga después (para seguir cubriendo
+#plurales/formas como 'materia' -> 'materias', 'estudiante' ->
+#'estudiantes'), ya que solo se exige el límite ANTES de la palabra.
 def _patron_de(kw):
-    """Compila (con cache) el patrón para `kw`: coincide solo si `kw`
-    empieza en un límite de palabra -así 'area' NO coincide dentro de
-    'tareas', ni 'rol' dentro de 'control', ni 'tema' dentro de 'sistema'-,
-    pero SÍ permite que la palabra siga después (para seguir cubriendo
-    plurales/formas como 'materia' -> 'materias', 'estudiante' ->
-    'estudiantes'), ya que solo se exige el límite ANTES de la palabra."""
+
     patron= _cache_patrones.get(kw)
     if patron is None:
         expresion= _PATRONES_EXCEPCION.get(kw, r'\b' + re.escape(kw))
@@ -191,13 +192,13 @@ def _patron_de(kw):
     return patron
 
 
+#Devuelve el QIcon coherente para un texto de botón/título/pestaña.
+#
+#Único punto de verdad de la app: el mismo texto produce SIEMPRE el
+#mismo icono en cualquier módulo. Si nada coincide, devuelve un QIcon
+#nulo (mejor un botón sin icono que un icono sin sentido).
 def icono_para_texto(texto):
-    """Devuelve el QIcon coherente para un texto de botón/título/pestaña.
 
-    Único punto de verdad de la app: el mismo texto produce SIEMPRE el
-    mismo icono en cualquier módulo. Si nada coincide, devuelve un QIcon
-    nulo (mejor un botón sin icono que un icono sin sentido).
-    """
     clave= _normalizar(texto)
     if clave in _cache_texto:
         return _cache_texto[clave]
@@ -211,26 +212,26 @@ def icono_para_texto(texto):
     return icono
 
 
+#Filtro de eventos global: rellena los iconos que falten.
+#
+#Nunca sobreescribe un icono ya asignado manualmente: solo actúa
+#cuando `icon().isNull()` (el botón/pestaña/ventana no tiene ninguno).
+#
+#RENDIMIENTO (importante): la asignación se DIFIERE y se COALESA. Dos
+#razones:
+#1. Si se asignara el icono dentro del evento Polish que dispara el
+#propio constructor del widget, PySide6 revienta (SystemError al
+#volver del constructor); diferido, el widget ya está completo.
+#2. Al cambiar de tema claro/oscuro, Qt re-pule (evento Polish) TODOS
+#los widgets de la app de golpe. Si por cada uno se programara un
+#QTimer.singleShot(0) individual, el cambio de tema se llenaría de
+#miles de timers y se volvería lento. Aquí todos los widgets
+#pendientes se acumulan en sendos conjuntos y UN ÚNICO timer los
+#procesa todos juntos en el siguiente ciclo del bucle de eventos.
 class _Iconizador(QObject):
-    """Filtro de eventos global: rellena los iconos que falten.
-
-    Nunca sobreescribe un icono ya asignado manualmente: solo actúa
-    cuando `icon().isNull()` (el botón/pestaña/ventana no tiene ninguno).
-
-    RENDIMIENTO (importante): la asignación se DIFIERE y se COALESA. Dos
-    razones:
-      1. Si se asignara el icono dentro del evento Polish que dispara el
-         propio constructor del widget, PySide6 revienta (SystemError al
-         volver del constructor); diferido, el widget ya está completo.
-      2. Al cambiar de tema claro/oscuro, Qt re-pule (evento Polish) TODOS
-         los widgets de la app de golpe. Si por cada uno se programara un
-         QTimer.singleShot(0) individual, el cambio de tema se llenaría de
-         miles de timers y se volvería lento. Aquí todos los widgets
-         pendientes se acumulan en sendos conjuntos y UN ÚNICO timer los
-         procesa todos juntos en el siguiente ciclo del bucle de eventos.
-    """
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._botones= set()
         self._tabs= set()
@@ -240,17 +241,20 @@ class _Iconizador(QObject):
         self._timer.setInterval(0)
         self._timer.timeout.connect(self._procesar_pendientes)
 
+    #Programa UNA sola pasada para todo lo pendiente.
     def _agendar(self):
-        """Programa UNA sola pasada para todo lo pendiente."""
+
         if not self._timer.isActive():
             self._timer.start()
 
     def _procesar_pendientes(self):
-        botones, self._botones = self._botones, set()
-        tabs, self._tabs = self._tabs, set()
-        ventanas, self._ventanas = self._ventanas, set()
+
+        botones, self._botones= self._botones, set()
+        tabs, self._tabs= self._tabs, set()
+        ventanas, self._ventanas= self._ventanas, set()
         for btn in botones:
             try:
+
                 if btn.icon().isNull() and btn.text():
                     icono= icono_para_texto(btn.text())
                     if not icono.isNull():
@@ -260,6 +264,7 @@ class _Iconizador(QObject):
                 pass  #el widget C++ ya fue destruido
         for tabs_w in tabs:
             try:
+
                 barra= tabs_w.tabBar()
                 for i in range(tabs_w.count()):
                     if barra.tabIcon(i).isNull() and tabs_w.tabText(i):
@@ -270,6 +275,7 @@ class _Iconizador(QObject):
                 pass
         for win in ventanas:
             try:
+
                 if win.windowIcon().isNull() and win.windowTitle():
                     icono= icono_para_texto(win.windowTitle())
                     if not icono.isNull():
@@ -282,11 +288,13 @@ class _Iconizador(QObject):
     #cada clase Python se calcula UNA vez si es relevante (botón / tabs / ventana) y después es solo una búsqueda
     #en diccionario.
     _cache_clases= {}
-    _TAG_BOTON, _TAG_TABS, _TAG_VENTANA = 1, 2, 3
+    _TAG_BOTON, _TAG_TABS, _TAG_VENTANA= 1, 2, 3
 
     @classmethod
     def _tag_de_clase(cls, clase):
+
         try:
+
             if issubclass(clase, (QPushButton, QToolButton)):
                 return cls._TAG_BOTON
             if issubclass(clase, QTabWidget):
@@ -298,6 +306,7 @@ class _Iconizador(QObject):
         return 0
 
     def eventFilter(self, obj, event):
+
         t= event.type()
         if t != QEvent.Type.Polish and t != QEvent.Type.Show:
             return False
@@ -309,6 +318,7 @@ class _Iconizador(QObject):
         if not tag:
             return False
         try:
+
             if tag == self._TAG_BOTON:
                 if obj.icon().isNull() and obj.text() \
                         and not icono_para_texto(obj.text()).isNull():
@@ -328,8 +338,9 @@ class _Iconizador(QObject):
 _instalado= False
 
 
+#Instala el filtro UNA sola vez sobre la aplicación.
 def instalar_iconos_automaticos(app):
-    """Instala el filtro UNA sola vez sobre la aplicación."""
+
     global _instalado
     if _instalado:
         return

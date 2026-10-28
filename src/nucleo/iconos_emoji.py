@@ -1,32 +1,31 @@
-"""iconos_emoji.py — Reemplazo de TODOS los emojis de texto de AcaDeXI por
-iconos vectoriales multicolor dibujados con QPainter.
-
-Por qué existe
----------------
-La app usaba emojis Unicode sueltos (💾, 🗑, ✅, 🎓...) incrustados en el
-texto de botones, títulos y tooltips. Eso depende de que el sistema
-operativo tenga una fuente con esos glifos y de qué versión de esa fuente
-sea (Windows/Linux/macOS los dibujan distinto, y algunos ni los tienen),
-así que la misma pantalla se veía distinta -o directamente rota, con
-"cuadritos"- según el equipo. Este módulo sustituye cada emoji por un
-QIcon dibujado a mano, vectorial (se ve nítido en cualquier tamaño/DPI) y
-EN VARIOS COLORES -como el emoji original-, no un simple glifo monocromo.
-
-Cómo se usa desde cualquier módulo
------------------------------------
-    from iconos_emoji import icono_emoji, quitar_emojis_texto
-
-    btn_guardar= QPushButton(quitar_emojis_texto("💾 Guardar"))
-    btn_guardar.setIcon(icono_emoji("💾"))
-    btn_guardar.setIconSize(QSize(18, 18))
-
-O, para un QLabel con el emoji suelto dentro de un texto más largo, usar
-`pixmap_emoji("🎓", 16)` y colocarlo en un QLabel aparte junto al texto.
-
-Todo el dibujo se cachea por (caracter, tamaño) así que llamar a
-`icono_emoji`/`pixmap_emoji` muchas veces (una app grande como esta lo hace
-todo el tiempo, al reconstruir listas/tablas) es barato.
-"""
+#iconos_emoji.py — Reemplazo de TODOS los emojis de texto de AcaDeXI por
+#iconos vectoriales multicolor dibujados con QPainter.
+#
+#Por qué existe
+# -----------------------------------------
+# la app usaba emojis Unicode sueltos (💾, 🗑, ✅, 🎓...) incrustados en el
+# -----------------------------------------
+#texto de botones, títulos y tooltips. Eso depende de que el sistema
+#operativo tenga una fuente con esos glifos y de qué versión de esa fuente
+#sea (Windows/Linux/macOS los dibujan distinto, y algunos ni los tienen),
+#así que la misma pantalla se veía distinta -o directamente rota, con
+#"cuadritos"- según el equipo. Este módulo sustituye cada emoji por un
+#QIcon dibujado a mano, vectorial (se ve nítido en cualquier tamaño/DPI) y
+#EN VARIOS COLORES -como el emoji original-, no un simple glifo monocromo.
+#
+#Cómo se usa desde cualquier módulo
+#from iconos_emoji import icono_emoji, quitar_emojis_texto
+#
+#btn_guardar= QPushButton(quitar_emojis_texto("💾 Guardar"))
+#btn_guardar.setIcon(icono_emoji("💾"))
+#btn_guardar.setIconSize(QSize(18, 18))
+#
+#O, para un QLabel con el emoji suelto dentro de un texto más largo, usar
+#`pixmap_emoji("🎓", 16)` y colocarlo en un QLabel aparte junto al texto.
+#
+#Todo el dibujo se cachea por (caracter, tamaño) así que llamar a
+#`icono_emoji`/`pixmap_emoji` muchas veces (una app grande como esta lo hace
+#todo el tiempo, al reconstruir listas/tablas) es barato.
 import math
 import weakref
 
@@ -58,21 +57,22 @@ _widgets_filtro_boton= weakref.WeakSet()
 _widgets_filtro_pixmap= weakref.WeakKeyDictionary()  #widget -> tamaño pedido
 
 
+#Blanco para acciones estructurales sobre controles de acento.
+#
+#Los iconos de filtro se usan sobre botones y cabeceras de color; un
+#trazo blanco conserva el mismo contraste en todos los temas.
 def _color_neutro_estructural():
-    """Blanco para acciones estructurales sobre controles de acento.
 
-    Los iconos de filtro se usan sobre botones y cabeceras de color; un
-    trazo blanco conserva el mismo contraste en todos los temas.
-    """
     return "#FFFFFF"
 
 
+#Llamar tras cambiar el tema (y una vez al iniciar la app). Si el
+#modo realmente cambió, limpia la cache de íconos -para que los
+#PRÓXIMOS `icono_emoji`/`pixmap_emoji` reflejen el tema nuevo- y refresca
+#en el acto los widgets ya construidos que dependen del tema (ver
+#`icono_boton_filtro`/`pixmap_boton_filtro`).
 def establecer_modo_oscuro(activo):
-    """Llamar tras cambiar el tema (y una vez al iniciar la app). Si el
-    modo realmente cambió, limpia la cache de íconos -para que los
-    PRÓXIMOS `icono_emoji`/`pixmap_emoji` reflejen el tema nuevo- y refresca
-    en el acto los widgets ya construidos que dependen del tema (ver
-    `icono_boton_filtro`/`pixmap_boton_filtro`)."""
+
     global _modo_oscuro_activo
     activo= bool(activo)
     if activo == _modo_oscuro_activo:
@@ -82,33 +82,38 @@ def establecer_modo_oscuro(activo):
     _cache_icon.clear()
     for boton in list(_widgets_filtro_boton):
         try:
+
             boton.setIcon(icono_emoji("\uE000"))
         except RuntimeError:
             pass  #el widget C++ ya fue destruido
     for label, tamano in list(_widgets_filtro_pixmap.items()):
         try:
+
             label.setPixmap(pixmap_emoji("\uE000", tamano))
         except RuntimeError:
             pass
 
 
+#Asigna el icono de "Filtros" a `boton` (QPushButton/QToolButton) y lo
+#deja registrado para refrescarse solo si más tarde cambia el tema.
+#Usar esto en vez de `boton.setIcon(icono_emoji("\uE000"))` a mano.
 def icono_boton_filtro(boton):
-    """Asigna el icono de "Filtros" a `boton` (QPushButton/QToolButton) y lo
-    deja registrado para refrescarse solo si más tarde cambia el tema.
-    Usar esto en vez de `boton.setIcon(icono_emoji("\\uE000"))` a mano."""
+
     boton.setIcon(icono_emoji("\uE000"))
     _widgets_filtro_boton.add(boton)
 
 
+#Igual que `icono_boton_filtro` pero para un QLabel con el pixmap del
+#icono de Filtros suelto (cabeceras de sección, etc.).
 def pixmap_boton_filtro(label, size=20):
-    """Igual que `icono_boton_filtro` pero para un QLabel con el pixmap del
-    icono de Filtros suelto (cabeceras de sección, etc.)."""
+
     label.setPixmap(pixmap_emoji("\uE000", size))
     _widgets_filtro_pixmap[label]= size
 
 
 #Utilidades de bajo nivel
 def _nuevo_lienzo(size):
+
     pix= QPixmap(size, size)
     pix.fill(Qt.GlobalColor.transparent)
     p= QPainter(pix)
@@ -117,12 +122,14 @@ def _nuevo_lienzo(size):
     return pix, p
 
 
+#Rect en fracción [0,1] del lienzo -> QRectF en píxeles reales.
 def _r(size, x0, y0, x1, y1):
-    """Rect en fracción [0,1] del lienzo -> QRectF en píxeles reales."""
+
     return QRectF(x0 * size, y0 * size, (x1 - x0) * size, (y1 - y0) * size)
 
 
 def _pluma(color, ancho=1.4):
+
     pen= QPen(QColor(color))
     pen.setWidthF(ancho)
     pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
@@ -131,10 +138,12 @@ def _pluma(color, ancho=1.4):
 
 
 def _sin_pluma():
+
     return QPen(Qt.PenStyle.NoPen)
 
 
 def _degradado(rect, c1, c2, vertical=True):
+
     g= QLinearGradient(rect.topLeft(), rect.bottomLeft() if vertical else rect.topRight())
     g.setColorAt(0, QColor(c1))
     g.setColorAt(1, QColor(c2))
@@ -143,18 +152,21 @@ def _degradado(rect, c1, c2, vertical=True):
 
 #Primitivas de forma (cada una recibe QPainter + tamaño de lienzo en px)
 def _disco(p, size, x0, y0, x1, y1, color, borde=None):
+
     p.setBrush(QBrush(QColor(color)))
     p.setPen(_pluma(borde) if borde else _sin_pluma())
     p.drawEllipse(_r(size, x0, y0, x1, y1))
 
 
 def _rect_redondeado(p, size, x0, y0, x1, y1, color, radio=0.12, borde=None):
+
     p.setBrush(QBrush(QColor(color)))
     p.setPen(_pluma(borde) if borde else _sin_pluma())
     p.drawRoundedRect(_r(size, x0, y0, x1, y1), radio * size, radio * size)
 
 
 def _poligono(p, size, puntos_frac, color, borde=None):
+
     poly= QPolygonF([QPointF(x * size, y * size) for x, y in puntos_frac])
     p.setBrush(QBrush(QColor(color)))
     p.setPen(_pluma(borde) if borde else _sin_pluma())
@@ -162,11 +174,13 @@ def _poligono(p, size, puntos_frac, color, borde=None):
 
 
 def _linea(p, size, x0, y0, x1, y1, color, ancho=1.6):
+
     p.setPen(_pluma(color, ancho))
     p.drawLine(QPointF(x0 * size, y0 * size), QPointF(x1 * size, y1 * size))
 
 
 def _check(p, size, color="white", x0=0.28, y0=0.52, x1=0.44, y1=0.68, x2=0.74, y2=0.32, ancho=2.2):
+
     pen= _pluma(color, ancho)
     p.setPen(pen)
     p.drawLine(QPointF(x0 * size, y0 * size), QPointF(x1 * size, y1 * size))
@@ -174,6 +188,7 @@ def _check(p, size, color="white", x0=0.28, y0=0.52, x1=0.44, y1=0.68, x2=0.74, 
 
 
 def _cruz(p, size, color, x0=0.30, y0=0.30, x1=0.70, y1=0.70, ancho=2.2):
+
     pen= _pluma(color, ancho)
     p.setPen(pen)
     p.drawLine(QPointF(x0 * size, y0 * size), QPointF(x1 * size, y1 * size))
@@ -181,6 +196,7 @@ def _cruz(p, size, color, x0=0.30, y0=0.30, x1=0.70, y1=0.70, ancho=2.2):
 
 
 def _mas(p, size, color, ancho=2.4, x0=0.5, y0=0.5, medio=0.24):
+
     pen= _pluma(color, ancho)
     p.setPen(pen)
     p.drawLine(QPointF((x0 - medio) * size, y0 * size), QPointF((x0 + medio) * size, y0 * size))
@@ -188,13 +204,15 @@ def _mas(p, size, color, ancho=2.4, x0=0.5, y0=0.5, medio=0.24):
 
 
 def _menos(p, size, color, ancho=2.4, y=0.5, medio=0.24):
+
     p.setPen(_pluma(color, ancho))
     p.drawLine(QPointF((0.5 - medio) * size, y * size), QPointF((0.5 + medio) * size, y * size))
 
 
 def _estrella(p, size, x0, y0, x1, y1, color, borde=None, puntas=5):
-    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-    radio_ext, radio_int = (x1 - x0) / 2, (x1 - x0) / 2 * 0.42
+
+    cx, cy= (x0 + x1) / 2, (y0 + y1) / 2
+    radio_ext, radio_int= (x1 - x0) / 2, (x1 - x0) / 2 * 0.42
     puntos= []
     for i in range(puntas * 2):
         ang= math.pi / puntas * i - math.pi / 2
@@ -203,24 +221,26 @@ def _estrella(p, size, x0, y0, x1, y1, color, borde=None, puntas=5):
     _poligono(p, size, puntos, color, borde)
 
 
+#Flecha recta apuntando a `angulo_deg` (0 = derecha), centrada en (cx,cy).
 def _flecha(p, size, color, angulo_deg=0, cx=0.5, cy=0.5, largo=0.34, ancho_cabeza=0.16, grosor=2.4):
-    """Flecha recta apuntando a `angulo_deg` (0 = derecha), centrada en (cx,cy)."""
+
     ang= math.radians(angulo_deg)
-    dx, dy = math.cos(ang), math.sin(ang)
-    x_ini, y_ini = cx - dx * largo, cy - dy * largo
-    x_fin, y_fin = cx + dx * largo, cy + dy * largo
+    dx, dy= math.cos(ang), math.sin(ang)
+    x_ini, y_ini= cx - dx * largo, cy - dy * largo
+    x_fin, y_fin= cx + dx * largo, cy + dy * largo
     p.setPen(_pluma(color, grosor))
     p.drawLine(QPointF(x_ini * size, y_ini * size), QPointF(x_fin * size, y_fin * size))
     perp= ang + math.pi / 2
-    px, py = math.cos(perp) * ancho_cabeza, math.sin(perp) * ancho_cabeza
-    back_x, back_y = x_fin - dx * ancho_cabeza * 1.3, y_fin - dy * ancho_cabeza * 1.3
+    px, py= math.cos(perp) * ancho_cabeza, math.sin(perp) * ancho_cabeza
+    back_x, back_y= x_fin - dx * ancho_cabeza * 1.3, y_fin - dy * ancho_cabeza * 1.3
     _poligono(p, size, [
         (x_fin, y_fin), (back_x + px, back_y + py), (back_x - px, back_y - py)
     ], color)
 
 
+#Dos arcos con punta de flecha formando un círculo -icono de refrescar/sincronizar.
 def _flechas_circulares(p, size, color1, color2):
-    """Dos arcos con punta de flecha formando un círculo -icono de refrescar/sincronizar."""
+
     rect= _r(size, 0.16, 0.16, 0.84, 0.84)
     p.setPen(_pluma(color1, 2.4))
     p.setBrush(Qt.BrushStyle.NoBrush)
@@ -231,8 +251,9 @@ def _flechas_circulares(p, size, color1, color2):
     _poligono(p, size, [(0.20, 0.70), (0.10, 0.78), (0.10, 0.60)], color2)
 
 
+#tipo: 'undo' (↩ apunta a la izq.) o 'redo' (apunta a la der.).
 def _flecha_curva(p, size, color, tipo="undo"):
-    """tipo: 'undo' (↩ apunta a la izq.) o 'redo' (apunta a la der.)."""
+
     rect= _r(size, 0.20, 0.22, 0.80, 0.78)
     p.setPen(_pluma(color, 2.4))
     p.setBrush(Qt.BrushStyle.NoBrush)
@@ -245,6 +266,7 @@ def _flecha_curva(p, size, color, tipo="undo"):
 
 
 def _triangulo_alerta(p, size, color_fondo="#FBBF24", color_signo="#78350F"):
+
     _poligono(p, size, [(0.5, 0.12), (0.92, 0.85), (0.08, 0.85)], color_fondo, borde="#B45309")
     p.setPen(_pluma(color_signo, 2.6))
     p.drawLine(QPointF(0.5 * size, 0.40 * size), QPointF(0.5 * size, 0.62 * size))
@@ -252,6 +274,7 @@ def _triangulo_alerta(p, size, color_fondo="#FBBF24", color_signo="#78350F"):
 
 
 def _candado(p, size, color_cuerpo="#64748B", color_arco="#94A3B8", abierto=False):
+
     if abierto:
         arco= _r(size, 0.26, 0.10, 0.74, 0.56)
         p.setPen(_pluma(color_arco, 3.4))
@@ -267,6 +290,7 @@ def _candado(p, size, color_cuerpo="#64748B", color_arco="#94A3B8", abierto=Fals
 
 
 def _llave(p, size, color="#EAB308"):
+
     _disco(p, size, 0.14, 0.30, 0.42, 0.58, color, borde="#A16207")
     _disco(p, size, 0.24, 0.40, 0.34, 0.48, "white")
     p.setPen(_pluma(color, 4.0))
@@ -276,6 +300,7 @@ def _llave(p, size, color="#EAB308"):
 
 
 def _carpeta(p, size, color="#F5B942", abierta=False):
+
     _rect_redondeado(p, size, 0.10, 0.22, 0.46, 0.34, color, radio=0.06)
     if abierta:
         _poligono(p, size, [(0.10, 0.34), (0.14, 0.82), (0.92, 0.82), (0.88, 0.40), (0.36, 0.40), (0.30, 0.34)],
@@ -286,6 +311,7 @@ def _carpeta(p, size, color="#F5B942", abierta=False):
 
 
 def _documento(p, size, color_pagina="#F8FAFC", color_borde="#94A3B8", color_esquina="#3B82F6", lineas=True):
+
     _poligono(p, size, [(0.24, 0.10), (0.64, 0.10), (0.80, 0.26), (0.80, 0.90), (0.24, 0.90)],
                color_pagina, borde=color_borde)
     _poligono(p, size, [(0.64, 0.10), (0.80, 0.26), (0.64, 0.26)], color_esquina)
@@ -294,10 +320,11 @@ def _documento(p, size, color_pagina="#F8FAFC", color_borde="#94A3B8", color_esq
             _linea(p, size, 0.34, y, 0.70 if i != 2 else 0.58, y, "#94A3B8", 1.6)
 
 
+#Registrar Nota Completiva: hoja de examen + insignia de "retomar/
+#completar" (flecha circular), porque una completiva es justo eso: una
+#segunda oportunidad para terminar una evaluación pendiente.
 def _nota_completiva(p, size):
-    """Registrar Nota Completiva: hoja de examen + insignia de "retomar/
-    completar" (flecha circular), porque una completiva es justo eso: una
-    segunda oportunidad para terminar una evaluación pendiente."""
+
     _documento(p, size, color_esquina="#3B82F6")
     _disco(p, size, 0.54, 0.54, 0.94, 0.94, "#DBEAFE", borde="#3B82F6")
     p.setPen(_pluma("#2563EB", 2.1))
@@ -306,32 +333,35 @@ def _nota_completiva(p, size):
     _poligono(p, size, [(0.855, 0.635), (0.905, 0.605), (0.905, 0.675)], "#2563EB")
 
 
+#Registrar Nota Extraordinaria: hoja de examen + insignia de estrella,
+#para lo "fuera de lo ordinario" -una convocatoria que no es parte del
+#ciclo regular de evaluaciones-.
 def _nota_extraordinaria(p, size):
-    """Registrar Nota Extraordinaria: hoja de examen + insignia de estrella,
-    para lo "fuera de lo ordinario" -una convocatoria que no es parte del
-    ciclo regular de evaluaciones-."""
+
     _documento(p, size, color_esquina="#F59E0B")
     _disco(p, size, 0.54, 0.54, 0.94, 0.94, "#FEF3C7", borde="#F59E0B")
     _estrella(p, size, 0.615, 0.615, 0.865, 0.865, "#D97706")
 
 
+#Registrar Nota Especial: hoja de examen + insignia de escudo, para un
+#caso particular con condiciones propias -mismo lenguaje visual que el
+#resto de "excepciones/protegido" de la app-.
 def _nota_especial(p, size):
-    """Registrar Nota Especial: hoja de examen + insignia de escudo, para un
-    caso particular con condiciones propias -mismo lenguaje visual que el
-    resto de "excepciones/protegido" de la app-."""
+
     _documento(p, size, color_esquina="#8B5CF6")
     _disco(p, size, 0.54, 0.54, 0.94, 0.94, "#EDE9FE", borde="#8B5CF6")
     _poligono(p, size, [(0.74, 0.615), (0.815, 0.640), (0.815, 0.700),
                          (0.74, 0.760), (0.665, 0.700), (0.665, 0.640)], "#7C3AED")
 
 
+#Registro de notas -para el KPI "Notas registradas (año actual)"-:
+#una planilla con filas ya marcadas con check, para comunicar "cuántas
+#notas se han cargado" (una cuenta de registros), en vez del genérico
+#gráfico de tendencia ascendente (📈) que en el resto de la app se usa
+#para "promedio/desempeño" -un concepto distinto- y que aquí no dejaba
+#claro que el KPI cuenta calificaciones ya guardadas.
 def _registro_notas_kpi(p, size, color="#10B981"):
-    """Registro de notas -para el KPI "Notas registradas (año actual)"-:
-    una planilla con filas ya marcadas con check, para comunicar "cuántas
-    notas se han cargado" (una cuenta de registros), en vez del genérico
-    gráfico de tendencia ascendente (📈) que en el resto de la app se usa
-    para "promedio/desempeño" -un concepto distinto- y que aquí no dejaba
-    claro que el KPI cuenta calificaciones ya guardadas."""
+
     borde= "#065F46"
     claro= "#D1FAE5"
     #Hoja de la planilla.
@@ -352,6 +382,7 @@ def _registro_notas_kpi(p, size, color="#10B981"):
 
 
 def _libro(p, size, color="#3B82F6", color_borde="#1E3A8A"):
+
     _poligono(p, size, [(0.16, 0.16), (0.50, 0.24), (0.50, 0.86), (0.16, 0.80)], color, borde=color_borde)
     _poligono(p, size, [(0.84, 0.16), (0.50, 0.24), (0.50, 0.86), (0.84, 0.80)], color, borde=color_borde)
     p.setPen(_pluma("white", 1.2))
@@ -359,7 +390,9 @@ def _libro(p, size, color="#3B82F6", color_borde="#1E3A8A"):
 
 
 def _persona(p, size, n=1, color="#3B82F6", graduado=False):
+
     def _dibujar_una(cx, escala, color_piel="#3B82F6"):
+
         _disco(p, size, cx - 0.09 * escala, 0.18 * escala + 0.05, cx + 0.09 * escala, 0.18 * escala + 0.05 + 0.18 * escala, color_piel)
         _poligono(p, size, [
             (cx - 0.22 * escala, 0.90), (cx - 0.16 * escala, 0.52), (cx + 0.16 * escala, 0.52), (cx + 0.22 * escala, 0.90)
@@ -376,12 +409,14 @@ def _persona(p, size, n=1, color="#3B82F6", graduado=False):
 
 
 def _casa(p, size, color_techo="#EF4444", color_pared="#F8FAFC"):
+
     _poligono(p, size, [(0.5, 0.12), (0.90, 0.46), (0.10, 0.46)], color_techo)
     _rect_redondeado(p, size, 0.20, 0.44, 0.80, 0.88, color_pared, radio=0.02, borde="#94A3B8")
     _rect_redondeado(p, size, 0.44, 0.62, 0.56, 0.88, "#B45309", radio=0.02)
 
 
 def _edificio(p, size, color="#64748B", ventanas="#BFDBFE"):
+
     _rect_redondeado(p, size, 0.22, 0.14, 0.78, 0.90, color, radio=0.03)
     for fy in (0.26, 0.42, 0.58, 0.74):
         for fx in (0.32, 0.52):
@@ -389,6 +424,7 @@ def _edificio(p, size, color="#64748B", ventanas="#BFDBFE"):
 
 
 def _escuela(p, size):
+
     _edificio(p, size, "#F97316", "#FEF3C7")
     _poligono(p, size, [(0.5, 0.02), (0.5, 0.14)], "#78350F")
     p.setPen(_pluma("#78350F", 1.6))
@@ -397,11 +433,13 @@ def _escuela(p, size):
 
 
 def _hospital(p, size):
+
     _rect_redondeado(p, size, 0.18, 0.20, 0.82, 0.90, "#F8FAFC", radio=0.04, borde="#94A3B8")
     _mas(p, size, "#EF4444", ancho=4.2, y0=0.48, medio=0.16)
 
 
 def _castillo(p, size):
+
     _rect_redondeado(p, size, 0.20, 0.42, 0.80, 0.90, "#8B5CF6", radio=0.02)
     for fx in (0.24, 0.40, 0.56, 0.72):
         _rect_redondeado(p, size, fx, 0.30, fx + 0.08, 0.42, "#8B5CF6", radio=0.0)
@@ -409,6 +447,7 @@ def _castillo(p, size):
 
 
 def _bombilla(p, size):
+
     _disco(p, size, 0.28, 0.14, 0.72, 0.58, "#FDE047", borde="#CA8A04")
     _rect_redondeado(p, size, 0.40, 0.56, 0.60, 0.78, "#94A3B8", radio=0.05)
     for y in (0.82, 0.88):
@@ -416,7 +455,8 @@ def _bombilla(p, size):
 
 
 def _engranaje(p, size, color="#64748B"):
-    cx, cy, r_ext, r_int = 0.5, 0.5, 0.34, 0.24
+
+    cx, cy, r_ext, r_int= 0.5, 0.5, 0.34, 0.24
     dientes= []
     n= 8
     for i in range(n * 2):
@@ -428,6 +468,7 @@ def _engranaje(p, size, color="#64748B"):
 
 
 def _llave_inglesa(p, size, color="#64748B"):
+
     p.save()
     p.translate(size * 0.5, size * 0.5)
     p.rotate(-45)
@@ -441,6 +482,7 @@ def _llave_inglesa(p, size, color="#64748B"):
 
 
 def _lupa(p, size, color="#3B82F6", signo=None):
+
     p.setBrush(QBrush(QColor(255, 255, 255, 60)))
     p.setPen(_pluma(color, 3.0))
     p.drawEllipse(_r(size, 0.16, 0.16, 0.62, 0.62))
@@ -452,10 +494,11 @@ def _lupa(p, size, color="#3B82F6", signo=None):
         _menos(p, size, color, ancho=1.8, y=0.39, medio=0.10)
 
 
+#Lápiz de edición. Deliberadamente dibujado GRANDE (ocupa casi todo
+#el lienzo, no solo una franja central) porque a tamaños de botón chicos
+#(16-18px) una versión más "delgada" se perdía y costaba reconocerla.
 def _lapiz(p, size):
-    """Lápiz de edición. Deliberadamente dibujado GRANDE (ocupa casi todo
-    el lienzo, no solo una franja central) porque a tamaños de botón chicos
-    (16-18px) una versión más "delgada" se perdía y costaba reconocerla."""
+
     p.save()
     p.translate(size * 0.5, size * 0.5)
     p.rotate(45)
@@ -466,15 +509,16 @@ def _lapiz(p, size):
     p.restore()
 
 
+#Align-justify: 4 líneas horizontales redondeadas del mismo largo
+#(el icono clásico de 'filtros/columnas' de las suites modernas).
+#
+#A diferencia del resto de los íconos "estructurales" de este archivo,
+#este SIEMPRE se dibuja en blanco puro, sin importar el tema claro/oscuro
+#-por diseño: el botón/ventana de Filtros usa un fondo de color (acento)
+#donde el blanco siempre contrasta bien, así que no hace falta -ni se
+#quiere- que cambie de tono con el tema.
 def _alineacion_justificada(p, size):
-    """Align-justify: 4 líneas horizontales redondeadas del mismo largo
-    (el icono clásico de 'filtros/columnas' de las suites modernas).
 
-    A diferencia del resto de los íconos "estructurales" de este archivo,
-    este SIEMPRE se dibuja en blanco puro, sin importar el tema claro/oscuro
-    -por diseño: el botón/ventana de Filtros usa un fondo de color (acento)
-    donde el blanco siempre contrasta bien, así que no hace falta -ni se
-    quiere- que cambie de tono con el tema."""
     paso= size * 0.9 / 4
     ancho_linea= size * 0.78
     x0= size * 0.11
@@ -486,12 +530,13 @@ def _alineacion_justificada(p, size):
         p.drawLine(QPointF(x0, y), QPointF(x0 + ancho_linea, y))
 
 
+#Icono de alineación de texto: 4 líneas de distinto largo, colocadas
+#a la izquierda/centradas/a la derecha según `modo` -el mismo lenguaje
+#visual que las suites de ofimática usan para estos tres botones, que
+#en el editor de reportes existían con texto vacío y sin ningún dibujo
+#(botones invisibles).
 def _alineacion_lineas(p, size, modo):
-    """Icono de alineación de texto: 4 líneas de distinto largo, colocadas
-    a la izquierda/centradas/a la derecha según `modo` -el mismo lenguaje
-    visual que las suites de ofimática usan para estos tres botones, que
-    en el editor de reportes existían con texto vacío y sin ningún dibujo
-    (botones invisibles)."""
+
     anchos_relativos= (0.78, 0.50, 0.64, 0.38)
     paso= size * 0.9 / 4
     grosor= max(1.6, size * 0.11)
@@ -510,11 +555,12 @@ def _alineacion_lineas(p, size, modo):
         p.drawLine(QPointF(x0, y), QPointF(x0 + ancho, y))
 
 
+#Documento con una insignia de "ojo" (vista previa) arriba y un
+#lápiz editando apoyado sobre la esquina inferior -para que la pestaña
+#"Vista Previa y Edición" comunique de un vistazo sus dos funciones a
+#la vez, en vez de un 👁 o un ✏ sueltos que solo cuentan la mitad.
 def _archivo_vista_edicion(p, size):
-    """Documento con una insignia de "ojo" (vista previa) arriba y un
-    lápiz editando apoyado sobre la esquina inferior -para que la pestaña
-    "Vista Previa y Edición" comunique de un vistazo sus dos funciones a
-    la vez, en vez de un 👁 o un ✏ sueltos que solo cuentan la mitad."""
+
     #Hoja de documento con líneas de texto.
     _rect_redondeado(p, size, 0.14, 0.06, 0.68, 0.88, "#F8FAFC", radio=0.05, borde="#94A3B8")
     for y in (0.24, 0.36, 0.48, 0.60):
@@ -538,6 +584,7 @@ def _archivo_vista_edicion(p, size):
 
 
 def _papelera(p, size):
+
     _poligono(p, size, [(0.24, 0.28), (0.76, 0.28), (0.70, 0.90), (0.30, 0.90)], "#94A3B8", borde="#475569")
     _rect_redondeado(p, size, 0.18, 0.20, 0.82, 0.28, "#64748B", radio=0.02)
     _rect_redondeado(p, size, 0.40, 0.10, 0.60, 0.20, "#64748B", radio=0.02)
@@ -546,6 +593,7 @@ def _papelera(p, size):
 
 
 def _disquete(p, size):
+
     _rect_redondeado(p, size, 0.14, 0.14, 0.86, 0.86, "#3B82F6", radio=0.08, borde="#1E40AF")
     _rect_redondeado(p, size, 0.30, 0.14, 0.70, 0.36, "#E2E8F0", radio=0.02)
     _rect_redondeado(p, size, 0.58, 0.16, 0.66, 0.30, "#1E293B", radio=0.01)
@@ -553,18 +601,21 @@ def _disquete(p, size):
 
 
 def _disco_optico(p, size):
+
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, "#CBD5E1", borde="#64748B")
     _disco(p, size, 0.40, 0.40, 0.60, 0.60, "#94A3B8")
     _disco(p, size, 0.46, 0.46, 0.54, 0.54, "white")
 
 
 def _campana(p, size, color="#EAB308"):
+
     _poligono(p, size, [(0.30, 0.70), (0.36, 0.30), (0.5, 0.16), (0.64, 0.30), (0.70, 0.70)], color, borde="#A16207")
     _rect_redondeado(p, size, 0.26, 0.70, 0.74, 0.78, color, radio=0.4)
     _disco(p, size, 0.44, 0.80, 0.56, 0.90, color)
 
 
 def _ojo(p, size, cerrado=False):
+
     if cerrado:
         #Ojo "tachado" (estilo eye-off): se dibuja el mismo párpado que el ojo abierto pero un poco más comprimido
         #(entrecerrado), y encima una línea diagonal que lo cruza -icono estándar de "contraseña oculta", mucho más
@@ -582,6 +633,7 @@ def _ojo(p, size, cerrado=False):
 
 
 def _camara(p, size):
+
     _rect_redondeado(p, size, 0.14, 0.32, 0.86, 0.82, "#334155", radio=0.08)
     _rect_redondeado(p, size, 0.36, 0.20, 0.64, 0.34, "#334155", radio=0.10)
     _disco(p, size, 0.36, 0.42, 0.64, 0.70, "#93C5FD", borde="#1E40AF")
@@ -590,6 +642,7 @@ def _camara(p, size):
 
 
 def _eslabon(p, size, color="#94A3B8"):
+
     p.setPen(_pluma(color, 4.0))
     p.setBrush(Qt.BrushStyle.NoBrush)
     p.drawRoundedRect(_r(size, 0.12, 0.32, 0.56, 0.62), size * 0.13, size * 0.13)
@@ -597,6 +650,7 @@ def _eslabon(p, size, color="#94A3B8"):
 
 
 def _corazon(p, size, color="#EF4444"):
+
     path= QPainterPath()
     s= size
     path.moveTo(0.5 * s, 0.30 * s)
@@ -610,11 +664,13 @@ def _corazon(p, size, color="#EF4444"):
 
 
 def _bandera(p, size, color="#EF4444"):
+
     _linea(p, size, 0.22, 0.10, 0.22, 0.90, "#64748B", 2.4)
     _poligono(p, size, [(0.22, 0.14), (0.78, 0.24), (0.22, 0.46)], color)
 
 
 def _trofeo(p, size):
+
     _rect_redondeado(p, size, 0.34, 0.72, 0.66, 0.82, "#CA8A04", radio=0.02)
     _rect_redondeado(p, size, 0.26, 0.82, 0.74, 0.90, "#A16207", radio=0.05)
     _poligono(p, size, [(0.32, 0.20), (0.68, 0.20), (0.62, 0.60), (0.38, 0.60)], "#FACC15", borde="#CA8A04")
@@ -625,12 +681,14 @@ def _trofeo(p, size):
 
 
 def _diana(p, size):
+
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, "#EF4444", borde="#7F1D1D")
     _disco(p, size, 0.28, 0.28, 0.72, 0.72, "white")
     _disco(p, size, 0.42, 0.42, 0.58, 0.58, "#EF4444")
 
 
 def _regla(p, size):
+
     p.save()
     p.translate(size * 0.5, size * 0.5)
     p.rotate(-30)
@@ -642,6 +700,7 @@ def _regla(p, size):
 
 
 def _escoba(p, size):
+
     p.save()
     p.translate(size * 0.5, size * 0.5)
     p.rotate(20)
@@ -652,6 +711,7 @@ def _escoba(p, size):
 
 
 def _paleta(p, size):
+
     p.setBrush(QBrush(QColor("#F59E0B")))
     p.setPen(_pluma("#B45309", 1.4))
     path= QPainterPath()
@@ -665,12 +725,14 @@ def _paleta(p, size):
 
 
 def _brujula(p, size):
+
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, "#E2E8F0", borde="#64748B")
     _poligono(p, size, [(0.5, 0.22), (0.60, 0.5), (0.5, 0.78), (0.40, 0.5)], "#EF4444")
     _disco(p, size, 0.46, 0.46, 0.54, 0.54, "#1E293B")
 
 
 def _nube(p, size, color="#E2E8F0"):
+
     p.setBrush(QBrush(QColor(color)))
     p.setPen(_pluma("#94A3B8", 1.2))
     p.drawEllipse(_r(size, 0.14, 0.42, 0.50, 0.80))
@@ -680,15 +742,17 @@ def _nube(p, size, color="#E2E8F0"):
 
 
 def _sol(p, size):
+
     _disco(p, size, 0.28, 0.28, 0.72, 0.72, "#FBBF24")
     for i in range(8):
         ang= math.pi / 4 * i
-        x0, y0 = 0.5 + 0.30 * math.cos(ang), 0.5 + 0.30 * math.sin(ang)
-        x1, y1 = 0.5 + 0.44 * math.cos(ang), 0.5 + 0.44 * math.sin(ang)
+        x0, y0= 0.5 + 0.30 * math.cos(ang), 0.5 + 0.30 * math.sin(ang)
+        x1, y1= 0.5 + 0.44 * math.cos(ang), 0.5 + 0.44 * math.sin(ang)
         _linea(p, size, x0, y0, x1, y1, "#FBBF24", 2.4)
 
 
 def _luna(p, size):
+
     path= QPainterPath()
     path.addEllipse(_r(size, 0.16, 0.16, 0.80, 0.80))
     recorte= QPainterPath()
@@ -699,6 +763,7 @@ def _luna(p, size):
 
 
 def _telefono(p, size, color="#22C55E"):
+
     p.save()
     p.translate(size * 0.5, size * 0.5)
     p.rotate(-45)
@@ -725,12 +790,14 @@ def _telefono(p, size, color="#22C55E"):
 
 
 def _escudo(p, size, color="#3B82F6"):
+
     _poligono(p, size, [(0.5, 0.10), (0.84, 0.22), (0.84, 0.52), (0.5, 0.90), (0.16, 0.52), (0.16, 0.22)],
                color, borde="#1E3A8A")
     _check(p, size, "white", x0=0.34, y0=0.50, x1=0.46, y1=0.62, x2=0.68, y2=0.36, ancho=2.6)
 
 
 def _impresora(p, size):
+
     _rect_redondeado(p, size, 0.16, 0.36, 0.84, 0.62, "#64748B", radio=0.06)
     _rect_redondeado(p, size, 0.28, 0.14, 0.72, 0.38, "white", radio=0.02, borde="#94A3B8")
     _rect_redondeado(p, size, 0.28, 0.60, 0.72, 0.90, "white", radio=0.02, borde="#94A3B8")
@@ -738,6 +805,7 @@ def _impresora(p, size):
 
 
 def _enchufe(p, size):
+
     _rect_redondeado(p, size, 0.30, 0.18, 0.70, 0.56, "#1E293B", radio=0.10)
     _linea(p, size, 0.42, 0.10, 0.42, 0.22, "#EAB308", 2.4)
     _linea(p, size, 0.58, 0.10, 0.58, 0.22, "#EAB308", 2.4)
@@ -745,6 +813,7 @@ def _enchufe(p, size):
 
 
 def _lentes(p, size):
+
     p.setPen(_pluma("#1E293B", 2.4))
     p.setBrush(QBrush(QColor(147, 197, 253, 140)))
     p.drawEllipse(_r(size, 0.10, 0.36, 0.42, 0.66))
@@ -753,6 +822,7 @@ def _lentes(p, size):
 
 
 def _maletin(p, size):
+
     _rect_redondeado(p, size, 0.42, 0.14, 0.58, 0.26, "#78350F", radio=0.02, borde="#78350F")
     _rect_redondeado(p, size, 0.12, 0.26, 0.88, 0.82, "#B45309", radio=0.06, borde="#78350F")
     _rect_redondeado(p, size, 0.44, 0.44, 0.56, 0.56, "#78350F", radio=0.1)
@@ -760,6 +830,7 @@ def _maletin(p, size):
 
 
 def _cohete(p, size):
+
     p.save()
     p.translate(size * 0.5, size * 0.5)
     p.rotate(45)
@@ -773,12 +844,14 @@ def _cohete(p, size):
 
 
 def _paquete(p, size):
+
     _rect_redondeado(p, size, 0.14, 0.28, 0.86, 0.86, "#D6A15A", radio=0.04, borde="#92652A")
     _poligono(p, size, [(0.14, 0.28), (0.5, 0.44), (0.86, 0.28)], "#B9803F", borde="#92652A")
     _linea(p, size, 0.5, 0.44, 0.5, 0.86, "#92652A", 1.4)
 
 
 def _pantalla(p, size):
+
     _rect_redondeado(p, size, 0.10, 0.16, 0.90, 0.66, "#334155", radio=0.05)
     _rect_redondeado(p, size, 0.15, 0.21, 0.85, 0.61, "#60A5FA", radio=0.02)
     _rect_redondeado(p, size, 0.40, 0.66, 0.60, 0.76, "#64748B", radio=0.02)
@@ -786,19 +859,21 @@ def _pantalla(p, size):
 
 
 def _ventana_app(p, size):
+
     _rect_redondeado(p, size, 0.12, 0.16, 0.88, 0.84, "#E2E8F0", radio=0.06, borde="#64748B")
     _rect_redondeado(p, size, 0.12, 0.16, 0.88, 0.30, "#3B82F6", radio=0.06)
     for i, cx in enumerate((0.78, 0.70, 0.62)):
         _disco(p, size, cx - 0.02, 0.21, cx + 0.02, 0.25, ("#EF4444", "#EAB308", "#22C55E")[i])
 
 
+#Balanza de pesas -para el KPI "Módulos con pesos al 100%"- rediseñada
+#con platillos RELLENOS en tono dorado/cálido (evoca "peso", como una
+#balanza de joyero) en vez de los simples arcos grises de antes, más una
+#pequeña insignia verde con un check en la esquina superior para reforzar
+#a simple vista la idea de "cuadrado/completo al 100%" que representa
+#este KPI -no solo "hay una balanza", sino "la balanza está en su punto".
 def _balanza(p, size):
-    """Balanza de pesas -para el KPI "Módulos con pesos al 100%"- rediseñada
-    con platillos RELLENOS en tono dorado/cálido (evoca "peso", como una
-    balanza de joyero) en vez de los simples arcos grises de antes, más una
-    pequeña insignia verde con un check en la esquina superior para reforzar
-    a simple vista la idea de "cuadrado/completo al 100%" que representa
-    este KPI -no solo "hay una balanza", sino "la balanza está en su punto"."""
+
     color_cuerpo= "#FCD34D"
     color_borde= "#92400E"
     #Poste vertical y brazo horizontal (el "fiel" de la balanza).
@@ -823,15 +898,16 @@ def _balanza(p, size):
     _check(p, size, color="white", x0=0.68, y0=0.19, x1=0.735, y1=0.25, x2=0.865, y2=0.11, ancho=2.0)
 
 
+#Puerta de salida -para "Cerrar sesión"- con marco, hoja con paneles
+#y perilla, más una flecha saliendo hacia afuera: antes era solo un
+#rectángulo liso de un color plano (una "puerta" muy genérica, sin
+#relieve ni detalle), que a tamaño de icono se leía como una simple
+#tarjeta de color. Con marco + paneles + perilla se lee de inmediato
+#como una puerta real, y la flecha -el mismo lenguaje visual que usan
+#los iconos de "exportar"/"salir" en el resto de la app- deja clara la
+#ACCIÓN (salir/cerrar sesión), no solo el objeto.
 def _puerta_salida(p, size):
-    """Puerta de salida -para "Cerrar sesión"- con marco, hoja con paneles
-    y perilla, más una flecha saliendo hacia afuera: antes era solo un
-    rectángulo liso de un color plano (una "puerta" muy genérica, sin
-    relieve ni detalle), que a tamaño de icono se leía como una simple
-    tarjeta de color. Con marco + paneles + perilla se lee de inmediato
-    como una puerta real, y la flecha -el mismo lenguaje visual que usan
-    los iconos de "exportar"/"salir" en el resto de la app- deja clara la
-    ACCIÓN (salir/cerrar sesión), no solo el objeto."""
+
     color_marco= "#78350F"
     color_hoja= "#D97706"
     color_panel= "#B45309"
@@ -850,6 +926,7 @@ def _puerta_salida(p, size):
 
 
 def _pieza_rompecabezas(p, size, color="#8B5CF6"):
+
     path= QPainterPath()
     s= size
     path.moveTo(0.20 * s, 0.20 * s)
@@ -871,15 +948,17 @@ def _pieza_rompecabezas(p, size, color="#8B5CF6"):
 
 
 def _menu_hamburguesa(p, size, color="#475569"):
+
     for y in (0.30, 0.50, 0.70):
         _linea(p, size, 0.16, y, 0.84, y, color, 3.0)
 
 
+#Grilla de 4 paneles (2x2) de distinto tamaño -icono estándar de
+#"panel de control"/"dashboard"-, cada uno en un color distinto para que
+#no se confunda con "reportes"/"calificaciones" (que ya usan el gráfico
+#de barras 📊).
 def _panel_dashboard(p, size):
-    """Grilla de 4 paneles (2x2) de distinto tamaño -icono estándar de
-    "panel de control"/"dashboard"-, cada uno en un color distinto para que
-    no se confunda con "reportes"/"calificaciones" (que ya usan el gráfico
-    de barras 📊)."""
+
     _rect_redondeado(p, size, 0.12, 0.12, 0.56, 0.46, "#6366F1", radio=0.10)
     _rect_redondeado(p, size, 0.62, 0.12, 0.88, 0.32, "#22C55E", radio=0.10)
     _rect_redondeado(p, size, 0.62, 0.40, 0.88, 0.60, "#F59E0B", radio=0.10)
@@ -887,6 +966,7 @@ def _panel_dashboard(p, size):
 
 
 def _calendario(p, size, color_top="#EF4444"):
+
     _rect_redondeado(p, size, 0.14, 0.20, 0.86, 0.88, "white", radio=0.04, borde="#94A3B8")
     _rect_redondeado(p, size, 0.14, 0.20, 0.86, 0.36, color_top, radio=0.04)
     _linea(p, size, 0.30, 0.12, 0.30, 0.26, "#64748B", 2.0)
@@ -897,16 +977,18 @@ def _calendario(p, size, color_top="#EF4444"):
 
 
 def _reloj(p, size):
+
     _disco(p, size, 0.12, 0.12, 0.88, 0.88, "white", borde="#334155")
     _linea(p, size, 0.5, 0.5, 0.5, 0.26, "#334155", 2.2)
     _linea(p, size, 0.5, 0.5, 0.68, 0.56, "#334155", 2.2)
     _disco(p, size, 0.47, 0.47, 0.53, 0.53, "#EF4444")
 
 
+#Reloj de arena para estados de 'cargando/procesando' -reemplazo del
+#emoji ⏳, con la misma silueta reconocible (dos triángulos) pero en el
+#trazo plano y monocromo-de-acento de esta librería.
 def _reloj_arena(p, size, color_marco="#94A3B8", color_arena="#F59E0B"):
-    """Reloj de arena para estados de 'cargando/procesando' -reemplazo del
-    emoji ⏳, con la misma silueta reconocible (dos triángulos) pero en el
-    trazo plano y monocromo-de-acento de esta librería."""
+
     marco_sup= [(0.24, 0.10), (0.76, 0.10), (0.76, 0.16), (0.24, 0.16)]
     marco_inf= [(0.24, 0.84), (0.76, 0.84), (0.76, 0.90), (0.24, 0.90)]
     _poligono(p, size, marco_sup, color_marco)
@@ -920,6 +1002,7 @@ def _reloj_arena(p, size, color_marco="#94A3B8", color_arena="#F59E0B"):
 
 
 def _grafico_barras(p, size):
+
     colores= ("#3B82F6", "#22C55E", "#F59E0B")
     alturas= (0.42, 0.62, 0.30)
     for i, (c, h) in enumerate(zip(colores, alturas)):
@@ -929,6 +1012,7 @@ def _grafico_barras(p, size):
 
 
 def _grafico_lineas(p, size, color="#22C55E"):
+
     p.setPen(_pluma(color, 2.4))
     puntos= [(0.14, 0.74), (0.36, 0.54), (0.56, 0.64), (0.80, 0.24)]
     for i in range(len(puntos) - 1):
@@ -938,17 +1022,19 @@ def _grafico_lineas(p, size, color="#22C55E"):
 
 
 def _sobre(p, size):
+
     _rect_redondeado(p, size, 0.12, 0.24, 0.88, 0.76, "white", radio=0.04, borde="#3B82F6")
     _poligono(p, size, [(0.12, 0.26), (0.5, 0.54), (0.88, 0.26)], None if False else "#93C5FD", borde="#3B82F6")
 
 
+#Bandeja abierta con una flecha vertical: hacia_abajo=True es
+#"Importar" (la flecha entra a la bandeja), False es "Exportar" (la
+#flecha sale de la bandeja). A propósito NO es un sobre de correo -para
+#que "Importar/Exportar datos" deje de confundirse visualmente con
+#"Enviar un correo", que es lo que pasaba al reutilizar 📤/📥 (basados
+#en _sobre) para ambos significados en toda la app.
 def _bandeja_flecha(p, size, color, hacia_abajo=True):
-    """Bandeja abierta con una flecha vertical: hacia_abajo=True es
-    "Importar" (la flecha entra a la bandeja), False es "Exportar" (la
-    flecha sale de la bandeja). A propósito NO es un sobre de correo -para
-    que "Importar/Exportar datos" deje de confundirse visualmente con
-    "Enviar un correo", que es lo que pasaba al reutilizar 📤/📥 (basados
-    en _sobre) para ambos significados en toda la app."""
+
     p.setPen(_pluma(color, 2.6))
     p.setBrush(Qt.BrushStyle.NoBrush)
     bandeja= QPainterPath()
@@ -965,21 +1051,24 @@ def _bandeja_flecha(p, size, color, hacia_abajo=True):
         _poligono(p, size, [(0.32, 0.32), (0.68, 0.32), (0.5, 0.10)], color)
 
 
+#"Importar": flecha entrando a una bandeja, en el MISMO azul que
+#"Exportar" (antes era verde; ahora ambos comparten color porque son la
+#misma familia de acción -mover datos-, y solo el sentido de la flecha
+#distingue una de otra).
 def _icono_importar(p, size):
-    """"Importar": flecha entrando a una bandeja, en el MISMO azul que
-    "Exportar" (antes era verde; ahora ambos comparten color porque son la
-    misma familia de acción -mover datos-, y solo el sentido de la flecha
-    distingue una de otra)."""
+
     _bandeja_flecha(p, size, "#3B82F6", hacia_abajo=True)
 
 
+#"Exportar": flecha saliendo de una bandeja, en azul (igual espíritu
+#de color que ya usaba la flecha de 📤 antes de este cambio).
 def _icono_exportar(p, size):
-    """"Exportar": flecha saliendo de una bandeja, en azul (igual espíritu
-    de color que ya usaba la flecha de 📤 antes de este cambio)."""
+
     _bandeja_flecha(p, size, "#3B82F6", hacia_abajo=False)
 
 
 def _pin_ubicacion(p, size, color="#EF4444"):
+
     path= QPainterPath()
     s= size
     path.moveTo(0.5 * s, 0.90 * s)
@@ -995,6 +1084,7 @@ def _pin_ubicacion(p, size, color="#EF4444"):
 
 
 def _mapa(p, size):
+
     _poligono(p, size, [(0.10, 0.20), (0.36, 0.12), (0.64, 0.20), (0.90, 0.12), (0.90, 0.80),
                         (0.64, 0.88), (0.36, 0.80), (0.10, 0.88)], "#BBF7D0", borde="#15803D")
     _linea(p, size, 0.36, 0.12, 0.36, 0.80, "#15803D", 1.2)
@@ -1003,30 +1093,35 @@ def _mapa(p, size):
 
 
 def _semaforo(p, size):
+
     _rect_redondeado(p, size, 0.32, 0.10, 0.68, 0.90, "#1E293B", radio=0.10)
     for cy, c in zip((0.26, 0.50, 0.74), ("#EF4444", "#EAB308", "#22C55E")):
         _disco(p, size, 0.40, cy - 0.08, 0.60, cy + 0.08, c)
 
 
 def _prohibido(p, size):
+
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, "#EF4444", borde="#7F1D1D")
     p.setPen(_pluma("white", 3.2))
     p.drawLine(QPointF(0.26 * size, 0.26 * size), QPointF(0.74 * size, 0.74 * size))
 
 
 def _construccion(p, size):
+
     for i, x0 in enumerate((0.10, 0.30, 0.50, 0.70)):
         color= "#FBBF24" if i % 2 == 0 else "#1E293B"
         _rect_redondeado(p, size, x0, 0.40, x0 + 0.20, 0.56, color, radio=0.0)
 
 
 def _chispas(p, size, color="#FBBF24"):
+
     _estrella(p, size, 0.36, 0.16, 0.64, 0.44, color, puntas=4)
     _estrella(p, size, 0.10, 0.52, 0.34, 0.76, color, puntas=4)
     _estrella(p, size, 0.60, 0.56, 0.90, 0.86, color, puntas=4)
 
 
 def _gota(p, size, color="#3B82F6"):
+
     path= QPainterPath()
     s= size
     path.moveTo(0.5 * s, 0.12 * s)
@@ -1040,6 +1135,7 @@ def _gota(p, size, color="#3B82F6"):
 
 
 def _cerebro(p, size, color="#F472B6"):
+
     _disco(p, size, 0.14, 0.20, 0.54, 0.68, color, borde="#BE185D")
     _disco(p, size, 0.46, 0.20, 0.86, 0.68, color, borde="#BE185D")
     p.setPen(_pluma("#BE185D", 1.0))
@@ -1048,6 +1144,7 @@ def _cerebro(p, size, color="#F472B6"):
 
 
 def _sonrisa(p, size, color="#FBBF24"):
+
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, color, borde="#B45309")
     _disco(p, size, 0.32, 0.38, 0.40, 0.46, "#1E293B")
     _disco(p, size, 0.60, 0.38, 0.68, 0.46, "#1E293B")
@@ -1057,12 +1154,14 @@ def _sonrisa(p, size, color="#FBBF24"):
 
 
 def _manos_saludo(p, size):
+
     _rect_redondeado(p, size, 0.10, 0.40, 0.48, 0.62, "#F59E0B", radio=0.3)
     _rect_redondeado(p, size, 0.52, 0.40, 0.90, 0.62, "#FBBF24", radio=0.3)
     _disco(p, size, 0.40, 0.42, 0.60, 0.60, "#F59E0B")
 
 
 def _tijeras(p, size):
+
     p.setPen(_pluma("#94A3B8", 3.0))
     p.drawLine(QPointF(0.20 * size, 0.20 * size), QPointF(0.80 * size, 0.80 * size))
     p.drawLine(QPointF(0.80 * size, 0.20 * size), QPointF(0.20 * size, 0.80 * size))
@@ -1070,12 +1169,13 @@ def _tijeras(p, size):
     _disco(p, size, 0.14, 0.72, 0.28, 0.86, "#3B82F6")
 
 
+#Icono para los botones de 'Elegir y Recortar' Foto/Logotipo/Firma:
+#la miniatura de imagen (mismo dibujo que 🖼: marco, sol y montaña) con
+#unas tijeras chiquitas superpuestas en la esquina inferior derecha,
+#para distinguirlo de un botón de solo "ver" o solo "recortar" -es
+#ambas cosas en un solo icono, como pide la acción real del botón.
 def _foto_recortar(p, size):
-    """Icono para los botones de 'Elegir y Recortar' Foto/Logotipo/Firma:
-    la miniatura de imagen (mismo dibujo que 🖼: marco, sol y montaña) con
-    unas tijeras chiquitas superpuestas en la esquina inferior derecha,
-    para distinguirlo de un botón de solo "ver" o solo "recortar" -es
-    ambas cosas en un solo icono, como pide la acción real del botón."""
+
     #Marco de imagen, un poco más chico y desplazado a la izquierda/arriba para dejarle espacio a la insignia de
     #tijeras sin que se encimen.
     _rect_redondeado(p, size, 0.06, 0.10, 0.78, 0.72, "white", radio=0.05, borde="#94A3B8")
@@ -1085,7 +1185,7 @@ def _foto_recortar(p, size):
     #"compuestos" de la app,
     #p.ej. 📝 = documento + lápiz).
     _disco(p, size, 0.52, 0.52, 0.96, 0.96, "white", borde="#CBD5E1")
-    cx0, cy0, cx1, cy1 = 0.58, 0.58, 0.90, 0.90
+    cx0, cy0, cx1, cy1= 0.58, 0.58, 0.90, 0.90
     p.setPen(_pluma("#64748B", 2.0))
     p.drawLine(QPointF((cx0 + 0.10) * size, (cy0 + 0.06) * size), QPointF((cx1 - 0.06) * size, (cy1 - 0.10) * size))
     p.drawLine(QPointF((cx1 - 0.06) * size, (cy0 + 0.06) * size), QPointF((cx0 + 0.10) * size, (cy1 - 0.10) * size))
@@ -1094,20 +1194,23 @@ def _foto_recortar(p, size):
 
 
 def _dividir(p, size, color="#475569"):
+
     _linea(p, size, 0.22, 0.5, 0.78, 0.5, color, 2.6)
     _disco(p, size, 0.46, 0.24, 0.54, 0.32, color)
     _disco(p, size, 0.46, 0.68, 0.54, 0.76, color)
 
 
 def _control_deslizante(p, size):
+
     _linea(p, size, 0.16, 0.5, 0.84, 0.5, "#94A3B8", 3.0)
     _disco(p, size, 0.44, 0.36, 0.60, 0.64, "#3B82F6", borde="#1E40AF")
 
 
+#Cuatro escuadras en las esquinas apuntando hacia afuera: mismo icono
+#'expandir/pantalla completa' de cualquier reproductor de video, hecho a
+#mano como el resto (nada de glifo crudo de la fuente del sistema).
 def _pantalla_completa(p, size, color="#475569"):
-    """Cuatro escuadras en las esquinas apuntando hacia afuera: mismo icono
-    'expandir/pantalla completa' de cualquier reproductor de video, hecho a
-    mano como el resto (nada de glifo crudo de la fuente del sistema)."""
+
     largo= 0.22
     grosor= 2.4
     _linea(p, size, 0.14, 0.14, 0.14 + largo, 0.14, color, grosor)
@@ -1121,10 +1224,12 @@ def _pantalla_completa(p, size, color="#475569"):
 
 
 def _flecha_abajo_pequena(p, size, color="#475569"):
+
     _poligono(p, size, [(0.30, 0.38), (0.70, 0.38), (0.5, 0.66)], color)
 
 
 def _tarjeta_indice(p, size):
+
     _rect_redondeado(p, size, 0.12, 0.20, 0.80, 0.80, "white", radio=0.04, borde="#94A3B8")
     _rect_redondeado(p, size, 0.30, 0.14, 0.88, 0.74, "#93C5FD", radio=0.04, borde="#1E40AF")
     for y in (0.34, 0.46, 0.58):
@@ -1132,6 +1237,7 @@ def _tarjeta_indice(p, size):
 
 
 def _fuente_texto(p, size, color="#334155"):
+
     p.setPen(_pluma(color, 2.4))
     p.drawLine(QPointF(0.24 * size, 0.80 * size), QPointF(0.5 * size, 0.20 * size))
     p.drawLine(QPointF(0.5 * size, 0.20 * size), QPointF(0.76 * size, 0.80 * size))
@@ -1139,15 +1245,18 @@ def _fuente_texto(p, size, color="#334155"):
 
 
 def _explosion(p, size, color="#F97316"):
+
     _estrella(p, size, 0.10, 0.10, 0.90, 0.90, color, puntas=8)
     _estrella(p, size, 0.26, 0.26, 0.74, 0.74, "#FDE047", puntas=6)
 
 
 def _reciclaje(p, size, color="#22C55E"):
+
     _flechas_circulares(p, size, color, "#16A34A")
 
 
 def _pergamino(p, size):
+
     _rect_redondeado(p, size, 0.18, 0.18, 0.82, 0.82, "#FDE68A", radio=0.02, borde="#B45309")
     for y in (0.34, 0.48, 0.62):
         _linea(p, size, 0.28, y, 0.72, y, "#B45309", 1.4)
@@ -1156,6 +1265,7 @@ def _pergamino(p, size):
 
 
 def _archivador(p, size):
+
     _rect_redondeado(p, size, 0.14, 0.14, 0.86, 0.86, "#94A3B8", radio=0.05, borde="#475569")
     for y in (0.30, 0.50, 0.70):
         _rect_redondeado(p, size, 0.20, y, 0.80, y + 0.10, "#CBD5E1", radio=0.02)
@@ -1163,6 +1273,7 @@ def _archivador(p, size):
 
 
 def _tubo_ensayo(p, size):
+
     p.save()
     p.setBrush(QBrush(QColor("#E2E8F0")))
     p.setPen(_pluma("#94A3B8", 1.6))
@@ -1188,6 +1299,7 @@ def _tubo_ensayo(p, size):
 
 
 def _clip_tablero(p, size):
+
     _rect_redondeado(p, size, 0.16, 0.16, 0.84, 0.88, "#E2E8F0", radio=0.05, borde="#64748B")
     _rect_redondeado(p, size, 0.38, 0.10, 0.62, 0.22, "#94A3B8", radio=0.10)
     for y in (0.36, 0.50, 0.64, 0.76):
@@ -1197,11 +1309,12 @@ def _clip_tablero(p, size):
 #Iconos nuevos -profesor, estudiante en riesgo, secciones/grupos, copia de seguridad, auditoría y tutorial-
 #pensados para reemplazar glifos genéricos (👥, 🏫, 🚨, ➕, 📇...) que no comunicaban bien su significado específico
 #dentro de AcaDeXI.
+#Docente de pie, con corbata, señalando con un puntero una pizarra con
+#apuntes -pensado para leerse claramente como "una persona dando clase",
+#a diferencia del intento anterior (una ficha de color junto a un
+#rectángulo) que no se distinguía de un bloque abstracto.
 def _profesor(p, size, color="#0D9488"):
-    """Docente de pie, con corbata, señalando con un puntero una pizarra con
-    apuntes -pensado para leerse claramente como "una persona dando clase",
-    a diferencia del intento anterior (una ficha de color junto a un
-    rectángulo) que no se distinguía de un bloque abstracto."""
+
     #Patas del atril de la pizarra.
     _linea(p, size, 0.60, 0.86, 0.60, 0.94, "#94A3B8", 1.6)
     _linea(p, size, 0.90, 0.86, 0.90, 0.94, "#94A3B8", 1.6)
@@ -1223,10 +1336,11 @@ def _profesor(p, size, color="#0D9488"):
     _linea(p, size, 0.50, 0.50, 0.64, 0.44, "#334155", 2.2)
 
 
+#Estudiante con una insignia de alerta (triángulo con exclamación)
+#superpuesta -deja claro que se trata de una PERSONA en riesgo académico,
+#a diferencia del genérico 🚨 (sirena), que no lo comunicaba.
 def _estudiante_riesgo(p, size):
-    """Estudiante con una insignia de alerta (triángulo con exclamación)
-    superpuesta -deja claro que se trata de una PERSONA en riesgo académico,
-    a diferencia del genérico 🚨 (sirena), que no lo comunicaba."""
+
     p.save()
     p.translate(-0.06 * size, 0.03 * size)
     p.scale(0.84, 0.84)
@@ -1239,10 +1353,11 @@ def _estudiante_riesgo(p, size):
     _disco(p, size, 0.765, 0.32, 0.795, 0.35, "white")
 
 
+#Varias fichas de curso superpuestas, cada una con su propio
+#'grupo' de estudiantes -para 'Secciones/Grupos'-, en vez del edificio
+#de escuela (🏫) que se confundía con 'Institución'.
 def _secciones_grupos(p, size):
-    """Varias fichas de curso superpuestas, cada una con su propio
-    'grupo' de estudiantes -para 'Secciones/Grupos'-, en vez del edificio
-    de escuela (🏫) que se confundía con 'Institución'."""
+
     _rect_redondeado(p, size, 0.08, 0.34, 0.46, 0.64, "#FDE68A", radio=0.08, borde="#B45309")
     _rect_redondeado(p, size, 0.30, 0.16, 0.68, 0.46, "#FCD34D", radio=0.08, borde="#B45309")
     _rect_redondeado(p, size, 0.54, 0.38, 0.92, 0.68, "#F59E0B", radio=0.08, borde="#92400E")
@@ -1250,10 +1365,11 @@ def _secciones_grupos(p, size):
         _disco(p, size, cx - 0.035, cy - 0.035, cx + 0.035, cy + 0.035, col)
 
 
+#Carpeta con una flecha circular -una copia que se guarda y se puede
+#restaurar-, distinta tanto del disquete genérico (💾, 'Guardar') como
+#del escudo genérico (🛡, 'Seguridad').
 def _copia_seguridad(p, size):
-    """Carpeta con una flecha circular -una copia que se guarda y se puede
-    restaurar-, distinta tanto del disquete genérico (💾, 'Guardar') como
-    del escudo genérico (🛡, 'Seguridad')."""
+
     _rect_redondeado(p, size, 0.12, 0.28, 0.46, 0.36, "#0369A1", radio=0.03)
     _rect_redondeado(p, size, 0.12, 0.34, 0.88, 0.86, "#0EA5E9", radio=0.06, borde="#075985")
     rect= _r(size, 0.32, 0.42, 0.68, 0.78)
@@ -1263,10 +1379,11 @@ def _copia_seguridad(p, size):
     _poligono(p, size, [(0.68, 0.42), (0.77, 0.47), (0.65, 0.56)], "white")
 
 
+#Hoja de registro con una lupa como insignia -para 'Auditoría'-,
+#distinta del portapapeles genérico (📋) y de la ficha (📇) que se
+#usaban antes para esta pantalla.
 def _auditoria(p, size):
-    """Hoja de registro con una lupa como insignia -para 'Auditoría'-,
-    distinta del portapapeles genérico (📋) y de la ficha (📇) que se
-    usaban antes para esta pantalla."""
+
     _rect_redondeado(p, size, 0.14, 0.10, 0.72, 0.82, "#E2E8F0", radio=0.05, borde="#64748B")
     for y in (0.26, 0.38, 0.50, 0.62):
         _linea(p, size, 0.22, y, 0.64, y, "#64748B", 1.6)
@@ -1277,22 +1394,24 @@ def _auditoria(p, size):
     p.drawLine(QPointF(0.80 * size, 0.80 * size), QPointF(0.93 * size, 0.93 * size))
 
 
+#Libro abierto con una bombilla de idea encima -para 'Tutorial'-,
+#distinta del gorro de graduación (dentro de 🎓) y de la bombilla sola
+#(💡, ideas genéricas).
 def _tutorial_guia(p, size):
-    """Libro abierto con una bombilla de idea encima -para 'Tutorial'-,
-    distinta del gorro de graduación (dentro de 🎓) y de la bombilla sola
-    (💡, ideas genéricas)."""
+
     _libro(p, size, color="#8B5CF6", color_borde="#5B21B6")
     _disco(p, size, 0.40, 0.02, 0.60, 0.20, "#FDE047", borde="#CA8A04")
     _linea(p, size, 0.46, 0.20, 0.46, 0.26, "#94A3B8", 1.6)
     _linea(p, size, 0.54, 0.20, 0.54, 0.26, "#94A3B8", 1.6)
 
 
+#Nota/justificante: una hoja con líneas de texto y un sello circular
+#de "aprobado" en la esquina -para el estado de asistencia 'Excusado',
+#que es justo eso: una ausencia con una nota/justificación aceptada.
+#Distinto tanto del check verde genérico (Presente) como de cualquier
+#documento neutro (📄).
 def _excusa_justificante(p, size):
-    """Nota/justificante: una hoja con líneas de texto y un sello circular
-    de "aprobado" en la esquina -para el estado de asistencia 'Excusado',
-    que es justo eso: una ausencia con una nota/justificación aceptada.
-    Distinto tanto del check verde genérico (Presente) como de cualquier
-    documento neutro (📄)."""
+
     _rect_redondeado(p, size, 0.14, 0.06, 0.72, 0.86, "#EFF6FF", radio=0.05, borde="#93C5FD")
     for y in (0.22, 0.34, 0.46, 0.58, 0.68):
         ancho_x1= 0.58 if y != 0.68 else 0.44
@@ -1304,20 +1423,22 @@ def _excusa_justificante(p, size):
     p.drawLine(QPointF(0.72 * size, 0.86 * size), QPointF(0.89 * size, 0.68 * size))
 
 
+#Cruz médica clásica sobre una placa redondeada -para 'Licencia
+#Médica'-, en el morado propio de este estado (para no confundirse con
+#la cruz roja de emergencias/errores que ya usa la app en otros lados).
 def _licencia_medica(p, size):
-    """Cruz médica clásica sobre una placa redondeada -para 'Licencia
-    Médica'-, en el morado propio de este estado (para no confundirse con
-    la cruz roja de emergencias/errores que ya usa la app en otros lados)."""
+
     _rect_redondeado(p, size, 0.08, 0.08, 0.92, 0.92, "#8B5CF6", radio=0.22, borde="#5B21B6")
     _rect_redondeado(p, size, 0.42, 0.20, 0.58, 0.80, "white", radio=0.04)
     _rect_redondeado(p, size, 0.20, 0.42, 0.80, 0.58, "white", radio=0.04)
 
 
+#Mano abierta levantada -el gesto universal de "pedir/tener permiso"-
+#en vez de una llave (que remite a contraseñas/acceso, no a un permiso
+#de ausencia). Palma y dedos en tono piel con un pequeño distintivo
+#cian (el color propio de este estado) en la muñeca.
 def _permiso_mano(p, size):
-    """Mano abierta levantada -el gesto universal de "pedir/tener permiso"-
-    en vez de una llave (que remite a contraseñas/acceso, no a un permiso
-    de ausencia). Palma y dedos en tono piel con un pequeño distintivo
-    cian (el color propio de este estado) en la muñeca."""
+
     #Muñeca / brazalete distintivo (color del estado).
     _rect_redondeado(p, size, 0.30, 0.80, 0.72, 0.96, "#06B6D4", radio=0.10, borde="#0E7490")
     #Palma.
@@ -1331,13 +1452,14 @@ def _permiso_mano(p, size):
               "#F2C185", borde="#C9925A")
 
 
+#Dos eslabones entrelazados en diagonal -para acciones de
+#"Vincular"- pensado a propósito para que no se confunda con el
+#eslabón gris neutro y plano que ya existe para 🔗 (enlaces web/genéricos):
+#aquí cada eslabón tiene su propio color (índigo y celeste), con un
+#pequeño brillo/resalte para dar sensación de profundidad y de que
+#"encajan" entre sí, en vez de dos rectángulos superpuestos sin más.
 def _vinculacion(p, size):
-    """Dos eslabones entrelazados en diagonal -para acciones de
-    "Vincular"- pensado a propósito para que no se confunda con el
-    eslabón gris neutro y plano que ya existe para 🔗 (enlaces web/genéricos):
-    aquí cada eslabón tiene su propio color (índigo y celeste), con un
-    pequeño brillo/resalte para dar sensación de profundidad y de que
-    "encajan" entre sí, en vez de dos rectángulos superpuestos sin más."""
+
     p.save()
     p.translate(size * 0.5, size * 0.5)
     p.rotate(-35)
@@ -1364,11 +1486,12 @@ def _vinculacion(p, size):
     p.drawLine(QPointF(0.58 * size, 0.48 * size), QPointF(0.70 * size, 0.44 * size))
 
 
+#Tarjeta de boletín con una barra de progreso ascendente encima -para
+#"Boletín / Promedios"-, distinta tanto del documento genérico (📄)
+#como del gráfico de tendencia suelto (📈, que ya usan otras pestañas
+#de calificaciones).
 def _boletin_promedios(p, size):
-    """Tarjeta de boletín con una barra de progreso ascendente encima -para
-    "Boletín / Promedios"-, distinta tanto del documento genérico (📄)
-    como del gráfico de tendencia suelto (📈, que ya usan otras pestañas
-    de calificaciones)."""
+
     _rect_redondeado(p, size, 0.12, 0.10, 0.88, 0.90, "#F8FAFC", radio=0.08, borde="#94A3B8")
     _rect_redondeado(p, size, 0.12, 0.10, 0.88, 0.30, "#3B82F6", radio=0.08)
     _rect_redondeado(p, size, 0.12, 0.22, 0.88, 0.30, "#3B82F6", radio=0.0)
@@ -1381,31 +1504,33 @@ def _boletin_promedios(p, size):
     _rect_redondeado(p, size, 0.70, 0.48, 0.82, 0.82, "#22C55E", radio=0.02)
 
 
+#Banderín de "marcador de seguimiento" con un reloj de arena encima
+#-para "Seguimiento (RP / Incompletos)"-: comunica de un vistazo "algo
+#marcado, pendiente de resolver con el tiempo", distinto de la campana
+#de recordatorios genérica (🔔) y de la alerta roja de "Ausencia" (❌).
 def _seguimiento_rp(p, size):
-    """Banderín de "marcador de seguimiento" con un reloj de arena encima
-    -para "Seguimiento (RP / Incompletos)"-: comunica de un vistazo "algo
-    marcado, pendiente de resolver con el tiempo", distinto de la campana
-    de recordatorios genérica (🔔) y de la alerta roja de "Ausencia" (❌)."""
+
     _linea(p, size, 0.26, 0.10, 0.26, 0.92, "#64748B", 2.6)
     _poligono(p, size, [(0.26, 0.14), (0.80, 0.24), (0.26, 0.46)], "#F97316", borde="#C2410C")
     p.setBrush(QBrush(QColor("#FDE68A")))
     p.setPen(_pluma("#B45309", 1.8))
     p.drawEllipse(_r(size, 0.44, 0.56, 0.86, 0.98))
-    cx, cy = 0.65 * size, 0.77 * size
+    cx, cy= 0.65 * size, 0.77 * size
     p.drawLine(QPointF(cx, cy), QPointF(cx, cy - 0.13 * size))
     p.drawLine(QPointF(cx, cy), QPointF(cx + 0.09 * size, cy))
 
 
+#Bandera a cuadros de meta -para "Evaluaciones Finales"-: transmite
+#"recta final/cierre" de un vistazo, muy distinta del gráfico de barras
+#genérico (📊) que ya usan las evaluaciones parciales en otras pestañas.
 def _evaluaciones_finales(p, size):
-    """Bandera a cuadros de meta -para "Evaluaciones Finales"-: transmite
-    "recta final/cierre" de un vistazo, muy distinta del gráfico de barras
-    genérico (📊) que ya usan las evaluaciones parciales en otras pestañas."""
+
     _linea(p, size, 0.24, 0.08, 0.24, 0.92, "#64748B", 2.8)
     p.setPen(_sin_pluma())
-    ancho, alto = 0.56, 0.34
-    x0, y0 = 0.24, 0.12
-    filas, columnas = 4, 6
-    cw, ch = ancho / columnas, alto / filas
+    ancho, alto= 0.56, 0.34
+    x0, y0= 0.24, 0.12
+    filas, columnas= 4, 6
+    cw, ch= ancho / columnas, alto / filas
     for fila in range(filas):
         for col in range(columnas):
             oscuro= (fila + col) % 2 == 0
@@ -1414,12 +1539,13 @@ def _evaluaciones_finales(p, size):
                               x0 + (col + 1) * cw, y0 + (fila + 1) * ch, color, radio=0.0)
 
 
+#Libro abierto con una insignia/medallón encima -para "Currículo
+#(CE)"-: el libro representa el plan curricular en sí, y el medallón
+#(con una marca de verificación) representa las Competencias
+#Específicas evaluadas contra ese currículo. Distinto del gorro de
+#graduación (dentro de 🎓, para "estudiante").
 def _curriculo_ce(p, size):
-    """Libro abierto con una insignia/medallón encima -para "Currículo
-    (CE)"-: el libro representa el plan curricular en sí, y el medallón
-    (con una marca de verificación) representa las Competencias
-    Específicas evaluadas contra ese currículo. Distinto del gorro de
-    graduación (dentro de 🎓, para "estudiante")."""
+
     _libro(p, size, color="#0EA5E9", color_borde="#075985")
     _disco(p, size, 0.36, 0.02, 0.64, 0.30, "#FACC15", borde="#CA8A04")
     p.setPen(_pluma("#78350F", 2.2))
@@ -1427,11 +1553,12 @@ def _curriculo_ce(p, size):
     p.drawLine(QPointF(0.49 * size, 0.22 * size), QPointF(0.58 * size, 0.10 * size))
 
 
+#Lista de verificación (rúbrica) con una marca de estrella al final
+#-para "Notas por Competencia"-: cada renglón con su propio check
+#representa una competencia evaluada individualmente, distinto tanto
+#del boletín consolidado como de la bandera de evaluaciones finales.
 def _notas_competencia(p, size):
-    """Lista de verificación (rúbrica) con una marca de estrella al final
-    -para "Notas por Competencia"-: cada renglón con su propio check
-    representa una competencia evaluada individualmente, distinto tanto
-    del boletín consolidado como de la bandera de evaluaciones finales."""
+
     _rect_redondeado(p, size, 0.14, 0.08, 0.86, 0.92, "#F8FAFC", radio=0.06, borde="#94A3B8")
     for y in (0.24, 0.42, 0.60):
         _disco(p, size, 0.22, y - 0.05, 0.32, y + 0.05, "#22C55E")
@@ -1442,11 +1569,12 @@ def _notas_competencia(p, size):
     _estrella(p, size, 0.62, 0.72, 0.86, 0.90, "#FBBF24", borde="#CA8A04")
 
 
+#Icono clásico de "compartir" -tres nodos conectados en triángulo-
+#en los colores propios de la app (azul/verde), para "Compartir
+#Calificaciones": comunica "enviar esto hacia afuera (a un tercero)",
+#distinto de exportar (bandeja) y de correo (sobre).
 def _compartir_calificaciones(p, size):
-    """Icono clásico de "compartir" -tres nodos conectados en triángulo-
-    en los colores propios de la app (azul/verde), para "Compartir
-    Calificaciones": comunica "enviar esto hacia afuera (a un tercero)",
-    distinto de exportar (bandeja) y de correo (sobre)."""
+
     p.setPen(_pluma("#3B82F6", 2.2))
     p.drawLine(QPointF(0.30 * size, 0.50 * size), QPointF(0.72 * size, 0.26 * size))
     p.drawLine(QPointF(0.30 * size, 0.50 * size), QPointF(0.72 * size, 0.74 * size))
@@ -1458,6 +1586,7 @@ def _compartir_calificaciones(p, size):
 #Tabla de despacho: caracter emoji -> función de dibujo(p, size) Cubre EXACTAMENTE los 159 emojis usados hoy en
 #la app.
 def _f(fn):
+
     return fn
 
 
@@ -1699,6 +1828,7 @@ _REGISTRO= {
 
 
 def _confeti(p, s):
+
     pass
 
 
@@ -1801,13 +1931,14 @@ _REGISTRO.setdefault(EMOJI_NOTA_EXTRAORDINARIA, lambda p, s: _nota_extraordinari
 _REGISTRO.setdefault(EMOJI_NOTA_ESPECIAL, lambda p, s: _nota_especial(p, s))
 
 
+#Anillo de progreso (igual en espíritu al widget 'anillo_desempeno'
+#que se ve DENTRO de esta misma pestaña) con una figura de estudiante
+#al centro -para la pestaña "Desempeño Individual"-: el aro remarca que
+#se trata del avance de UN estudiante en sus competencias fundamentales,
+#a diferencia de la tarjeta de boletín (consolidado del grupo) o la
+#bandera de evaluaciones finales (cierre de periodo).
 def _desempeno_individual(p, size):
-    """Anillo de progreso (igual en espíritu al widget 'anillo_desempeno'
-    que se ve DENTRO de esta misma pestaña) con una figura de estudiante
-    al centro -para la pestaña "Desempeño Individual"-: el aro remarca que
-    se trata del avance de UN estudiante en sus competencias fundamentales,
-    a diferencia de la tarjeta de boletín (consolidado del grupo) o la
-    bandera de evaluaciones finales (cierre de periodo)."""
+
     p.setPen(_pluma("#E2E8F0", 7.2))
     p.setBrush(Qt.BrushStyle.NoBrush)
     p.drawArc(_r(size, 0.09, 0.09, 0.91, 0.91), 0, 360 * 16)
@@ -1818,12 +1949,13 @@ def _desempeno_individual(p, size):
     _rect_redondeado(p, size, 0.35, 0.52, 0.65, 0.78, "#1E293B", radio=0.14)
 
 
+#Calculadora de escritorio clásica -pantalla + rejilla de botones-
+#para los botones "Calcular" de Evaluaciones Finales y Notas por
+#Competencia: representa con claridad "esto computa un resultado a
+#partir de tus notas", a diferencia de una lupa (buscar) o de chispas
+#genéricas (que no comunican ninguna acción concreta).
 def _calculadora(p, size):
-    """Calculadora de escritorio clásica -pantalla + rejilla de botones-
-    para los botones "Calcular" de Evaluaciones Finales y Notas por
-    Competencia: representa con claridad "esto computa un resultado a
-    partir de tus notas", a diferencia de una lupa (buscar) o de chispas
-    genéricas (que no comunican ninguna acción concreta)."""
+
     _rect_redondeado(p, size, 0.16, 0.06, 0.84, 0.94, "#1E293B", radio=0.10, borde="#0F172A")
     _rect_redondeado(p, size, 0.24, 0.14, 0.76, 0.32, "#86EFAC", radio=0.04)
     for fila in range(3):
@@ -1834,13 +1966,14 @@ def _calculadora(p, size):
             _rect_redondeado(p, size, x0, y0, x0 + 0.145, y0 + 0.115, color, radio=0.03)
 
 
+#Portapapeles con una varita/chispa "creando" una línea nueva -para
+#el botón "Generar Seguimiento"-: comunica "esto arma automáticamente
+#el plan de seguimiento por ti", distinto de la calculadora (que
+#computa un valor numérico) y del icono de la propia pestaña
+#Seguimiento (banderín + reloj de arena, que representa el estado ya
+#creado, no la acción de crearlo).
 def _generar_seguimiento(p, size):
-    """Portapapeles con una varita/chispa "creando" una línea nueva -para
-    el botón "Generar Seguimiento"-: comunica "esto arma automáticamente
-    el plan de seguimiento por ti", distinto de la calculadora (que
-    computa un valor numérico) y del icono de la propia pestaña
-    Seguimiento (banderín + reloj de arena, que representa el estado ya
-    creado, no la acción de crearlo)."""
+
     _rect_redondeado(p, size, 0.20, 0.10, 0.80, 0.92, "#F8FAFC", radio=0.08, borde="#94A3B8")
     _rect_redondeado(p, size, 0.38, 0.04, 0.62, 0.16, "#64748B", radio=0.04)
     _linea(p, size, 0.30, 0.36, 0.58, 0.36, "#CBD5E1", 2.2)
@@ -1864,12 +1997,13 @@ _REGISTRO.setdefault(EMOJI_GENERAR_SEGUIMIENTO, lambda p, s: _generar_seguimient
 #llamó setTabIcon). Cada uno se diseñó para no confundirse con su equivalente de Calificaciones "normales": el
 #boletín técnico usa un certificado con sello en vez de la tarjeta con barritas de _boletin_promedios, por
 #ejemplo.
+#Dos fichas de módulo apiladas (currículo técnico dividido en
+#módulos) con una insignia de check al frente -para "Módulos y RA"-:
+#el check representa los Resultados de Aprendizaje (RA) ya alcanzados
+#dentro de cada módulo, a diferencia de una carpeta genérica que no
+#diría nada sobre "aprendizaje logrado".
 def _modulos_ra(p, size):
-    """Dos fichas de módulo apiladas (currículo técnico dividido en
-    módulos) con una insignia de check al frente -para "Módulos y RA"-:
-    el check representa los Resultados de Aprendizaje (RA) ya alcanzados
-    dentro de cada módulo, a diferencia de una carpeta genérica que no
-    diría nada sobre "aprendizaje logrado"."""
+
     _rect_redondeado(p, size, 0.22, 0.10, 0.86, 0.46, "#94A3B8", radio=0.08, borde="#475569")
     _rect_redondeado(p, size, 0.14, 0.30, 0.78, 0.66, "#38BDF8", radio=0.08, borde="#0369A1")
     for y in (0.42, 0.52):
@@ -1880,11 +2014,12 @@ def _modulos_ra(p, size):
     p.drawLine(QPointF(0.72 * size, 0.82 * size), QPointF(0.85 * size, 0.66 * size))
 
 
+#Hoja de calificaciones con filas marcadas y una insignia "%" -para
+#"Registro de Notas" (técnicas)-: distinto del lápiz+documento genérico
+#(📝) que ya usan otros módulos para "registrar algo" en general, este
+#deja claro de un vistazo que lo que se registra son notas numéricas.
 def _registro_notas_tecnicas(p, size):
-    """Hoja de calificaciones con filas marcadas y una insignia "%" -para
-    "Registro de Notas" (técnicas)-: distinto del lápiz+documento genérico
-    (📝) que ya usan otros módulos para "registrar algo" en general, este
-    deja claro de un vistazo que lo que se registra son notas numéricas."""
+
     _rect_redondeado(p, size, 0.16, 0.08, 0.84, 0.92, "#F8FAFC", radio=0.07, borde="#94A3B8")
     _rect_redondeado(p, size, 0.34, 0.02, 0.66, 0.16, "#64748B", radio=0.04)
     for y, marcada in ((0.32, True), (0.48, False), (0.64, True)):
@@ -1905,12 +2040,13 @@ def _registro_notas_tecnicas(p, size):
     p.drawText(_r(size, 0.58, 0.715, 0.92, 0.98), Qt.AlignmentFlag.AlignCenter, "%")
 
 
+#Certificado con sello -para "Boletín Técnico"-: a propósito
+#distinto de la tarjeta con barritas ascendentes de _boletin_promedios
+#(Calificaciones "normales"), porque un boletín de Educación Técnica
+#se percibe/entrega como un certificado formal de la carrera/área
+#técnica cursada, no solo como un resumen de promedios.
 def _boletin_tecnico(p, size):
-    """Certificado con sello -para "Boletín Técnico"-: a propósito
-    distinto de la tarjeta con barritas ascendentes de _boletin_promedios
-    (Calificaciones "normales"), porque un boletín de Educación Técnica
-    se percibe/entrega como un certificado formal de la carrera/área
-    técnica cursada, no solo como un resumen de promedios."""
+
     _rect_redondeado(p, size, 0.10, 0.08, 0.90, 0.72, "#F8FAFC", radio=0.06, borde="#0EA5E9")
     _linea(p, size, 0.20, 0.22, 0.80, 0.22, "#0EA5E9", 2.4)
     for y in (0.34, 0.44, 0.54):
@@ -1944,6 +2080,7 @@ _REGISTRO.setdefault(EMOJI_BOLETIN_TECNICO, lambda p, s: _boletin_tecnico(p, s))
 #maletín) que no comunicaban nada específico de Educación Técnico-Profesional. Cada uno de estos se diseñó para
 #representar su concepto concreto y no confundirse entre sí.
 def _hexagono(p, size, cx, cy, r, color, borde=None, rot=90):
+
     pts= []
     for i in range(6):
         ang= math.radians(60 * i - rot)
@@ -1951,11 +2088,12 @@ def _hexagono(p, size, cx, cy, r, color, borde=None, rot=90):
     _poligono(p, size, pts, color, borde=borde)
 
 
+#Tubo de ensayo (laboratorio) + llave inglesa (taller) compartiendo
+#una placa base -para "Talleres y Laboratorios"-: une ambos conceptos
+#en un solo glifo, a diferencia del martillo+destornillador genérico
+#(🛠) que no decía nada sobre el componente de laboratorio.
 def _talleres_laboratorios(p, size):
-    """Tubo de ensayo (laboratorio) + llave inglesa (taller) compartiendo
-    una placa base -para "Talleres y Laboratorios"-: une ambos conceptos
-    en un solo glifo, a diferencia del martillo+destornillador genérico
-    (🛠) que no decía nada sobre el componente de laboratorio."""
+
     _rect_redondeado(p, size, 0.06, 0.68, 0.94, 0.90, "#E2E8F0", radio=0.08, borde="#94A3B8")
     p.save()
     p.translate(size * 0.02, size * 0.00)
@@ -1969,22 +2107,24 @@ def _talleres_laboratorios(p, size):
     p.restore()
 
 
+#Tres fichas hexagonales superpuestas, cada una de un color -para
+#"Áreas Técnicas"-: cada hexágono representa un área/especialidad
+#técnica distinta agrupada bajo el mismo programa, a diferencia del
+#edificio de escuela genérico (🏫) que no distingue "varias áreas".
 def _areas_tecnicas(p, size):
-    """Tres fichas hexagonales superpuestas, cada una de un color -para
-    "Áreas Técnicas"-: cada hexágono representa un área/especialidad
-    técnica distinta agrupada bajo el mismo programa, a diferencia del
-    edificio de escuela genérico (🏫) que no distingue "varias áreas"."""
+
     _hexagono(p, size, 0.36, 0.42, 0.26, "#38BDF8", borde="#0369A1")
     _hexagono(p, size, 0.64, 0.42, 0.26, "#818CF8", borde="#3730A3")
     _hexagono(p, size, 0.50, 0.70, 0.26, "#34D399", borde="#047857")
 
 
+#Pequeño edificio de oficina con una insignia de check -para
+#"Empresas de Pasantía"-: representa la empresa aliada externa donde
+#el estudiante hace su pasantía, distinto del maletín genérico (💼) que
+#ya se asocia en la app con "trabajo/negocios" en general, sin indicar
+#que se trata de una alianza institucional.
 def _empresa_pasantia(p, size):
-    """Pequeño edificio de oficina con una insignia de check -para
-    "Empresas de Pasantía"-: representa la empresa aliada externa donde
-    el estudiante hace su pasantía, distinto del maletín genérico (💼) que
-    ya se asocia en la app con "trabajo/negocios" en general, sin indicar
-    que se trata de una alianza institucional."""
+
     _rect_redondeado(p, size, 0.16, 0.14, 0.84, 0.90, "#0EA5E9", radio=0.05, borde="#075985")
     for fila in range(3):
         for col in range(2):
@@ -1998,13 +2138,14 @@ def _empresa_pasantia(p, size):
     p.drawLine(QPointF(0.76 * size, 0.29 * size), QPointF(0.88 * size, 0.13 * size))
 
 
+#Maletín de pasantía con un aro de progreso alrededor -para
+#"Control de Pasantías"-: el aro comunica "seguimiento/supervisión a lo
+#largo del tiempo" (mismo lenguaje visual que otros anillos de progreso
+#de la app), sobre el propio maletín que ya representa la pasantía en
+#sí, a diferencia del portapapeles genérico (📋) que no distinguía esta
+#sección de cualquier otro listado.
 def _control_pasantias(p, size):
-    """Maletín de pasantía con un aro de progreso alrededor -para
-    "Control de Pasantías"-: el aro comunica "seguimiento/supervisión a lo
-    largo del tiempo" (mismo lenguaje visual que otros anillos de progreso
-    de la app), sobre el propio maletín que ya representa la pasantía en
-    sí, a diferencia del portapapeles genérico (📋) que no distinguía esta
-    sección de cualquier otro listado."""
+
     p.setPen(_pluma("#E2E8F0", 5.0))
     p.setBrush(Qt.BrushStyle.NoBrush)
     p.drawArc(_r(size, 0.06, 0.06, 0.94, 0.94), 0, 360 * 16)
@@ -2035,11 +2176,12 @@ _REGISTRO.setdefault(EMOJI_CONTROL_PASANTIAS, lambda p, s: _control_pasantias(p,
 #icono), y "Usuarios y Roles"/"Auditoría" caían en 👤 y 🛡 -exactamente los mismos dibujos que "Mi Cuenta" y
 #"Seguridad y Backups" en la MISMA tab bar-, así que cada uno tiene un diseño propio:
 
+#Bandeja de recepción con un documento entrando y un check -para
+#la pestaña "Entregas" del Banco de Tareas: comunica "el estudiante
+#entrega / el docente recibe y confirma", a diferencia de la bandeja
+#con flecha de importar/exportar que solo habla de mover archivos.
 def _entregas_tab(p, size):
-    """Bandeja de recepción con un documento entrando y un check -para
-    la pestaña "Entregas" del Banco de Tareas: comunica "el estudiante
-    entrega / el docente recibe y confirma", a diferencia de la bandeja
-    con flecha de importar/exportar que solo habla de mover archivos."""
+
     _rect_redondeado(p, size, 0.28, 0.10, 0.68, 0.58, "#F8FAFC", radio=0.05, borde="#94A3B8")
     for y in (0.22, 0.32, 0.42):
         _linea(p, size, 0.36, y, 0.60, y, "#CBD5E1", 1.8)
@@ -2051,12 +2193,13 @@ def _entregas_tab(p, size):
     p.drawLine(QPointF(0.72 * size, 0.81 * size), QPointF(0.84 * size, 0.66 * size))
 
 
+#Birrete sobre libro abierto -para la pestaña "Académico" de
+#Configuración: el birrete representa lo estrictamente académico
+#(grados, curriculum) y el libro abierto los parámetros de materias/
+#grados/periodos que se configuran ahí, en vez del genérico 🎓 que la
+#app ya reserva para "estudiante".
 def _academico_tab(p, size):
-    """Birrete sobre libro abierto -para la pestaña "Académico" de
-    Configuración: el birrete representa lo estrictamente académico
-    (grados, curriculum) y el libro abierto los parámetros de materias/
-    grados/periodos que se configuran ahí, en vez del genérico 🎓 que la
-    app ya reserva para "estudiante"."""
+
     _poligono(p, size, [(0.08, 0.60), (0.50, 0.72), (0.50, 0.90), (0.08, 0.78)], "#F8FAFC", borde="#94A3B8")
     _poligono(p, size, [(0.92, 0.60), (0.50, 0.72), (0.50, 0.90), (0.92, 0.78)], "#E2E8F0", borde="#94A3B8")
     _poligono(p, size, [(0.50, 0.10), (0.94, 0.28), (0.50, 0.46), (0.06, 0.28)], "#1E293B", borde="#0F172A")
@@ -2065,11 +2208,12 @@ def _academico_tab(p, size):
     _disco(p, size, 0.84, 0.56, 0.96, 0.68, "#FACC15", borde="#CA8A04")
 
 
+#Dos personas con una insignia de rol -para "Usuarios y Roles":
+#la persona doble distingue la gestión multiusuario del 👤 solitario
+#de "Mi Cuenta", y la insignia violeta (distinta del escudo verde de
+#permisos/seguridad) representa los ROLES asignados a cada quien.
 def _usuarios_roles_tab(p, size):
-    """Dos personas con una insignia de rol -para "Usuarios y Roles":
-    la persona doble distingue la gestión multiusuario del 👤 solitario
-    de "Mi Cuenta", y la insignia violeta (distinta del escudo verde de
-    permisos/seguridad) representa los ROLES asignados a cada quien."""
+
     _disco(p, size, 0.48, 0.10, 0.74, 0.36, "#94A3B8")
     _rect_redondeado(p, size, 0.40, 0.40, 0.82, 0.74, "#94A3B8", radio=0.10)
     _disco(p, size, 0.08, 0.14, 0.44, 0.50, "#38BDF8", borde="#0369A1")
@@ -2078,12 +2222,13 @@ def _usuarios_roles_tab(p, size):
     _estrella(p, size, 0.67, 0.65, 0.87, 0.85, "#EDE9FE", borde="#6D28D9", puntas=5)
 
 
+#Bitácora con marcas de revisión y lupa -para la pestaña
+#"Auditoría": renglones verificados (acciones registradas y
+#revisables) + la lupa de "inspección del historial", con paleta
+#violeta para no confundirse con el escudo 🛡 de "Seguridad y
+#Backups" en la misma tab bar.
 def _auditoria_tab(p, size):
-    """Bitácora con marcas de revisión y lupa -para la pestaña
-    "Auditoría": renglones verificados (acciones registradas y
-    revisables) + la lupa de "inspección del historial", con paleta
-    violeta para no confundirse con el escudo 🛡 de "Seguridad y
-    Backups" en la misma tab bar."""
+
     _rect_redondeado(p, size, 0.12, 0.06, 0.78, 0.84, "#F8FAFC", radio=0.06, borde="#94A3B8")
     _rect_redondeado(p, size, 0.28, 0.02, 0.62, 0.14, "#8B5CF6", radio=0.04)
     for y, marcada in ((0.28, True), (0.42, True), (0.56, False)):
@@ -2098,8 +2243,9 @@ def _auditoria_tab(p, size):
     _linea(p, size, 0.82, 0.80, 0.94, 0.92, "#6D28D9", 4.0)
 
 
+#Edificio universitario con tres accesos: Facultades.
 def _facultades_universidad_tab(p, size):
-    """Edificio universitario con tres accesos: Facultades."""
+
     _poligono(p, size, [(0.08, 0.34), (0.50, 0.10), (0.92, 0.34)], "#4F46E5", borde="#3730A3")
     _rect_redondeado(p, size, 0.14, 0.34, 0.86, 0.84, "#EEF2FF", radio=0.03, borde="#818CF8")
     for x in (0.25, 0.45, 0.65):
@@ -2107,8 +2253,9 @@ def _facultades_universidad_tab(p, size):
     _linea(p, size, 0.10, 0.88, 0.90, 0.88, "#3730A3", 2.3)
 
 
+#Ruta académica con meta: Carreras.
 def _carreras_universidad_tab(p, size):
-    """Ruta académica con meta: Carreras."""
+
     _linea(p, size, 0.16, 0.78, 0.43, 0.55, "#0EA5E9", 3.0)
     _linea(p, size, 0.43, 0.55, 0.70, 0.32, "#0EA5E9", 3.0)
     _poligono(p, size, [(0.66, 0.20), (0.90, 0.27), (0.73, 0.47)], "#0284C7", borde="#0369A1")
@@ -2116,8 +2263,9 @@ def _carreras_universidad_tab(p, size):
     _disco(p, size, 0.34, 0.46, 0.53, 0.65, "#FACC15", borde="#CA8A04")
 
 
+#Malla de asignaturas conectadas: Malla Curricular.
 def _pensum_universidad_tab(p, size):
-    """Malla de asignaturas conectadas: Malla Curricular."""
+
     for y in (0.20, 0.48, 0.76):
         _linea(p, size, 0.22, y, 0.78, y, "#94A3B8", 1.6)
     for x in (0.22, 0.50, 0.78):
@@ -2150,28 +2298,32 @@ _REGISTRO.setdefault(EMOJI_TAB_PENSUM, lambda p, s: _pensum_universidad_tab(p, s
 #conexión directa vía backend/OAuth), la DIRECCIÓN (flecha verde arriba = envía; flecha azul abajo = recibe) y
 #la base de datos local que se mueve.
 
+#Silueta de nube (carpeta sincronizada por cliente de nube).
 def _nube_sincronizacion(p, size):
-    """Silueta de nube (carpeta sincronizada por cliente de nube)."""
+
     _rect_redondeado(p, size, 0.20, 0.16, 0.80, 0.34, "#E2E8F0", radio=0.08)
     _disco(p, size, 0.26, 0.06, 0.56, 0.36, "#E2E8F0")
     _disco(p, size, 0.48, 0.08, 0.76, 0.32, "#E2E8F0")
 
 
+#Monitor/servidor (conexión directa al backend vía OAuth/API).
 def _servidor_directo(p, size):
-    """Monitor/servidor (conexión directa al backend vía OAuth/API)."""
+
     _rect_redondeado(p, size, 0.22, 0.02, 0.78, 0.30, "#64748B", radio=0.05, borde="#334155")
     _rect_redondeado(p, size, 0.28, 0.08, 0.72, 0.24, "#0EA5E9", radio=0.02)
     _rect_redondeado(p, size, 0.46, 0.30, 0.54, 0.38, "#475569", radio=0.02)
 
 
+#Cilindro estilizado: la base de datos local que se envía/recibe.
 def _base_datos_local(p, size):
-    """Cilindro estilizado: la base de datos local que se envía/recibe."""
+
     _rect_redondeado(p, size, 0.14, 0.76, 0.86, 0.96, "#0EA5E9", radio=0.06, borde="#075985")
     _rect_redondeado(p, size, 0.20, 0.81, 0.80, 0.88, "#7DD3FC", radio=0.03)
 
 
+#Flecha gruesa de dirección (verde arriba = envía, azul abajo = recibe).
 def _flecha_sincronizacion(p, size, hacia_arriba, color, borde):
-    """Flecha gruesa de dirección (verde arriba = envía, azul abajo = recibe)."""
+
     if hacia_arriba:
         _rect_redondeado(p, size, 0.44, 0.50, 0.56, 0.74, color, radio=0.02, borde=borde)
         _poligono(p, size, [(0.50, 0.30), (0.72, 0.54), (0.28, 0.54)], color, borde=borde)
@@ -2180,34 +2332,38 @@ def _flecha_sincronizacion(p, size, hacia_arriba, color, borde):
         _poligono(p, size, [(0.50, 0.74), (0.28, 0.50), (0.72, 0.50)], color, borde=borde)
 
 
+#Nube + flecha verde hacia arriba + base de datos -"Subir Cambios":
+#los datos locales de este equipo viajan hacia la carpeta sincronizada.
 def _sync_subir(p, size):
-    """Nube + flecha verde hacia arriba + base de datos -"Subir Cambios":
-    los datos locales de este equipo viajan hacia la carpeta sincronizada."""
+
     _nube_sincronizacion(p, size)
     _base_datos_local(p, size)
     _flecha_sincronizacion(p, size, True, "#22C55E", "#15803D")
 
 
+#Nube + flecha azul hacia abajo + base de datos -"Descargar Novedades":
+#los cambios que otros equipos subieron a la carpeta llegan a este equipo.
 def _sync_descargar(p, size):
-    """Nube + flecha azul hacia abajo + base de datos -"Descargar Novedades":
-    los cambios que otros equipos subieron a la carpeta llegan a este equipo."""
+
     _nube_sincronizacion(p, size)
     _base_datos_local(p, size)
     _flecha_sincronizacion(p, size, False, "#3B82F6", "#1D4ED8")
 
 
+#Servidor + flecha verde hacia arriba + base de datos -"Subir (directo)":
+#como Subir Cambios, pero hablando directo con el backend/API (Drive,
+#Dropbox, OneDrive, servidor institucional) en vez de la carpeta local.
 def _sync_subir_directo(p, size):
-    """Servidor + flecha verde hacia arriba + base de datos -"Subir (directo)":
-    como Subir Cambios, pero hablando directo con el backend/API (Drive,
-    Dropbox, OneDrive, servidor institucional) en vez de la carpeta local."""
+
     _servidor_directo(p, size)
     _base_datos_local(p, size)
     _flecha_sincronizacion(p, size, True, "#22C55E", "#15803D")
 
 
+#Servidor + flecha azul hacia abajo + base de datos -"Descargar (directo)":
+#espejo de Subir (directo), trayendo cambios directo desde el backend.
 def _sync_descargar_directo(p, size):
-    """Servidor + flecha azul hacia abajo + base de datos -"Descargar (directo)":
-    espejo de Subir (directo), trayendo cambios directo desde el backend."""
+
     _servidor_directo(p, size)
     _base_datos_local(p, size)
     _flecha_sincronizacion(p, size, False, "#3B82F6", "#1D4ED8")
@@ -2230,8 +2386,9 @@ _REGISTRO.setdefault(EMOJI_SYNC_DESCARGAR_DIRECTO, lambda p, s: _sync_descargar_
 #vectoriales de la app— en celeste (#38BDF8), con una barra gris vertical para "primera"/"última" (el clásico
 #|◀ y ▶| que comunica "salto al extremo").
 
+#Chevron (>) redondeado sin mango de flecha, celeste.
 def _chevron_paginacion(p, size, hacia_izquierda, x0=0.36, x1=0.64):
-    """Chevron (>) redondeado sin mango de flecha, celeste."""
+
     pen= _pluma("#38BDF8", size * 0.16)
     pen.setCapStyle(Qt.PenCapStyle.RoundCap)
     pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
@@ -2244,25 +2401,30 @@ def _chevron_paginacion(p, size, hacia_izquierda, x0=0.36, x1=0.64):
     p.drawPolyline(QPolygonF([QPointF(x * size, y * size) for x, y in puntos]))
 
 
+#Barra vertical gris del salto-a-extremo (|◀ / ▶|).
 def _barra_extremo_paginacion(p, size, x):
-    """Barra vertical gris del salto-a-extremo (|◀ / ▶|)."""
+
     _rect_redondeado(p, size, x, 0.20, x + 0.11, 0.80, "#64748B", radio=0.045)
 
 
 def _pag_primera(p, size):
+
     _barra_extremo_paginacion(p, size, 0.10)
     _chevron_paginacion(p, size, True, 0.40, 0.66)
 
 
 def _pag_anterior(p, size):
+
     _chevron_paginacion(p, size, True, 0.32, 0.68)
 
 
 def _pag_siguiente(p, size):
+
     _chevron_paginacion(p, size, False, 0.32, 0.68)
 
 
 def _pag_ultima(p, size):
+
     _barra_extremo_paginacion(p, size, 0.79)
     _chevron_paginacion(p, size, False, 0.34, 0.60)
 
@@ -2282,22 +2444,25 @@ _REGISTRO.setdefault(EMOJI_PAG_ULTIMA, lambda p, s: _pag_ultima(p, s))
 #resaltada (verde = se inserta, rojo = se elimina) y un disco con el signo +/− en la esquina inferior derecha
 #que desambigua la operación de un vistazo.
 
+#Marco + cuadrícula 3x3 que representa la hoja de cálculo.
 def _cuadricula_hoja(p, size, color="#94A3B8"):
-    """Marco + cuadrícula 3x3 que representa la hoja de cálculo."""
+
     for y in (0.08, 0.36, 0.64, 0.92):
         _linea(p, size, 0.08, y, 0.92, y, color, 1.6)
     for x in (0.08, 0.36, 0.64, 0.92):
         _linea(p, size, x, 0.08, x, 0.92, color, 1.6)
 
 
+#Banda central de la cuadrícula (fila o columna afectada).
 def _banda_hoja(p, size, color):
-    """Banda central de la cuadrícula (fila o columna afectada)."""
+
     _rect_redondeado(p, size, 0.09, 0.37, 0.91, 0.63, color, radio=0.02)
 
 
+#Disco con + (insertar, verde) o − (eliminar, rojo) en la esquina.
 def _signo_operacion(p, size, insertar):
-    """Disco con + (insertar, verde) o − (eliminar, rojo) en la esquina."""
-    color, borde = ("#22C55E", "#15803D") if insertar else ("#EF4444", "#B91C1C")
+
+    color, borde= ("#22C55E", "#15803D") if insertar else ("#EF4444", "#B91C1C")
     _disco(p, size, 0.60, 0.60, 0.94, 0.94, color, borde=borde)
     p.setPen(_pluma("white", 2.4))
     p.drawLine(QPointF(0.69 * size, 0.77 * size), QPointF(0.85 * size, 0.77 * size))
@@ -2306,24 +2471,28 @@ def _signo_operacion(p, size, insertar):
 
 
 def _insertar_fila_hoja(p, size):
+
     _banda_hoja(p, size, "#BBF7D0")
     _cuadricula_hoja(p, size)
     _signo_operacion(p, size, True)
 
 
 def _eliminar_fila_hoja(p, size):
+
     _banda_hoja(p, size, "#FECACA")
     _cuadricula_hoja(p, size)
     _signo_operacion(p, size, False)
 
 
 def _insertar_columna_hoja(p, size):
+
     _rect_redondeado(p, size, 0.37, 0.09, 0.63, 0.91, "#BBF7D0", radio=0.02)
     _cuadricula_hoja(p, size)
     _signo_operacion(p, size, True)
 
 
 def _eliminar_columna_hoja(p, size):
+
     _rect_redondeado(p, size, 0.37, 0.09, 0.63, 0.91, "#FECACA", radio=0.02)
     _cuadricula_hoja(p, size)
     _signo_operacion(p, size, False)
@@ -2339,11 +2508,12 @@ _REGISTRO.setdefault(EMOJI_INSERTAR_COLUMNA, lambda p, s: _insertar_columna_hoja
 _REGISTRO.setdefault(EMOJI_ELIMINAR_COLUMNA, lambda p, s: _eliminar_columna_hoja(p, s))
 
 
+#Cuadro de texto para el modo Excel del editor de reportes: un
+#recuadro con borde y una "T" dibujada con trazos (sin depender de
+#fuentes del sistema), el glifo que Word/Excel usan para su botón
+#de cuadro de texto.
 def _cuadro_texto_hoja(p, size):
-    """Cuadro de texto para el modo Excel del editor de reportes: un
-    recuadro con borde y una "T" dibujada con trazos (sin depender de
-    fuentes del sistema), el glifo que Word/Excel usan para su botón
-    de cuadro de texto."""
+
     _rect_redondeado(p, size, 0.10, 0.16, 0.90, 0.84, "#F8FAFC", radio=0.10, borde="#64748B")
     p.setPen(_pluma("#0EA5E9", size * 0.13))
     p.setPen(_pluma("#0EA5E9", max(1.0, size * 0.11)))
@@ -2365,9 +2535,10 @@ _REGISTRO.setdefault(EMOJI_CUADRO_TEXTO, lambda p, s: _cuadro_texto_hoja(p, s))
 #cabecera del Dashboard, así que llevan degradado, halo suave y -en el caso nocturno- un par de estrellas, para
 #que se vean bien a los ~26-30px con los que se usan junto al saludo ("Buenos días" / "Buenas tardes" / "Buenas
 #noches"): mañana y tarde comparten el icono de sol -ambas son "de día"-, y la noche usa la luna con estrellas.
+#Sol con halo degradado y rayos de grosor variable -más lleno y con
+#más profundidad que el `_sol` genérico usado suelto en frases.
 def _saludo_dia(p, size):
-    """Sol con halo degradado y rayos de grosor variable -más lleno y con
-    más profundidad que el `_sol` genérico usado suelto en frases."""
+
     centro= _r(size, 0.5, 0.5, 0.5, 0.5)
     halo= _r(size, 0.10, 0.10, 0.90, 0.90)
     p.setPen(_sin_pluma())
@@ -2376,8 +2547,8 @@ def _saludo_dia(p, size):
     for i in range(12):
         ang= math.pi / 6 * i
         largo= 0.40 if i % 3 == 0 else 0.35
-        x0, y0 = 0.5 + 0.30 * math.cos(ang), 0.5 + 0.30 * math.sin(ang)
-        x1, y1 = 0.5 + largo * math.cos(ang), 0.5 + largo * math.sin(ang)
+        x0, y0= 0.5 + 0.30 * math.cos(ang), 0.5 + 0.30 * math.sin(ang)
+        x1, y1= 0.5 + largo * math.cos(ang), 0.5 + largo * math.sin(ang)
         _linea(p, size, x0, y0, x1, y1, "#F59E0B", 2.6 if i % 3 == 0 else 1.8)
     nucleo= _r(size, 0.26, 0.26, 0.74, 0.74)
     p.setBrush(_degradado(nucleo, "#FDE047", "#F59E0B"))
@@ -2389,9 +2560,10 @@ def _saludo_dia(p, size):
     p.drawEllipse(brillo)
 
 
+#Luna creciente con degradado y un par de estrellas -más lleno y con
+#más profundidad que el `_luna` genérico usado suelto en frases.
 def _saludo_noche(p, size):
-    """Luna creciente con degradado y un par de estrellas -más lleno y con
-    más profundidad que el `_luna` genérico usado suelto en frases."""
+
     path= QPainterPath()
     path.addEllipse(_r(size, 0.14, 0.14, 0.82, 0.82))
     recorte= QPainterPath()
@@ -2415,6 +2587,7 @@ _REGISTRO.setdefault(EMOJI_SALUDO_NOCHE, lambda p, s: _saludo_noche(p, s))
 #y semi-transparente, pensada para dibujarse SOBRE un círculo de fondo (ver pixmap_placeholder_foto_tabla en
 #paginacion.py) -por eso no lleva su propio fondo, a diferencia de EMOJI_SALUDO_DIA/NOCHE de arriba.
 def _silueta_persona_placeholder(p, size):
+
     color= QColor("#FFFFFF")
     color.setAlpha(235)
     p.setPen(_sin_pluma())
@@ -2439,10 +2612,11 @@ _REGISTRO.setdefault(EMOJI_FOTO_RECORTAR, lambda p, s: _foto_recortar(p, s))
 _PALETA_RESPALDO= ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#F472B6"]
 
 
+#Respaldo para emojis futuros sin dibujo dedicado: ficha redondeada
+#con degradado y el propio caracter dibujado encima (nunca un círculo
+#anónimo y repetitivo).
 def _dibujar_respaldo(p, size, caracter):
-    """Respaldo para emojis futuros sin dibujo dedicado: ficha redondeada
-    con degradado y el propio caracter dibujado encima (nunca un círculo
-    anónimo y repetitivo)."""
+
     color= _PALETA_RESPALDO[abs(hash(caracter)) % len(_PALETA_RESPALDO)]
     ficha= _r(size, 0.08, 0.08, 0.92, 0.92)
     p.setBrush(_degradado(ficha, color, "#1E293B"))
@@ -2458,15 +2632,17 @@ def _dibujar_respaldo(p, size, caracter):
 
 
 #API PÚBLICA
+#Devuelve un QPixmap (transparente, cuadrado `size`x`size`) con el
+#icono multicolor equivalente a `caracter`. Cacheado.
 def pixmap_emoji(caracter, size=TAMANO_DEFECTO):
-    """Devuelve un QPixmap (transparente, cuadrado `size`x`size`) con el
-    icono multicolor equivalente a `caracter`. Cacheado."""
+
     clave= (caracter, size)
     if clave in _cache_pixmap:
         return _cache_pixmap[clave]
-    pix, p = _nuevo_lienzo(size)
+    pix, p= _nuevo_lienzo(size)
     dibujar= _REGISTRO.get(caracter)
     try:
+
         if dibujar:
             dibujar(p, size)
         else:
@@ -2477,9 +2653,10 @@ def pixmap_emoji(caracter, size=TAMANO_DEFECTO):
     return pix
 
 
+#Devuelve un QIcon cacheado equivalente a `caracter` (mismo tamaño
+#base para todos los estados; Qt lo escala si se pide otro size).
 def icono_emoji(caracter, size=TAMANO_DEFECTO):
-    """Devuelve un QIcon cacheado equivalente a `caracter` (mismo tamaño
-    base para todos los estados; Qt lo escala si se pide otro size)."""
+
     clave= (caracter, size)
     if clave in _cache_icon:
         return _cache_icon[clave]
@@ -2488,17 +2665,19 @@ def icono_emoji(caracter, size=TAMANO_DEFECTO):
     return icono
 
 
+#True si `caracter` tiene un dibujo dedicado (no el respaldo genérico).
 def emoji_soportado(caracter):
-    """True si `caracter` tiene un dibujo dedicado (no el respaldo genérico)."""
+
     return caracter in _REGISTRO
 
 
+#Quita del `texto` cualquier caracter que tenga icono dedicado aquí
+#(y cualquier espacio duplicado que quede), para usarlo como el texto
+#puro de un botón/label que ahora lleva el emoji como QIcon aparte.
+#
+#Ej.: quitar_emojis_texto("💾 Guardar")  ->  "Guardar"
 def quitar_emojis_texto(texto):
-    """Quita del `texto` cualquier caracter que tenga icono dedicado aquí
-    (y cualquier espacio duplicado que quede), para usarlo como el texto
-    puro de un botón/label que ahora lleva el emoji como QIcon aparte.
 
-    Ej.: quitar_emojis_texto("💾 Guardar")  ->  "Guardar" """
     resultado= []
     for ch in texto:
         if ch in _REGISTRO:
@@ -2508,14 +2687,15 @@ def quitar_emojis_texto(texto):
     return " ".join(limpio.split())
 
 
+#Devuelve un tag <img> en base64 con el icono equivalente a `caracter`,
+#listo para insertar en texto enriquecido (QMessageBox.setText, un QLabel
+#con texto HTML, etc.) donde no se puede colocar un QIcon aparte -por
+#ejemplo, dentro de una lista de detalles como '🎓 Curso: 5to A'.
+#Al ir incrustado como imagen (no como el propio caracter emoji), se ve
+#con el MISMO dibujo plano y consistente que el resto de la app, en vez
+#de depender de la fuente de emoji del sistema operativo.
 def html_icono_emoji(caracter, size=14):
-    """Devuelve un tag <img> en base64 con el icono equivalente a `caracter`,
-    listo para insertar en texto enriquecido (QMessageBox.setText, un QLabel
-    con texto HTML, etc.) donde no se puede colocar un QIcon aparte -por
-    ejemplo, dentro de una lista de detalles como '🎓 Curso: 5to A'.
-    Al ir incrustado como imagen (no como el propio caracter emoji), se ve
-    con el MISMO dibujo plano y consistente que el resto de la app, en vez
-    de depender de la fuente de emoji del sistema operativo."""
+
     from PySide6.QtCore import QBuffer
     import base64
     clave= (caracter, size)
@@ -2532,10 +2712,11 @@ def html_icono_emoji(caracter, size=14):
     return tag
 
 
+#QLabel listo para insertar junto a un texto, con el pixmap del
+#emoji correspondiente -útil cuando el emoji viene en medio de una
+#frase larga y no conviene usarlo como QIcon de un botón.
 def etiqueta_emoji(caracter, size=16, parent=None):
-    """QLabel listo para insertar junto a un texto, con el pixmap del
-    emoji correspondiente -útil cuando el emoji viene en medio de una
-    frase larga y no conviene usarlo como QIcon de un botón."""
+
     from PySide6.QtWidgets import QLabel
     lbl= QLabel(parent)
     lbl.setPixmap(pixmap_emoji(caracter, size))

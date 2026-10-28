@@ -1,71 +1,71 @@
-"""Módulo Psicología de AcaDeXI.
-
-Módulo EXCLUSIVO de la edición Side Stepper: solo un cargo personalizado al
-que se le otorgó el módulo "Psicología" (ver
-permisos.MODULOS_EXTRA_SIDE_STEPPER, permisos.guardar_permisos_side_stepper)
-puede acceder, además de los roles gerenciales (Administrador/Director/
-Coordinador) para supervisión institucional -ver permisos.puede_ver_psicologia.
-Ningún Profesor, Administrativo ni el rol fijo "Profesor" de Side Stepper
-puede verlo, aunque sí vean Observaciones.
-
-Deliberadamente COPIA el patrón de interacción de observaciones.py
-(naturaleza + categorías + texto libre + destacada, filtros por
-Curso/Sección, banner de edición, paginación), porque para quien usa la
-app se siente como "la Observaciones del psicólogo" -pero los datos NUNCA
-se mezclan: viven en su propia tabla `psicologia` (ver bd.inicializar_bd),
-así que un cambio en Observaciones (o un export/import entre ediciones)
-jamás toca, expone ni sobrescribe un registro de Psicología por accidente.
-
-Campos propios que Observaciones no tiene:
-  - confidencial: siempre 1 (de momento no hay UI que lo desactive; se deja
-    la columna para un futuro "resumen no confidencial" opcional).
-  - estado_caso: Abierto / En seguimiento / Cerrado / Derivado — para que el
-    psicólogo lleve el expediente de un caso a través del tiempo, no solo
-    una bitácora de eventos sueltos como Observaciones.
-  - proxima_cita: fecha opcional de seguimiento, se resalta en la tabla si
-    ya venció y el caso sigue abierto.
-
-------------------------------------------------------------------------
-REDISEÑO VISUAL (v2) — mismo lenguaje visual que el resto de la app
-------------------------------------------------------------------------
-Este módulo vivía con una pantalla "de solo funcionalidad" (formulario
-plano siempre visible, tarjetas sin colores de tema, sin cabecera tipo
-héroe) mientras el resto de AcaDeXI (Profesores, Estudiantes, Materias,
-Observaciones...) ya usa un lenguaje visual consistente. Este archivo
-alinea Psicología a ese mismo lenguaje, reutilizando exactamente los
-mismos nombres de objeto/QSS que ya pinta el tema activo de la app
-(TarjetaCabecera, TarjetaFiltros, TarjetaTabla, BtnAccionAgregar/Editar/
-Eliminar/Neutro) y el mismo componente de tarjetas KPI que ya usa
-Materias (`dashboard.TarjetaIndicador`), en vez de inventar un estilo
-nuevo. Como cada módulo de AcaDeXI mantiene su propia copia pequeña de
-los widgets puramente visuales (ver el mismo criterio documentado en
-observaciones.py/profesores.py: "en vez de importar entre módulos de
-funcionalidad"), este archivo trae sus propias copias de `BotonAnimado`,
-`IconoLupa`, `Chip`, `FlowLayout`, `SegmentadoPildora` y `CintaAlerta`.
-
-Además de la piel visual, se suman mejoras de experiencia que faltaban:
-  - `actualizar_tema()`: antes NO EXISTÍA -el módulo nunca se repintaba al
-    cambiar de tema/modo oscuro (main.py llama a este método en cada
-    página que lo define; sin él, Psicología se quedaba con los colores
-    del arranque)-. Ahora sí, igual que todos los demás módulos.
-  - Panel de alta/edición COLAPSABLE (antes un `QFrame.show()/hide()` sin
-    animar): se integra con `edicion_feedback.activar_modo_edicion`, que
-    ya sabe expandir automáticamente cualquier panel ancestro con
-    `expandir()`/`_expandido` al editar un registro -exactamente el mismo
-    mecanismo que usan Observaciones y otros módulos-.
-  - Fila de indicadores (Total, Abiertos, En seguimiento, Citas vencidas)
-    para que el psicólogo vea la carga de casos de un vistazo, sin tener
-    que filtrar manualmente.
-  - Cinta de alerta cuando hay citas de seguimiento vencidas, con acceso
-    directo a filtrarlas.
-  - Chips rápidos "Destacados"/"Vencidas" además del combo de estado.
-  - Deshacer la última eliminación (dato sensible: un borrado accidental
-    de una nota confidencial no debería ser irreversible sin más).
-  - Atajos de teclado (Ctrl+G/N/E/Del/Z), igual que Profesores/Estudiantes.
-  - Búsqueda con debounce (150 ms) en vez de refrescar en cada tecla.
-No se tocó ningún dato, columna, permiso ni consulta de negocio: todo lo
-anterior es estrictamente presentación/experiencia.
-"""
+#Módulo Psicología de AcaDeXI.
+#
+#Módulo EXCLUSIVO de la edición Side Stepper: solo un cargo personalizado al
+#que se le otorgó el módulo "Psicología" (ver
+#permisos.MODULOS_EXTRA_SIDE_STEPPER, permisos.guardar_permisos_side_stepper)
+#puede acceder, además de los roles gerenciales (Administrador/Director/
+#Coordinador) para supervisión institucional -ver permisos.puede_ver_psicologia.
+#Ningún Profesor, Administrativo ni el rol fijo "Profesor" de Side Stepper
+#puede verlo, aunque sí vean Observaciones.
+#
+#Deliberadamente COPIA el patrón de interacción de observaciones.py
+#(naturaleza + categorías + texto libre + destacada, filtros por
+#Curso/Sección, banner de edición, paginación), porque para quien usa la
+#app se siente como "la Observaciones del psicólogo" -pero los datos NUNCA
+#se mezclan: viven en su propia tabla `psicologia` (ver bd.inicializar_bd),
+#así que un cambio en Observaciones (o un export/import entre ediciones)
+#jamás toca, expone ni sobrescribe un registro de Psicología por accidente.
+#
+#Campos propios que Observaciones no tiene:
+#- confidencial: siempre 1 (de momento no hay UI que lo desactive; se deja
+#la columna para un futuro "resumen no confidencial" opcional).
+#- estado_caso: Abierto / En seguimiento / Cerrado / Derivado — para que el
+#psicólogo lleve el expediente de un caso a través del tiempo, no solo
+#una bitácora de eventos sueltos como Observaciones.
+#- proxima_cita: fecha opcional de seguimiento, se resalta en la tabla si
+#ya venció y el caso sigue abierto.
+#
+# -----------------------------------------
+# rediseño visual (v2)
+# -----------------------------------------
+#mismo lenguaje visual que el resto de la app
+#Este módulo vivía con una pantalla "de solo funcionalidad" (formulario
+#plano siempre visible, tarjetas sin colores de tema, sin cabecera tipo
+#héroe) mientras el resto de AcaDeXI (Profesores, Estudiantes, Materias,
+#Observaciones...) ya usa un lenguaje visual consistente. Este archivo
+#alinea Psicología a ese mismo lenguaje, reutilizando exactamente los
+#mismos nombres de objeto/QSS que ya pinta el tema activo de la app
+#(TarjetaCabecera, TarjetaFiltros, TarjetaTabla, BtnAccionAgregar/Editar/
+#Eliminar/Neutro) y el mismo componente de tarjetas KPI que ya usa
+#Materias (`dashboard.TarjetaIndicador`), en vez de inventar un estilo
+#nuevo. Como cada módulo de AcaDeXI mantiene su propia copia pequeña de
+#los widgets puramente visuales (ver el mismo criterio documentado en
+#observaciones.py/profesores.py: "en vez de importar entre módulos de
+#funcionalidad"), este archivo trae sus propias copias de `BotonAnimado`,
+#`IconoLupa`, `Chip`, `FlowLayout`, `SegmentadoPildora` y `CintaAlerta`.
+#
+#Además de la piel visual, se suman mejoras de experiencia que faltaban:
+#- `actualizar_tema()`: antes NO EXISTÍA -el módulo nunca se repintaba al
+#cambiar de tema/modo oscuro (main.py llama a este método en cada
+#página que lo define; sin él, Psicología se quedaba con los colores
+#del arranque)-. Ahora sí, igual que todos los demás módulos.
+#- Panel de alta/edición COLAPSABLE (antes un `QFrame.show()/hide()` sin
+#animar): se integra con `edicion_feedback.activar_modo_edicion`, que
+#ya sabe expandir automáticamente cualquier panel ancestro con
+#`expandir()`/`_expandido` al editar un registro -exactamente el mismo
+#mecanismo que usan Observaciones y otros módulos-.
+#- Fila de indicadores (Total, Abiertos, En seguimiento, Citas vencidas)
+#para que el psicólogo vea la carga de casos de un vistazo, sin tener
+#que filtrar manualmente.
+#- Cinta de alerta cuando hay citas de seguimiento vencidas, con acceso
+#directo a filtrarlas.
+#- Chips rápidos "Destacados"/"Vencidas" además del combo de estado.
+#- Deshacer la última eliminación (dato sensible: un borrado accidental
+#de una nota confidencial no debería ser irreversible sin más).
+#- Atajos de teclado (Ctrl+G/N/E/Del/Z), igual que Profesores/Estudiantes.
+#- Búsqueda con debounce (150 ms) en vez de refrescar en cada tecla.
+#No se tocó ningún dato, columna, permiso ni consulta de negocio: todo lo
+#anterior es estrictamente presentación/experiencia.
 from datetime import datetime, date, timedelta
 
 from PySide6.QtWidgets import (
@@ -155,17 +155,20 @@ COL_PROXIMA= 7
 
 
 def _texto_categorias(claves_csv):
+
     claves= [c for c in (claves_csv or "").split(",") if c]
     return ", ".join(ETIQUETA_CATEGORIA.get(c, c) for c in claves) if claves else "—"
 
 
+#'Hoy' / 'Ayer' / día de la semana (última semana) / fecha completa en
+#el formato elegido en Configuración ▸ Apariencia -para el resto de
+#casos-. Variante de un solo día (sin hora) de la misma idea que usa
+#observaciones.py, porque aquí `fecha` se guarda como YYYY-MM-DD, sin
+#componente de hora.
 def _fecha_relativa_dia(fecha_str, main_window=None):
-    """'Hoy' / 'Ayer' / día de la semana (última semana) / fecha completa en
-    el formato elegido en Configuración ▸ Apariencia -para el resto de
-    casos-. Variante de un solo día (sin hora) de la misma idea que usa
-    observaciones.py, porque aquí `fecha` se guarda como YYYY-MM-DD, sin
-    componente de hora."""
+
     try:
+
         d= datetime.strptime(fecha_str, "%Y-%m-%d").date()
     except (ValueError, TypeError):
         return fecha_str or "—"
@@ -183,30 +186,33 @@ def _fecha_relativa_dia(fecha_str, main_window=None):
 #criterio que estudiantes.py / profesores.py / observaciones.py: cada módulo mantiene la suya en vez de
 #importar entre módulos de funcionalidad).
 def _hex_a_rgba(color_hex, alpha):
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
     if len(color_hex) < 6:
         color_hex= "2563EB"
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Igual que `_hex_a_rgba` pero como QColor real, para
+#QTableWidgetItem.setBackground (tiñe cada fila con el color de su
+#estado del caso, ver `_cargar_tabla`).
 def _color_fila_qcolor(color_hex, alpha_255):
-    """Igual que `_hex_a_rgba` pero como QColor real, para
-    QTableWidgetItem.setBackground (tiñe cada fila con el color de su
-    estado del caso, ver `_cargar_tabla`)."""
+
     color_hex= (color_hex or "#64748B").lstrip("#")
     if len(color_hex) < 6:
         color_hex= "64748B"
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return QColor(r, g, b, alpha_255)
 
 
+#Arma el texto de la columna 'Curso' (antes 'Sección'): grado + sección
+#del estudiante, y si aplica -Politécnico/Universidad-, también su área
+#técnica o carrera. Requiere que la fila `f` venga de una consulta con
+#los alias grado_nombre/seccion_nombre/area_nombre/carrera_nombre (ver
+#los JOIN en `_cargar_tabla` y `_ver_detalle`).
 def _texto_curso_completo(f):
-    """Arma el texto de la columna 'Curso' (antes 'Sección'): grado + sección
-    del estudiante, y si aplica -Politécnico/Universidad-, también su área
-    técnica o carrera. Requiere que la fila `f` venga de una consulta con
-    los alias grado_nombre/seccion_nombre/area_nombre/carrera_nombre (ver
-    los JOIN en `_cargar_tabla` y `_ver_detalle`)."""
+
     if f["grado_nombre"]:
         base= f["grado_nombre"]
         if f["seccion_nombre"]:
@@ -217,10 +223,12 @@ def _texto_curso_completo(f):
     return f"{base} · {extra}" if extra else base
 
 
+#Lee la paleta/tema activo de la ventana principal para que las tarjetas de
+#este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que las tarjetas de
-    este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         modo_oscuro= bool(getattr(main_window, "modo_oscuro", False))
         idx= 1 if modo_oscuro else 0
@@ -246,11 +254,12 @@ def _colores_tema(main_window):
 _cache_punto= {}
 
 
+#Pequeño círculo sólido de `color_hex` (cacheado), usado como icono de
+#identidad de color en los segmentados y como icono de los botones —
+#versión self-contained, sin depender de iconos_categorias.py (ese
+#archivo está pensado para las categorías propias de Observaciones).
 def _pixmap_punto(color_hex, size=10):
-    """Pequeño círculo sólido de `color_hex` (cacheado), usado como icono de
-    identidad de color en los segmentados y como icono de los botones —
-    versión self-contained, sin depender de iconos_categorias.py (ese
-    archivo está pensado para las categorías propias de Observaciones)."""
+
     llave= (color_hex, size)
     pix= _cache_punto.get(llave)
     if pix is not None:
@@ -267,11 +276,12 @@ def _pixmap_punto(color_hex, size=10):
     return pix
 
 
+#Fila de punto de color + etiqueta -una por categoría- para la
+#columna "Categorías" de la tabla (una fila puede tener varias a la
+#vez; un QTableWidgetItem solo admite un icono, por eso va como
+#cellWidget, igual que observaciones.py).
 def _widget_categorias_fila(categorias_csv, color_texto="#64748B"):
-    """Fila de punto de color + etiqueta -una por categoría- para la
-    columna "Categorías" de la tabla (una fila puede tener varias a la
-    vez; un QTableWidgetItem solo admite un icono, por eso va como
-    cellWidget, igual que observaciones.py)."""
+
     claves= [c for c in (categorias_csv or "").split(",") if c]
     if not claves:
         lbl= QLabel("—")
@@ -313,7 +323,9 @@ def _widget_categorias_fila(categorias_csv, color_texto="#64748B"):
 #tarjeta se adapte a ventanas angostas en vez de recortar categorías). Copia local, ver nota de módulo más
 #arriba.
 class FlowLayout(QLayout):
+
     def __init__(self, parent=None, margin=0, spacing=8):
+
         super().__init__(parent)
         if parent is not None:
             self.setContentsMargins(margin, margin, margin, margin)
@@ -321,34 +333,44 @@ class FlowLayout(QLayout):
         self._items= []
 
     def addItem(self, item):
+
         self._items.append(item)
 
     def count(self):
+
         return len(self._items)
 
     def itemAt(self, index):
+
         return self._items[index] if 0 <= index < len(self._items) else None
 
     def takeAt(self, index):
+
         return self._items.pop(index) if 0 <= index < len(self._items) else None
 
     def expandingDirections(self):
+
         return Qt.Orientation(0)
 
     def hasHeightForWidth(self):
+
         return True
 
     def heightForWidth(self, width):
+
         return self._hacer_layout(QRect(0, 0, width, 0), True)
 
     def setGeometry(self, rect):
+
         super().setGeometry(rect)
         self._hacer_layout(rect, False)
 
     def sizeHint(self):
+
         return self.minimumSize()
 
     def minimumSize(self):
+
         tam= QSize()
         for item in self._items:
             tam= tam.expandedTo(item.minimumSize())
@@ -357,7 +379,8 @@ class FlowLayout(QLayout):
         return tam
 
     def _hacer_layout(self, rect, solo_calcular):
-        x, y = rect.x(), rect.y()
+
+        x, y= rect.x(), rect.y()
         alto_linea= 0
         espacio= self.spacing()
         for item in self._items:
@@ -376,20 +399,23 @@ class FlowLayout(QLayout):
 
 
 #Widgets visuales
+#Icono de lupa dibujado a mano (mismo diseño que el resto de barras
+#de búsqueda de AcaDeXI: horario.py, estudiantes.py, profesores.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano (mismo diseño que el resto de barras
-    de búsqueda de AcaDeXI: horario.py, estudiantes.py, profesores.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -400,13 +426,14 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#QPushButton normal (mismo objectName/estilo por QSS/tema) que además
+#'respira' con una sombra suave al pasar el mouse por encima. Solo anima
+#mientras el cursor está sobre el botón, así que no cuesta rendimiento
+#en reposo.
 class BotonAnimado(QPushButton):
-    """QPushButton normal (mismo objectName/estilo por QSS/tema) que además
-    'respira' con una sombra suave al pasar el mouse por encima. Solo anima
-    mientras el cursor está sobre el botón, así que no cuesta rendimiento
-    en reposo."""
 
     def __init__(self, texto="", parent=None):
+
         super().__init__(texto, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._sombra= QGraphicsDropShadowEffect(self)
@@ -419,31 +446,35 @@ class BotonAnimado(QPushButton):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _animar_sombra(self, hasta):
+
         self._anim.stop()
         self._anim.setStartValue(self._sombra.blurRadius())
         self._anim.setEndValue(hasta)
         self._anim.start()
 
     def enterEvent(self, event):
+
         if self.isEnabled():
             self._animar_sombra(18)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(0)
         super().leaveEvent(event)
 
 
+#Pastilla seleccionable con transición de color animada y una onda
+#('ripple') pintada a mano al pulsar. Se usa para categorías y para los
+#filtros rápidos (Destacados/Vencidas). Cada chip lleva un punto de
+#color FIJO (su identidad), y el fondo de la pastilla se anima entre
+#'apagado' (gris translúcido) y 'encendido' (su color) al marcarse.
 class Chip(QFrame):
-    """Pastilla seleccionable con transición de color animada y una onda
-    ('ripple') pintada a mano al pulsar. Se usa para categorías y para los
-    filtros rápidos (Destacados/Vencidas). Cada chip lleva un punto de
-    color FIJO (su identidad), y el fondo de la pastilla se anima entre
-    'apagado' (gris translúcido) y 'encendido' (su color) al marcarse."""
 
     alternado= Signal(bool)
 
     def __init__(self, clave, texto, color_activo="#6366F1", parent=None):
+
         super().__init__(parent)
         self.clave= clave
         self._texto_base= texto
@@ -485,13 +516,16 @@ class Chip(QFrame):
         self._actualizar_estilo()
 
     def _on_anim(self, valor):
+
         self._factor= valor
         self._actualizar_estilo()
 
     def esta_marcado(self):
+
         return self._marcado
 
     def establecer_marcado(self, marcado, animar=True, emitir=True):
+
         if marcado == self._marcado:
             return
         self._marcado= marcado
@@ -507,22 +541,26 @@ class Chip(QFrame):
             self.alternado.emit(marcado)
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self._agregar_ripple(event.position())
             self.establecer_marcado(not self._marcado)
         super().mousePressEvent(event)
 
     def enterEvent(self, event):
+
         self._hover= True
         self.update()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._hover= False
         self.update()
         super().leaveEvent(event)
 
     def _agregar_ripple(self, punto):
+
         anim= QVariantAnimation(self)
         anim.setDuration(420)
         anim.setStartValue(0.0)
@@ -533,6 +571,7 @@ class Chip(QFrame):
         anim.valueChanged.connect(self.update)
 
         def _terminar():
+
             if entrada in self._ripples:
                 self._ripples.remove(entrada)
             self.update()
@@ -540,6 +579,7 @@ class Chip(QFrame):
         anim.start()
 
     def _color_mezclado(self):
+
         base= self._color_inactivo_bg
         if self._hover and not self._marcado:
             base= QColor(base)
@@ -552,21 +592,25 @@ class Chip(QFrame):
         return QColor(int(r), int(g), int(b), int(a))
 
     def establecer_paleta(self, bg_inactivo, borde_inactivo, texto_inactivo):
+
         self._color_inactivo_bg= QColor(bg_inactivo)
         self._color_borde_inactivo= QColor(borde_inactivo)
         self._color_texto_inactivo= QColor(texto_inactivo)
         self._actualizar_estilo()
 
     def _actualizar_texto(self):
+
         self.lbl.setText(self._texto_base)
         self.updateGeometry()
 
     def _actualizar_estilo(self):
+
         color_texto= "white" if self._factor > 0.5 else self._color_texto_inactivo.name()
         self.lbl.setStyleSheet(f"background: transparent; color: {color_texto};")
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect= QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
@@ -595,31 +639,32 @@ class Chip(QFrame):
                 painter.drawEllipse(punto, r, r)
 
 
+#Selector en forma de píldora. Generaliza `SegmentadoNaturaleza`
+#(observaciones.py) a cualquier lista de (clave, etiqueta, color) -aquí
+#se usa tanto para "Tipo de caso" (naturaleza) como para "Estado del
+#caso"-.
+#
+#La opción activa se marca SOLO con el estado nativo :checked de cada
+#QPushButton (fondo de su propio color + texto blanco), resuelto por Qt
+#en cada repintado. Antes había además un QFrame "resaltado" que se
+#movía a mano por encima de los botones (geometría calculada en
+#_reposicionar_resaltado, con reintentos en showEvent/resizeEvent/
+#singleShot(0) para cubrir el caso de nacer dentro de un panel
+#colapsable todavía cerrado). Ese cálculo manual dependía de que el
+#layout ya tuviera geometría válida en el momento exacto en que se
+#disparaba cada uno de esos eventos, así que cuando el panel se abría
+#en el momento "equivocado" el resaltado se quedaba con una geometría
+#vieja o directamente no se movía -de ahí que la selección se viera
+#marcada unas veces sí y otras no-. Al depender únicamente de
+#QPushButton:checked ya no hay ninguna geometría que calcular ni
+#reposicionar: el propio Qt pinta el estado correcto siempre, sin
+#importar cuándo se vuelve visible el widget.
 class SegmentadoPildora(QWidget):
-    """Selector en forma de píldora. Generaliza `SegmentadoNaturaleza`
-    (observaciones.py) a cualquier lista de (clave, etiqueta, color) -aquí
-    se usa tanto para "Tipo de caso" (naturaleza) como para "Estado del
-    caso"-.
-
-    La opción activa se marca SOLO con el estado nativo :checked de cada
-    QPushButton (fondo de su propio color + texto blanco), resuelto por Qt
-    en cada repintado. Antes había además un QFrame "resaltado" que se
-    movía a mano por encima de los botones (geometría calculada en
-    _reposicionar_resaltado, con reintentos en showEvent/resizeEvent/
-    singleShot(0) para cubrir el caso de nacer dentro de un panel
-    colapsable todavía cerrado). Ese cálculo manual dependía de que el
-    layout ya tuviera geometría válida en el momento exacto en que se
-    disparaba cada uno de esos eventos, así que cuando el panel se abría
-    en el momento "equivocado" el resaltado se quedaba con una geometría
-    vieja o directamente no se movía -de ahí que la selección se viera
-    marcada unas veces sí y otras no-. Al depender únicamente de
-    QPushButton:checked ya no hay ninguna geometría que calcular ni
-    reposicionar: el propio Qt pinta el estado correcto siempre, sin
-    importar cuándo se vuelve visible el widget."""
 
     cambiado= Signal(str)
 
     def __init__(self, opciones, valor_inicial=None, parent=None):
+
         super().__init__(parent)
         self._opciones= opciones
         self._colores_opcion= {clave: color for clave, _et, color in opciones}
@@ -664,13 +709,16 @@ class SegmentadoPildora(QWidget):
         self._fondo.lower()
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         self._fondo.setGeometry(self.rect())
 
     def valor(self):
+
         return self._valor
 
     def establecer_valor(self, clave, animar=True, emitir=True):
+
         self._valor= clave
         for k, btn in self._botones:
             btn.setChecked(k == clave)
@@ -678,6 +726,7 @@ class SegmentadoPildora(QWidget):
             self.cambiado.emit(clave)
 
     def aplicar_paleta(self, bg, borde, txt_sec):
+
         self._fondo.setStyleSheet(
             f"QFrame#SegmentadoFondo {{ background-color: {bg}; border: 1px solid {borde}; border-radius: 12px; }}")
         for k, btn in self._botones:
@@ -691,14 +740,15 @@ class SegmentadoPildora(QWidget):
             """)
 
 
+#Franja compacta que solo aparece cuando hay algo que atender (mismo
+#patrón que observaciones.py/banco_tareas.py): entra/sale animando su
+#altura máxima. Un clic filtra la tabla por citas vencidas.
 class CintaAlerta(QFrame):
-    """Franja compacta que solo aparece cuando hay algo que atender (mismo
-    patrón que observaciones.py/banco_tareas.py): entra/sale animando su
-    altura máxima. Un clic filtra la tabla por citas vencidas."""
 
     clicada= Signal()
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setObjectName("CintaAlertaPsicologia")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -721,6 +771,7 @@ class CintaAlerta(QFrame):
         self._visible_actual= False
 
     def aplicar_paleta(self, color="#F59E0B"):
+
         self.setStyleSheet(f"""
             QFrame#CintaAlertaPsicologia {{
                 background-color: {_hex_a_rgba(color, 0.14)};
@@ -734,6 +785,7 @@ class CintaAlerta(QFrame):
             f"background: transparent; border: none; font-weight: 700; font-size: 12px; color: {color};")
 
     def mostrar_mensaje(self, texto):
+
         self.lbl_texto.setText(texto)
         if not self._visible_actual:
             self._visible_actual= True
@@ -743,6 +795,7 @@ class CintaAlerta(QFrame):
             self._anim.start()
 
     def ocultar(self):
+
         if self._visible_actual:
             self._visible_actual= False
             self._anim.stop()
@@ -751,21 +804,23 @@ class CintaAlerta(QFrame):
             self._anim.start()
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
         super().mousePressEvent(event)
 
 
+#Contenedor tipo tarjeta liviano que va DENTRO de `calendario.
+#PanelDesplegable` (fondo translúcido neutro + borde redondeado + sombra
+#con la que se anima el destello de guardado). Es el mismo patrón que
+#usa observaciones.py: el panel colapsable (icono ⊕/⊖ + título, ver
+#calendario.PanelDesplegable) se encarga de expandir/colapsar, y esta
+#tarjeta de aquí adentro es la que realmente sostiene los campos del
+#formulario y sabe destellar en verde/rojo tras guardar.
 class TarjetaPanel(QFrame):
-    """Contenedor tipo tarjeta liviano que va DENTRO de `calendario.
-    PanelDesplegable` (fondo translúcido neutro + borde redondeado + sombra
-    con la que se anima el destello de guardado). Es el mismo patrón que
-    usa observaciones.py: el panel colapsable (icono ⊕/⊖ + título, ver
-    calendario.PanelDesplegable) se encarga de expandir/colapsar, y esta
-    tarjeta de aquí adentro es la que realmente sostiene los campos del
-    formulario y sabe destellar en verde/rojo tras guardar."""
 
     def __init__(self, titulo="", con_sombra=True, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaPanel")
         self._con_sombra= con_sombra
@@ -795,9 +850,10 @@ class TarjetaPanel(QFrame):
         self.contenido.setSpacing(28)
         raiz.addLayout(self.contenido)
 
+    #Resplandor breve de color en el borde de la tarjeta, a modo de
+    #confirmación visual (verde=éxito, rojo=aviso). Requiere con_sombra=True.
     def destello(self, color_hex="#22C55E"):
-        """Resplandor breve de color en el borde de la tarjeta, a modo de
-        confirmación visual (verde=éxito, rojo=aviso). Requiere con_sombra=True."""
+
         if self._sombra is None:
             return
         grupo= QParallelAnimationGroup(self)
@@ -817,6 +873,7 @@ class TarjetaPanel(QFrame):
         self._anim_destello= grupo
 
     def aplicar_paleta(self, colores):
+
         self.setStyleSheet(f"""
             QFrame#TarjetaPanel {{
                 background-color: {_hex_a_rgba(colores['txt_sec'], 0.07)};
@@ -832,14 +889,15 @@ class TarjetaPanel(QFrame):
             self._sombra.setColor(self._color_sombra_normal)
 
 
+#Página de navegación de Psicología. Se autoprotege con
+#permisos.puede_ver_psicologia: aunque main.py ya oculta el módulo del
+#menú a quien no lo tiene, esta comprobación es una segunda capa (igual
+#que hacen Reportes/Configuración) por si algún día se navega aquí por
+#otra vía (atajo, deep-link, etc.).
 class ModuloPsicologia(QWidget):
-    """Página de navegación de Psicología. Se autoprotege con
-    permisos.puede_ver_psicologia: aunque main.py ya oculta el módulo del
-    menú a quien no lo tiene, esta comprobación es una segunda capa (igual
-    que hacen Reportes/Configuración) por si algún día se navega aquí por
-    otra vía (atajo, deep-link, etc.)."""
 
     def __init__(self, main_window=None, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.registro_en_edicion= None
@@ -1137,6 +1195,7 @@ class ModuloPsicologia(QWidget):
         #ambos espaciados es lo que evita el efecto "todo pegado": antes una sola lista plana de widgets en el mismo
         #QVBoxLayout no podía distinguir "espacio dentro de un campo" de "espacio entre campos distintos".
         def _bloque(etiqueta_texto, widget_control, stretch=0):
+
             contenedor= QWidget()
             #Fondo explícitamente transparente: sin esto, cada bloque hereda el fondo gris genérico que el QSS global de la
             #app aplica a cualquier QWidget plano -de ahí los "cosos" grises feos detrás de cada campo del formulario-. El
@@ -1171,8 +1230,8 @@ class ModuloPsicologia(QWidget):
         self.combo_carrera_form.currentIndexChanged.connect(self._poblar_estudiantes_form)
         conectar_tooltip_seleccion(self.combo_carrera_form,
                                     "Filtrar estudiantes por carrera (Universidad)")
-        self.bloque_area_tecnica_form, _ = _bloque("Área Técnica:", self.combo_area_tecnica_form)
-        self.bloque_carrera_form, _ = _bloque("Carrera:", self.combo_carrera_form)
+        self.bloque_area_tecnica_form, _= _bloque("Área Técnica:", self.combo_area_tecnica_form)
+        self.bloque_carrera_form, _= _bloque("Carrera:", self.combo_carrera_form)
         fila0.addWidget(self.bloque_area_tecnica_form)
         fila0.addWidget(self.bloque_carrera_form)
         fila0.addStretch()
@@ -1196,9 +1255,9 @@ class ModuloPsicologia(QWidget):
         self.combo_estudiante_form= QComboBox()
         self.combo_estudiante_form.setMinimumHeight(38)
         conectar_tooltip_seleccion(self.combo_estudiante_form, "Estudiante al que corresponde este registro")
-        bloque_curso, _ = _bloque("Curso:", self.combo_curso_form)
-        bloque_seccion, _ = _bloque("Sección:", self.combo_seccion_form)
-        bloque_estudiante, _ = _bloque("Estudiante:", self.combo_estudiante_form)
+        bloque_curso, _= _bloque("Curso:", self.combo_curso_form)
+        bloque_seccion, _= _bloque("Sección:", self.combo_seccion_form)
+        bloque_estudiante, _= _bloque("Estudiante:", self.combo_estudiante_form)
         fila1.addWidget(bloque_curso)
         fila1.addWidget(bloque_seccion)
         fila1.addWidget(bloque_estudiante, 1)
@@ -1360,6 +1419,7 @@ class ModuloPsicologia(QWidget):
 
     #Atajos de teclado
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Psicología"
         registrar_atajo(self, self.main_window, "Ctrl+G", "Guardar registro de Psicología", self._guardar)
         registrar_atajo(self, self.main_window, "Ctrl+N", "Nuevo registro de Psicología", self._nuevo)
@@ -1380,11 +1440,12 @@ class ModuloPsicologia(QWidget):
                          self._abrir_dialogo_filtros)
 
     #TEMA / ESTILO
+    #Sincroniza los colores de las tarjetas y acentos de este módulo con
+    #el tema/modo claro-oscuro actual de la app. Se llama al construir la
+    #pantalla y cada vez que el usuario cambia de tema (ver main.py) —
+    #antes este método NO EXISTÍA, así que el módulo nunca se repintaba.
     def actualizar_tema(self):
-        """Sincroniza los colores de las tarjetas y acentos de este módulo con
-        el tema/modo claro-oscuro actual de la app. Se llama al construir la
-        pantalla y cada vez que el usuario cambia de tema (ver main.py) —
-        antes este método NO EXISTÍA, así que el módulo nunca se repintaba."""
+
         if getattr(self, "_bloqueado", True):
             return
         colores= _colores_tema(self.main_window)
@@ -1512,7 +1573,7 @@ class ModuloPsicologia(QWidget):
         #caja bien delimitada (borde visible + fondo propio + esquinas redondeadas) y un borde de acento al enfocar, en
         #vez de depender solo del QSS genérico de QComboBox/QDateEdit que pone main.py -ese solo define un borde 1px
         #muy sutil del mismo gris del fondo, que aquí se perdía contra el resto de controles ya rediseñados.
-        #        #Dos detalles que se quedaron sueltos la primera vez que se armó
+        ##Dos detalles que se quedaron sueltos la primera vez que se armó
         #este bloque:
         #1) Sin una regla "::down-arrow" propia, el triangulito nativo de Qt para abrir el calendario de "Próxima cita"
         #quedaba oscuro sobre fondo oscuro (o al revés) -invisible según el tema-, así que ahora se dibuja a mano con
@@ -1523,7 +1584,7 @@ class ModuloPsicologia(QWidget):
         #`self.setStyleSheet(...)`: Qt no combina el stylesheet de un widget con el de sus ancestros, usa el más
         #cercano nada más -mismo motivo por el que el diálogo de filtros necesita su propio QToolTip más abajo-. Por
         #eso el QToolTip también se repite aquí, dentro de este mismo bloque.
-        #        #El bloque "QComboBox QAbstractItemView { ... }" de aquí abajo es el que pinta la LISTA desplegable (lo que se
+        ##El bloque "QComboBox QAbstractItemView { ... }" de aquí abajo es el que pinta la LISTA desplegable (lo que se
         #ve al abrir el combo), no la caja cerrada. Esa lista es una ventana emergente aparte -mismo caso que un
         #QDialog de nivel superior-, así que NO hereda ningún estilo puesto en un ancestro: si un combo no tiene este
         #bloque puesto DIRECTAMENTE en sí mismo, su desplegable cae al estilo nativo de Qt (fondo blanco, texto negro)
@@ -1697,10 +1758,12 @@ class ModuloPsicologia(QWidget):
 
     #ANIMACIONES — capa puramente visual
     def _animar_contador(self, valor_final):
+
         if valor_final is None:
             return
 
         def texto(v):
+
             return f"{v} caso" + ("s" if v != 1 else "")
         valor_inicial= self._contador_valor_actual
         self._contador_valor_actual= valor_final
@@ -1717,6 +1780,7 @@ class ModuloPsicologia(QWidget):
         self._anim_contador= anim
 
     def _animar_fundido_tabla(self):
+
         efecto= QGraphicsOpacityEffect(self.tabla)
         self.tabla.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", self)
@@ -1730,6 +1794,7 @@ class ModuloPsicologia(QWidget):
 
     #Carga de datos
     def _condiciones_filtro(self, excluir_estado=False):
+
         condiciones= []
         parametros= []
         curso_id= self.combo_curso_filtro.currentData()
@@ -1775,13 +1840,15 @@ class ModuloPsicologia(QWidget):
         return condiciones, parametros
 
     def _refrescar(self):
+
         self.pagina.reiniciar()
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         if getattr(self, "_bloqueado", True):
             return
-        condiciones, parametros = self._condiciones_filtro()
+        condiciones, parametros= self._condiciones_filtro()
         where= f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1790,7 +1857,7 @@ class ModuloPsicologia(QWidget):
                       {where}""", parametros)
         total= c.fetchone()["n"]
         self.pagina.establecer_total(total)
-        inicio, _fin = self.pagina.rango_actual()
+        inicio, _fin= self.pagina.rango_actual()
         tam= self.pagina.tamano_pagina() or total or 1
         c.execute(f"""SELECT psicologia.*, estudiantes.nombre as est_nombre, estudiantes.apellidos as est_apellidos,
                       secciones.nombre as seccion_nombre, grados.nombre as grado_nombre,
@@ -1891,12 +1958,15 @@ class ModuloPsicologia(QWidget):
         self._tabla_cargada_una_vez= True
 
     def _colores_txt_sec(self):
+
         try:
+
             return _colores_tema(self.main_window)["txt_sec"]
         except Exception:
             return "#64748B"
 
     def _actualizar_kpis(self, condiciones, parametros):
+
         where= f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
         hoy= date.today().strftime("%Y-%m-%d")
         conn= obtener_conexion()
@@ -1920,6 +1990,7 @@ class ModuloPsicologia(QWidget):
         self._actualizar_alerta_vencidas()
 
     def _actualizar_alerta_vencidas(self):
+
         n= self._vencidas_actual
         if n > 0:
             plural= "s" if n != 1 else ""
@@ -1929,10 +2000,12 @@ class ModuloPsicologia(QWidget):
             self.cinta_alerta.ocultar()
 
     def _ver_vencidas(self):
+
         self.chip_vencidas.establecer_marcado(True)
         self._refrescar()
 
     def _fila_id_seleccionada(self):
+
         seleccion= self.tabla.selectedItems()
         if not seleccion:
             return None
@@ -1940,35 +2013,41 @@ class ModuloPsicologia(QWidget):
         return item.data(Qt.ItemDataRole.UserRole) if item else None
 
     def _actualizar_botones_accion(self):
+
         hay_seleccion= self._fila_id_seleccionada() is not None
         self.btn_ver.setEnabled(hay_seleccion)
         self.btn_editar.setEnabled(hay_seleccion)
         self.btn_eliminar.setEnabled(hay_seleccion)
 
+    #True si la institución es de tipo Politécnico (o Personalizado con
+    #el módulo Politécnico activo). Mismo criterio usado en
+    #estudiantes.py/observaciones.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con
-        el módulo Politécnico activo). Mismo criterio usado en
-        estudiantes.py/observaciones.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con
+    #el módulo Universidad activo). Mismo criterio usado en
+    #estudiantes.py/observaciones.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con
-        el módulo Universidad activo). Mismo criterio usado en
-        estudiantes.py/observaciones.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #Igual que en Estudiantes/Observaciones: el combo de Área Técnica
+    #solo se muestra si la institución tiene el módulo Politécnico
+    #activo.
     def _cargar_especialidades_combo_filtro(self):
-        """Igual que en Estudiantes/Observaciones: el combo de Área Técnica
-        solo se muestra si la institución tiene el módulo Politécnico
-        activo."""
+
         combo= self.combo_filtro_especialidad
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad.setVisible(es_poli)
@@ -1989,9 +2068,10 @@ class ModuloPsicologia(QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
+    #Igual que en Estudiantes/Observaciones: el combo de Carrera solo
+    #se muestra si la institución tiene el módulo Universidad activo.
     def _cargar_carreras_combo_filtro(self):
-        """Igual que en Estudiantes/Observaciones: el combo de Carrera solo
-        se muestra si la institución tiene el módulo Universidad activo."""
+
         combo= self.combo_filtro_carrera
         es_uni= self._es_universidad()
         self.lbl_filtro_carrera.setVisible(es_uni)
@@ -2013,6 +2093,7 @@ class ModuloPsicologia(QWidget):
         combo.blockSignals(False)
 
     def _limpiar_filtros(self):
+
         self.combo_curso_filtro.setCurrentIndex(0)
         cascada_seccion_por_curso(self.combo_curso_filtro, self.combo_seccion_filtro, incluir_todas=True)
         self.combo_estado_caso_filtro.setCurrentIndex(0)
@@ -2023,11 +2104,12 @@ class ModuloPsicologia(QWidget):
         self.in_busqueda.clear()
         self._refrescar()
 
+    #Crea (una sola vez) la ventanita con los filtros de curso/sección,
+    #estado del caso y los chips rápidos. No es modal: se puede dejar
+    #abierta mientras se ajustan los combos y la tabla de atrás se sigue
+    #actualizando en vivo -mismo patrón que `estudiantes._construir_dialogo_filtros`.
     def _construir_dialogo_filtros(self):
-        """Crea (una sola vez) la ventanita con los filtros de curso/sección,
-        estado del caso y los chips rápidos. No es modal: se puede dejar
-        abierta mientras se ajustan los combos y la tabla de atrás se sigue
-        actualizando en vivo -mismo patrón que `estudiantes._construir_dialogo_filtros`."""
+
         self.dialogo_filtros= QDialog(self)
         self.dialogo_filtros.setObjectName("DialogoFiltros")
         self.dialogo_filtros.setWindowTitle("Filtros de Psicología")
@@ -2104,6 +2186,7 @@ class ModuloPsicologia(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros.parent() is not _fc:
@@ -2113,14 +2196,15 @@ class ModuloPsicologia(QWidget):
         self.dialogo_filtros.activateWindow()
 
     #FORMULARIO
+    #Menú de clic derecho sobre el campo 'Próxima cita': su única
+    #opción de momento es volver a 'Sin próxima cita' (equivalente a
+    #dejar el campo en su valor mínimo, que es como se guarda un
+    #proxima_cita= None). Se deja como menú -en vez de un botón "x" fijo
+    #siempre visible- para no añadir otro elemento más a una fila que ya
+    #tiene bastante; si en el futuro se necesitan más acciones aquí, este
+    #es el lugar natural para sumarlas.
     def _menu_contextual_proxima_cita(self, posicion):
-        """Menú de clic derecho sobre el campo 'Próxima cita': su única
-        opción de momento es volver a 'Sin próxima cita' (equivalente a
-        dejar el campo en su valor mínimo, que es como se guarda un
-        proxima_cita= None). Se deja como menú -en vez de un botón "x" fijo
-        siempre visible- para no añadir otro elemento más a una fila que ya
-        tiene bastante; si en el futuro se necesitan más acciones aquí, este
-        es el lugar natural para sumarlas."""
+
         tiene_cita= (self.fecha_proxima_cita_form.date()
                       != self.fecha_proxima_cita_form.minimumDate())
         menu= QMenu(self.fecha_proxima_cita_form)
@@ -2131,10 +2215,11 @@ class ModuloPsicologia(QWidget):
         menu.addAction(accion_quitar)
         menu.exec(self.fecha_proxima_cita_form.mapToGlobal(posicion))
 
+    #Igual que `_cargar_especialidades_combo_filtro`, pero para el combo
+    #del formulario de alta/edición: solo se muestra si la institución
+    #tiene el módulo Politécnico activo.
     def _cargar_areas_tecnicas_combo_form(self):
-        """Igual que `_cargar_especialidades_combo_filtro`, pero para el combo
-        del formulario de alta/edición: solo se muestra si la institución
-        tiene el módulo Politécnico activo."""
+
         combo= self.combo_area_tecnica_form
         es_poli= self._es_politecnico()
         self.bloque_area_tecnica_form.setVisible(es_poli)
@@ -2154,10 +2239,11 @@ class ModuloPsicologia(QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
+    #Igual que `_cargar_carreras_combo_filtro`, pero para el combo del
+    #formulario de alta/edición: solo se muestra si la institución tiene
+    #el módulo Universidad activo.
     def _cargar_carreras_combo_form(self):
-        """Igual que `_cargar_carreras_combo_filtro`, pero para el combo del
-        formulario de alta/edición: solo se muestra si la institución tiene
-        el módulo Universidad activo."""
+
         combo= self.combo_carrera_form
         es_uni= self._es_universidad()
         self.bloque_carrera_form.setVisible(es_uni)
@@ -2178,6 +2264,7 @@ class ModuloPsicologia(QWidget):
         combo.blockSignals(False)
 
     def _poblar_estudiantes_form(self):
+
         seccion_id= self.combo_seccion_form.currentData()
         self.combo_estudiante_form.clear()
         if seccion_id is None:
@@ -2208,14 +2295,15 @@ class ModuloPsicologia(QWidget):
         for f in filas:
             self.combo_estudiante_form.addItem(f"{f['nombre']} {f['apellidos']}", f["id"])
 
+    #Resetea los campos a un estado 'nuevo, en blanco', SIN decidir si
+    #el panel debe quedar expandido o colapsado -eso lo decide quien
+    #llame a este método-. Se reutiliza en tres momentos: al abrir el
+    #panel para un alta desde cero (`_nuevo`), justo después de guardar
+    #(`_guardar` deja el panel ABIERTO para poder cargar varios registros
+    #seguidos sin reabrirlo cada vez -mismo comportamiento que
+    #`observaciones._limpiar`-) y al cancelar/cerrar (`_cerrar_formulario`).
     def _limpiar_formulario(self):
-        """Resetea los campos a un estado 'nuevo, en blanco', SIN decidir si
-        el panel debe quedar expandido o colapsado -eso lo decide quien
-        llame a este método-. Se reutiliza en tres momentos: al abrir el
-        panel para un alta desde cero (`_nuevo`), justo después de guardar
-        (`_guardar` deja el panel ABIERTO para poder cargar varios registros
-        seguidos sin reabrirlo cada vez -mismo comportamiento que
-        `observaciones._limpiar`-) y al cancelar/cerrar (`_cerrar_formulario`)."""
+
         self.registro_en_edicion= None
         self._cargar_areas_tecnicas_combo_form()
         self._cargar_carreras_combo_form()
@@ -2230,10 +2318,11 @@ class ModuloPsicologia(QWidget):
         self.txt_descripcion_form.clear()
         desactivar_modo_edicion(self.combo_estudiante_form)
 
+    #Abre el panel colapsable en blanco. Ya no hay un botón visible
+    #para esto -la propia cabecera '+ Nuevo registro de Psicología' hace
+    #de botón-, pero el método se conserva para el atajo Ctrl+N.
     def _nuevo(self):
-        """Abre el panel colapsable en blanco. Ya no hay un botón visible
-        para esto -la propia cabecera '+ Nuevo registro de Psicología' hace
-        de botón-, pero el método se conserva para el atajo Ctrl+N."""
+
         if getattr(self, "_bloqueado", True):
             return
         self._limpiar_formulario()
@@ -2241,6 +2330,7 @@ class ModuloPsicologia(QWidget):
         self.combo_estudiante_form.setFocus()
 
     def _cargar_seleccionada_en_formulario(self):
+
         id_reg= self._fila_id_seleccionada()
         if id_reg is None:
             return
@@ -2284,14 +2374,16 @@ class ModuloPsicologia(QWidget):
         activar_modo_edicion(self.combo_estudiante_form, f"Editando registro de "
                               f"{self.combo_estudiante_form.currentText()}")
 
+    #Cancela y CIERRA el panel (a diferencia de `_limpiar_formulario`,
+    #que solo vacía los campos y deja que quien llame decida si
+    #colapsar). Es lo que dispara el botón 'Cancelar' del formulario.
     def _cerrar_formulario(self):
-        """Cancela y CIERRA el panel (a diferencia de `_limpiar_formulario`,
-        que solo vacía los campos y deja que quien llame decida si
-        colapsar). Es lo que dispara el botón 'Cancelar' del formulario."""
+
         self._limpiar_formulario()
         self.panel_formulario.expandir(False)
 
     def _guardar(self):
+
         if getattr(self, "_bloqueado", True):
             return
         estudiante_id= self.combo_estudiante_form.currentData()
@@ -2342,6 +2434,7 @@ class ModuloPsicologia(QWidget):
 
     #Ver detalle / ELIMINAR / DESHACER
     def _ver_detalle(self):
+
         id_reg= self._fila_id_seleccionada()
         if id_reg is None:
             return
@@ -2383,6 +2476,7 @@ class ModuloPsicologia(QWidget):
         mostrar_detalle_campos(self, titulo, campos, extra_botones=extra_botones, foto_path=f["est_foto"])
 
     def _eliminar_seleccionada(self):
+
         if getattr(self, "_bloqueado", True):
             return
         id_reg= self._fila_id_seleccionada()
@@ -2415,6 +2509,7 @@ class ModuloPsicologia(QWidget):
         self._refrescar()
 
     def _deshacer_eliminacion(self):
+
         if not self._ultimo_eliminado:
             return
         datos= self._ultimo_eliminado
@@ -2423,6 +2518,7 @@ class ModuloPsicologia(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             c.execute(f"INSERT INTO psicologia ({','.join(columnas)}) VALUES ({marcadores})",
                       [datos[col] for col in columnas])
             conn.commit()

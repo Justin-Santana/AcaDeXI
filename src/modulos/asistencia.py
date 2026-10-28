@@ -74,14 +74,16 @@ VALORES_ESTADO_DEFECTO= {
 }
 
 
+#Lee de la BD la clasificación de estados configurada por el usuario y la
+#completa con los valores predeterminados para cualquier estado nuevo que
+#todavía no tenga un valor guardado (ej. si se agregó un estado en una
+#actualización posterior). Nunca falla: ante cualquier problema devuelve
+#los valores predeterminados.
 def cargar_valores_estado():
-    """Lee de la BD la clasificación de estados configurada por el usuario y la
-    completa con los valores predeterminados para cualquier estado nuevo que
-    todavía no tenga un valor guardado (ej. si se agregó un estado en una
-    actualización posterior). Nunca falla: ante cualquier problema devuelve
-    los valores predeterminados."""
+
     valores= dict(VALORES_ESTADO_DEFECTO)
     try:
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT valores_estados_asistencia FROM configuracion WHERE id=1")
@@ -98,8 +100,9 @@ def cargar_valores_estado():
     return valores
 
 
+#Persiste la clasificación de estados (dict estado -> categoría) en la BD.
 def guardar_valores_estado(valores):
-    """Persiste la clasificación de estados (dict estado -> categoría) en la BD."""
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("UPDATE configuracion SET valores_estados_asistencia=? WHERE id=1",
@@ -112,26 +115,29 @@ _MESES_ES= ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
              "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 
 
+#Reemplaza el texto del placeholder (ítem 0, sin dato asociado) de un
+#combo de Curso/Sección poblado por filtros_curso_seccion.poblar_combo_curso /
+#cascada_seccion_por_curso. Es un ajuste puramente visual y LOCAL a este
+#módulo (Asistencia): no modifica filtros_curso_seccion.py, así que el resto
+#de la app sigue mostrando el placeholder largo original. Si el ítem 0 ya
+#tiene un curso/sección real seleccionado (no es placeholder), no se toca.
 def _acortar_placeholder_combo(combo, texto):
-    """Reemplaza el texto del placeholder (ítem 0, sin dato asociado) de un
-    combo de Curso/Sección poblado por filtros_curso_seccion.poblar_combo_curso /
-    cascada_seccion_por_curso. Es un ajuste puramente visual y LOCAL a este
-    módulo (Asistencia): no modifica filtros_curso_seccion.py, así que el resto
-    de la app sigue mostrando el placeholder largo original. Si el ítem 0 ya
-    tiene un curso/sección real seleccionado (no es placeholder), no se toca."""
+
     if combo.count() > 0 and combo.itemData(0) is None:
         combo.setItemText(0, texto)
 
 
+#Formatea una QDate en español ('martes 4 de agosto') sin depender de la
+#configuración regional del sistema.
 def _fecha_larga_es(qdate):
-    """Formatea una QDate en español ('martes 4 de agosto') sin depender de la
-    configuración regional del sistema."""
+
     return f"{_DIAS_ES[qdate.dayOfWeek() - 1]} {qdate.day()} de {_MESES_ES[qdate.month() - 1]}"
 
 
+#Quita mayúsculas y acentos para que el buscador no sea estricto:
+#'jose', 'José' y 'JOSÉ' encuentran lo mismo (mismo criterio que configuracion.py).
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que el buscador no sea estricto:
-    'jose', 'José' y 'JOSÉ' encuentran lo mismo (mismo criterio que configuracion.py)."""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -139,20 +145,23 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que configuracion.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-    (mismo diseño que configuracion.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -163,9 +172,10 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#Etiqueta de formulario con un pequeño icono (dibujado con QPainter vía
+#pixmap_emoji, igual que el resto de iconos del módulo) delante del texto.
 def _etiqueta_con_icono(texto, emoji, size=15):
-    """Etiqueta de formulario con un pequeño icono (dibujado con QPainter vía
-    pixmap_emoji, igual que el resto de iconos del módulo) delante del texto."""
+
     contenedor= QWidget()
     lay= QHBoxLayout(contenedor)
     lay.setContentsMargins(0, 0, 0, 0)
@@ -178,21 +188,25 @@ def _etiqueta_con_icono(texto, emoji, size=15):
 
 
 def _hex_a_rgb(color_hex):
+
     color_hex= color_hex.lstrip("#")
     return ",".join(str(int(color_hex[i:i + 2], 16)) for i in (0, 2, 4))
 
 
+#Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada.
 def _hex_a_rgba(color_hex, alpha):
-    """Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada."""
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Lee la paleta/tema activo de la ventana principal para que las tarjetas de
+#este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que las tarjetas de
-    este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -208,8 +222,9 @@ def _colores_tema(main_window):
                 "txt_sec": "#64748B", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#Botón tipo 'chip' con el color del estado, usado en 'Marcar todos: X'.
 def _boton_estado_color(texto, color, callback):
-    """Botón tipo 'chip' con el color del estado, usado en 'Marcar todos: X'."""
+
     btn= QPushButton(texto)
     btn.setCursor(Qt.CursorShape.PointingHandCursor)
     rgb= _hex_a_rgb(color)
@@ -231,27 +246,30 @@ def _boton_estado_color(texto, color, callback):
 
 
 #Widgets animados reutilizables
+#QProgressBar cuyo valor se desliza suavemente hacia el nuevo valor en vez
+#de saltar de golpe. El texto '%p%' se actualiza solo, cuadro a cuadro.
 class BarraAnimada(QProgressBar):
-    """QProgressBar cuyo valor se desliza suavemente hacia el nuevo valor en vez
-    de saltar de golpe. El texto '%p%' se actualiza solo, cuadro a cuadro."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._animacion= QPropertyAnimation(self, b"value", self)
         self._animacion.setDuration(420)
         self._animacion.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def poner_valor_animado(self, valor):
+
         self._animacion.stop()
         self._animacion.setStartValue(self.value())
         self._animacion.setEndValue(valor)
         self._animacion.start()
 
 
+#QLabel numérica que anima el conteo (efecto 'odómetro') al cambiar de valor.
 class ContadorAnimado(QLabel):
-    """QLabel numérica que anima el conteo (efecto 'odómetro') al cambiar de valor."""
 
     def __init__(self, sufijo="", parent=None):
+
         super().__init__(parent)
         self._valor= 0
         self._sufijo= sufijo
@@ -262,18 +280,22 @@ class ContadorAnimado(QLabel):
         self._refrescar_texto()
 
     def _obtener_valor(self):
+
         return self._valor
 
     def _fijar_valor(self, valor):
+
         self._valor= valor
         self._refrescar_texto()
 
     valorAnimado= Property(int, _obtener_valor, _fijar_valor)
 
     def _refrescar_texto(self):
+
         self.setText(f"{self._valor}{self._sufijo}")
 
     def establecer(self, valor):
+
         #Importante: comparamos contra el ÚLTIMO VALOR OBJETIVO pedido, no contra el valor instantáneo (a medio
         #animar). Si comparáramos contra self._valor, una animación en curso podría "pasar" casualmente por el nuevo
         #valor pedido a mitad de camino y esta función abandonaría sin redirigirla, dejándola terminar en el valor
@@ -287,11 +309,12 @@ class ContadorAnimado(QLabel):
         self._animacion.start()
 
 
+#Tarjeta compacta de resumen (icono + número animado + etiqueta) con una
+#ligera 'elevación' animada al pasar el mouse por encima.
 class TarjetaEstadistica(QFrame):
-    """Tarjeta compacta de resumen (icono + número animado + etiqueta) con una
-    ligera 'elevación' animada al pasar el mouse por encima."""
 
     def __init__(self, icono, titulo, color, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaEstadistica")
         self._color= color
@@ -323,10 +346,11 @@ class TarjetaEstadistica(QFrame):
         lbl_titulo.setStyleSheet("font-size: 11px; font-weight: 600;")
         layout.addWidget(lbl_titulo)
 
+    #Actualiza los colores de la tarjeta para coincidir con el tema activo.
+    #El color semántico (verde/rojo/etc.) del borde izquierdo y del número
+    #no cambia: es el que distingue cada estado de un vistazo.
     def aplicar_paleta(self, bg_panel, borde, txt_sec):
-        """Actualiza los colores de la tarjeta para coincidir con el tema activo.
-        El color semántico (verde/rojo/etc.) del borde izquierdo y del número
-        no cambia: es el que distingue cada estado de un vistazo."""
+
         self.setStyleSheet(f"""
             QFrame#TarjetaEstadistica {{
                 background-color: {bg_panel};
@@ -338,32 +362,37 @@ class TarjetaEstadistica(QFrame):
         """)
 
     def establecer(self, valor):
+
         self.contador.establecer(valor)
 
     def enterEvent(self, event):
+
         self._animar_sombra(24)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(14)
         super().leaveEvent(event)
 
     def _animar_sombra(self, destino):
+
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(destino)
         self._anim_sombra.start()
 
 
+#Pequeño diálogo de configuración: para cada estado de asistencia
+#(Presente, Ausente, Tardanza, Excusado, Licencia Médica, Permiso...)
+#permite elegir qué categoría cuenta a la hora de calcular las tarjetas
+#de resumen, el % de asistencia del grupo y el informe de riesgo de
+#inasistencia. Incluye un botón para restablecer los valores
+#predeterminados sin necesidad de ajustarlos uno por uno.
 class DialogoValoresAsistencia(QDialog):
-    """Pequeño diálogo de configuración: para cada estado de asistencia
-    (Presente, Ausente, Tardanza, Excusado, Licencia Médica, Permiso...)
-    permite elegir qué categoría cuenta a la hora de calcular las tarjetas
-    de resumen, el % de asistencia del grupo y el informe de riesgo de
-    inasistencia. Incluye un botón para restablecer los valores
-    predeterminados sin necesidad de ajustarlos uno por uno."""
 
     def __init__(self, parent, main_window, valores_actuales):
+
         super().__init__(parent)
         self.main_window= main_window
         self.setWindowTitle("Valores de Asistencia")
@@ -443,15 +472,17 @@ class DialogoValoresAsistencia(QDialog):
 
         centrar_y_al_frente(self, parent)
 
+    #Solo cambia las selecciones dentro del diálogo (a los valores
+    #predeterminados); no guarda nada todavía, así el usuario puede
+    #seguir ajustando o presionar Cancelar para no aplicar el cambio.
     def _restablecer(self):
-        """Solo cambia las selecciones dentro del diálogo (a los valores
-        predeterminados); no guarda nada todavía, así el usuario puede
-        seguir ajustando o presionar Cancelar para no aplicar el cambio."""
+
         for estado, combo in self._combos.items():
             idx= combo.findData(VALORES_ESTADO_DEFECTO.get(estado, "Neutro"))
             combo.setCurrentIndex(idx if idx >= 0 else 0)
 
     def valores(self):
+
         return {estado: combo.currentData() for estado, combo in self._combos.items()}
 
 
@@ -465,7 +496,9 @@ from PySide6.QtCore import QSize, QRect, QPoint
 
 
 class FlowLayout(QLayout):
+
     def __init__(self, parent=None, margin=0, spacing_h=8, spacing_v=8):
+
         super().__init__(parent)
         if parent is not None:
             self.setContentsMargins(margin, margin, margin, margin)
@@ -474,44 +507,56 @@ class FlowLayout(QLayout):
         self._items= []
 
     def addItem(self, item):
+
         self._items.append(item)
 
     def horizontalSpacing(self):
+
         return self._spacing_h
 
     def verticalSpacing(self):
+
         return self._spacing_v
 
     def count(self):
+
         return len(self._items)
 
     def itemAt(self, index):
+
         if 0 <= index < len(self._items):
             return self._items[index]
         return None
 
     def takeAt(self, index):
+
         if 0 <= index < len(self._items):
             return self._items.pop(index)
         return None
 
     def expandingDirections(self):
+
         return Qt.Orientation(0)
 
     def hasHeightForWidth(self):
+
         return True
 
     def heightForWidth(self, width):
+
         return self._hacer_layout(QRect(0, 0, width, 0), probar=True)
 
     def setGeometry(self, rect):
+
         super().setGeometry(rect)
         self._hacer_layout(rect, probar=False)
 
     def sizeHint(self):
+
         return self.minimumSize()
 
     def minimumSize(self):
+
         tam= QSize()
         for item in self._items:
             tam= tam.expandedTo(item.minimumSize())
@@ -520,6 +565,7 @@ class FlowLayout(QLayout):
         return tam
 
     def _hacer_layout(self, rect, probar):
+
         margenes= self.contentsMargins()
         ancho_disponible= rect.width() - margenes.left() - margenes.right()
         x= rect.x() + margenes.left()
@@ -543,7 +589,9 @@ class FlowLayout(QLayout):
 
 
 class ModuloAsistencia(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         #Clasificación estado -> categoría de conteo (Presente/Ausente/Tardanza/
@@ -554,6 +602,7 @@ class ModuloAsistencia(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Asistencia"
         registrar_atajo(self, self.main_window, "Ctrl+G", "Registrar asistencia", self._guardar)
         registrar_atajo(self, self.main_window, "Ctrl+I", "Generar informe de inasistencia",
@@ -566,6 +615,7 @@ class ModuloAsistencia(QWidget):
 
     #Construcción de interfaz
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -616,6 +666,7 @@ class ModuloAsistencia(QWidget):
         self.actualizar_tema()
 
     def _crear_cabecera(self):
+
         self.frame_cabecera= QFrame()
         tarjeta= self.frame_cabecera
         tarjeta.setObjectName("CabeceraAsistencia")
@@ -670,12 +721,13 @@ class ModuloAsistencia(QWidget):
 
         return tarjeta
 
+    #Arma la línea de resumen ('Curso: 1ro A · Sección: A · …') a partir
+    #de [(etiqueta, combo_o_texto), ...], omitiendo lo vacío/'Todas'/'Todos'.
+    #Mismo criterio que usan Calificaciones y Calificaciones Técnicas, para
+    #que las ventanas de "☰ Filtros" se vean y se comporten igual en
+    #todos los módulos.
     def _resumen_filtros_texto(self, partes):
-        """Arma la línea de resumen ('Curso: 1ro A · Sección: A · …') a partir
-        de [(etiqueta, combo_o_texto), ...], omitiendo lo vacío/'Todas'/'Todos'.
-        Mismo criterio que usan Calificaciones y Calificaciones Técnicas, para
-        que las ventanas de "☰ Filtros" se vean y se comporten igual en
-        todos los módulos."""
+
         trozos= []
         for etiqueta, valor in partes:
             if isinstance(valor, QComboBox):
@@ -711,10 +763,11 @@ class ModuloAsistencia(QWidget):
         "Fecha": "#64748B", "Umbral": "#F59E0B",
     }
 
+    #Crea una 'píldora' (icono + texto, fondo traslúcido del color de
+    #la etiqueta) para representar un filtro activo. Es el reemplazo
+    #visual de un simple 'Etiqueta: valor' dentro de la barra de resumen.
     def _crear_chip_filtro(self, etiqueta, texto):
-        """Crea una 'píldora' (icono + texto, fondo traslúcido del color de
-        la etiqueta) para representar un filtro activo. Es el reemplazo
-        visual de un simple 'Etiqueta: valor' dentro de la barra de resumen."""
+
         color= self._COLOR_CHIP_FILTRO.get(etiqueta, "#3B82F6")
         icono= self._ICONO_CHIP_FILTRO.get(etiqueta, "🔎")
         chip= QFrame()
@@ -738,11 +791,12 @@ class ModuloAsistencia(QWidget):
         lay.addWidget(lbl_texto)
         return chip
 
+    #Vacía `contenedor_layout` y lo repuebla con un chip por cada
+    #filtro activo en `partes` (mismo formato que _resumen_filtros_texto:
+    #[(etiqueta, combo_o_texto), ...]). Si no hay ninguno, deja un chip
+    #neutro indicándolo, para que la barra nunca se vea vacía/rota.
     def _actualizar_chips_filtros(self, contenedor_layout, partes):
-        """Vacía `contenedor_layout` y lo repuebla con un chip por cada
-        filtro activo en `partes` (mismo formato que _resumen_filtros_texto:
-        [(etiqueta, combo_o_texto), ...]). Si no hay ninguno, deja un chip
-        neutro indicándolo, para que la barra nunca se vea vacía/rota."""
+
         while contenedor_layout.count():
             item= contenedor_layout.takeAt(0)
             widget= item.widget()
@@ -770,6 +824,7 @@ class ModuloAsistencia(QWidget):
                 contenedor_layout.addWidget(self._crear_chip_filtro(etiqueta, texto))
 
     def _tab_registro(self):
+
         w= QWidget()
         layout= QVBoxLayout(w)
         layout.setSpacing(14)
@@ -997,7 +1052,7 @@ class ModuloAsistencia(QWidget):
             btn.setIcon(icono_emoji(ICONOS_ESTADO.get(estado, "")))
             btn.setIconSize(_QSize_emoji(16, 16))
             btn.clicked.connect(lambda checked=False, e=estado, b=btn: self._marcar_todos(e, b))
-            fila, columna = divmod(indice, COLUMNAS_MARCAR)
+            fila, columna= divmod(indice, COLUMNAS_MARCAR)
             grid_marcar.addWidget(btn, fila, columna)
         layout.addWidget(self.marco_marcar_todos)
 
@@ -1031,6 +1086,7 @@ class ModuloAsistencia(QWidget):
         return w
 
     def _tab_alertas(self):
+
         w= QWidget()
         layout= QVBoxLayout(w)
         layout.setSpacing(14)
@@ -1167,10 +1223,11 @@ class ModuloAsistencia(QWidget):
         return w
 
     #Ventanas de filtrado (una por pestaña: Registro Diario y Alertas)
+    #Crea (una sola vez) la ventanita con los filtros de Registro
+    #Diario. No es modal: se puede dejar abierta mientras se ajustan
+    #los combos y la tabla de atrás se sigue actualizando en vivo.
     def _construir_dialogo_filtros_registro(self):
-        """Crea (una sola vez) la ventanita con los filtros de Registro
-        Diario. No es modal: se puede dejar abierta mientras se ajustan
-        los combos y la tabla de atrás se sigue actualizando en vivo."""
+
         self.dialogo_filtros_registro= QDialog(self)
         self.dialogo_filtros_registro.setObjectName("DialogoFiltrosAsis")
         self.dialogo_filtros_registro.setWindowTitle("Filtros de Registro Diario")
@@ -1252,10 +1309,11 @@ class ModuloAsistencia(QWidget):
         self.date_fecha.dateChanged.connect(self._actualizar_resumen_filtros_registro)
         self._actualizar_resumen_filtros_registro()
 
+    #Etiqueta del chip de materia del Registro Diario: en un Politécnico
+    #distingue 'Módulo' (módulo técnico, modelo 'Técnica (RA)') de
+    #'Materia' académica; en el resto de instituciones es siempre 'Materia'.
     def _etiqueta_chip_materia_registro(self):
-        """Etiqueta del chip de materia del Registro Diario: en un Politécnico
-        distingue 'Módulo' (módulo técnico, modelo 'Técnica (RA)') de
-        'Materia' académica; en el resto de instituciones es siempre 'Materia'."""
+
         if not self._es_politecnico():
             return "Materia"
         dato= self.combo_materia.currentData()
@@ -1264,6 +1322,7 @@ class ModuloAsistencia(QWidget):
         return "Materia"
 
     def _actualizar_resumen_filtros_registro(self):
+
         if not hasattr(self, "lay_chips_registro"):
             return
         self._actualizar_chips_filtros(self.lay_chips_registro, [
@@ -1276,6 +1335,7 @@ class ModuloAsistencia(QWidget):
         ])
 
     def _abrir_dialogo_filtros_registro(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros_registro.parent() is not _fc:
@@ -1284,9 +1344,10 @@ class ModuloAsistencia(QWidget):
         self.dialogo_filtros_registro.raise_()
         self.dialogo_filtros_registro.activateWindow()
 
+    #Crea (una sola vez) la ventanita con los filtros de Alertas de
+    #Inasistencia. No es modal, igual que la de Registro Diario.
     def _construir_dialogo_filtros_alertas(self):
-        """Crea (una sola vez) la ventanita con los filtros de Alertas de
-        Inasistencia. No es modal, igual que la de Registro Diario."""
+
         self.dialogo_filtros_alertas= QDialog(self)
         self.dialogo_filtros_alertas.setObjectName("DialogoFiltrosAsis")
         self.dialogo_filtros_alertas.setWindowTitle("Filtros de Alertas de Inasistencia")
@@ -1359,6 +1420,7 @@ class ModuloAsistencia(QWidget):
         self._actualizar_resumen_filtros_alertas()
 
     def _actualizar_resumen_filtros_alertas(self):
+
         if not hasattr(self, "lay_chips_alertas"):
             return
         self._actualizar_chips_filtros(self.lay_chips_alertas, [
@@ -1370,6 +1432,7 @@ class ModuloAsistencia(QWidget):
         ])
 
     def _abrir_dialogo_filtros_alertas(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros_alertas.parent() is not _fc:
@@ -1379,9 +1442,10 @@ class ModuloAsistencia(QWidget):
         self.dialogo_filtros_alertas.activateWindow()
 
     #Animaciones auxiliares
+    #Fundido de entrada (fade-in) reutilizable para tablas, pestañas y el
+    #contenido general del módulo.
     def _animar_aparicion(self, widget, duracion=240):
-        """Fundido de entrada (fade-in) reutilizable para tablas, pestañas y el
-        contenido general del módulo."""
+
         efecto= QGraphicsOpacityEffect(widget)
         widget.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", widget)
@@ -1393,9 +1457,10 @@ class ModuloAsistencia(QWidget):
         anim.finished.connect(lambda: widget.setGraphicsEffect(None))
         anim.start()
 
+    #Parpadeo breve de opacidad para dar feedback táctil a un botón (sin
+    #efectos gráficos persistentes, así que solo se usa en widgets simples).
     def _flash(self, widget):
-        """Parpadeo breve de opacidad para dar feedback táctil a un botón (sin
-        efectos gráficos persistentes, así que solo se usa en widgets simples)."""
+
         if widget is None:
             return
         efecto= QGraphicsOpacityEffect(widget)
@@ -1411,15 +1476,17 @@ class ModuloAsistencia(QWidget):
         anim.start()
 
     def _al_cambiar_tab(self, indice):
+
         widget= self.tabs.widget(indice)
         if widget is not None:
             self._animar_aparicion(widget, 220)
 
     #Alertas: carga de datos
+    #Igual que en la pestaña principal (Registro Diario): los combos de
+    #Área Técnica y Carrera solo se muestran/pueblan si la institución
+    #tiene ese módulo activo.
     def _cargar_especialidad_carrera_filtro_alerta(self):
-        """Igual que en la pestaña principal (Registro Diario): los combos de
-        Área Técnica y Carrera solo se muestran/pueblan si la institución
-        tiene ese módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_alerta.setVisible(es_poli)
         self.combo_filtro_especialidad_alerta.setVisible(es_poli)
@@ -1457,23 +1524,28 @@ class ModuloAsistencia(QWidget):
             self.combo_filtro_carrera_alerta.blockSignals(False)
 
     def _cargar_secciones_alerta(self):
+
         permitidas= self._secciones_permitidas_con_nivel_alerta()
         poblar_combo_curso(self.combo_curso_alerta, incluir_todos=False, secciones_permitidas=permitidas)
         _acortar_placeholder_combo(self.combo_curso_alerta, "Selecciona un grado")
         self._filtrar_secciones_alerta_por_curso()
 
     def _secciones_permitidas_con_nivel_alerta(self):
+
         permitidas= obtener_secciones_permitidas(self.main_window)
         nivel= self.combo_filtro_nivel_alerta.currentData() if hasattr(self, "combo_filtro_nivel_alerta") else None
         return interseccion_opcional(permitidas, secciones_del_nivel_educativo(nivel))
 
     def _nivel_filtro_alerta_cambio(self):
+
         self._cargar_secciones_alerta()
 
     def _curso_alerta_cambio(self):
+
         self._filtrar_secciones_alerta_por_curso()
 
     def _filtrar_secciones_alerta_por_curso(self):
+
         permitidas= self._secciones_permitidas_con_nivel_alerta()
         cascada_seccion_por_curso(self.combo_curso_alerta, self.combo_seccion_alerta,
                                    incluir_todas= False, secciones_permitidas=permitidas)
@@ -1486,6 +1558,7 @@ class ModuloAsistencia(QWidget):
             _acortar_placeholder_combo(self.combo_seccion_alerta, "Selecciona sección")
 
     def _calcular_inasistencia(self):
+
         seccion_id= self.combo_seccion_alerta.currentData()
         curso_id= self.combo_curso_alerta.currentData() if hasattr(self, "combo_curso_alerta") else None
         permitidas= obtener_secciones_permitidas(self.main_window)
@@ -1539,12 +1612,13 @@ class ModuloAsistencia(QWidget):
         estados_inasistencia= [e for e, cat in self._valores_estado.items() if cat in ("Ausente", "Tardanza")]
 
         def _clausula_in(estados):
+
             if not estados:
                 return "0", []  #ningún estado en esta categoría: condición siempre falsa
             return f"estado IN ({','.join('?' for _ in estados)})", list(estados)
 
-        cond_presente, params_presente = _clausula_in(estados_presente)
-        cond_inasistencia, params_inasistencia = _clausula_in(estados_inasistencia)
+        cond_presente, params_presente= _clausula_in(estados_presente)
+        cond_inasistencia, params_inasistencia= _clausula_in(estados_inasistencia)
         c.execute(f"""SELECT estudiante_id,
                             SUM(CASE WHEN {cond_presente} THEN 1 ELSE 0 END) as presentes,
                             SUM(CASE WHEN {cond_inasistencia} THEN 1 ELSE 0 END) as inasistencias
@@ -1575,13 +1649,14 @@ class ModuloAsistencia(QWidget):
         return resultado
 
     def _generar_informe_inasistencia(self):
+
         umbral= self.spin_umbral.value()
         datos= self._calcular_inasistencia()
         self._datos_informe_actual= datos
         self._umbral_informe_actual= umbral
 
         self.paginacion_alertas.establecer_total(len(datos))
-        inicio, fin = self.paginacion_alertas.rango_actual()
+        inicio, fin= self.paginacion_alertas.rango_actual()
         pagina= datos[inicio:fin]
 
         self.tabla_alertas.setUpdatesEnabled(False)
@@ -1617,10 +1692,11 @@ class ModuloAsistencia(QWidget):
                             self.main_window.usuario_actual, f"Umbral {umbral}% - {en_alerta} en alerta")
 
     def _exportar_informe_csv(self):
+
         if not getattr(self, "_datos_informe_actual", None):
             mostrar_mensaje("advertencia", "Sin datos", "Genera el informe antes de exportar.", self)
             return
-        ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Informe de Inasistencia",
+        ruta, _= QFileDialog.getSaveFileName(self, "Exportar Informe de Inasistencia",
                                               "informe_inasistencia.csv", "CSV (*.csv)")
         if not ruta:
             return
@@ -1638,10 +1714,12 @@ class ModuloAsistencia(QWidget):
         mostrar_mensaje("exito", "Exportado", f"Informe guardado en:\n{ruta}", self)
 
     def _exportar_informe_pdf(self):
+
         if not getattr(self, "_datos_informe_actual", None):
             mostrar_mensaje("advertencia", "Sin datos", "Genera el informe antes de exportar.", self)
             return
         try:
+
             from reportlab.lib.pagesizes import letter
             from reportlab.pdfgen import canvas
         except ImportError:
@@ -1649,14 +1727,14 @@ class ModuloAsistencia(QWidget):
                            "Instala 'reportlab' (pip install reportlab) para exportar en PDF.", self)
             return
         from src.modulos.calificaciones import _datos_institucion, _dibujar_encabezado, _dibujar_pie_pagina
-        ruta, _ = QFileDialog.getSaveFileName(self, "Exportar Informe de Inasistencia",
+        ruta, _= QFileDialog.getSaveFileName(self, "Exportar Informe de Inasistencia",
                                               "informe_inasistencia.pdf", "PDF (*.pdf)")
         if not ruta:
             return
         umbral= self._umbral_informe_actual
         en_alerta= [d for d in self._datos_informe_actual if d["porcentaje"] >= umbral and d["total"] > 0]
         institucion= _datos_institucion()
-        ancho, alto = letter
+        ancho, alto= letter
         cvs= canvas.Canvas(ruta, pagesize=letter)
         y= _dibujar_encabezado(cvs, ancho, alto, institucion, "Informe Automático de Inasistencia")
         cvs.setFont("Helvetica", 9)
@@ -1690,28 +1768,33 @@ class ModuloAsistencia(QWidget):
         mostrar_mensaje("exito", "Exportado", f"Informe guardado en:\n{ruta}", self)
 
     def _cargar_secciones(self):
+
         permitidas= self._secciones_permitidas_con_nivel()
         poblar_combo_curso(self.combo_curso, incluir_todos=False, secciones_permitidas=permitidas)
         _acortar_placeholder_combo(self.combo_curso, "Selecciona un grado")
         self._filtrar_secciones_registro_por_curso()
 
+    #RBAC de Profesor (si aplica) combinado con el filtro de Nivel
+    #Educativo elegido, para que Curso/Sección solo ofrezcan lo válido
+    #para ambos criterios a la vez (igual patrón que ya usa
+    #secciones_permitidas en todos los combos de este módulo).
     def _secciones_permitidas_con_nivel(self):
-        """RBAC de Profesor (si aplica) combinado con el filtro de Nivel
-        Educativo elegido, para que Curso/Sección solo ofrezcan lo válido
-        para ambos criterios a la vez (igual patrón que ya usa
-        secciones_permitidas en todos los combos de este módulo)."""
+
         permitidas= obtener_secciones_permitidas(self.main_window)
         nivel= self.combo_filtro_nivel.currentData() if hasattr(self, "combo_filtro_nivel") else None
         return interseccion_opcional(permitidas, secciones_del_nivel_educativo(nivel))
 
     def _nivel_filtro_registro_cambio(self):
+
         self._cargar_secciones()
         self._cargar_lista()
 
     def _curso_registro_cambio(self):
+
         self._filtrar_secciones_registro_por_curso()
 
     def _filtrar_secciones_registro_por_curso(self):
+
         permitidas= self._secciones_permitidas_con_nivel()
         cascada_seccion_por_curso(self.combo_curso, self.combo_seccion,
                                    incluir_todas= False, secciones_permitidas=permitidas)
@@ -1722,16 +1805,17 @@ class ModuloAsistencia(QWidget):
             _acortar_placeholder_combo(self.combo_seccion, "Selecciona curso")
         self._cargar_lista()
 
+    #Lista de Materias del selector de 'Registro Diario'. Si la
+    #institución es un Politécnico (o Personalizado con el módulo
+    #Politécnico activo) y hay un Área Técnica elegida en el filtro de
+    #arriba, se limita ESTRICTAMENTE a los módulos técnicos de esa
+    #área -mismo criterio que 'Asignar Clase' en materias.py
+    #(_cargar_combo_h_materia)-, para no mezclar materias de otras
+    #especialidades en la lista de asistencia. Sin área técnica elegida
+    #(o en una institución que no es Politécnico), se comporta como
+    #antes: todas las materias activas que el usuario tiene permitidas.
     def _cargar_materias_combo(self):
-        """Lista de Materias del selector de 'Registro Diario'. Si la
-        institución es un Politécnico (o Personalizado con el módulo
-        Politécnico activo) y hay un Área Técnica elegida en el filtro de
-        arriba, se limita ESTRICTAMENTE a los módulos técnicos de esa
-        área -mismo criterio que 'Asignar Clase' en materias.py
-        (_cargar_combo_h_materia)-, para no mezclar materias de otras
-        especialidades en la lista de asistencia. Sin área técnica elegida
-        (o en una institución que no es Politécnico), se comporta como
-        antes: todas las materias activas que el usuario tiene permitidas."""
+
         actual= self.combo_materia.currentData()
         #IDs de materias que son Módulos Técnicos (modelo 'Técnica (RA)'):
         #permite que los chips de filtro digan "Módulo: X" en vez de "Materia: X" cuando la selección lo es (solo
@@ -1765,6 +1849,7 @@ class ModuloAsistencia(QWidget):
         self.combo_materia.blockSignals(False)
 
     def _capturar_estado_actual(self):
+
         if not hasattr(self, "_registros_asistencia"):
             self._registros_asistencia= {}
         for i in range(self.tabla.rowCount()):
@@ -1775,32 +1860,38 @@ class ModuloAsistencia(QWidget):
                 self._registros_asistencia[est_id]= combo.currentText()
 
     def _on_cambio_pagina_registro(self):
+
         #Se llama cuando el usuario cambia de página: primero guardamos en memoria lo marcado en la página que se está
         #por reemplazar (para no perder cambios sin guardar) y luego pintamos la nueva página.
         self._capturar_estado_actual()
         self._renderizar_pagina()
 
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo). Mismo criterio usado en estudiantes.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo). Mismo criterio usado en estudiantes.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #Igual que en Estudiantes: los combos de Área Técnica y Carrera solo
+    #se muestran/pueblan si la institución tiene ese módulo activo.
     def _cargar_especialidad_carrera_filtro_asistencia(self):
-        """Igual que en Estudiantes: los combos de Área Técnica y Carrera solo
-        se muestran/pueblan si la institución tiene ese módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_asis.setVisible(es_poli)
         self.combo_filtro_especialidad_asis.setVisible(es_poli)
@@ -1837,12 +1928,13 @@ class ModuloAsistencia(QWidget):
             self.combo_filtro_carrera_asis.setCurrentIndex(idx if idx >= 0 else 0)
             self.combo_filtro_carrera_asis.blockSignals(False)
 
+    #Lista de estudiantes de la sección que coinciden con el texto de
+    #búsqueda (por nombre o apellido, sin distinguir mayúsculas/acentos) y,
+    #si aplica, con el área técnica/carrera elegidas. Solo afecta qué se
+    #MUESTRA/pagina; el guardado y las tarjetas de resumen del día siguen
+    #considerando la sección completa.
     def _estudiantes_filtrados(self):
-        """Lista de estudiantes de la sección que coinciden con el texto de
-        búsqueda (por nombre o apellido, sin distinguir mayúsculas/acentos) y,
-        si aplica, con el área técnica/carrera elegidas. Solo afecta qué se
-        MUESTRA/pagina; el guardado y las tarjetas de resumen del día siguen
-        considerando la sección completa."""
+
         campo= getattr(self, "in_buscar_estudiantes", None)
         texto= _normalizar(campo.text().strip()) if campo else ""
         especialidad_id= (self.combo_filtro_especialidad_asis.currentData()
@@ -1859,11 +1951,13 @@ class ModuloAsistencia(QWidget):
         return resultado
 
     def _filtro_estudiantes_cambio(self):
+
         self._capturar_estado_actual()
         self.paginacion_registro.reiniciar()
         self._renderizar_pagina()
 
     def _cargar_lista(self):
+
         seccion_id= self.combo_seccion.currentData()
         if seccion_id is None:
             self.tabla.setRowCount(0)
@@ -1891,6 +1985,7 @@ class ModuloAsistencia(QWidget):
         self._renderizar_pagina()
 
     def _estilizar_combo_estado(self, combo, estado):
+
         color= COLORES_ESTADO.get(estado, "#6366F1")
         colores= _colores_tema(self.main_window)
         combo.setStyleSheet(f"""
@@ -1911,14 +2006,16 @@ class ModuloAsistencia(QWidget):
         """)
 
     def _on_cambio_estado_fila(self, estudiante_id, estado, combo):
+
         self._registros_asistencia[estudiante_id]= estado
         self._estilizar_combo_estado(combo, estado)
         self._actualizar_estadisticas()
 
     def _renderizar_pagina(self):
+
         estudiantes= self._estudiantes_filtrados()
         self.paginacion_registro.establecer_total(len(estudiantes))
-        inicio, fin = self.paginacion_registro.rango_actual()
+        inicio, fin= self.paginacion_registro.rango_actual()
         pagina= estudiantes[inicio:fin]
 
         #El "No." solo se muestra si además de la Sección (obligatoria para llegar hasta aquí) también se filtró Área
@@ -1967,6 +2064,7 @@ class ModuloAsistencia(QWidget):
         self.estado_vacio_registro.actualizar(hay_filtro_elegido=self.combo_seccion.currentData() is not None)
 
     def _marcar_todos(self, estado, boton=None):
+
         for est in self._estudiantes_seccion:
             self._registros_asistencia[est["id"]]= estado
         for i in range(self.tabla.rowCount()):
@@ -1979,12 +2077,13 @@ class ModuloAsistencia(QWidget):
         self._actualizar_estadisticas()
         self._flash(boton)
 
+    #Recalcula las tarjetas de resumen y la barra de porcentaje a partir de
+    #TODA la sección (no solo la página visible), con animaciones suaves.
+    #Los conteos se agrupan por CATEGORÍA (self._valores_estado), no por el
+    #nombre literal del estado, así que respetan los valores configurados
+    #en el botón ⚙.
     def _actualizar_estadisticas(self):
-        """Recalcula las tarjetas de resumen y la barra de porcentaje a partir de
- TODA la sección (no solo la página visible), con animaciones suaves.
- Los conteos se agrupan por CATEGORÍA (self._valores_estado), no por el
- nombre literal del estado, así que respetan los valores configurados
- en el botón ⚙."""
+
         total= len(self._estudiantes_seccion)
         conteos_categoria= {categoria: 0 for categoria in CATEGORIAS_CONTEO}
         for est in self._estudiantes_seccion:
@@ -2006,10 +2105,11 @@ class ModuloAsistencia(QWidget):
         porcentaje= round((conteos_categoria.get("Presente", 0) / total_computable) * 100) if total_computable else 0
         self.barra_porcentaje.poner_valor_animado(porcentaje)
 
+    #Abre el diálogo de configuración de valores y, si se guarda,
+    #persiste el cambio y refresca de inmediato las tarjetas/informe para
+    #que el efecto se vea sin tener que salir del módulo.
     def _abrir_valores_estado(self):
-        """Abre el diálogo de configuración de valores y, si se guarda,
-        persiste el cambio y refresca de inmediato las tarjetas/informe para
-        que el efecto se vea sin tener que salir del módulo."""
+
         dialogo= DialogoValoresAsistencia(self, self.main_window, self._valores_estado)
         if dialogo.exec() == QDialog.DialogCode.Accepted:
             self._valores_estado= dialogo.valores()
@@ -2023,6 +2123,7 @@ class ModuloAsistencia(QWidget):
                             "Los valores de asistencia se actualizaron correctamente.", self)
 
     def _guardar(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para registrar asistencia.", self)
             return
@@ -2060,6 +2161,7 @@ class ModuloAsistencia(QWidget):
         mostrar_mensaje("exito", "Guardado", "El registro de asistencia se guardó correctamente.", self)
 
     def refrescar(self):
+
         if hasattr(self, "combo_filtro_nivel"):
             poblar_combo_nivel_educativo(self.combo_filtro_nivel)
         if hasattr(self, "combo_filtro_nivel_alerta"):
@@ -2074,10 +2176,11 @@ class ModuloAsistencia(QWidget):
         self._cargar_especialidad_carrera_filtro_alerta()
         self._cargar_secciones_alerta()
 
+    #Sincroniza los colores de las tarjetas y acentos de este módulo con el
+    #tema/modo claro-oscuro actual de la app. Se llama al construir la pantalla
+    #y cada vez que el usuario cambia de tema (ver main.py).
     def actualizar_tema(self):
-        """Sincroniza los colores de las tarjetas y acentos de este módulo con el
-        tema/modo claro-oscuro actual de la app. Se llama al construir la pantalla
-        y cada vez que el usuario cambia de tema (ver main.py)."""
+
         colores= _colores_tema(self.main_window)
         bg_panel= colores["bg_panel"]
         bg_btn= colores["bg_btn"]
@@ -2135,7 +2238,7 @@ class ModuloAsistencia(QWidget):
         #La sombra de la cabecera debe seguir el color de acento del tema:
         #antes quedaba fija en morado (QColor(76,29,149,...)) sin importar el tema elegido, así que se veía un brillo
         #violeta aunque el degradado de la cabecera fuera rojo/verde/etc., como en la captura.
-        r, g, b = int(accent.lstrip("#")[0:2], 16), int(accent.lstrip("#")[2:4], 16), int(accent.lstrip("#")[4:6], 16)
+        r, g, b= int(accent.lstrip("#")[0:2], 16), int(accent.lstrip("#")[2:4], 16), int(accent.lstrip("#")[4:6], 16)
         self._sombra_cabecera.setColor(QColor(r, g, b, 90))
 
         #--- Buscador de estudiantes ---

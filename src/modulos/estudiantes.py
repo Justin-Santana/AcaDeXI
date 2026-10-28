@@ -37,17 +37,20 @@ ESTADOS= ["Activo", "Inactivo"]
 
 
 #Utilidades visuales — puramente estéticas, no tocan datos ni lógica.
+#Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada.
 def _hex_a_rgba(color_hex, alpha):
-    """Convierte un color '#RRGGBB' a una cadena rgba(...) con la opacidad indicada."""
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Lee la paleta/tema activo de la ventana principal para que las tarjetas de
+#este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió.
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que las tarjetas de
-    este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -63,10 +66,11 @@ def _colores_tema(main_window):
                 "txt_prim": "#0F172A", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#Devuelve una copia circular (estilo avatar) de `pixmap`. Es solo otra forma
+#de DIBUJAR la misma foto ya guardada: no altera el archivo ni el dato 'foto'
+#que se guarda en la base de datos.
 def _redondear_pixmap(pixmap, tamano):
-    """Devuelve una copia circular (estilo avatar) de `pixmap`. Es solo otra forma
-    de DIBUJAR la misma foto ya guardada: no altera el archivo ni el dato 'foto'
-    que se guarda en la base de datos."""
+
     if pixmap is None or pixmap.isNull():
         return pixmap
     fuente= pixmap.scaled(tamano, tamano, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
@@ -85,9 +89,10 @@ def _redondear_pixmap(pixmap, tamano):
     return resultado
 
 
+#Quita mayúsculas y acentos para que el buscador no sea estricto:
+#'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que el buscador no sea estricto:
-    'jose', 'José' y 'JOSÉ' encuentran lo mismo. (mismo criterio que horario.py)"""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -95,20 +100,23 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que horario.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-    (mismo diseño que horario.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -119,13 +127,14 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
+#por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
+#encima. Solo anima mientras el cursor está sobre el botón —nunca en segundo
+#plano—, así que no cuesta rendimiento en reposo.
 class BotonAnimado(QPushButton):
-    """QPushButton normal (misma señal `clicked`, mismo objectName, mismo estilo
-    por QSS/tema) que además 'respira' con una sombra suave al pasar el mouse por
-    encima. Solo anima mientras el cursor está sobre el botón —nunca en segundo
-    plano—, así que no cuesta rendimiento en reposo."""
 
     def __init__(self, texto="", parent=None):
+
         super().__init__(texto, parent)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._sombra= QGraphicsDropShadowEffect(self)
@@ -138,23 +147,28 @@ class BotonAnimado(QPushButton):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def _animar_sombra(self, hasta):
+
         self._anim.stop()
         self._anim.setStartValue(self._sombra.blurRadius())
         self._anim.setEndValue(hasta)
         self._anim.start()
 
     def enterEvent(self, event):
+
         if self.isEnabled():
             self._animar_sombra(18)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._animar_sombra(0)
         super().leaveEvent(event)
 
 
 class ModuloEstudiantes(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion= None
@@ -166,6 +180,7 @@ class ModuloEstudiantes(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Estudiantes"
         #_guardar ya distingue internamente entre "guardar override local del docente" (datos_locales_docente.py) y
         #"guardar en la BD institucional" según es_profesor_restringido, así que el atajo es seguro para ambos roles
@@ -187,6 +202,7 @@ class ModuloEstudiantes(QWidget):
     #una pantalla aparte, aterriza aquí mismo con el filtro de Curso/Sección ya abierto y listo para elegir, porque
     #para un docente "ver sus secciones" es, en la práctica, ver quién está en cada una).
     def showEvent(self, event):
+
         super().showEvent(event)
         pendiente= getattr(self.main_window, "_pestana_pendiente_dashboard", None)
         if pendiente == "secciones":
@@ -195,6 +211,7 @@ class ModuloEstudiantes(QWidget):
             QTimer.singleShot(0, self.combo_filtro_grado.showPopup)
 
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -359,10 +376,10 @@ class ModuloEstudiantes(QWidget):
                              self.in_tutor, self.in_tutor2, self.combo_grado_ficha, self.combo_seccion,
                              self.combo_estado, self.combo_especialidad_estudiante, self.combo_carrera_estudiante]
         for indice, campo in enumerate(campos_en_orden):
-            fila, columna = divmod(indice, 4)
+            fila, columna= divmod(indice, 4)
             form_frame.addWidget(campo, fila, columna)
 
-        fila_ultima, _ = divmod(len(campos_en_orden) - 1, 4)
+        fila_ultima, _= divmod(len(campos_en_orden) - 1, 4)
         fila_siguiente= fila_ultima + 1  #siempre una fila nueva y vacía, sin importar en qué
         #columna haya terminado la grilla de campos (evita que esta fila se solape con la última).
 
@@ -680,11 +697,13 @@ class ModuloEstudiantes(QWidget):
         self.actualizar_tema()
 
     def _titulo(self, texto):
+
         lbl= QLabel(texto)
         lbl.setObjectName("TituloModulo")
         return lbl
 
     def _mostrar_info_docente(self):
+
         mostrar_mensaje("info", "Mis Estudiantes · Modo Docente",
             "Puedes personalizar todos los datos de tus estudiantes: nombre, apellidos, sexo, fecha de "
             "nacimiento, documento, dirección, teléfono, correo, tutores, sección y estado, además de "
@@ -702,6 +721,7 @@ class ModuloEstudiantes(QWidget):
             self)
 
     def _elegir_foto(self):
+
         if es_profesor_restringido(self.main_window) and self.id_edicion is None:
             mostrar_mensaje("advertencia", "Selecciona un estudiante",
                            "Primero usa 'Cargar Seleccionado' para elegir a cuál de tus estudiantes"
@@ -716,12 +736,14 @@ class ModuloEstudiantes(QWidget):
         self.lbl_foto.setPixmap(_redondear_pixmap(QPixmap(destino), 64))
 
     def _ver_foto_ampliada(self):
+
         if not self.foto_path or not os.path.exists(self.foto_path):
             mostrar_mensaje("advertencia", "Sin foto", "Este estudiante no tiene una fotografía cargada.", self)
             return
         VisorFotoDialog(self.foto_path, self, titulo="Fotografía del Estudiante").exec()
 
     def _quitar_foto(self):
+
         if not self.foto_path:
             mostrar_mensaje("advertencia", "Sin foto", "Este estudiante no tiene una fotografía cargada.", self)
             return
@@ -732,12 +754,14 @@ class ModuloEstudiantes(QWidget):
         self.lbl_foto.setPixmap(QPixmap())
 
     def _secciones_permitidas_ids(self):
+
         return obtener_secciones_permitidas(self.main_window)
 
+    #Crea (una sola vez) la ventanita con todos los filtros. No es modal:
+    #se puede dejar abierta mientras se ajustan los combos y la tabla de
+    #atrás se sigue actualizando en vivo, igual que antes.
     def _construir_dialogo_filtros(self):
-        """Crea (una sola vez) la ventanita con todos los filtros. No es modal:
-        se puede dejar abierta mientras se ajustan los combos y la tabla de
-        atrás se sigue actualizando en vivo, igual que antes."""
+
         self.dialogo_filtros= QDialog(self)
         self.dialogo_filtros.setObjectName("DialogoFiltros")
         self.dialogo_filtros.setWindowTitle("Filtros de Estudiantes")
@@ -809,6 +833,7 @@ class ModuloEstudiantes(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros.parent() is not _fc:
@@ -817,11 +842,12 @@ class ModuloEstudiantes(QWidget):
         self.dialogo_filtros.raise_()
         self.dialogo_filtros.activateWindow()
 
+    #Regresa los seis filtros a 'Todos' de un solo golpe. El cambio de
+    #combo_filtro_grado ya dispara la cascada de sección y _filtro_cambio
+    #por sí solo (ver _grado_filtro_cambio), así que no hace falta llamar
+    #_filtro_cambio() de nuevo para ese combo.
     def _limpiar_filtros(self):
-        """Regresa los seis filtros a 'Todos' de un solo golpe. El cambio de
-        combo_filtro_grado ya dispara la cascada de sección y _filtro_cambio
-        por sí solo (ver _grado_filtro_cambio), así que no hace falta llamar
-        _filtro_cambio() de nuevo para ese combo."""
+
         self.combo_filtro_nivel.setCurrentIndex(0)
         self.combo_filtro_grado.setCurrentIndex(0)
         self.combo_filtro_especialidad.setCurrentIndex(0)
@@ -829,11 +855,12 @@ class ModuloEstudiantes(QWidget):
         self.combo_filtro_sexo.setCurrentIndex(0)
         self.combo_filtro_estado.setCurrentIndex(0)
 
+    #Repuebla el filtro de Nivel Educativo con solo los niveles que esta
+    #institución tiene habilitados (misma fuente de verdad que usa
+    #Materias > Secciones para el combo de Nivel Educativo del Grado:
+    #niveles_academicos_habilitados en configuracion.py).
     def _cargar_niveles_combo_filtro(self):
-        """Repuebla el filtro de Nivel Educativo con solo los niveles que esta
-        institución tiene habilitados (misma fuente de verdad que usa
-        Materias > Secciones para el combo de Nivel Educativo del Grado:
-        niveles_academicos_habilitados en configuracion.py)."""
+
         combo= self.combo_filtro_nivel
         seleccion_previa= combo.currentData() if combo.count() else None
         conn= obtener_conexion()
@@ -853,27 +880,31 @@ class ModuloEstudiantes(QWidget):
         combo.blockSignals(False)
 
     def _cargar_grados_combo_filtro(self):
+
         poblar_combo_curso(self.combo_filtro_grado, incluir_todos=False,
                             secciones_permitidas= self._secciones_permitidas_ids())
 
     def _grado_filtro_cambio(self):
+
         cascada_seccion_por_curso(self.combo_filtro_grado, self.combo_filtro_seccion,
                                    incluir_todas= False, secciones_permitidas=self._secciones_permitidas_ids())
         self._filtro_cambio()
 
+    #Igual que _cargar_grados_combo_filtro pero para el combo de Grado
+    #de la ficha de alta/edición del estudiante (obligatorio, acota
+    #self.combo_seccion, no la tabla).
     def _cargar_grados_combo_ficha(self):
-        """Igual que _cargar_grados_combo_filtro pero para el combo de Grado
-        de la ficha de alta/edición del estudiante (obligatorio, acota
-        self.combo_seccion, no la tabla)."""
+
         poblar_combo_curso(self.combo_grado_ficha, incluir_todos=False,
                             secciones_permitidas= self._secciones_permitidas_ids())
 
+    #Repuebla 'Sección' con solo las secciones del curso/grado elegido en
+    #'Curso/Grado'. Mientras no se elija un curso, 'Sección' queda vacía
+    #(con un placeholder sin datos), así que no puede quedar seleccionada
+    #por accidente una sección de otro curso (igual que en la pestaña de
+    #Horarios de Materias).
     def _grado_ficha_cambio(self, _indice=None, seccion_id_preseleccionar=None):
-        """Repuebla 'Sección' con solo las secciones del curso/grado elegido en
-        'Curso/Grado'. Mientras no se elija un curso, 'Sección' queda vacía
-        (con un placeholder sin datos), así que no puede quedar seleccionada
-        por accidente una sección de otro curso (igual que en la pestaña de
-        Horarios de Materias)."""
+
         cascada_seccion_por_curso(self.combo_grado_ficha, self.combo_seccion,
                                    incluir_todas= False, secciones_permitidas=self._secciones_permitidas_ids())
         if seccion_id_preseleccionar is not None:
@@ -882,6 +913,7 @@ class ModuloEstudiantes(QWidget):
         self._actualizar_profesor_guia()
 
     def _cargar_especialidades_combo_filtro(self):
+
         combo= self.combo_filtro_especialidad
         seleccion_previa= combo.currentData()
         combo.blockSignals(True)
@@ -889,6 +921,7 @@ class ModuloEstudiantes(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
             filas= c.fetchall()
         except Exception:
@@ -912,16 +945,17 @@ class ModuloEstudiantes(QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
+    #Igual que el combo de Carrera de la ficha (_cargar_carrera_ficha_combo):
+    #solo se muestra cuando la institución es de tipo Universidad (o
+    #Personalizado con el módulo Universidad activo), sin importar si ya
+    #hay carreras cargadas o no. Antes este filtro se mostraba/ocultaba
+    #según si la tabla `carreras` tenía filas, lo que era inconsistente
+    #con el resto de la app: una institución que NO es Universidad pero
+    #conserva carreras viejas en la base (p. ej. tras cambiar el tipo de
+    #institución) igual lo mostraba, y una Universidad recién configurada
+    #sin carreras aún cargadas no lo mostraba.
     def _cargar_carreras_combo_filtro(self):
-        """Igual que el combo de Carrera de la ficha (_cargar_carrera_ficha_combo):
-        solo se muestra cuando la institución es de tipo Universidad (o
-        Personalizado con el módulo Universidad activo), sin importar si ya
-        hay carreras cargadas o no. Antes este filtro se mostraba/ocultaba
-        según si la tabla `carreras` tenía filas, lo que era inconsistente
-        con el resto de la app: una institución que NO es Universidad pero
-        conserva carreras viejas en la base (p. ej. tras cambiar el tipo de
-        institución) igual lo mostraba, y una Universidad recién configurada
-        sin carreras aún cargadas no lo mostraba."""
+
         combo= self.combo_filtro_carrera
         es_uni= self._es_universidad()
         self._carrera_disponible= es_uni
@@ -938,6 +972,7 @@ class ModuloEstudiantes(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
             filas= c.fetchall()
         except Exception:
@@ -951,6 +986,7 @@ class ModuloEstudiantes(QWidget):
         combo.blockSignals(False)
 
     def _actualizar_profesor_guia(self):
+
         seccion_id= self.combo_seccion.currentData()
         if seccion_id is None:
             self.lbl_profesor_guia.setText("Profesor guía: —")
@@ -966,23 +1002,24 @@ class ModuloEstudiantes(QWidget):
         self.lbl_profesor_guia.setText(f"Profesor guía: {nombre if nombre else 'Sin asignar'}")
         self._actualizar_disponibilidad_especialidad_ficha(seccion_id)
 
+    #Oculta (no solo deshabilita) el combo de Área Técnica de la ficha si
+    #la sección elegida no es Secundaria - Segundo Ciclo (misma regla que
+    #valida _guardar(): puede_tener_componente_tecnico). Solo aplica cuando
+    #la institución es Politécnico -en cualquier otro caso el combo ya está
+    #oculto por _cargar_especialidad_ficha_combo() vía _es_politecnico().
+    #
+    #Antes esto solo deshabilitaba el combo (quedaba visible mostrando
+    #"— Selecciona un área técnica —" en gris) sin importar la sección,
+    #así que un estudiante de Primaria en una institución "Personalizado"
+    #con Politécnico Y Primaria activos a la vez veía un campo obligatorio
+    #que ni siquiera podía llenar -bloqueando el guardado. Ver el mismo
+    #arreglo en Materias > Cursos y Secciones.
     def _actualizar_disponibilidad_especialidad_ficha(self, seccion_id):
-        """Oculta (no solo deshabilita) el combo de Área Técnica de la ficha si
-        la sección elegida no es Secundaria - Segundo Ciclo (misma regla que
-        valida _guardar(): puede_tener_componente_tecnico). Solo aplica cuando
-        la institución es Politécnico -en cualquier otro caso el combo ya está
-        oculto por _cargar_especialidad_ficha_combo() vía _es_politecnico().
 
-        Antes esto solo deshabilitaba el combo (quedaba visible mostrando
-        "— Selecciona un área técnica —" en gris) sin importar la sección,
-        así que un estudiante de Primaria en una institución "Personalizado"
-        con Politécnico Y Primaria activos a la vez veía un campo obligatorio
-        que ni siquiera podía llenar -bloqueando el guardado. Ver el mismo
-        arreglo en Materias > Cursos y Secciones."""
         if not self._es_politecnico() or not hasattr(self, "combo_especialidad_estudiante"):
             return
-        nivel_sec, ciclo_sec = resolver_nivel_academico_de_seccion(seccion_id)
-        tipo_inst, _ = self.main_window._tipo_institucion()
+        nivel_sec, ciclo_sec= resolver_nivel_academico_de_seccion(seccion_id)
+        tipo_inst, _= self.main_window._tipo_institucion()
         permite= seccion_id is None or puede_tener_componente_tecnico(nivel_sec, ciclo_sec, tipo_inst)
         self.combo_especialidad_estudiante.setVisible(permite)
         self.combo_especialidad_estudiante.setEnabled(True)
@@ -996,6 +1033,7 @@ class ModuloEstudiantes(QWidget):
                                         "Área técnica del estudiante (obligatorio en Politécnico).")
 
     def _generar_matricula(self):
+
         anio= datetime.now().strftime("%Y")
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1005,6 +1043,7 @@ class ModuloEstudiantes(QWidget):
         conn.close()
         if f and f["matricula"]:
             try:
+
                 consecutivo= int(f["matricula"].split("-")[-1]) + 1
             except (ValueError, IndexError):
                 consecutivo= 1
@@ -1013,9 +1052,11 @@ class ModuloEstudiantes(QWidget):
         return f"{anio}-{consecutivo:04d}"
 
     def _autogenerar_matricula(self):
+
         self.in_matricula.setText(self._generar_matricula())
 
     def _matricula_disponible(self, matricula, excluyendo_id=None):
+
         if not matricula:
             return True
         conn= obtener_conexion()
@@ -1043,15 +1084,18 @@ class ModuloEstudiantes(QWidget):
     }
 
     def _abrir_exportar_intercambio(self):
+
         seccion_id= self.combo_filtro_seccion.currentData() if hasattr(self, "combo_filtro_seccion") else None
         DialogoExportarEstudiantes(self.main_window, seccion_id_actual=seccion_id, parent=self).exec()
 
     def _abrir_importar_intercambio(self):
+
         dialogo= DialogoImportarEstudiantes(self.main_window, parent=self)
         if dialogo.exec() == QDialog.DialogCode.Accepted:
             self._cargar_tabla()
 
     def _importar_excel_csv(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para importar estudiantes.", self)
             return
@@ -1061,11 +1105,12 @@ class ModuloEstudiantes(QWidget):
                            "Coordinación que te exporte el paquete de Estudiantes y Cursos e impórtalo desde "
                            "Copias de Seguridad.", self)
             return
-        ruta, _ = QFileDialog.getOpenFileName(
+        ruta, _= QFileDialog.getOpenFileName(
             self, "Importar Estudiantes", "", "Excel/CSV (*.xlsx *.xls *.csv)")
         if not ruta:
             return
         try:
+
             filas_crudas= self._leer_filas_importacion(ruta)
         except Exception as e:
             mostrar_mensaje("error", "Error al leer el archivo", f"No se pudo leer el archivo:\n{e}", self)
@@ -1074,7 +1119,7 @@ class ModuloEstudiantes(QWidget):
             mostrar_mensaje("advertencia", "Archivo vacío",
                            "No se encontraron filas de datos en el archivo seleccionado.", self)
             return
-        insertados, duplicados, sin_nombre = 0, 0, 0
+        insertados, duplicados, sin_nombre= 0, 0, 0
         conn= obtener_conexion()
         c= conn.cursor()
         for fila in filas_crudas:
@@ -1116,6 +1161,7 @@ class ModuloEstudiantes(QWidget):
         mostrar_mensaje("exito", "Importación completada", resumen, self)
 
     def _leer_filas_importacion(self, ruta):
+
         extension= os.path.splitext(ruta)[1].lower()
         filas= []
         if extension == ".csv":
@@ -1133,6 +1179,7 @@ class ModuloEstudiantes(QWidget):
                                  for i in range(len(claves)) if claves[i]})
         else:
             try:
+
                 import openpyxl
             except ImportError:
                 raise RuntimeError("Instala 'openpyxl' (pip install openpyxl) para importar archivos Excel.")
@@ -1156,9 +1203,11 @@ class ModuloEstudiantes(QWidget):
         return filas
 
     def _normalizar_encabezados(self, encabezados):
+
         return [self.ALIAS_COLUMNAS.get((e or "").strip().lower(), None) for e in encabezados]
 
     def _guardar(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para editar estudiantes.", self)
             return
@@ -1196,8 +1245,8 @@ class ModuloEstudiantes(QWidget):
         #Universidad o Secundaria-Primer Ciclo, el combo ni siquiera se muestra
         #(_actualizar_disponibilidad_especialidad_ficha) y por lo tanto tampoco debe exigirse aquí -mismo criterio que
         #en Materias > Cursos y Secciones.
-        nivel_sec_actual, ciclo_sec_actual = resolver_nivel_academico_de_seccion(seccion_id_actual)
-        tipo_inst_actual, _ = self.main_window._tipo_institucion()
+        nivel_sec_actual, ciclo_sec_actual= resolver_nivel_academico_de_seccion(seccion_id_actual)
+        tipo_inst_actual, _= self.main_window._tipo_institucion()
         permite_tecnico_actual= seccion_id_actual is None or puede_tener_componente_tecnico(
             nivel_sec_actual, ciclo_sec_actual, tipo_inst_actual)
         if (self._es_politecnico() and not ambos_activos and permite_tecnico_actual
@@ -1225,8 +1274,8 @@ class ModuloEstudiantes(QWidget):
             #Ciclo (República Dominicana). Reutiliza la misma regla de
             #Materias > Secciones (puede_tener_componente_tecnico), en vez de duplicarla, para que nunca puedan
             #desalinearse.
-            nivel_sec, ciclo_sec = resolver_nivel_academico_de_seccion(seccion_id)
-            tipo_inst, _ = self.main_window._tipo_institucion()
+            nivel_sec, ciclo_sec= resolver_nivel_academico_de_seccion(seccion_id)
+            tipo_inst, _= self.main_window._tipo_institucion()
             if not puede_tener_componente_tecnico(nivel_sec, ciclo_sec, tipo_inst):
                 self._destello("#EF4444")
                 mostrar_mensaje("advertencia", "Combinación inválida",
@@ -1242,6 +1291,7 @@ class ModuloEstudiantes(QWidget):
             self.foto_path, seccion_id, self.combo_estado.currentText(), especialidad_id, carrera_id
         )
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             seccion_anterior_id= None
@@ -1280,9 +1330,10 @@ class ModuloEstudiantes(QWidget):
         self._limpiar()
         self.refrescar()
 
+    #Guarda los retoques del Profesor SOLO en su almacén local (Modo Docente),
+    #sin tocar la base de datos institucional.
     def _guardar_override_local(self):
-        """Guarda los retoques del Profesor SOLO en su almacén local (Modo Docente),
-        sin tocar la base de datos institucional."""
+
         if self.id_edicion is None:
             mostrar_mensaje("advertencia", "Selecciona un estudiante",
                            "Usa 'Cargar Seleccionado' para elegir a cuál de tus estudiantes le vas a"
@@ -1323,6 +1374,7 @@ class ModuloEstudiantes(QWidget):
         self.refrescar()
 
     def _restablecer_override(self):
+
         if self.id_edicion is None:
             mostrar_mensaje("advertencia", "Selecciona un estudiante",
                            "Usa 'Cargar Seleccionado' para elegir el estudiante cuya personalización"
@@ -1338,6 +1390,7 @@ class ModuloEstudiantes(QWidget):
         self.refrescar()
 
     def _limpiar(self):
+
         self.id_edicion= None
         self.foto_path= ""
         self.lbl_foto.setText("Sin\nfoto")
@@ -1363,6 +1416,7 @@ class ModuloEstudiantes(QWidget):
         desactivar_modo_edicion(self.in_matricula)
 
     def _cargar_seleccionado(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un estudiante de la tabla.", self)
@@ -1418,6 +1472,7 @@ class ModuloEstudiantes(QWidget):
                              f"Editando estudiante: {nombre_est} {apellidos_est}".strip())
 
     def _eliminar(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no tiene permiso para eliminar estudiantes.", self)
             return
@@ -1471,15 +1526,17 @@ class ModuloEstudiantes(QWidget):
 
         self.refrescar()
 
+    #Restaura el último estudiante eliminado desde esta pantalla, tal cual
+    #estaba (mismo id y mismos datos). Solo funciona una vez por eliminación.
     def _deshacer_eliminacion(self):
-        """Restaura el último estudiante eliminado desde esta pantalla, tal cual
-        estaba (mismo id y mismos datos). Solo funciona una vez por eliminación."""
+
         if not self._ultima_eliminacion:
             return
         datos= self._ultima_eliminacion
         conn= obtener_conexion()
         c= conn.cursor()
         try:
+
             c.execute("""INSERT INTO estudiantes
                          (id, matricula, nombre, apellidos, sexo, fecha_nacimiento, documento,
                           direccion, telefono, correo, tutor, tutor2, foto, seccion_id, estado)
@@ -1506,10 +1563,12 @@ class ModuloEstudiantes(QWidget):
         self.refrescar()
 
     def _filtro_cambio(self, texto=""):
+
         self.paginacion.reiniciar()
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         texto= _normalizar(self.in_buscar.text().strip())
         nivel_filtro= self.combo_filtro_nivel.currentData()
         seccion_id= self.combo_filtro_seccion.currentData()
@@ -1579,7 +1638,7 @@ class ModuloEstudiantes(QWidget):
                 continue
             filtradas.append(f)
         self.paginacion.establecer_total(len(filtradas))
-        inicio, fin = self.paginacion.rango_actual()
+        inicio, fin= self.paginacion.rango_actual()
         pagina= filtradas[inicio:fin]
         self.lbl_vacio.setVisible(len(filtradas) == 0)
         #El "No." solo tiene sentido con una Sección concreta filtrada (y, si la institución usa Área Técnica/Carrera,
@@ -1655,12 +1714,13 @@ class ModuloEstudiantes(QWidget):
         self._animar_contador(len(filtradas))
         self._animar_fundido_tabla()
 
+    #Ensancha una columna por encima de su ancho base solo cuando algún
+    #registro de la página actual lo necesita (un nombre, tutor, etc.
+    #demasiado largo). El resto de columnas se queda en su ancho normal,
+    #así que la tabla solo saca la barra horizontal cuando de verdad hay
+    #un valor "demasiado grande" que no cabe.
     def _ajustar_anchos_columnas(self):
-        """Ensancha una columna por encima de su ancho base solo cuando algún
-        registro de la página actual lo necesita (un nombre, tutor, etc.
-        demasiado largo). El resto de columnas se queda en su ancho normal,
-        así que la tabla solo saca la barra horizontal cuando de verdad hay
-        un valor "demasiado grande" que no cabe."""
+
         for col, base in self._anchos_base_columnas.items():
             if self.tabla.isColumnHidden(col):
                 continue
@@ -1669,6 +1729,7 @@ class ModuloEstudiantes(QWidget):
                 self.tabla.setColumnWidth(col, base)
 
     def refrescar(self):
+
         seccion_actual= self.combo_seccion.currentData()
         self._cargar_grados_combo_ficha()
         self._grado_ficha_cambio(seccion_id_preseleccionar=seccion_actual)
@@ -1687,44 +1748,51 @@ class ModuloEstudiantes(QWidget):
             self.in_matricula.setText(self._generar_matricula())
         self._cargar_tabla()
 
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo) — solo entonces se pide/usa el Área Técnica
+    #del estudiante.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo) — solo entonces se pide/usa el Área Técnica
-        del estudiante."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo) — solo entonces se pide/usa la Carrera del
+    #estudiante. Independiente de _es_politecnico(): en 'Personalizado' ambos
+    #módulos pueden estar activos a la vez (por ejemplo, un politécnico que
+    #también ofrece carreras universitarias), y en ese caso un mismo
+    #estudiante puede tener área técnica Y carrera al mismo tiempo.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo) — solo entonces se pide/usa la Carrera del
-        estudiante. Independiente de _es_politecnico(): en 'Personalizado' ambos
-        módulos pueden estar activos a la vez (por ejemplo, un politécnico que
-        también ofrece carreras universitarias), y en ese caso un mismo
-        estudiante puede tener área técnica Y carrera al mismo tiempo."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #True solo cuando la institución es "Personalizado" y tiene
+    #Politécnico Y Universidad activos a la vez -el único caso en el que
+    #Área Técnica y Carrera dejan de ser obligatorias (ver el guardado
+    #del formulario). Si la institución es puramente Politécnico o
+    #puramente Universidad, o si "Personalizado" solo tiene UNO de los
+    #dos módulos activo, esto es False y el campo correspondiente sigue
+    #siendo obligatorio como siempre.
     def _ambos_modulos_tecnicos_activos(self):
-        """True solo cuando la institución es "Personalizado" y tiene
-        Politécnico Y Universidad activos a la vez -el único caso en el que
-        Área Técnica y Carrera dejan de ser obligatorias (ver el guardado
-        del formulario). Si la institución es puramente Politécnico o
-        puramente Universidad, o si "Personalizado" solo tiene UNO de los
-        dos módulos activo, esto es False y el campo correspondiente sigue
-        siendo obligatorio como siempre."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Personalizado" and "Politécnico" in personalizados and "Universidad" in personalizados
 
     def _cargar_especialidad_ficha_combo(self):
+
         combo= self.combo_especialidad_estudiante
         es_poli= self._es_politecnico()
         combo.setVisible(es_poli)
@@ -1745,6 +1813,7 @@ class ModuloEstudiantes(QWidget):
         combo.blockSignals(False)
 
     def _cargar_carrera_ficha_combo(self):
+
         combo= self.combo_carrera_estudiante
         es_uni= self._es_universidad()
         combo.setVisible(es_uni)
@@ -1764,10 +1833,11 @@ class ModuloEstudiantes(QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
+    #Sincroniza los colores de las tarjetas y acentos de este módulo con el
+    #tema/modo claro-oscuro actual de la app. Se llama al construir la pantalla
+    #y cada vez que el usuario cambia de tema (ver main.py).
     def actualizar_tema(self):
-        """Sincroniza los colores de las tarjetas y acentos de este módulo con el
-        tema/modo claro-oscuro actual de la app. Se llama al construir la pantalla
-        y cada vez que el usuario cambia de tema (ver main.py)."""
+
         colores= _colores_tema(self.main_window)
         self.frame_cabecera.setStyleSheet(f"""
             QFrame#TarjetaCabecera {{
@@ -1960,10 +2030,12 @@ class ModuloEstudiantes(QWidget):
 
     #ANIMACIONES — capa puramente visual: no participan en la lógica de negocio, permisos, validación ni guardado
     #de datos.
+    #Actualiza el chip '👥 N estudiantes' de la cabecera con una pequeña
+    #animación de conteo, en vez de un cambio brusco de texto.
     def _animar_contador(self, valor_final):
-        """Actualiza el chip '👥 N estudiantes' de la cabecera con una pequeña
-        animación de conteo, en vez de un cambio brusco de texto."""
+
         def texto(v):
+
             return f"{html_icono_emoji('👥', 15)} {v} estudiante" + ("s" if v != 1 else "")
         valor_inicial= getattr(self, "_contador_valor_actual", 0)
         self._contador_valor_actual= valor_final
@@ -1979,10 +2051,11 @@ class ModuloEstudiantes(QWidget):
         anim.start()
         self._anim_contador= anim  #referencia viva mientras corre la animación
 
+    #Fundido breve al recargar la tabla, como confirmación visual de que los
+    #datos se actualizaron. El efecto se retira apenas termina para no afectar
+    #el rendimiento del scroll normal de la tabla el resto del tiempo.
     def _animar_fundido_tabla(self):
-        """Fundido breve al recargar la tabla, como confirmación visual de que los
-        datos se actualizaron. El efecto se retira apenas termina para no afectar
-        el rendimiento del scroll normal de la tabla el resto del tiempo."""
+
         efecto= QGraphicsOpacityEffect(self.tabla)
         self.tabla.setGraphicsEffect(efecto)
         anim= QPropertyAnimation(efecto, b"opacity", self)
@@ -1994,10 +2067,11 @@ class ModuloEstudiantes(QWidget):
         anim.start()
         self._anim_tabla= anim  #referencia viva mientras corre la animación
 
+    #Resplandor breve de color en el borde de la tarjeta del formulario, a
+    #modo de confirmación visual (verde=éxito, rojo=aviso). Solo anima la
+    #sombra ya existente de la tarjeta: no toca ningún dato ni campo.
     def _destello(self, color_hex="#22C55E"):
-        """Resplandor breve de color en el borde de la tarjeta del formulario, a
-        modo de confirmación visual (verde=éxito, rojo=aviso). Solo anima la
-        sombra ya existente de la tarjeta: no toca ningún dato ni campo."""
+
         if not hasattr(self, "_sombra_formulario"):
             return
         grupo= QParallelAnimationGroup(self)

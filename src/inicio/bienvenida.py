@@ -1,13 +1,12 @@
-"""Pantalla de bienvenida animada.
-
-Se muestra justo después de un inicio de sesión exitoso (ver
-`mostrar_login()` en main.py) y actúa como una transición elegante antes
-de que la ventana principal termine de abrirse por completo: el logo de
-la app aparece con un efecto de "pop"/rebote, luego el texto de
-bienvenida con el rol, y debajo el estado "Inicializando AcaDeXI" con una
-barra fina de carga que, al completarse, muestra un check (✓) a la
-derecha del texto. Finalmente todo se desvanece para dar paso a la app.
-"""
+#Pantalla de bienvenida animada.
+#
+#Se muestra justo después de un inicio de sesión exitoso (ver
+#`mostrar_login()` en main.py) y actúa como una transición elegante antes
+#de que la ventana principal termine de abrirse por completo: el logo de
+#la app aparece con un efecto de "pop"/rebote, luego el texto de
+#bienvenida con el rol, y debajo el estado "Inicializando AcaDeXI" con una
+#barra fina de carga que, al completarse, muestra un check (✓) a la
+#derecha del texto. Finalmente todo se desvanece para dar paso a la app.
 
 import os
 import sys
@@ -22,8 +21,9 @@ from src.nucleo.rutas import obtener_carpeta_raiz, obtener_carpeta_iconos
 
 
 def _hex_a_rgba(hex_color, alpha):
+
     hex_color= hex_color.lstrip("#")
-    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
@@ -36,11 +36,12 @@ _AQUI= obtener_carpeta_raiz()
 _CARPETA_ICONOS= obtener_carpeta_iconos()
 
 
+#Genera, en orden de prioridad, las carpetas donde puede estar el
+#logo de la app, tanto en desarrollo como empaquetado con PyInstaller
+#(--onedir). Sigue la misma lógica que `_carpetas_candidatas_iconos()`
+#de iconos.py, agregando también la carpeta donde vive este archivo.
 def _carpetas_candidatas_logo():
-    """Genera, en orden de prioridad, las carpetas donde puede estar el
-    logo de la app, tanto en desarrollo como empaquetado con PyInstaller
-    (--onedir). Sigue la misma lógica que `_carpetas_candidatas_iconos()`
-    de iconos.py, agregando también la carpeta donde vive este archivo."""
+
     candidatas= [_AQUI, _CARPETA_ICONOS]
 
     if getattr(sys, "frozen", False):
@@ -69,6 +70,7 @@ _cache_pixmap_logo= None
 
 
 def _ruta_logo():
+
     global _cache_ruta_logo
     if _cache_ruta_logo is not None:
         return _cache_ruta_logo
@@ -82,9 +84,10 @@ def _ruta_logo():
     return ruta_encontrada
 
 
+#Carga (una sola vez, cacheado) el pixmap original del logo, o None
+#si no se encontró el archivo en ninguna carpeta candidata.
 def _pixmap_logo_base():
-    """Carga (una sola vez, cacheado) el pixmap original del logo, o None
-    si no se encontró el archivo en ninguna carpeta candidata."""
+
     global _cache_pixmap_logo
     if _cache_pixmap_logo is None:
         ruta= _ruta_logo()
@@ -92,12 +95,13 @@ def _pixmap_logo_base():
     return _cache_pixmap_logo if not _cache_pixmap_logo.isNull() else None
 
 
+#El logo de la app con un anillo de progreso alrededor y una entrada
+#tipo "pop" (rebote). Si no se encuentra el archivo del logo, cae de
+#vuelta a un emblema 🎓.
 class _LogoAnimado(QWidget):
-    """El logo de la app con un anillo de progreso alrededor y una entrada
-    tipo "pop" (rebote). Si no se encuentra el archivo del logo, cae de
-    vuelta a un emblema 🎓."""
 
     def __init__(self, color_halo="#6366F1", diametro=112, parent=None):
+
         super().__init__(parent)
         self._diametro= diametro
         self.setFixedSize(diametro, diametro)
@@ -118,31 +122,36 @@ class _LogoAnimado(QWidget):
                 Qt.TransformationMode.SmoothTransformation)
 
     def _leer_escala_logo(self):
+
         return self._escala_logo
 
     def _poner_escala_logo(self, valor):
+
         self._escala_logo= valor
         self.update()
 
     escalaLogo= Property(float, _leer_escala_logo, _poner_escala_logo)
 
     def _leer_anillo(self):
+
         return self._progreso_anillo
 
     def _poner_anillo(self, valor):
+
         self._progreso_anillo= valor
         self.update()
 
     progresoAnillo= Property(float, _leer_anillo, _poner_anillo)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
         margen= 6
         rect= QRect(margen, margen, self._diametro - margen * 2, self._diametro - margen * 2)
-        cx, cy = self.width() / 2, self.height() / 2
+        cx, cy= self.width() / 2, self.height() / 2
 
         #Halo suave de fondo
         halo= QColor(self._color_halo)
@@ -194,11 +203,12 @@ class _LogoAnimado(QWidget):
             painter.drawArc(rect, angulo_inicio, angulo_barrido)
 
 
+#Overlay de pantalla completa, sin bordes y translúcido, con una
+#tarjeta centrada que muestra la animación de bienvenida.
 class SplashBienvenida(QWidget):
-    """Overlay de pantalla completa, sin bordes y translúcido, con una
-    tarjeta centrada que muestra la animación de bienvenida."""
 
     def __init__(self, main_window, nombre, rol):
+
         super().__init__(None)
         self.main_window= main_window
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint |
@@ -218,7 +228,9 @@ class SplashBienvenida(QWidget):
         self._secuencia_iniciada= False
 
     def _colores_tema(self):
+
         try:
+
             paleta= self.main_window.theme_palettes.get(
                 self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
             idx= 1 if self.main_window.modo_oscuro else 0
@@ -233,6 +245,7 @@ class SplashBienvenida(QWidget):
                     "txt_sec": "#94A3B8", "accent": "#6366F1"}
 
     def _build_ui(self, nombre, rol):
+
         colores= self._colores_tema()
 
         layout_raiz= QVBoxLayout(self)
@@ -350,13 +363,15 @@ class SplashBienvenida(QWidget):
         """)
 
     def _posicionar(self):
+
         pantalla= QApplication.primaryScreen()
         geo= pantalla.availableGeometry() if pantalla else QRect(0, 0, 1280, 800)
         self.setGeometry(geo)
 
+    #Muestra el overlay y bloquea (con un QEventLoop local, igual que
+    #un diálogo modal) hasta que termina toda la secuencia de animación.
     def mostrar_y_esperar(self):
-        """Muestra el overlay y bloquea (con un QEventLoop local, igual que
-        un diálogo modal) hasta que termina toda la secuencia de animación."""
+
         self.show()
         self.raise_()
         self.activateWindow()
@@ -374,6 +389,7 @@ class SplashBienvenida(QWidget):
 
     #---------------- SECUENCIA DE ANIMACIÓN ----------------
     def _iniciar_secuencia(self):
+
         if self._secuencia_iniciada:
             return
         self._secuencia_iniciada= True
@@ -387,6 +403,7 @@ class SplashBienvenida(QWidget):
         QTimer.singleShot(220, self._animar_logo_y_carga)
 
     def _animar_logo_y_carga(self):
+
         #El anillo se dibuja alrededor, junto con el "pop" del logo
         self._anim_anillo= QPropertyAnimation(self.circulo, b"progresoAnillo")
         self._anim_anillo.setDuration(560)
@@ -416,10 +433,12 @@ class SplashBienvenida(QWidget):
         self._anim_barra.start()
 
     def _mostrar_check_estado(self):
+
         self.lbl_check_estado.setVisible(True)
         QTimer.singleShot(700, self._cerrar_con_fade)
 
     def _cerrar_con_fade(self):
+
         self._anim_fade_out= QPropertyAnimation(self._efecto, b"opacity")
         self._anim_fade_out.setDuration(380)
         self._anim_fade_out.setStartValue(1.0)
@@ -429,6 +448,7 @@ class SplashBienvenida(QWidget):
         self._anim_fade_out.start()
 
     def _finalizar(self):
+
         if self._loop.isRunning():
             self._loop.quit()
         self.close()
@@ -437,18 +457,18 @@ class SplashBienvenida(QWidget):
 _ya_mostrada_en_esta_sesion_de_app= False
 
 
+#Muestra la animación de bienvenida tras un login exitoso.
+#
+#Sólo se muestra UNA vez por cada apertura del programa: si el usuario
+#cierra sesión y vuelve a iniciar sesión sin cerrar la app, esta
+#llamada no hace nada (la bandera vive en memoria del proceso, así que
+#se reinicia sola la próxima vez que se abra la app de verdad).
+#
+#Bloquea brevemente (con un QEventLoop local, igual que un diálogo
+#modal) para que la secuencia se vea completa antes de que el flujo de
+#main.py continúe hacia la apertura de la ventana principal.
 def mostrar_bienvenida_animada(main_window, nombre, rol):
-    """Muestra la animación de bienvenida tras un login exitoso.
 
-    Sólo se muestra UNA vez por cada apertura del programa: si el usuario
-    cierra sesión y vuelve a iniciar sesión sin cerrar la app, esta
-    llamada no hace nada (la bandera vive en memoria del proceso, así que
-    se reinicia sola la próxima vez que se abra la app de verdad).
-
-    Bloquea brevemente (con un QEventLoop local, igual que un diálogo
-    modal) para que la secuencia se vea completa antes de que el flujo de
-    main.py continúe hacia la apertura de la ventana principal.
-    """
     global _ya_mostrada_en_esta_sesion_de_app
     if _ya_mostrada_en_esta_sesion_de_app:
         return

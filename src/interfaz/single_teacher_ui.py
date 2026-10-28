@@ -1,22 +1,21 @@
-"""Capa de UI propia de AcaDeXI Single Teacher.
-
-Conectada a bd_single_teacher.py (Pieza 3 del prompt de arquitectura de las
-4 ediciones), NO a bd.py. A propósito, estos módulos son más simples que
-sus equivalentes institucionales (estudiantes.py, calificaciones.py...):
-no hay RBAC por fila, no hay overrides, no hay múltiples profesores ni
-matrícula institucional que generar -un solo docente, dueño directo de
-todos sus datos. Reutilizan el mismo lenguaje visual de la app (mismos
-objectName de botones/tarjetas que ya estiliza la hoja de estilos global)
-pero sin la complejidad adicional que esa ausencia de jerarquía hace
-innecesaria.
-
-Cada clase se registra en main.py (_fabricas_modulos, rama "single_teacher")
-y aparece en el menú lateral con el mismo nombre con el que se navega desde
-el tour interactivo (ver tutoriales.PASOS_SINGLE_TEACHER): los textos
-visibles de botones y el nombre de cada módulo están escritos para calzar
-exactamente con esos pasos -si cambias un texto aquí, actualiza también el
-paso correspondiente en tutoriales.py.
-"""
+#Capa de UI propia de AcaDeXI Single Teacher.
+#
+#Conectada a bd_single_teacher.py (Pieza 3 del prompt de arquitectura de las
+#4 ediciones), NO a bd.py. A propósito, estos módulos son más simples que
+#sus equivalentes institucionales (estudiantes.py, calificaciones.py...):
+#no hay RBAC por fila, no hay overrides, no hay múltiples profesores ni
+#matrícula institucional que generar -un solo docente, dueño directo de
+#todos sus datos. Reutilizan el mismo lenguaje visual de la app (mismos
+#objectName de botones/tarjetas que ya estiliza la hoja de estilos global)
+#pero sin la complejidad adicional que esa ausencia de jerarquía hace
+#innecesaria.
+#
+#Cada clase se registra en main.py (_fabricas_modulos, rama "single_teacher")
+#y aparece en el menú lateral con el mismo nombre con el que se navega desde
+#el tour interactivo (ver tutoriales.PASOS_SINGLE_TEACHER): los textos
+#visibles de botones y el nombre de cada módulo están escritos para calzar
+#exactamente con esos pasos -si cambias un texto aquí, actualiza también el
+#paso correspondiente en tutoriales.py.
 from datetime import datetime
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -34,6 +33,7 @@ from src.interfaz.filtro_vacio import EstadoVacioFiltro
 
 
 def _combo_agregar_filas(combo, filas, campo_texto="nombre"):
+
     combo.clear()
     combo.addItem("Selecciona…", None)
     for f in filas:
@@ -41,6 +41,7 @@ def _combo_agregar_filas(combo, filas, campo_texto="nombre"):
 
 
 def _tabla_solo_lectura(tabla):
+
     tabla.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
     tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     tabla.verticalHeader().setVisible(False)
@@ -49,7 +50,9 @@ def _tabla_solo_lectura(tabla):
 
 #DASHBOARD
 class ModuloDashboardST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -67,6 +70,7 @@ class ModuloDashboardST(QWidget):
         self._cargar()
 
     def _cargar(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("SELECT COUNT(*) as n FROM estudiantes")
@@ -90,7 +94,9 @@ class ModuloDashboardST(QWidget):
 
 #CURSOS (diálogo reutilizado desde Estudiantes/Materias/Horario/Tareas)
 class DialogoGestionarCursos(QDialog):
+
     def __init__(self, main_window, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.setWindowTitle("Gestionar mis cursos")
@@ -138,6 +144,7 @@ class DialogoGestionarCursos(QDialog):
         centrar_y_al_frente(self, parent)
 
     def _cargar_tabla(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("SELECT id, nombre, nivel_educativo FROM secciones ORDER BY nombre")
@@ -151,6 +158,7 @@ class DialogoGestionarCursos(QDialog):
             self.tabla.setItem(i, 1, QTableWidgetItem(f["nivel_educativo"] or ""))
 
     def _agregar(self):
+
         nombre= self.in_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Falta el nombre", "Escribe un nombre para el curso.", self)
@@ -165,6 +173,7 @@ class DialogoGestionarCursos(QDialog):
         self._cargar_tabla()
 
     def _eliminar(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un curso de la tabla.", self)
@@ -180,6 +189,7 @@ class DialogoGestionarCursos(QDialog):
 
 
 def _recargar_combo_cursos(main_window, combo):
+
     conn= db.obtener_conexion(main_window)
     c= conn.cursor()
     c.execute("SELECT id, nombre FROM secciones ORDER BY nombre")
@@ -189,7 +199,9 @@ def _recargar_combo_cursos(main_window, combo):
 
 #ESTUDIANTES
 class ModuloEstudiantesST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         self._id_edicion= None
@@ -218,7 +230,8 @@ class ModuloEstudiantesST(QWidget):
         self.in_fecha_nacimiento.setCalendarPopup(True)
         self.in_fecha_nacimiento.setDate(QDate.currentDate().addYears(-10))
         aplicar_formato_widget_fecha(self.in_fecha_nacimiento, main_window)
-        self.combo_sexo= QComboBox(); self.combo_sexo.addItems(["Masculino", "Femenino"])
+        self.combo_sexo= QComboBox()
+        self.combo_sexo.addItems(["Masculino", "Femenino"])
         self.combo_curso= QComboBox()
         self.in_tutor= QLineEdit()
         limitar_campo_texto(self.in_tutor)
@@ -226,14 +239,22 @@ class ModuloEstudiantesST(QWidget):
         limitar_campo_texto(self.in_telefono)
         self.in_correo= QLineEdit()
         limitar_campo_texto(self.in_correo)
-        form.addWidget(QLabel("Nombre:"), 0, 0); form.addWidget(self.in_nombre, 0, 1)
-        form.addWidget(QLabel("Apellidos:"), 0, 2); form.addWidget(self.in_apellidos, 0, 3)
-        form.addWidget(QLabel("Fecha de nacimiento:"), 1, 0); form.addWidget(self.in_fecha_nacimiento, 1, 1)
-        form.addWidget(QLabel("Sexo:"), 1, 2); form.addWidget(self.combo_sexo, 1, 3)
-        form.addWidget(QLabel("Curso:"), 2, 0); form.addWidget(self.combo_curso, 2, 1)
-        form.addWidget(QLabel("Tutor:"), 2, 2); form.addWidget(self.in_tutor, 2, 3)
-        form.addWidget(QLabel("Teléfono:"), 3, 0); form.addWidget(self.in_telefono, 3, 1)
-        form.addWidget(QLabel("Correo:"), 3, 2); form.addWidget(self.in_correo, 3, 3)
+        form.addWidget(QLabel("Nombre:"), 0, 0)
+        form.addWidget(self.in_nombre, 0, 1)
+        form.addWidget(QLabel("Apellidos:"), 0, 2)
+        form.addWidget(self.in_apellidos, 0, 3)
+        form.addWidget(QLabel("Fecha de nacimiento:"), 1, 0)
+        form.addWidget(self.in_fecha_nacimiento, 1, 1)
+        form.addWidget(QLabel("Sexo:"), 1, 2)
+        form.addWidget(self.combo_sexo, 1, 3)
+        form.addWidget(QLabel("Curso:"), 2, 0)
+        form.addWidget(self.combo_curso, 2, 1)
+        form.addWidget(QLabel("Tutor:"), 2, 2)
+        form.addWidget(self.in_tutor, 2, 3)
+        form.addWidget(QLabel("Teléfono:"), 3, 0)
+        form.addWidget(self.in_telefono, 3, 1)
+        form.addWidget(QLabel("Correo:"), 3, 2)
+        form.addWidget(self.in_correo, 3, 3)
         layout.addLayout(form)
 
         fila_botones= QHBoxLayout()
@@ -270,14 +291,17 @@ class ModuloEstudiantesST(QWidget):
         self._recargar_todo()
 
     def _recargar_todo(self):
+
         _recargar_combo_cursos(self.main_window, self.combo_curso)
         self._cargar_tabla()
 
     def _abrir_cursos(self):
+
         DialogoGestionarCursos(self.main_window, parent=self).exec()
         self._recargar_todo()
 
     def _cargar_tabla(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("""SELECT estudiantes.*, secciones.nombre as curso_nombre FROM estudiantes
@@ -295,13 +319,18 @@ class ModuloEstudiantesST(QWidget):
             self.tabla.setItem(i, 3, QTableWidgetItem(f["tutor"] or ""))
 
     def _limpiar(self):
+
         self._id_edicion= None
-        self.in_nombre.clear(); self.in_apellidos.clear(); self.in_tutor.clear()
-        self.in_telefono.clear(); self.in_correo.clear()
+        self.in_nombre.clear()
+        self.in_apellidos.clear()
+        self.in_tutor.clear()
+        self.in_telefono.clear()
+        self.in_correo.clear()
         self.combo_curso.setCurrentIndex(0)
         self.btn_guardar.setText("💾 Guardar")
 
     def _guardar(self):
+
         nombre= self.in_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Falta el nombre", "El nombre del estudiante es obligatorio.", self)
@@ -324,6 +353,7 @@ class ModuloEstudiantesST(QWidget):
         self._cargar_tabla()
 
     def _editar_seleccionado(self, fila, _col):
+
         id_estudiante= self.tabla.item(fila, 0).data(Qt.ItemDataRole.UserRole)
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
@@ -347,6 +377,7 @@ class ModuloEstudiantesST(QWidget):
         self.btn_guardar.setText("💾 Guardar cambios")
 
     def _eliminar(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un estudiante de la tabla.", self)
@@ -367,7 +398,9 @@ class ModuloEstudiantesST(QWidget):
 
 #MATERIAS
 class ModuloMateriasST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -411,6 +444,7 @@ class ModuloMateriasST(QWidget):
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("SELECT id, nombre, es_tecnica FROM materias ORDER BY nombre")
@@ -424,6 +458,7 @@ class ModuloMateriasST(QWidget):
             self.tabla.setItem(i, 1, QTableWidgetItem("Sí" if f["es_tecnica"] else "No"))
 
     def _guardar(self):
+
         nombre= self.in_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Falta el nombre", "Escribe el nombre de la materia.", self)
@@ -439,6 +474,7 @@ class ModuloMateriasST(QWidget):
         self._cargar_tabla()
 
     def _eliminar(self):
+
         fila= self.tabla.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una materia de la tabla.", self)
@@ -453,6 +489,7 @@ class ModuloMateriasST(QWidget):
 
 
 def _recargar_combo_materias(main_window, combo):
+
     conn= db.obtener_conexion(main_window)
     c= conn.cursor()
     c.execute("SELECT id, nombre FROM materias ORDER BY nombre")
@@ -461,6 +498,7 @@ def _recargar_combo_materias(main_window, combo):
 
 
 def _recargar_combo_periodos(main_window, combo):
+
     conn= db.obtener_conexion(main_window)
     c= conn.cursor()
     c.execute("SELECT id, nombre FROM periodos ORDER BY orden")
@@ -482,7 +520,9 @@ def _recargar_combo_periodos(main_window, combo):
 
 #ASISTENCIA
 class ModuloAsistenciaST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -528,6 +568,7 @@ class ModuloAsistenciaST(QWidget):
         _recargar_combo_cursos(main_window, self.combo_curso)
 
     def _cargar_tabla(self):
+
         seccion_id= self.combo_curso.currentData()
         self.tabla.setRowCount(0)
         if seccion_id is None:
@@ -555,6 +596,7 @@ class ModuloAsistenciaST(QWidget):
         self.estado_vacio.actualizar(hay_filtro_elegido=True)
 
     def _guardar(self):
+
         seccion_id= self.combo_curso.currentData()
         if seccion_id is None:
             mostrar_mensaje("advertencia", "Falta el curso", "Elige un curso primero.", self)
@@ -575,7 +617,9 @@ class ModuloAsistenciaST(QWidget):
 
 #CALIFICACIONES
 class ModuloCalificacionesST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -592,17 +636,29 @@ class ModuloCalificacionesST(QWidget):
         self.combo_estudiante= QComboBox()
         self.combo_materia= QComboBox()
         self.combo_periodo= QComboBox()
-        self.in_descripcion= QLineEdit(); self.in_descripcion.setPlaceholderText("Ej. Examen Parcial 1")
+        self.in_descripcion= QLineEdit()
+        self.in_descripcion.setPlaceholderText("Ej. Examen Parcial 1")
         limitar_campo_texto(self.in_descripcion)
-        self.spin_valor= QDoubleSpinBox(); self.spin_valor.setRange(0, 1000); self.spin_valor.setDecimals(2)
-        self.spin_peso= QDoubleSpinBox(); self.spin_peso.setRange(0, 100); self.spin_peso.setSuffix(" %")
-        form.addWidget(QLabel("Curso:"), 0, 0); form.addWidget(self.combo_curso, 0, 1)
-        form.addWidget(QLabel("Estudiante:"), 0, 2); form.addWidget(self.combo_estudiante, 0, 3)
-        form.addWidget(QLabel("Materia:"), 1, 0); form.addWidget(self.combo_materia, 1, 1)
-        form.addWidget(QLabel("Periodo:"), 1, 2); form.addWidget(self.combo_periodo, 1, 3)
-        form.addWidget(QLabel("Descripción:"), 2, 0); form.addWidget(self.in_descripcion, 2, 1, 1, 3)
-        form.addWidget(QLabel("Valor:"), 3, 0); form.addWidget(self.spin_valor, 3, 1)
-        form.addWidget(QLabel("Peso:"), 3, 2); form.addWidget(self.spin_peso, 3, 3)
+        self.spin_valor= QDoubleSpinBox()
+        self.spin_valor.setRange(0, 1000)
+        self.spin_valor.setDecimals(2)
+        self.spin_peso= QDoubleSpinBox()
+        self.spin_peso.setRange(0, 100)
+        self.spin_peso.setSuffix(" %")
+        form.addWidget(QLabel("Curso:"), 0, 0)
+        form.addWidget(self.combo_curso, 0, 1)
+        form.addWidget(QLabel("Estudiante:"), 0, 2)
+        form.addWidget(self.combo_estudiante, 0, 3)
+        form.addWidget(QLabel("Materia:"), 1, 0)
+        form.addWidget(self.combo_materia, 1, 1)
+        form.addWidget(QLabel("Periodo:"), 1, 2)
+        form.addWidget(self.combo_periodo, 1, 3)
+        form.addWidget(QLabel("Descripción:"), 2, 0)
+        form.addWidget(self.in_descripcion, 2, 1, 1, 3)
+        form.addWidget(QLabel("Valor:"), 3, 0)
+        form.addWidget(self.spin_valor, 3, 1)
+        form.addWidget(QLabel("Peso:"), 3, 2)
+        form.addWidget(self.spin_peso, 3, 3)
         layout.addLayout(form)
 
         self.btn_guardar= QPushButton("Registrar Calificación")
@@ -627,6 +683,7 @@ class ModuloCalificacionesST(QWidget):
         self._cargar_tabla()
 
     def _cargar_estudiantes(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         seccion_id= self.combo_curso.currentData()
@@ -644,6 +701,7 @@ class ModuloCalificacionesST(QWidget):
         conn.close()
 
     def _guardar(self):
+
         estudiante_id= self.combo_estudiante.currentData()
         materia_id= self.combo_materia.currentData()
         periodo_id= self.combo_periodo.currentData()
@@ -665,6 +723,7 @@ class ModuloCalificacionesST(QWidget):
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("""SELECT calificaciones.descripcion, calificaciones.valor,
@@ -686,7 +745,9 @@ class ModuloCalificacionesST(QWidget):
 
 #Banco de tareas
 class ModuloBancoTareasST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -700,19 +761,26 @@ class ModuloBancoTareasST(QWidget):
         form= QGridLayout()
         self.combo_curso= QComboBox()
         self.combo_materia= QComboBox()
-        self.in_titulo= QLineEdit(); self.in_titulo.setPlaceholderText("Título de la tarea")
+        self.in_titulo= QLineEdit()
+        self.in_titulo.setPlaceholderText("Título de la tarea")
         limitar_campo_texto(self.in_titulo)
-        self.in_descripcion= QTextEdit(); self.in_descripcion.setFixedHeight(60)
+        self.in_descripcion= QTextEdit()
+        self.in_descripcion.setFixedHeight(60)
         limitar_campo_texto(self.in_descripcion)
         self.in_fecha_entrega= QDateEdit()
         self.in_fecha_entrega.setCalendarPopup(True)
         self.in_fecha_entrega.setDate(QDate.currentDate().addDays(7))
         aplicar_formato_widget_fecha(self.in_fecha_entrega, main_window)
-        form.addWidget(QLabel("Curso:"), 0, 0); form.addWidget(self.combo_curso, 0, 1)
-        form.addWidget(QLabel("Materia:"), 0, 2); form.addWidget(self.combo_materia, 0, 3)
-        form.addWidget(QLabel("Título:"), 1, 0); form.addWidget(self.in_titulo, 1, 1, 1, 3)
-        form.addWidget(QLabel("Descripción:"), 2, 0); form.addWidget(self.in_descripcion, 2, 1, 1, 3)
-        form.addWidget(QLabel("Fecha de entrega:"), 3, 0); form.addWidget(self.in_fecha_entrega, 3, 1)
+        form.addWidget(QLabel("Curso:"), 0, 0)
+        form.addWidget(self.combo_curso, 0, 1)
+        form.addWidget(QLabel("Materia:"), 0, 2)
+        form.addWidget(self.combo_materia, 0, 3)
+        form.addWidget(QLabel("Título:"), 1, 0)
+        form.addWidget(self.in_titulo, 1, 1, 1, 3)
+        form.addWidget(QLabel("Descripción:"), 2, 0)
+        form.addWidget(self.in_descripcion, 2, 1, 1, 3)
+        form.addWidget(QLabel("Fecha de entrega:"), 3, 0)
+        form.addWidget(self.in_fecha_entrega, 3, 1)
         layout.addLayout(form)
 
         self.btn_guardar= QPushButton("Guardar Tarea")
@@ -736,6 +804,7 @@ class ModuloBancoTareasST(QWidget):
         self._cargar_tabla()
 
     def _guardar(self):
+
         titulo= self.in_titulo.text().strip()
         if not titulo:
             mostrar_mensaje("advertencia", "Falta el título", "Escribe un título para la tarea.", self)
@@ -749,10 +818,12 @@ class ModuloBancoTareasST(QWidget):
         conn.commit()
         conn.close()
         mostrar_mensaje("exito", "Guardado", f"Tarea «{titulo}» guardada.", self)
-        self.in_titulo.clear(); self.in_descripcion.clear()
+        self.in_titulo.clear()
+        self.in_descripcion.clear()
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("""SELECT tareas.titulo, tareas.fecha_entrega, secciones.nombre as curso
@@ -769,9 +840,11 @@ class ModuloBancoTareasST(QWidget):
 
 #HORARIO
 class ModuloHorarioST(QWidget):
+
     DIAS= ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
 
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -785,19 +858,29 @@ class ModuloHorarioST(QWidget):
         form= QGridLayout()
         self.combo_curso= QComboBox()
         self.combo_materia= QComboBox()
-        self.combo_dia= QComboBox(); self.combo_dia.addItems(self.DIAS)
-        self.in_hora_inicio= QLineEdit(); self.in_hora_inicio.setPlaceholderText("08:00")
+        self.combo_dia= QComboBox()
+        self.combo_dia.addItems(self.DIAS)
+        self.in_hora_inicio= QLineEdit()
+        self.in_hora_inicio.setPlaceholderText("08:00")
         limitar_campo_texto(self.in_hora_inicio)
-        self.in_hora_fin= QLineEdit(); self.in_hora_fin.setPlaceholderText("09:00")
+        self.in_hora_fin= QLineEdit()
+        self.in_hora_fin.setPlaceholderText("09:00")
         limitar_campo_texto(self.in_hora_fin)
-        self.in_aula= QLineEdit(); self.in_aula.setPlaceholderText("Aula/lugar (opcional)")
+        self.in_aula= QLineEdit()
+        self.in_aula.setPlaceholderText("Aula/lugar (opcional)")
         limitar_campo_texto(self.in_aula)
-        form.addWidget(QLabel("Curso:"), 0, 0); form.addWidget(self.combo_curso, 0, 1)
-        form.addWidget(QLabel("Materia:"), 0, 2); form.addWidget(self.combo_materia, 0, 3)
-        form.addWidget(QLabel("Día:"), 1, 0); form.addWidget(self.combo_dia, 1, 1)
-        form.addWidget(QLabel("Hora inicio (HH:MM):"), 1, 2); form.addWidget(self.in_hora_inicio, 1, 3)
-        form.addWidget(QLabel("Hora fin (HH:MM):"), 2, 0); form.addWidget(self.in_hora_fin, 2, 1)
-        form.addWidget(QLabel("Aula:"), 2, 2); form.addWidget(self.in_aula, 2, 3)
+        form.addWidget(QLabel("Curso:"), 0, 0)
+        form.addWidget(self.combo_curso, 0, 1)
+        form.addWidget(QLabel("Materia:"), 0, 2)
+        form.addWidget(self.combo_materia, 0, 3)
+        form.addWidget(QLabel("Día:"), 1, 0)
+        form.addWidget(self.combo_dia, 1, 1)
+        form.addWidget(QLabel("Hora inicio (HH:MM):"), 1, 2)
+        form.addWidget(self.in_hora_inicio, 1, 3)
+        form.addWidget(QLabel("Hora fin (HH:MM):"), 2, 0)
+        form.addWidget(self.in_hora_fin, 2, 1)
+        form.addWidget(QLabel("Aula:"), 2, 2)
+        form.addWidget(self.in_aula, 2, 3)
         layout.addLayout(form)
 
         self.btn_guardar= QPushButton("Guardar Horario")
@@ -821,6 +904,7 @@ class ModuloHorarioST(QWidget):
         self._cargar_tabla()
 
     def _guardar(self):
+
         if not self.in_hora_inicio.text().strip() or not self.in_hora_fin.text().strip():
             mostrar_mensaje("advertencia", "Faltan horas", "Escribe la hora de inicio y de fin (formato HH:MM).", self)
             return
@@ -833,10 +917,13 @@ class ModuloHorarioST(QWidget):
         conn.commit()
         conn.close()
         mostrar_mensaje("exito", "Guardado", "Bloque de horario agregado.", self)
-        self.in_hora_inicio.clear(); self.in_hora_fin.clear(); self.in_aula.clear()
+        self.in_hora_inicio.clear()
+        self.in_hora_fin.clear()
+        self.in_aula.clear()
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("""SELECT horario.dia, horario.hora_inicio, horario.hora_fin,
@@ -857,7 +944,9 @@ class ModuloHorarioST(QWidget):
 
 #OBSERVACIONES
 class ModuloObservacionesST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -872,13 +961,19 @@ class ModuloObservacionesST(QWidget):
         self.combo_curso= QComboBox()
         self.combo_curso.currentIndexChanged.connect(self._cargar_estudiantes)
         self.combo_estudiante= QComboBox()
-        self.combo_tipo= QComboBox(); self.combo_tipo.addItems(["Positiva", "Neutral", "Negativa"])
-        self.in_descripcion= QTextEdit(); self.in_descripcion.setFixedHeight(70)
+        self.combo_tipo= QComboBox()
+        self.combo_tipo.addItems(["Positiva", "Neutral", "Negativa"])
+        self.in_descripcion= QTextEdit()
+        self.in_descripcion.setFixedHeight(70)
         limitar_campo_texto(self.in_descripcion)
-        form.addWidget(QLabel("Curso:"), 0, 0); form.addWidget(self.combo_curso, 0, 1)
-        form.addWidget(QLabel("Estudiante:"), 0, 2); form.addWidget(self.combo_estudiante, 0, 3)
-        form.addWidget(QLabel("Tipo:"), 1, 0); form.addWidget(self.combo_tipo, 1, 1)
-        form.addWidget(QLabel("Descripción:"), 2, 0); form.addWidget(self.in_descripcion, 2, 1, 1, 3)
+        form.addWidget(QLabel("Curso:"), 0, 0)
+        form.addWidget(self.combo_curso, 0, 1)
+        form.addWidget(QLabel("Estudiante:"), 0, 2)
+        form.addWidget(self.combo_estudiante, 0, 3)
+        form.addWidget(QLabel("Tipo:"), 1, 0)
+        form.addWidget(self.combo_tipo, 1, 1)
+        form.addWidget(QLabel("Descripción:"), 2, 0)
+        form.addWidget(self.in_descripcion, 2, 1, 1, 3)
         layout.addLayout(form)
 
         self.btn_guardar= QPushButton("Guardar Observación")
@@ -901,6 +996,7 @@ class ModuloObservacionesST(QWidget):
         self._cargar_tabla()
 
     def _cargar_estudiantes(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         seccion_id= self.combo_curso.currentData()
@@ -916,6 +1012,7 @@ class ModuloObservacionesST(QWidget):
         conn.close()
 
     def _guardar(self):
+
         estudiante_id= self.combo_estudiante.currentData()
         if estudiante_id is None:
             mostrar_mensaje("advertencia", "Falta el estudiante", "Elige un curso y un estudiante primero.", self)
@@ -932,6 +1029,7 @@ class ModuloObservacionesST(QWidget):
         self._cargar_tabla()
 
     def _cargar_tabla(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("""SELECT observaciones.tipo, observaciones.fecha,
@@ -948,13 +1046,15 @@ class ModuloObservacionesST(QWidget):
 
 
 #REPORTES
+#Exportación simple a Excel (mismo patrón liviano que otros módulos
+#de la app usan con openpyxl) más los dos botones de Intercambio entre
+#ediciones (ver intercambio_dialogs.py), que para Single Teacher son la
+#vía principal de llevar datos a otra instalación (no hay overrides ni
+#.acdx institucional del que depender).
 class ModuloReportesST(QWidget):
-    """Exportación simple a Excel (mismo patrón liviano que otros módulos
-    de la app usan con openpyxl) más los dos botones de Intercambio entre
-    ediciones (ver intercambio_dialogs.py), que para Single Teacher son la
-    vía principal de llevar datos a otra instalación (no hay overrides ni
-    .acdx institucional del que depender)."""
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -987,7 +1087,8 @@ class ModuloReportesST(QWidget):
         btn_excel_calificaciones.clicked.connect(self._exportar_calificaciones_excel)
         layout.addWidget(btn_excel_calificaciones)
 
-        separador= QFrame(); separador.setFrameShape(QFrame.Shape.HLine)
+        separador= QFrame()
+        separador.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(separador)
 
         btn_exportar_intercambio= QPushButton("Exportar Estudiantes a otra edición")
@@ -1009,7 +1110,8 @@ class ModuloReportesST(QWidget):
         layout.addStretch()
 
     def _exportar_estudiantes_excel(self):
-        ruta, _ = QFileDialog.getSaveFileName(self, "Guardar Excel", "estudiantes.xlsx", "Excel (*.xlsx)")
+
+        ruta, _= QFileDialog.getSaveFileName(self, "Guardar Excel", "estudiantes.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
         import openpyxl
@@ -1027,7 +1129,8 @@ class ModuloReportesST(QWidget):
         mostrar_mensaje("exito", "Exportado", f"Se guardó en:\n{ruta}", self)
 
     def _exportar_calificaciones_excel(self):
-        ruta, _ = QFileDialog.getSaveFileName(self, "Guardar Excel", "calificaciones.xlsx", "Excel (*.xlsx)")
+
+        ruta, _= QFileDialog.getSaveFileName(self, "Guardar Excel", "calificaciones.xlsx", "Excel (*.xlsx)")
         if not ruta:
             return
         import openpyxl
@@ -1050,17 +1153,21 @@ class ModuloReportesST(QWidget):
         mostrar_mensaje("exito", "Exportado", f"Se guardó en:\n{ruta}", self)
 
     def _exportar_intercambio(self):
+
         from src.interfaz.intercambio_dialogs import DialogoExportarEstudiantes
         DialogoExportarEstudiantes(self.main_window, seccion_id_actual=None, parent=self).exec()
 
     def _importar_intercambio(self):
+
         from src.interfaz.intercambio_dialogs import DialogoImportarEstudiantes
         DialogoImportarEstudiantes(self.main_window, parent=self).exec()
 
 
 #CONFIGURACIÓN
 class ModuloConfiguracionST(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         layout= QVBoxLayout(self)
@@ -1075,9 +1182,11 @@ class ModuloConfiguracionST(QWidget):
         self.in_nombre_docente= QLineEdit()
         limitar_campo_texto(self.in_nombre_docente)
         form.addRow("Tu nombre:", self.in_nombre_docente)
-        self.spin_nota_min_primaria= QDoubleSpinBox(); self.spin_nota_min_primaria.setRange(0, 1000)
+        self.spin_nota_min_primaria= QDoubleSpinBox()
+        self.spin_nota_min_primaria.setRange(0, 1000)
         form.addRow("Nota mínima aprobatoria (Primaria):", self.spin_nota_min_primaria)
-        self.spin_nota_min_secundaria= QDoubleSpinBox(); self.spin_nota_min_secundaria.setRange(0, 1000)
+        self.spin_nota_min_secundaria= QDoubleSpinBox()
+        self.spin_nota_min_secundaria.setRange(0, 1000)
         form.addRow("Nota mínima aprobatoria (Secundaria):", self.spin_nota_min_secundaria)
         layout.addLayout(form)
 
@@ -1090,7 +1199,8 @@ class ModuloConfiguracionST(QWidget):
         btn_guardar.clicked.connect(self._guardar)
         layout.addWidget(btn_guardar)
 
-        separador= QFrame(); separador.setFrameShape(QFrame.Shape.HLine)
+        separador= QFrame()
+        separador.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(separador)
 
         btn_tutorial= QPushButton("Ver tutorial de nuevo")
@@ -1105,6 +1215,7 @@ class ModuloConfiguracionST(QWidget):
         self._cargar()
 
     def _cargar(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("SELECT * FROM configuracion WHERE id=1")
@@ -1116,6 +1227,7 @@ class ModuloConfiguracionST(QWidget):
             self.spin_nota_min_secundaria.setValue(f["nota_minima_secundaria"] or 70)
 
     def _guardar(self):
+
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("""UPDATE configuracion SET nombre_docente=?, nota_minima_primaria=?,
@@ -1127,18 +1239,20 @@ class ModuloConfiguracionST(QWidget):
         mostrar_mensaje("exito", "Guardado", "Configuración actualizada.", self)
 
     def _ver_tutorial_de_nuevo(self):
+
         from src.inicio.tutoriales import ofrecer_tutorial
         ofrecer_tutorial(self.main_window, "single_teacher", forzar=True)
 
 
 #Wizard de primer arranque
+#Primer arranque de Single Teacher (ver main.py, edicion_actual()):
+#a diferencia de WizardConfiguracion (institucional, largo), este es
+#intencionalmente corto -nombre del docente y, opcionalmente, su primer
+#curso- porque no hay nada institucional que configurar.
 class WizardSingleTeacher(QDialog):
-    """Primer arranque de Single Teacher (ver main.py, edicion_actual()):
-    a diferencia de WizardConfiguracion (institucional, largo), este es
-    intencionalmente corto -nombre del docente y, opcionalmente, su primer
-    curso- porque no hay nada institucional que configurar."""
 
     def __init__(self, main_window, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.setWindowTitle("Bienvenido a AcaDeXI Single Teacher")
@@ -1176,6 +1290,7 @@ class WizardSingleTeacher(QDialog):
         centrar_y_al_frente(self, parent)
 
     def _finalizar(self):
+
         nombre= self.in_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Falta tu nombre", "Escribe tu nombre para continuar.", self)

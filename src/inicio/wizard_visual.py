@@ -1,19 +1,18 @@
-"""Framework visual compartido para los wizards de configuración de AcaDeXI.
-
-El wizard institucional de Full Institutional (WizardConfiguracion en
-configuracion.py) define el lenguaje visual "bonito" del asistente: header
-con badge + stepper animado + contador de pasos, páginas como tarjetas
-elevadas ("WizardCard") con sombra suave, pie con botones Atrás/Siguiente y
-transición de deslizamiento + fundido entre pasos. Este módulo extrae ese
-diseño a una clase base (WizardEstilizado) para que los demás wizards de la
-app (Single Teacher, Side Stepper) se vean EXACTAMENTE igual, sin copiar el
-QSS ni la mecánica a mano en cada archivo.
-
-Los wizards hijos solo implementan `_construir_paginas()` (llamando a
-`self.agregar_pagina(...)` por cada paso, en orden) y opcionalmente
-`validar_paso(idx)` y `finalizar()`. El header, el stepper, los botones, el
-tema y las animaciones salen de aquí.
-"""
+#Framework visual compartido para los wizards de configuración de AcaDeXI.
+#
+#El wizard institucional de Full Institutional (WizardConfiguracion en
+#configuracion.py) define el lenguaje visual "bonito" del asistente: header
+#con badge + stepper animado + contador de pasos, páginas como tarjetas
+#elevadas ("WizardCard") con sombra suave, pie con botones Atrás/Siguiente y
+#transición de deslizamiento + fundido entre pasos. Este módulo extrae ese
+#diseño a una clase base (WizardEstilizado) para que los demás wizards de la
+#app (Single Teacher, Side Stepper) se vean EXACTAMENTE igual, sin copiar el
+#QSS ni la mecánica a mano en cada archivo.
+#
+#Los wizards hijos solo implementan `_construir_paginas()` (llamando a
+#`self.agregar_pagina(...)` por cada paso, en orden) y opcionalmente
+#`validar_paso(idx)` y `finalizar()`. El header, el stepper, los botones, el
+#tema y las animaciones salen de aquí.
 import os
 import sys
 
@@ -29,18 +28,20 @@ from src.interfaz.configuracion import (WizardStepper, PanelAparienciaWizard, _f
                            _RealceHover, _hex_a_rgba)
 
 try:
+
     from src.inicio.bienvenida import _pixmap_logo_base
 except Exception:
     _pixmap_logo_base= None
 
 
+#Base visual de todos los asistentes de AcaDeXI (misma apariencia que
+#el wizard institucional de Full Institutional). Subclases llaman a
+#`self.agregar_pagina(titulo, icono)` dentro de `_construir_paginas()`.
 class WizardEstilizado(QDialog):
-    """Base visual de todos los asistentes de AcaDeXI (misma apariencia que
-    el wizard institucional de Full Institutional). Subclases llaman a
-    `self.agregar_pagina(titulo, icono)` dentro de `_construir_paginas()`."""
 
     def __init__(self, main_window, titulo_ventana, tamano=(760, 620),
                  icono_ventana= ICONO_SETUP, parent=None):
+
         super().__init__(parent if parent is not None else main_window)
         self.main_window= main_window
         self.setWindowTitle(titulo_ventana)
@@ -59,6 +60,7 @@ class WizardEstilizado(QDialog):
 
     #Construcción del esqueleto (header / stack / pie)
     def _build_ui(self):
+
         layout= QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -158,25 +160,29 @@ class WizardEstilizado(QDialog):
 
 
     #Hooks para las subclases
+    #La subclase crea aquí sus páginas con self.agregar_pagina(...).
     def _construir_paginas(self):
-        """La subclase crea aquí sus páginas con self.agregar_pagina(...)."""
+
         raise NotImplementedError
 
+    #La subclase devuelve False (mostrando su aviso) para bloquear el
+    #avance desde el paso `indice`. Por defecto no valida nada.
     def validar_paso(self, indice):
-        """La subclase devuelve False (mostrando su aviso) para bloquear el
-        avance desde el paso `indice`. Por defecto no valida nada."""
+
         return True
 
+    #Acción al pulsar 'Finalizar' en el último paso (por defecto,
+    #aceptar el diálogo).
     def finalizar(self):
-        """Acción al pulsar 'Finalizar' en el último paso (por defecto,
-        aceptar el diálogo)."""
+
         self.accept()
 
     #Páginas (tarjetas elevadas, igual que _nueva_pagina del wizard Full)
+    #Registra un paso y crea su tarjeta elevada. Devuelve (contenedor,
+    #layout_interno) para que la subclase llene el formulario igual que
+    #hacen los _crear_pasoN de WizardConfiguracion.
     def agregar_pagina(self, titulo, icono="🧭"):
-        """Registra un paso y crea su tarjeta elevada. Devuelve (contenedor,
-        layout_interno) para que la subclase llene el formulario igual que
-        hacen los _crear_pasoN de WizardConfiguracion."""
+
         self._titulos_pasos.append(titulo)
         self._iconos_pasos.append(icono)
         contenedor= QWidget()
@@ -197,15 +203,17 @@ class WizardEstilizado(QDialog):
         self.stack.addWidget(contenedor)
         return contenedor, l
 
+    #Título grande de paso (mismo objectName/QSS que el wizard Full).
     def titulo_paso(self, texto):
-        """Título grande de paso (mismo objectName/QSS que el wizard Full)."""
+
         lbl= QLabel(texto)
         lbl.setObjectName("WizardSubtitulo")
         return lbl
 
+    #Centro de una página tipo 'Bienvenida'/'Finalización': emoji grande
+    #+ título WizardTitulo + descripción WizardDesc, todo centrado.
     def hero_paso(self, emoji, titulo, descripcion):
-        """Centro de una página tipo 'Bienvenida'/'Finalización': emoji grande
-        + título WizardTitulo + descripción WizardDesc, todo centrado."""
+
         lbl_hero= QLabel()
         lbl_hero.setPixmap(pixmap_emoji(emoji, 64))
         lbl_hero.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -220,6 +228,7 @@ class WizardEstilizado(QDialog):
 
     #Navegación
     def _actualizar_encabezado(self, index):
+
         self.lbl_paso.setText(self._titulos_pasos[index])
         icono= self._iconos_pasos[index] if index < len(self._iconos_pasos) else "🧭"
         self.lbl_badge_paso.setPixmap(pixmap_emoji(icono, 20))
@@ -232,10 +241,11 @@ class WizardEstilizado(QDialog):
         if self.stepper is not None:
             self.stepper.ir_a(index)
 
+    #Cambia de página con una transición corta de deslizamiento +
+    #fundido (~220ms), en el sentido del avance —la misma mecánica del
+    #wizard institucional (ver WizardConfiguracion._ir_a_paso).
     def _ir_a_paso(self, nuevo_idx, direccion=1):
-        """Cambia de página con una transición corta de deslizamiento +
-        fundido (~220ms), en el sentido del avance —la misma mecánica del
-        wizard institucional (ver WizardConfiguracion._ir_a_paso)."""
+
         self.stack.setCurrentIndex(nuevo_idx)
         pagina= self.stack.currentWidget()
         ancho= max(self.stack.width(), 1)
@@ -257,6 +267,7 @@ class WizardEstilizado(QDialog):
         anim_op.setEasingCurve(QEasingCurve.Type.OutCubic)
 
         def _limpiar():
+
             pagina.setGraphicsEffect(None)
         anim_pos.finished.connect(_limpiar)
         #Se guardan las referencias en la página para que Python no las recolecte a mitad de camino (mismo patrón que
@@ -267,10 +278,12 @@ class WizardEstilizado(QDialog):
         anim_op.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
     def _anterior(self):
+
         if self.stack.currentIndex() > 0:
             self._ir_a_paso(self.stack.currentIndex() - 1, direccion=-1)
 
     def _siguiente(self):
+
         idx= self.stack.currentIndex()
         if not self.validar_paso(idx):
             return
@@ -283,12 +296,13 @@ class WizardEstilizado(QDialog):
 
     #Tema (mismo QSS que WizardConfiguracion._apply_theme)
     def _apply_theme(self):
+
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
         idx= 1 if self.main_window.modo_oscuro else 0
-        bg_window, bg_panel = paleta["window_bg"][idx], paleta["display_bg"][idx]
-        txt_prim, txt_sec = paleta["text_primary"][idx], paleta["text_secondary"][idx]
-        bg_btn, accent = paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
+        bg_window, bg_panel= paleta["window_bg"][idx], paleta["display_bg"][idx]
+        txt_prim, txt_sec= paleta["text_primary"][idx], paleta["text_secondary"][idx]
+        bg_btn, accent= paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
         hv_accent= paleta["btn_op_hover"][idx]
         self.setStyleSheet(f"""
             QDialog {{ background-color: {bg_window}; }}

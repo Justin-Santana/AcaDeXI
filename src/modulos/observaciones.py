@@ -1,22 +1,21 @@
-"""Observaciones de AcaDeXI.
-
-Rediseño del módulo (v2 — alineado al lenguaje visual real del resto de la
-app: cabecera tipo héroe, `TarjetaFiltros` de una sola fila, confirmación por
-destello de color en vez de notificaciones flotantes, sin tarjetas KPI).
-
-Modelo de datos:
-- El antiguo campo único "tipo" (Positiva/Negativa/Neutra/Académica/Conductual,
-  con un par ambiguo) se reemplaza por dos dimensiones independientes:
-  `naturaleza` (cómo fue: Positiva/Informativa/Negativa) y `categorías` (de
-  qué trata: rendimiento, conducta, tareas... pueden combinarse varias).
-- El profesor escribe primero la descripción; el sistema sugiere categorías
-  por palabras clave (chips dinámicos).
-- Categorías como "Problema disciplinario", "Requiere seguimiento" o
-  "Comunicación con padres" marcan la observación como destacada.
-
-Se mantiene el RBAC exacto (gerencial vs. profesor restringido a sus
-secciones, permisos de edición/eliminación por autor).
-"""
+#Observaciones de AcaDeXI.
+#
+#Rediseño del módulo (v2 — alineado al lenguaje visual real del resto de la
+#app: cabecera tipo héroe, `TarjetaFiltros` de una sola fila, confirmación por
+#destello de color en vez de notificaciones flotantes, sin tarjetas KPI).
+#
+#Modelo de datos:
+#- El antiguo campo único "tipo" (Positiva/Negativa/Neutra/Académica/Conductual,
+#con un par ambiguo) se reemplaza por dos dimensiones independientes:
+#`naturaleza` (cómo fue: Positiva/Informativa/Negativa) y `categorías` (de
+#qué trata: rendimiento, conducta, tareas... pueden combinarse varias).
+#- El profesor escribe primero la descripción; el sistema sugiere categorías
+#por palabras clave (chips dinámicos).
+#- Categorías como "Problema disciplinario", "Requiere seguimiento" o
+#"Comunicación con padres" marcan la observación como destacada.
+#
+#Se mantiene el RBAC exacto (gerencial vs. profesor restringido a sus
+#secciones, permisos de edición/eliminación por autor).
 import unicodedata
 import re
 from datetime import datetime, date, timedelta
@@ -173,19 +172,22 @@ _MESES_LARGO= ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "
 #copia pequeña de estas (mismo criterio que estudiantes.py / profesores.py / asistencia.py) en vez de importar
 #entre módulos de funcionalidad.
 def _hex_a_rgba(color_hex, alpha):
+
     color_hex= (color_hex or "#2563EB").lstrip("#")
     if len(color_hex) < 6:
         color_hex= "2563EB"
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Lee la paleta/tema activo de la ventana principal para que las tarjetas de
+#este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió
+#(mismo helper que estudiantes.py / profesores.py, con el añadido de
+#'txt_prim' que ya usa configuracion.py para textos sobre fondos propios).
 def _colores_tema(main_window):
-    """Lee la paleta/tema activo de la ventana principal para que las tarjetas de
-    este módulo respeten el tema y el modo claro/oscuro que el usuario ya eligió
-    (mismo helper que estudiantes.py / profesores.py, con el añadido de
-    'txt_prim' que ya usa configuracion.py para textos sobre fondos propios)."""
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
         return {
@@ -201,9 +203,10 @@ def _colores_tema(main_window):
                 "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
+#Quita mayúsculas y acentos para búsqueda/coincidencia no estricta
+#(mismo criterio que horario.py / configuracion.py / estudiantes.py).
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para búsqueda/coincidencia no estricta
-    (mismo criterio que horario.py / configuracion.py / estudiantes.py)."""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -211,27 +214,30 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
+#True si `palabra_normalizada` aparece en `texto_normalizado` empezando
+#en un límite de palabra real, no en medio de otra palabra. Antes se
+#usaba un simple `in` (substring), lo que producía falsos positivos como
+#la clave "nota" (Rendimiento académico) disparándose dentro de "mejoría
+#noTAble", o "deber" (Tareas) dentro de "de-BER-ía". Solo se exige el
+#límite al INICIO, no al final: varias claves son raíces a propósito
+#(p. ej. "desempeñ" para que combine con "desempeño"/"desempeña", o
+#"sanci" con "sanción"/"sancionado"), y exigir también el límite final
+#rompería esa coincidencia intencional por sufijo.
 def _contiene_palabra(texto_normalizado, palabra_normalizada):
-    """True si `palabra_normalizada` aparece en `texto_normalizado` empezando
-    en un límite de palabra real, no en medio de otra palabra. Antes se
-    usaba un simple `in` (substring), lo que producía falsos positivos como
-    la clave "nota" (Rendimiento académico) disparándose dentro de "mejoría
-    noTAble", o "deber" (Tareas) dentro de "de-BER-ía". Solo se exige el
-    límite al INICIO, no al final: varias claves son raíces a propósito
-    (p. ej. "desempeñ" para que combine con "desempeño"/"desempeña", o
-    "sanci" con "sanción"/"sancionado"), y exigir también el límite final
-    rompería esa coincidencia intencional por sufijo."""
+
     patron= r"(?<!\w)" + re.escape(palabra_normalizada)
     return re.search(patron, texto_normalizado) is not None
 
 
+#'Hoy · 9:41 AM', 'Ayer · 3:10 PM', 'Martes · 8:00 AM' o, para fechas de
+#hace una semana o más, la fecha completa en el formato elegido en
+#Configuración ▸ Apariencia (dd/mm/aaaa, mm/dd/aaaa, aaaa-mm-dd o texto
+#largo) en vez de un formato de mes fijo. La hora respeta igual el
+#formato de 12h/24h configurado.
 def _fecha_relativa(fecha_str, main_window=None):
-    """'Hoy · 9:41 AM', 'Ayer · 3:10 PM', 'Martes · 8:00 AM' o, para fechas de
-    hace una semana o más, la fecha completa en el formato elegido en
-    Configuración ▸ Apariencia (dd/mm/aaaa, mm/dd/aaaa, aaaa-mm-dd o texto
-    largo) en vez de un formato de mes fijo. La hora respeta igual el
-    formato de 12h/24h configurado."""
+
     try:
+
         dt= datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
     except (ValueError, TypeError):
         return fecha_str or ""
@@ -247,11 +253,13 @@ def _fecha_relativa(fecha_str, main_window=None):
     return formatear_fecha(dt.strftime("%Y-%m-%d"), main_window)
 
 
+#Solo la hora (respetando 12h/24h de Configuración), para mostrar en el
+#detalle de una observación junto a la fecha relativa — que para fechas
+#antiguas ya no incluye la hora. No se usa en la tabla visual.
 def _hora_exacta(fecha_str, main_window=None):
-    """Solo la hora (respetando 12h/24h de Configuración), para mostrar en el
-    detalle de una observación junto a la fecha relativa — que para fechas
-    antiguas ya no incluye la hora. No se usa en la tabla visual."""
+
     try:
+
         dt= datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
     except (ValueError, TypeError):
         return "—"
@@ -259,9 +267,10 @@ def _hora_exacta(fecha_str, main_window=None):
 
 
 
+#Fundido de entrada (fade-in) reutilizable — mismo patrón que
+#asistencia.py para el contenido general del módulo.
 def _animar_aparicion(widget, duracion=280):
-    """Fundido de entrada (fade-in) reutilizable — mismo patrón que
-    asistencia.py para el contenido general del módulo."""
+
     efecto= QGraphicsOpacityEffect(widget)
     widget.setGraphicsEffect(efecto)
     anim= QPropertyAnimation(efecto, b"opacity", widget)
@@ -274,11 +283,12 @@ def _animar_aparicion(widget, duracion=280):
     anim.start()
 
 
+#Layout de flujo: envuelve los chips a la siguiente línea según el ancho
+#disponible. Recalcula posiciones sin recrear widgets.
 class FlowLayout(QLayout):
-    """Layout de flujo: envuelve los chips a la siguiente línea según el ancho
-    disponible. Recalcula posiciones sin recrear widgets."""
 
     def __init__(self, parent=None, margin=0, spacing=8):
+
         super().__init__(parent)
         if parent is not None:
             self.setContentsMargins(margin, margin, margin, margin)
@@ -286,34 +296,44 @@ class FlowLayout(QLayout):
         self._items= []
 
     def addItem(self, item):
+
         self._items.append(item)
 
     def count(self):
+
         return len(self._items)
 
     def itemAt(self, index):
+
         return self._items[index] if 0 <= index < len(self._items) else None
 
     def takeAt(self, index):
+
         return self._items.pop(index) if 0 <= index < len(self._items) else None
 
     def expandingDirections(self):
+
         return Qt.Orientation(0)
 
     def hasHeightForWidth(self):
+
         return True
 
     def heightForWidth(self, width):
+
         return self._hacer_layout(QRect(0, 0, width, 0), True)
 
     def setGeometry(self, rect):
+
         super().setGeometry(rect)
         self._hacer_layout(rect, False)
 
     def sizeHint(self):
+
         return self.minimumSize()
 
     def minimumSize(self):
+
         tam= QSize()
         for item in self._items:
             tam= tam.expandedTo(item.minimumSize())
@@ -322,7 +342,8 @@ class FlowLayout(QLayout):
         return tam
 
     def _hacer_layout(self, rect, solo_calcular):
-        x, y = rect.x(), rect.y()
+
+        x, y= rect.x(), rect.y()
         alto_linea= 0
         espacio= self.spacing()
         for item in self._items:
@@ -341,21 +362,24 @@ class FlowLayout(QLayout):
 
 
 #Widgets visuales
+#Icono de lupa dibujado a mano con QPainter (mismo diseño exacto que el
+#resto de barras de búsqueda de AcaDeXI: horario.py, estudiantes.py,
+#profesores.py, configuracion.py, asistencia.py).
 class IconoLupa(QWidget):
-    """Icono de lupa dibujado a mano con QPainter (mismo diseño exacto que el
-    resto de barras de búsqueda de AcaDeXI: horario.py, estudiantes.py,
-    profesores.py, configuracion.py, asistencia.py)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= "#64748B"
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -366,11 +390,12 @@ class IconoLupa(QWidget):
         painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
+#QLabel numérica que anima el conteo ('odómetro') al cambiar de valor.
+#Mismo widget que asistencia.py, con plantilla de texto configurable.
 class ContadorAnimado(QLabel):
-    """QLabel numérica que anima el conteo ('odómetro') al cambiar de valor.
-    Mismo widget que asistencia.py, con plantilla de texto configurable."""
 
     def __init__(self, plantilla_texto=None, parent=None):
+
         super().__init__(parent)
         self._valor= 0
         self._valor_objetivo= 0
@@ -381,18 +406,22 @@ class ContadorAnimado(QLabel):
         self._refrescar_texto()
 
     def _obtener_valor(self):
+
         return self._valor
 
     def _fijar_valor(self, valor):
+
         self._valor= valor
         self._refrescar_texto()
 
     valorAnimado= Property(int, _obtener_valor, _fijar_valor)
 
     def _refrescar_texto(self):
+
         self.setText(self._plantilla(self._valor))
 
     def establecer(self, valor):
+
         #Se compara contra el ÚLTIMO VALOR OBJETIVO pedido, no contra el valor instantáneo a medio animar (si no, una
         #animación en curso podría "pasar" por el nuevo valor pedido a mitad de camino y esta función abandonaría
         #dejándola terminar en el valor viejo).
@@ -405,14 +434,15 @@ class ContadorAnimado(QLabel):
         self._animacion.start()
 
 
+#Contenedor tipo tarjeta liviano: fondo translúcido neutro + borde
+#redondeado (sin QGraphicsDropShadowEffect permanente — ese look ya se
+#consigue de forma nativa y prácticamente gratis; ver materias.py). Solo el
+#panel principal de un módulo (el formulario) pide sombra explícita, para
+#poder animar un destello de color como confirmación de guardado.
 class TarjetaPanel(QFrame):
-    """Contenedor tipo tarjeta liviano: fondo translúcido neutro + borde
-    redondeado (sin QGraphicsDropShadowEffect permanente — ese look ya se
-    consigue de forma nativa y prácticamente gratis; ver materias.py). Solo el
-    panel principal de un módulo (el formulario) pide sombra explícita, para
-    poder animar un destello de color como confirmación de guardado."""
 
     def __init__(self, titulo="", con_sombra=False, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaPanel")
         self._con_sombra= con_sombra
@@ -439,9 +469,10 @@ class TarjetaPanel(QFrame):
         self.contenido.setSpacing(10)
         raiz.addLayout(self.contenido)
 
+    #Resplandor breve de color en el borde de la tarjeta, a modo de
+    #confirmación visual (verde=éxito, ámbar=aviso). Requiere con_sombra=True.
     def destello(self, color_hex="#22C55E"):
-        """Resplandor breve de color en el borde de la tarjeta, a modo de
-        confirmación visual (verde=éxito, ámbar=aviso). Requiere con_sombra=True."""
+
         if self._sombra is None:
             return
         anim_color= QPropertyAnimation(self._sombra, b"color", self)
@@ -459,6 +490,7 @@ class TarjetaPanel(QFrame):
         self._anim_destello= (anim_color, anim_blur)
 
     def aplicar_paleta(self, colores):
+
         self.setStyleSheet(f"""
             QFrame#TarjetaPanel {{
                 background-color: {_hex_a_rgba(colores['txt_sec'], 0.07)};
@@ -474,14 +506,15 @@ class TarjetaPanel(QFrame):
             self._sombra.setColor(self._color_sombra_normal)
 
 
+#Pastilla seleccionable con transición de color animada y una onda
+#('ripple') pintada a mano con QPainter al pulsar. Se usa para elegir
+#categorías, para los filtros y para la naturaleza.
 class Chip(QFrame):
-    """Pastilla seleccionable con transición de color animada y una onda
-    ('ripple') pintada a mano con QPainter al pulsar. Se usa para elegir
-    categorías, para los filtros y para la naturaleza."""
 
     alternado= Signal(bool)
 
     def __init__(self, clave, texto, color_activo="#6366F1", parent=None):
+
         super().__init__(parent)
         self.clave= clave
         self._texto_base= texto
@@ -522,13 +555,16 @@ class Chip(QFrame):
         self._actualizar_estilo()
 
     def _on_anim(self, valor):
+
         self._factor= valor
         self._actualizar_estilo()
 
     def esta_marcado(self):
+
         return self._marcado
 
     def establecer_marcado(self, marcado, animar=True, emitir=True):
+
         if marcado == self._marcado:
             return
         self._marcado= marcado
@@ -543,29 +579,34 @@ class Chip(QFrame):
         if emitir:
             self.alternado.emit(marcado)
 
+    #Opcional: agrega un '(N)' al final del texto del chip — se usa en
+    #los chips de naturaleza para mostrar cuántas observaciones hay de cada
+    #tipo sin necesitar una fila de tarjetas KPI aparte.
     def establecer_contador(self, n):
-        """Opcional: agrega un '(N)' al final del texto del chip — se usa en
-        los chips de naturaleza para mostrar cuántas observaciones hay de cada
-        tipo sin necesitar una fila de tarjetas KPI aparte."""
+
         self._actualizar_texto(n)
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self._agregar_ripple(event.position())
             self.establecer_marcado(not self._marcado)
         super().mousePressEvent(event)
 
     def enterEvent(self, event):
+
         self._hover= True
         self.update()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+
         self._hover= False
         self.update()
         super().leaveEvent(event)
 
     def _agregar_ripple(self, punto):
+
         anim= QVariantAnimation(self)
         anim.setDuration(420)
         anim.setStartValue(0.0)
@@ -576,6 +617,7 @@ class Chip(QFrame):
         anim.valueChanged.connect(self.update)
 
         def _terminar():
+
             if entrada in self._ripples:
                 self._ripples.remove(entrada)
             self.update()
@@ -583,6 +625,7 @@ class Chip(QFrame):
         anim.start()
 
     def _color_mezclado(self):
+
         base= self._color_inactivo_bg
         if self._hover and not self._marcado:
             base= QColor(base)
@@ -595,17 +638,20 @@ class Chip(QFrame):
         return QColor(int(r), int(g), int(b), int(a))
 
     def establecer_paleta(self, bg_inactivo, borde_inactivo, texto_inactivo):
+
         self._color_inactivo_bg= QColor(bg_inactivo)
         self._color_borde_inactivo= QColor(borde_inactivo)
         self._color_texto_inactivo= QColor(texto_inactivo)
         self._actualizar_estilo()
 
     def _actualizar_texto(self, n=None):
+
         sufijo= f"  ({n})" if n else ""
         self.lbl.setText(f"{self._texto_base}{sufijo}")
         self.updateGeometry()
 
     def _actualizar_estilo(self):
+
         color_texto= "white" if self._factor > 0.5 else self._color_texto_inactivo.name()
         self.lbl.setStyleSheet(f"background: transparent; color: {color_texto};")
         #El icono cambia de color EXACTAMENTE igual que el texto (blanco cuando el chip está marcado/activo, gris
@@ -615,6 +661,7 @@ class Chip(QFrame):
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect= QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
@@ -643,13 +690,14 @@ class Chip(QFrame):
                 painter.drawEllipse(punto, r, r)
 
 
+#Selector de naturaleza (🟢 Positiva / ⚪ Informativa / 🔴 Negativa) en
+#forma de píldora deslizante, coloreada según la opción activa.
 class SegmentadoNaturaleza(QWidget):
-    """Selector de naturaleza (🟢 Positiva / ⚪ Informativa / 🔴 Negativa) en
-    forma de píldora deslizante, coloreada según la opción activa."""
 
     cambiado= Signal(str)
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._valor= "Informativa"
         self.setFixedHeight(42)
@@ -681,14 +729,17 @@ class SegmentadoNaturaleza(QWidget):
         QTimer.singleShot(0, lambda: self._reposicionar_resaltado(animar=False))
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         self._fondo.setGeometry(self.rect())
         self._reposicionar_resaltado(animar=False)
 
     def valor(self):
+
         return self._valor
 
     def establecer_valor(self, clave, animar=True, emitir=True):
+
         self._valor= clave
         for k, btn in self._botones:
             btn.setChecked(k == clave)
@@ -699,6 +750,7 @@ class SegmentadoNaturaleza(QWidget):
             self.cambiado.emit(clave)
 
     def _reposicionar_resaltado(self, animar=True):
+
         for k, btn in self._botones:
             if k == self._valor and btn.width() > 0:
                 geo= btn.geometry()
@@ -715,6 +767,7 @@ class SegmentadoNaturaleza(QWidget):
                 break
 
     def aplicar_paleta(self, bg, borde, txt_sec):
+
         self._fondo.setStyleSheet(f"QFrame#SegmentadoFondo {{ background-color: {bg}; border: 1px solid {borde}; border-radius: 12px; }}")
         color= _COLOR_NATURALEZA.get(self._valor, "#6366F1")
         self._resaltado.setStyleSheet(f"QFrame#SegmentadoResaltado {{ background-color: {color}; border-radius: 9px; }}")
@@ -728,11 +781,12 @@ class SegmentadoNaturaleza(QWidget):
             """)
 
 
+#Barra horizontal animada (dibujada con QPainter) para mostrar la
+#frecuencia de cada categoría: '[icono] Buena conducta ████████  12'.
 class BarraFrecuencia(QWidget):
-    """Barra horizontal animada (dibujada con QPainter) para mostrar la
-    frecuencia de cada categoría: '[icono] Buena conducta ████████  12'."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self._clave= ""
         self._etiqueta= ""
@@ -749,10 +803,12 @@ class BarraFrecuencia(QWidget):
         self._anim.valueChanged.connect(self._on_anim)
 
     def _on_anim(self, v):
+
         self._progreso= v
         self.update()
 
     def establecer_datos(self, clave, etiqueta, color, cantidad, fraccion):
+
         self._clave= clave
         self._etiqueta= etiqueta
         self._color= QColor(color)
@@ -764,11 +820,13 @@ class BarraFrecuencia(QWidget):
         self._anim.start()
 
     def establecer_colores(self, color_texto, color_pista):
+
         self._color_texto= QColor(color_texto)
         self._color_pista= QColor(color_pista)
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         margen_izq= 168
@@ -809,15 +867,17 @@ class BarraFrecuencia(QWidget):
                           Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, str(self._cantidad))
 
 
+#Franja de alerta compacta (mismo patrón que banco_tareas.py): solo
+#aparece cuando hay algo que atender. Entra/sale animando su altura máxima
+#— una propiedad normal de QWidget, no requiere QGraphicsEffect, así que es
+#barata y no afecta la fluidez del scroll. Un clic filtra la línea de
+#tiempo por destacadas.
 class CintaAlerta(QFrame):
-    """Franja de alerta compacta (mismo patrón que banco_tareas.py): solo
-    aparece cuando hay algo que atender. Entra/sale animando su altura máxima
-    — una propiedad normal de QWidget, no requiere QGraphicsEffect, así que es
-    barata y no afecta la fluidez del scroll. Un clic filtra la línea de
-    tiempo por destacadas."""
+
     clicada= Signal()
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setObjectName("CintaAlerta")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -841,6 +901,7 @@ class CintaAlerta(QFrame):
         self._color= "#F59E0B"
 
     def aplicar_paleta(self, color="#F59E0B"):
+
         self._color= color
         self.setStyleSheet(f"""
             QFrame#CintaAlerta {{
@@ -853,6 +914,7 @@ class CintaAlerta(QFrame):
         self.lbl_accion.setStyleSheet(f"background: transparent; border: none; font-weight: 700; font-size: 12px; color: {color};")
 
     def mostrar_mensaje(self, texto):
+
         self.lbl_texto.setText(texto)
         if not self._visible_actual:
             self._visible_actual= True
@@ -862,6 +924,7 @@ class CintaAlerta(QFrame):
             self._anim.start()
 
     def ocultar(self):
+
         if self._visible_actual:
             self._visible_actual= False
             self._anim.stop()
@@ -870,6 +933,7 @@ class CintaAlerta(QFrame):
             self._anim.start()
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
         super().mousePressEvent(event)
@@ -897,41 +961,44 @@ COL_DESCRIPCION= 9
 ENCABEZADOS_TABLA= ["ID", "No.", "Tipo", "", "Estudiante", "Curso", "Sección", "Fecha", "Categorías", "Descripción"]
 
 
+#Igual que `_hex_a_rgba` pero devuelve un QColor real (no un string
+#CSS), porque QTableWidgetItem.setBackground necesita un QBrush/QColor:
+#es lo que tiñe cada fila de la tabla con el color de su naturaleza.
 def _color_fila_qcolor(color_hex, alpha_255):
-    """Igual que `_hex_a_rgba` pero devuelve un QColor real (no un string
-    CSS), porque QTableWidgetItem.setBackground necesita un QBrush/QColor:
-    es lo que tiñe cada fila de la tabla con el color de su naturaleza."""
+
     color_hex= (color_hex or "#64748B").lstrip("#")
     if len(color_hex) < 6:
         color_hex= "64748B"
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return QColor(r, g, b, alpha_255)
 
 
+#'Rendimiento académico · Reconocimiento / logro' (o '—' si no tiene
+#ninguna). Se usa como texto alternativo -tooltip, diálogo de detalle,
+#exportaciones- allí donde no aplica un icono (ver también
+#`_widget_categorias_fila`, que es lo que se ve en la tabla).
 def _texto_categorias_fila(fila):
-    """'Rendimiento académico · Reconocimiento / logro' (o '—' si no tiene
-    ninguna). Se usa como texto alternativo -tooltip, diálogo de detalle,
-    exportaciones- allí donde no aplica un icono (ver también
-    `_widget_categorias_fila`, que es lo que se ve en la tabla)."""
+
     claves= [c for c in (fila["categorias"] or "").split(",") if c]
     partes= []
     for clave in claves:
         info= CATEGORIAS_POR_CLAVE.get(clave)
         if info:
-            _c, etiqueta_c, _p = info
+            _c, etiqueta_c, _p= info
             partes.append(etiqueta_c)
     return " · ".join(partes) if partes else "—"
 
 
+#Fila de icono + ETIQUETA -uno por categoría- para la columna
+#"Categorías" de la tabla. Antes solo mostraba el icono (monocromo) y la
+#etiqueta quedaba escondida en el tooltip, así que dos categorías con
+#forma parecida a tamaño chico eran difíciles de distinguir sin pasar el
+#mouse por encima. Ahora cada icono es MULTICOLOR (ver
+#`pixmap_categoria_color` en iconos_categorias.py) y va acompañado de su
+#nombre corto, visible siempre -el tooltip se conserva solo como refuerzo
+#para el nombre completo, no como único lugar donde aparece el texto.
 def _widget_categorias_fila(fila, color_texto="#64748B"):
-    """Fila de icono + ETIQUETA -uno por categoría- para la columna
-    "Categorías" de la tabla. Antes solo mostraba el icono (monocromo) y la
-    etiqueta quedaba escondida en el tooltip, así que dos categorías con
-    forma parecida a tamaño chico eran difíciles de distinguir sin pasar el
-    mouse por encima. Ahora cada icono es MULTICOLOR (ver
-    `pixmap_categoria_color` en iconos_categorias.py) y va acompañado de su
-    nombre corto, visible siempre -el tooltip se conserva solo como refuerzo
-    para el nombre completo, no como único lugar donde aparece el texto."""
+
     claves= [c for c in (fila["categorias"] or "").split(",") if c]
     if not claves:
         lbl= QLabel("—")
@@ -947,7 +1014,7 @@ def _widget_categorias_fila(fila, color_texto="#64748B"):
         info= CATEGORIAS_POR_CLAVE.get(clave)
         if not info:
             continue
-        _c, etiqueta_c, _p = info
+        _c, etiqueta_c, _p= info
         grupo= QWidget()
         lay_grupo= QHBoxLayout(grupo)
         lay_grupo.setContentsMargins(0, 0, 0, 0)
@@ -973,19 +1040,21 @@ def _widget_categorias_fila(fila, color_texto="#64748B"):
 
 
 #Módulo principal
+#Sugerencia pequeña y descartable que aparece justo después de guardar una
+#observación: ofrece (sin obligar a nada) sumar o restar puntos en la
+#competencia que el docente elija, coherente con lo que acaba de registrar.
+#Se anima igual que CintaAlerta, para no interrumpir el flujo del docente.
+#Tiene un botón principal (ajustar competencia/RA) y uno secundario opcional
+#(marcar entrega en Banco de Tareas), que solo aparece cuando aplica -ver
+#_guardar en ModuloObservaciones.
 class CintaAjusteCompetencia(QFrame):
-    """Sugerencia pequeña y descartable que aparece justo después de guardar una
-    observación: ofrece (sin obligar a nada) sumar o restar puntos en la
-    competencia que el docente elija, coherente con lo que acaba de registrar.
-    Se anima igual que CintaAlerta, para no interrumpir el flujo del docente.
-    Tiene un botón principal (ajustar competencia/RA) y uno secundario opcional
-    (marcar entrega en Banco de Tareas), que solo aparece cuando aplica -ver
-    _guardar en ModuloObservaciones."""
+
     ajustar= Signal()
     ajustar_secundario= Signal()
     descartada= Signal()
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setObjectName("CintaAjusteCompetencia")
         self.setMaximumHeight(0)
@@ -1034,6 +1103,7 @@ class CintaAjusteCompetencia(QFrame):
             "background: transparent; border: none; font-size: 12px; color: #6366F1;")
 
     def mostrar_para(self, texto, texto_boton=None, texto_boton_secundario=None):
+
         self.lbl_texto.setText(texto)
         if texto_boton:
             self.btn_ajustar.setText(texto_boton)
@@ -1050,6 +1120,7 @@ class CintaAjusteCompetencia(QFrame):
             self._anim.start()
 
     def ocultar(self):
+
         if self._visible_actual:
             self._visible_actual= False
             self._anim.stop()
@@ -1058,15 +1129,16 @@ class CintaAjusteCompetencia(QFrame):
             self._anim.start()
 
 
+#Deja sumar o restar puntos en la Competencia Específica que el docente elija,
+#a raíz de una observación. No es obligatorio ni automático: el docente decide la
+#materia, la competencia, el período y cuánto pesa el ajuste. Por debajo, esto crea
+#una evidencia normal (categoría "Ajuste por Observación") vinculada a esa
+#competencia, así que entra en el mismo cálculo automático que cualquier otra nota
+#— no un número suelto sin trazabilidad.
 class DialogoAjusteCompetencia(QDialog):
-    """Deja sumar o restar puntos en la Competencia Específica que el docente elija,
-    a raíz de una observación. No es obligatorio ni automático: el docente decide la
-    materia, la competencia, el período y cuánto pesa el ajuste. Por debajo, esto crea
-    una evidencia normal (categoría "Ajuste por Observación") vinculada a esa
-    competencia, así que entra en el mismo cálculo automático que cualquier otra nota
-    — no un número suelto sin trazabilidad."""
 
     def __init__(self, estudiante_id, texto_observacion, naturaleza, parent=None, materia_id_sugerida=None):
+
         super().__init__(parent)
         self.estudiante_id= estudiante_id
         self.setWindowTitle("Ajustar Competencia por Observación")
@@ -1140,6 +1212,7 @@ class DialogoAjusteCompetencia(QDialog):
         centrar_y_al_frente(self, parent)
 
     def _cargar_competencias(self):
+
         self.combo_competencia.clear()
         materia_id= self.combo_materia.currentData()
         if materia_id is None or self.grado_id is None:
@@ -1148,6 +1221,7 @@ class DialogoAjusteCompetencia(QDialog):
             self.combo_competencia.addItem(f"{comp['codigo']} — {comp['descripcion']}", comp["id"])
 
     def datos(self):
+
         return {
             "materia_id": self.combo_materia.currentData(),
             "competencia_id": self.combo_competencia.currentData(),
@@ -1157,7 +1231,9 @@ class DialogoAjusteCompetencia(QDialog):
 
 
 class ModuloObservaciones(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion= None
@@ -1175,6 +1251,7 @@ class ModuloObservaciones(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Observaciones"
         registrar_atajo(self, self.main_window, "Ctrl+G", "Guardar observación", self._guardar)
         registrar_atajo(self, self.main_window, "Ctrl+L", "Limpiar formulario", self._limpiar)
@@ -1188,6 +1265,7 @@ class ModuloObservaciones(QWidget):
 
     #Construcción de interfaz
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -1372,7 +1450,7 @@ class ModuloObservaciones(QWidget):
         #--- Registros (tabla) — va justo debajo de los filtros, arriba de "categorías frecuentes" y del formulario de
         #captura, para que lo que el docente/gerencia consulta con más frecuencia (el historial) esté visible sin tener
         #que bajar toda la pantalla.
-        #        #Se reemplaza la antigua lista de tarjetas apiladas (con animación de entrada por geometría, que se
+        ##Se reemplaza la antigua lista de tarjetas apiladas (con animación de entrada por geometría, que se
         #desincronizaba con el layout y
         #producía el bugueo visual reportado) por una QTableWidget real:
         #escalable con muchos registros —con SU PROPIO scroll, sin estirar la página— pero conservando el mismo
@@ -1598,7 +1676,7 @@ class ModuloObservaciones(QWidget):
         marco_plantillas= QWidget()
         layout_plantillas= FlowLayout(marco_plantillas, margin=0, spacing=6)
         for plantilla in PLANTILLAS:
-            titulo, naturaleza_sugerida, categorias_sugeridas, _cuerpo = plantilla
+            titulo, naturaleza_sugerida, categorias_sugeridas, _cuerpo= plantilla
             btn= QPushButton(titulo)
             #Icono multicolor de la plantilla: la primera categoría sugerida si tiene alguna (más específico), si no la
             #naturaleza sugerida -así TODAS las plantillas quedan con icono, ninguna se ve "pelada" al lado de las demás.
@@ -1645,6 +1723,7 @@ class ModuloObservaciones(QWidget):
 
     #Panel avanzado de filtros (colapsable, tipo acordeón)
     def _alternar_panel_avanzado(self):
+
         expandido= self.panel_avanzado.maximumHeight() > 0
         anim= QPropertyAnimation(self.panel_avanzado, b"maximumHeight", self)
         anim.setDuration(220)
@@ -1665,6 +1744,7 @@ class ModuloObservaciones(QWidget):
         self._actualizar_texto_boton_filtros()
 
     def _filtros_avanzados_activos(self):
+
         n= 0
         if self._filtro_naturaleza:
             n += 1
@@ -1674,31 +1754,37 @@ class ModuloObservaciones(QWidget):
         return n
 
     def _actualizar_texto_boton_filtros(self):
+
         n= self._filtros_avanzados_activos()
         self.btn_mas_filtros.setText(f"Más filtros ({n})" if n else "Más filtros")
 
     #Carga de combos: curso (grado) → SECCIÓN → ESTUDIANTE
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo). Mismo criterio usado en estudiantes.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo). Mismo criterio usado en estudiantes.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #Igual que en Estudiantes: el combo de Área Técnica solo se muestra si
+    #la institución tiene el módulo Politécnico activo.
     def _cargar_especialidades_combo_filtro(self):
-        """Igual que en Estudiantes: el combo de Área Técnica solo se muestra si
-        la institución tiene el módulo Politécnico activo."""
+
         combo= self.combo_filtro_especialidad
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad.setVisible(es_poli)
@@ -1719,9 +1805,10 @@ class ModuloObservaciones(QWidget):
         combo.setCurrentIndex(idx if idx >= 0 else 0)
         combo.blockSignals(False)
 
+    #Igual que en Estudiantes: el combo de Carrera solo se muestra si la
+    #institución tiene el módulo Universidad activo.
     def _cargar_carreras_combo_filtro(self):
-        """Igual que en Estudiantes: el combo de Carrera solo se muestra si la
-        institución tiene el módulo Universidad activo."""
+
         combo= self.combo_filtro_carrera
         es_uni= self._es_universidad()
         self.lbl_filtro_carrera.setVisible(es_uni)
@@ -1743,19 +1830,22 @@ class ModuloObservaciones(QWidget):
         combo.blockSignals(False)
 
     def _secciones_permitidas_ids(self):
+
         base= obtener_secciones_permitidas(self.main_window) if self.restringido else None
         nivel= self.combo_filtro_nivel.currentData() if hasattr(self, "combo_filtro_nivel") else None
         return interseccion_opcional(base, secciones_del_nivel_educativo(nivel))
 
     def _nivel_filtro_cambio(self):
+
         self._cargar_combos_filtro()
         self._filtro_cambio()
 
+    #Ventanita (no modal) con Curso/Grado, Sección, Área Técnica y
+    #Carrera para la tabla de "Registros" — separada de "🔧 Más filtros"
+    #(que sigue igual: Nivel Educativo, Naturaleza, Categorías,
+    #Destacadas). Mismo patrón que calendario.py/banco_tareas.py.
     def _construir_dialogo_filtros_listado(self):
-        """Ventanita (no modal) con Curso/Grado, Sección, Área Técnica y
-        Carrera para la tabla de "Registros" — separada de "🔧 Más filtros"
-        (que sigue igual: Nivel Educativo, Naturaleza, Categorías,
-        Destacadas). Mismo patrón que calendario.py/banco_tareas.py."""
+
         self.dialogo_filtros_listado= QDialog(self)
         self.dialogo_filtros_listado.setObjectName("DialogoFiltrosObs")
         self.dialogo_filtros_listado.setWindowTitle("Filtros de Observaciones")
@@ -1825,6 +1915,7 @@ class ModuloObservaciones(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros_listado(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros_listado.parent() is not _fc:
@@ -1834,18 +1925,20 @@ class ModuloObservaciones(QWidget):
         self.dialogo_filtros_listado.activateWindow()
 
     def _limpiar_filtros_listado(self):
+
         for combo in (self.combo_filtro_especialidad, self.combo_filtro_carrera, self.combo_filtro_grado):
             combo.blockSignals(True)
             combo.setCurrentIndex(0)
             combo.blockSignals(False)
         self._grado_filtro_cambio()
 
+    #Como Curso/Sección/Área Técnica/Carrera ahora viven en la ventana
+    #de Filtros (oculta por defecto), esta fila deja a la vista, sin abrir
+    #la ventana, qué se está mostrando en la tabla -icono vectorial real
+    #(pixmap_emoji en un QLabel aparte, ver iconos_emoji.py) junto al
+    #texto, no un emoji incrustado en el string como antes.
     def _actualizar_resumen_filtros_listado(self):
-        """Como Curso/Sección/Área Técnica/Carrera ahora viven en la ventana
-        de Filtros (oculta por defecto), esta fila deja a la vista, sin abrir
-        la ventana, qué se está mostrando en la tabla -icono vectorial real
-        (pixmap_emoji en un QLabel aparte, ver iconos_emoji.py) junto al
-        texto, no un emoji incrustado en el string como antes."""
+
         if not hasattr(self, "marco_resumen_filtros_listado"):
             return
         while self.layout_resumen_filtros_listado.count():
@@ -1857,6 +1950,7 @@ class ModuloObservaciones(QWidget):
         color_texto= self._colores["txt_sec"] if hasattr(self, "_colores") else "#64748B"
 
         def _agregar(glifo, texto):
+
             grupo= QWidget()
             lay= QHBoxLayout(grupo)
             lay.setContentsMargins(0, 0, 0, 0)
@@ -1879,18 +1973,21 @@ class ModuloObservaciones(QWidget):
             _agregar("🎓", self.combo_filtro_carrera.currentText())
 
     def _cargar_combos_filtro(self):
+
         permitidas= self._secciones_permitidas_ids()
         poblar_combo_curso(self.combo_filtro_grado, incluir_todos=False, secciones_permitidas=permitidas)
         cascada_seccion_por_curso(self.combo_filtro_grado, self.combo_filtro_seccion,
                                    incluir_todas= False, secciones_permitidas=permitidas)
 
     def _cargar_combos_form(self):
+
         permitidas= self._secciones_permitidas_ids()
         poblar_combo_curso(self.combo_grado_form, incluir_todos=False, secciones_permitidas=permitidas)
         cascada_seccion_por_curso(self.combo_grado_form, self.combo_seccion_form,
                                    incluir_todas= False, secciones_permitidas=permitidas)
 
     def _grado_filtro_cambio(self):
+
         permitidas= self._secciones_permitidas_ids()
         cascada_seccion_por_curso(self.combo_filtro_grado, self.combo_filtro_seccion,
                                    incluir_todas= False, secciones_permitidas=permitidas)
@@ -1898,19 +1995,22 @@ class ModuloObservaciones(QWidget):
         self._filtro_cambio()
 
     def _filtro_tecnico_listado_cambio(self):
+
         self._actualizar_resumen_filtros_listado()
         self._filtro_cambio()
 
     def _grado_form_cambio(self):
+
         permitidas= self._secciones_permitidas_ids()
         cascada_seccion_por_curso(self.combo_grado_form, self.combo_seccion_form,
                                    incluir_todas= False, secciones_permitidas=permitidas)
         self._cargar_combo_estudiantes()
 
+    #Igual que en Estudiantes/Asistencia/Pasantías: los combos de Área
+    #Técnica y Carrera del formulario solo se muestran/pueblan si la
+    #institución tiene ese módulo activo.
     def _cargar_filtro_tecnico_form(self):
-        """Igual que en Estudiantes/Asistencia/Pasantías: los combos de Área
-        Técnica y Carrera del formulario solo se muestran/pueblan si la
-        institución tiene ese módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_form.setVisible(es_poli)
         self.combo_filtro_especialidad_form.setVisible(es_poli)
@@ -1948,6 +2048,7 @@ class ModuloObservaciones(QWidget):
             self.combo_filtro_carrera_form.blockSignals(False)
 
     def _cargar_combo_estudiantes(self):
+
         self.combo_estudiante.clear()
         #Placeholder real (sin datos) primero: evita que, con los filtros
         #amplios (p.ej. "Todos los cursos"), quede seleccionado por accidente
@@ -1975,11 +2076,12 @@ class ModuloObservaciones(QWidget):
             self.combo_estudiante.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
         conn.close()
 
+    #Lista de materias/módulos elegibles para asociar a la observación
+    #(opcional). No se filtra por curso/sección como el estudiante —
+    #igual que el combo de materia de Asistencia, solo respeta qué
+    #materias tiene permitidas este usuario.
     def _cargar_combo_materias_obs(self):
-        """Lista de materias/módulos elegibles para asociar a la observación
-        (opcional). No se filtra por curso/sección como el estudiante —
-        igual que el combo de materia de Asistencia, solo respeta qué
-        materias tiene permitidas este usuario."""
+
         seleccion_previa= self.combo_materia_obs.currentData()
         self.combo_materia_obs.blockSignals(True)
         self.combo_materia_obs.clear()
@@ -1999,6 +2101,7 @@ class ModuloObservaciones(QWidget):
 
     #Sugerencias dinámicas de categoría
     def _on_texto_observacion_cambiado(self):
+
         #Cada vez que el docente sigue escribiendo se vuelve a "armar" la franja de sugerencias, aunque la haya cerrado
         #con la ✕ antes: cerrar solo descarta las sugerencias vigentes en ese momento, no apaga la función para el
         #resto de la redacción.
@@ -2006,10 +2109,12 @@ class ModuloObservaciones(QWidget):
         self._temporizador_sugerencias.start()
 
     def _descartar_sugerencias(self):
+
         self._sugerencias_descartadas= True
         self._reconstruir_chips_sugeridas([])
 
     def _actualizar_sugerencias(self):
+
         if self._sugerencias_descartadas:
             return
         texto= _normalizar(self.in_texto.toPlainText())
@@ -2030,6 +2135,7 @@ class ModuloObservaciones(QWidget):
         self._reconstruir_chips_sugeridas(sugeridas)
 
     def _reconstruir_chips_sugeridas(self, sugeridas):
+
         while self.layout_sugerencias.count():
             item= self.layout_sugerencias.takeAt(0)
             w= item.widget()
@@ -2055,6 +2161,7 @@ class ModuloObservaciones(QWidget):
         #correctamente.
 
     def _aceptar_sugerencia(self, clave):
+
         chip= self.chips_categoria.get(clave)
         if chip:
             chip.establecer_marcado(True)
@@ -2062,7 +2169,8 @@ class ModuloObservaciones(QWidget):
 
     #PLANTILLAS
     def _aplicar_plantilla(self, plantilla):
-        _titulo, naturaleza, claves, cuerpo = plantilla
+
+        _titulo, naturaleza, claves, cuerpo= plantilla
         nombre_est= self.combo_estudiante.currentText().strip()
         sujeto= nombre_est.split(" ")[0] if nombre_est else "El/La estudiante"
         self.in_texto.setPlainText(f"{sujeto} {cuerpo}")
@@ -2077,9 +2185,11 @@ class ModuloObservaciones(QWidget):
 
     #GUARDAR / EDITAR / ELIMINAR
     def _tipo_legado(self, naturaleza):
+
         return {"Positiva": "Positiva", "Informativa": "Neutra", "Negativa": "Negativa"}.get(naturaleza, "Neutra")
 
     def _guardar(self):
+
         estudiante_id= self.combo_estudiante.currentData()
         materia_id= self.combo_materia_obs.currentData()
         if estudiante_id is None:
@@ -2104,6 +2214,7 @@ class ModuloObservaciones(QWidget):
 
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             if self.id_edicion is None:
                 c.execute("""INSERT INTO observaciones
@@ -2147,7 +2258,7 @@ class ModuloObservaciones(QWidget):
                                and _hay_tareas_activas_en_materia(materia_id))
 
             es_tecnica= False
-            texto_principal, boton_principal = None, None
+            texto_principal, boton_principal= None, None
             if ofrece_calificacion:
                 #Si la observación quedó ligada a una materia con modelo "Técnica (RA)" (Politécnico), no tiene sentido ofrecer
                 #"Ajustar competencia" -ese modelo no usa Competencias Específicas-; se ofrece en su lugar ajustar un Resultado
@@ -2198,13 +2309,14 @@ class ModuloObservaciones(QWidget):
         self.paginacion.reiniciar()
         self._cargar_tabla()
 
+    #Despacha el clic en el botón PRINCIPAL de la cinta de sugerencia, según
+    #lo que se resolvió al guardar la observación (ver _guardar): 'Ajustar
+    #competencia', 'Ajustar RA técnico', o -si esa fue la única sugerencia
+    #aplicable- 'Marcar entrega'. El botón SECUNDARIO ('Marcar entrega', cuando
+    #aparece junto a una de calificación) va directo por su propia señal
+    #(ajustar_secundario -> _abrir_ajuste_entrega, conectado en _build_ui).
     def _al_pulsar_ajustar(self):
-        """Despacha el clic en el botón PRINCIPAL de la cinta de sugerencia, según
-        lo que se resolvió al guardar la observación (ver _guardar): 'Ajustar
-        competencia', 'Ajustar RA técnico', o -si esa fue la única sugerencia
-        aplicable- 'Marcar entrega'. El botón SECUNDARIO ('Marcar entrega', cuando
-        aparece junto a una de calificación) va directo por su propia señal
-        (ajustar_secundario -> _abrir_ajuste_entrega, conectado en _build_ui)."""
+
         datos_previos= getattr(self, "_ultimo_ajuste", None)
         if not datos_previos:
             return
@@ -2216,6 +2328,7 @@ class ModuloObservaciones(QWidget):
             self._abrir_ajuste_competencia()
 
     def _abrir_ajuste_ra(self):
+
         datos_previos= getattr(self, "_ultimo_ajuste", None)
         if not datos_previos:
             return
@@ -2240,6 +2353,7 @@ class ModuloObservaciones(QWidget):
                          "Se registró el ajuste en el Resultado de Aprendizaje elegido.", self)
 
     def _abrir_ajuste_entrega(self):
+
         datos_previos= getattr(self, "_ultimo_ajuste", None)
         if not datos_previos:
             return
@@ -2258,6 +2372,7 @@ class ModuloObservaciones(QWidget):
                          f"Se marcó la entrega como \"{d['estado']}\".", self)
 
     def _abrir_ajuste_competencia(self):
+
         datos_previos= getattr(self, "_ultimo_ajuste", None)
         if not datos_previos:
             return
@@ -2321,11 +2436,13 @@ class ModuloObservaciones(QWidget):
                          f"Se registró el ajuste ({signo}{d['ajuste']} pts) en la competencia elegida.", self)
 
     def _puede_editar_fila(self, fila):
+
         if self.gerencial:
             return True
         return fila["usuario_id"] == getattr(self.main_window, "id_usuario_actual", None)
 
     def _puede_editar_id(self, id_obs):
+
         for fila in self.observaciones_pagina:
             if fila["id"] == id_obs:
                 return self._puede_editar_fila(fila)
@@ -2337,6 +2454,7 @@ class ModuloObservaciones(QWidget):
         return bool(f) and self._puede_editar_fila(f)
 
     def _cargar_para_editar(self, id_obs):
+
         fila= next((f for f in self.observaciones_pagina if f["id"] == id_obs), None)
         if fila is None:
             conn= obtener_conexion()
@@ -2371,6 +2489,7 @@ class ModuloObservaciones(QWidget):
         activar_modo_edicion(self.in_texto, "Editando observación")
 
     def _eliminar_id(self, id_obs):
+
         fila= next((f for f in self.observaciones_pagina if f["id"] == id_obs), None)
         if fila is None or not self._puede_editar_fila(fila):
             mostrar_mensaje("advertencia", "Sin permisos", "Solo puedes eliminar tus propias observaciones.", self)
@@ -2380,6 +2499,7 @@ class ModuloObservaciones(QWidget):
             return
         conn= obtener_conexion()
         try:
+
             c= conn.cursor()
             c.execute("DELETE FROM observaciones WHERE id=?", (id_obs,))
             conn.commit()
@@ -2394,6 +2514,7 @@ class ModuloObservaciones(QWidget):
         self._cargar_tabla()
 
     def _limpiar(self):
+
         self.id_edicion= None
         self.in_texto.clear()
         self.segmentado.establecer_valor("Informativa", animar=False)
@@ -2407,6 +2528,7 @@ class ModuloObservaciones(QWidget):
 
     #FILTROS
     def _clic_filtro_naturaleza(self, clave_clicada):
+
         for clave, chip in self.chips_filtro_naturaleza.items():
             chip.establecer_marcado(clave == clave_clicada, animar=True, emitir=False)
         self._filtro_naturaleza= None if clave_clicada == "todas" else clave_clicada
@@ -2414,11 +2536,13 @@ class ModuloObservaciones(QWidget):
         self._cargar_tabla()
 
     def _al_pulsar_banner_destacadas(self):
+
         if self.panel_avanzado.maximumHeight() == 0:
             self._alternar_panel_avanzado()
         self.chip_destacadas.establecer_marcado(True)
 
     def _limpiar_filtros(self):
+
         self.in_buscar.blockSignals(True)
         self.in_buscar.clear()
         self.in_buscar.blockSignals(False)
@@ -2436,11 +2560,13 @@ class ModuloObservaciones(QWidget):
         self._cargar_tabla()
 
     def _filtro_cambio(self):
+
         self.paginacion.reiniciar()
         self._cargar_tabla()
 
     #Carga de la línea de tiempo
     def _observaciones_filtradas(self):
+
         texto_filtro= _normalizar(self.in_buscar.text().strip())
         seccion_filtro= self.combo_filtro_seccion.currentData()
         grado_filtro= self.combo_filtro_grado.currentData()
@@ -2500,12 +2626,13 @@ class ModuloObservaciones(QWidget):
         return visibles
 
     def _cargar_tabla(self):
+
         visibles= self._observaciones_filtradas()
 
         self._actualizar_estadisticas(visibles)
 
         self.paginacion.establecer_total(len(visibles))
-        inicio, fin = self.paginacion.rango_actual()
+        inicio, fin= self.paginacion.rango_actual()
         pagina= visibles[inicio:fin]
         self.observaciones_pagina= pagina
 
@@ -2591,11 +2718,13 @@ class ModuloObservaciones(QWidget):
 
     #DETALLE / acciones sobre la fila seleccionada
     def _fila_por_indice_tabla(self, indice):
+
         if 0 <= indice < len(self.observaciones_pagina):
             return self.observaciones_pagina[indice]
         return None
 
     def _abrir_detalle_fila(self, indice_tabla):
+
         fila= self._fila_por_indice_tabla(indice_tabla)
         if fila is None:
             return
@@ -2618,6 +2747,7 @@ class ModuloObservaciones(QWidget):
                                 extra_botones= extra_botones)
 
     def _ver_detalle_seleccionada(self):
+
         indice= self.tabla.currentRow()
         if indice < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro de la tabla.", self)
@@ -2625,6 +2755,7 @@ class ModuloObservaciones(QWidget):
         self._abrir_detalle_fila(indice)
 
     def _editar_seleccionada(self):
+
         fila= self._fila_por_indice_tabla(self.tabla.currentRow())
         if fila is None:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro de la tabla.", self)
@@ -2632,6 +2763,7 @@ class ModuloObservaciones(QWidget):
         self._cargar_para_editar(fila["id"])
 
     def _eliminar_seleccionada(self):
+
         fila= self._fila_por_indice_tabla(self.tabla.currentRow())
         if fila is None:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro de la tabla.", self)
@@ -2641,6 +2773,7 @@ class ModuloObservaciones(QWidget):
     #ESTADÍSTICAS (integradas en la cabecera y en los chips de filtro — sin una fila aparte de tarjetas KPI)
 
     def _actualizar_estadisticas(self, visibles):
+
         self.chip_contador.establecer(len(visibles))
 
         conteo_naturaleza= {"Positiva": 0, "Informativa": 0, "Negativa": 0}
@@ -2670,10 +2803,10 @@ class ModuloObservaciones(QWidget):
         maximo= top[0][1] if top else 0
         for i, barra in enumerate(self.barras_frecuencia):
             if i < len(top):
-                clave, cantidad = top[i]
+                clave, cantidad= top[i]
                 info= CATEGORIAS_POR_CLAVE.get(clave)
                 if info:
-                    _c, etiqueta, _p = info
+                    _c, etiqueta, _p= info
                     barra.establecer_datos(clave, etiqueta, self._colores["accent"], cantidad,
                                             cantidad / maximo if maximo else 0)
                     barra.setVisible(True)
@@ -2684,6 +2817,7 @@ class ModuloObservaciones(QWidget):
         self.lbl_sin_datos_frecuentes.setVisible(not top)
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         #Si el panel avanzado está expandido y el ancho cambia (lo que puede reacomodar los chips en más o menos
         #filas), se sigue el nuevo alto natural en vez de dejarlo recortado o con hueco de sobra.
@@ -2692,6 +2826,7 @@ class ModuloObservaciones(QWidget):
 
     #ENTRADA / TEMA / REFRESCO
     def refrescar(self):
+
         if hasattr(self, "combo_filtro_nivel"):
             poblar_combo_nivel_educativo(self.combo_filtro_nivel)
         self._cargar_combos_filtro()
@@ -2705,9 +2840,11 @@ class ModuloObservaciones(QWidget):
         QTimer.singleShot(0, self._cargar_tabla)
 
     def actualizar_tema(self):
+
         self._aplicar_tema_visual()
 
     def _aplicar_tema_visual(self):
+
         mw= self.main_window
         tema_actual= getattr(mw, "tema_actual", None)
         modo_oscuro= getattr(mw, "modo_oscuro", True)
@@ -2722,7 +2859,7 @@ class ModuloObservaciones(QWidget):
         #Refrescar colores de los encabezados colapsables (PanelDesplegable)
         for panel in self.findChildren(PanelDesplegable):
             panel.actualizar_color_tema()
-        bg_panel, borde, txt_prim, txt_sec, accent, accent_hv = (
+        bg_panel, borde, txt_prim, txt_sec, accent, accent_hv= (
             colores["bg_panel"], colores["bg_btn"], colores["txt_prim"], colores["txt_sec"],
             colores["accent"], colores["accent_hv"])
 

@@ -1,28 +1,28 @@
-"""Boletín Técnico — Formato Oficial República Dominicana (MINERD, Politécnico).
-
-FASE 2 de 3. Reutiliza el motor de Resultados de Aprendizaje (RA) que ya
-vive en bd.py (`resultados_aprendizaje` + `calificacion_ra`) y la MISMA
-fórmula de Calificación Final que ya calcula
-`calificaciones_tecnicas.py::_construir_tarjeta_modulo_boletin`:
-
-    C.F. = sum(nota_RA * peso_RA) / suma_pesos      (solo si TODOS los RA
-                                                       del módulo tienen nota)
-
-La grilla oficial (ver boletín técnico real) no muestra el peso ni la nota
-de cada RA por separado: muestra la CONTRIBUCIÓN de cada RA a la nota final
-(nota_RA * peso_RA / 100). Se comprobó contra la plantilla real: sumando las
-columnas RA1%...RA9% de una fila se obtiene exactamente su C.F. -por eso la
-celda de este módulo es esa contribución, no el peso ni la nota crudos.
-
-Este módulo espera materias con `modelo_evaluacion = MODELO_EVALUACION_TECNICA`
-(constante que ya vive en materias.py) — mismas materias que ya administra
-calificaciones_tecnicas.py, no crea materias ni RA nuevos.
-"""
+#Boletín Técnico — Formato Oficial República Dominicana (MINERD, Politécnico).
+#
+#FASE 2 de 3. Reutiliza el motor de Resultados de Aprendizaje (RA) que ya
+#vive en bd.py (`resultados_aprendizaje` + `calificacion_ra`) y la MISMA
+#fórmula de Calificación Final que ya calcula
+#`calificaciones_tecnicas.py::_construir_tarjeta_modulo_boletin`:
+#
+#C.F. = sum(nota_RA * peso_RA) / suma_pesos      (solo si TODOS los RA
+#del módulo tienen nota)
+#
+#La grilla oficial (ver boletín técnico real) no muestra el peso ni la nota
+#de cada RA por separado: muestra la CONTRIBUCIÓN de cada RA a la nota final
+#(nota_RA * peso_RA / 100). Se comprobó contra la plantilla real: sumando las
+#columnas RA1%...RA9% de una fila se obtiene exactamente su C.F. -por eso la
+#celda de este módulo es esa contribución, no el peso ni la nota crudos.
+#
+#Este módulo espera materias con `modelo_evaluacion = MODELO_EVALUACION_TECNICA`
+#(constante que ya vive en materias.py) — mismas materias que ya administra
+#calificaciones_tecnicas.py, no crea materias ni RA nuevos.
 from datetime import datetime
 
 from src.nucleo.bd import obtener_conexion
 
 try:
+
     from src.modulos.materias import MODELO_EVALUACION_TECNICA
 except Exception:
     #Mismo valor por defecto que usa la columna `materias.modelo_evaluacion` en bd.py si el módulo materias.py no
@@ -35,12 +35,13 @@ DECISIONES_PROMOCION_SITUACION= {
 }
 
 
+#Mismo criterio (y mismo fallback) que ya usa
+#calificaciones_tecnicas.py::_generar_boletin: primero por horario de la
+#sección; si no hay nada ahí (sección aún sin horario técnico cargado),
+#cae a cualquier módulo técnico donde el estudiante ya tenga notas
+#registradas ese año, para no dejar el boletín vacío.
 def modulos_tecnicos_de_estudiante(estudiante_id, seccion_id, anio_academico):
-    """Mismo criterio (y mismo fallback) que ya usa
-    calificaciones_tecnicas.py::_generar_boletin: primero por horario de la
-    sección; si no hay nada ahí (sección aún sin horario técnico cargado),
-    cae a cualquier módulo técnico donde el estudiante ya tenga notas
-    registradas ese año, para no dejar el boletín vacío."""
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("""SELECT DISTINCT materias.id, materias.nombre, materias.codigo
@@ -60,18 +61,19 @@ def modulos_tecnicos_de_estudiante(estudiante_id, seccion_id, anio_academico):
     return modulos
 
 
+#Devuelve {"contribuciones": [c_ra1, c_ra2, ...], "cf": valor_o_None,
+#"n_ra": int}. `contribuciones[i]` es None si ese RA todavía no tiene
+#nota (celda en blanco en el PDF, igual que la plantilla real cuando un
+#módulo usa menos RA que el máximo de la tabla).
 def grilla_modulo_tecnico(estudiante_id, materia_id, anio_academico):
-    """Devuelve {"contribuciones": [c_ra1, c_ra2, ...], "cf": valor_o_None,
-    "n_ra": int}. `contribuciones[i]` es None si ese RA todavía no tiene
-    nota (celda en blanco en el PDF, igual que la plantilla real cuando un
-    módulo usa menos RA que el máximo de la tabla)."""
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("""SELECT * FROM resultados_aprendizaje WHERE materia_id=? AND estado='Activo'
                  ORDER BY orden, codigo""", (materia_id,))
     ra_lista= [dict(f) for f in c.fetchall()]
     contribuciones= []
-    notas_validas, pesos_validos = [], []
+    notas_validas, pesos_validos= [], []
     for ra in ra_lista:
         c.execute("""SELECT nota FROM calificacion_ra WHERE estudiante_id=? AND resultado_aprendizaje_id=?
                      AND anio_academico=?""", (estudiante_id, ra["id"], anio_academico))
@@ -94,6 +96,7 @@ def grilla_modulo_tecnico(estudiante_id, materia_id, anio_academico):
 
 
 def situacion_estudiante_politecnico(estudiante_id, anio_academico):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("""SELECT decision, accion_no_promocion, motivo_conducta FROM decision_promocion
@@ -109,11 +112,12 @@ def situacion_estudiante_politecnico(estudiante_id, anio_academico):
     return {"decision": f["decision"] or "Pendiente", "situacion": situacion, "condicion_final": condicion}
 
 
+#Ensambla los datos del boletín técnico: módulos técnicos del
+#estudiante, su grilla RA (contribuciones + C.F.), y su situación final
+#de Politécnico. Reutiliza `datos_estudiante_boletin` de
+#boletin_minerd.py para no duplicar la resolución de sección/grado/año.
 def construir_boletin_tecnico(estudiante_id, anio_academico=None):
-    """Ensambla los datos del boletín técnico: módulos técnicos del
-    estudiante, su grilla RA (contribuciones + C.F.), y su situación final
-    de Politécnico. Reutiliza `datos_estudiante_boletin` de
-    boletin_minerd.py para no duplicar la resolución de sección/grado/año."""
+
     from src.boletines.boletin_minerd import datos_estudiante_boletin
     datos= datos_estudiante_boletin(estudiante_id)
     if not datos:
@@ -135,10 +139,12 @@ def construir_boletin_tecnico(estudiante_id, anio_academico=None):
 #PDF — grilla oficial técnica (apaisado): filas = módulos, columnas = RA1%...RAn% (contribución) + C.F., más el
 #bloque de Situación/Condición Final del/de la estudiante.
 def _fmt(valor, decimales=0):
+
     return f"{valor:.{decimales}f}" if valor is not None else ""
 
 
 def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colores=None):
+
     from reportlab.lib.utils import ImageReader
     from src.boletines.boletin_minerd import _hex_a_rgb01, _dibujar_texto_ajustado
 
@@ -154,8 +160,9 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
     y= alto - 34
     if institucion.get("logo"):
         try:
+
             img= ImageReader(institucion["logo"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 40
             cvs.drawImage(img, margen, y - 30, width=alto_img * (iw / ih), height=alto_img,
                           preserveAspectRatio= True, mask='auto')
@@ -251,8 +258,9 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
 
     if institucion.get("firma"):
         try:
+
             img= ImageReader(institucion["firma"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 30
             x_firma= ancho - margen - 150
             cvs.drawImage(img, x_firma, y, width=alto_img * (iw / ih), height=alto_img,
@@ -267,11 +275,13 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
 
 
 def _dimensiones_pagina_tecnico(boletin):
+
     from reportlab.lib.pagesizes import letter, landscape
     return landscape(letter)
 
 
 def exportar_boletin_tecnico_oficial_pdf(estudiante_id, ruta_pdf, institucion, anio_academico=None):
+
     from reportlab.lib.pagesizes import letter, landscape
     from reportlab.pdfgen import canvas
     from src.boletines.boletin_minerd import colores_boletin
@@ -280,7 +290,7 @@ def exportar_boletin_tecnico_oficial_pdf(estudiante_id, ruta_pdf, institucion, a
     if boletin is None:
         return None
     colores= colores_boletin(None)  #Politécnico/Técnico siempre es Secundaria -> paleta "secundaria"
-    ancho, alto = _dimensiones_pagina_tecnico(boletin)
+    ancho, alto= _dimensiones_pagina_tecnico(boletin)
     cvs= canvas.Canvas(ruta_pdf, pagesize=(ancho, alto))
     dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colores)
     cvs.save()

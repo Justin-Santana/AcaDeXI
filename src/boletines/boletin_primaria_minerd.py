@@ -1,27 +1,26 @@
-"""Informe de Aprendizaje — Nivel Primario, Formato Oficial República
-Dominicana (MINERD).
-
-Complemento de boletin_minerd.py para el Nivel Primario: la plantilla real
-("Informe de Aprendizaje") es un documento distinto al "Boletín de
-Calificaciones" de Secundaria, no una variación menor -por eso vive en su
-propio módulo en vez de una rama más dentro del mismo dibujante:
-  - 3 grupos de competencias (no 4) -ver GRUPOS_DISPLAY_PRIMARIA en
-    boletin_minerd.py-, con columnas "Calificación final por competencia"
-    (C1-C3) en vez de "Promedio Grupo de Competencias Específicas" (PC1-PC4).
-  - Columnas de Recuperación Pedagógica (RP1-RP4) intercaladas entre cada
-    período, cuando el área tiene esa recuperación registrada (algunos
-    grados de Primaria las usan, otros no -se decide por los datos, no por
-    el nombre del grado, para no depender de convenciones de texto en
-    `grados.nombre`).
-  - Escala DESCRIPTIVA (Destacado/Logrado/En Proceso/Insuficiente) como
-    leyenda -las celdas siguen siendo numéricas (0-100), igual que el resto
-    de AcaDeXI; la leyenda solo explica cómo leerlas, tal como en la
-    plantilla real.
-  - Situación en 3 estados (Promovido/a, Aplazado/a, Repitiente) en vez del
-    A/R por asignatura de Secundaria -en Primaria la situación es del año
-    completo, no por área-.
-  - Caja de Observaciones por período (texto libre del docente).
-"""
+#Informe de Aprendizaje — Nivel Primario, Formato Oficial República
+#Dominicana (MINERD).
+#
+#Complemento de boletin_minerd.py para el Nivel Primario: la plantilla real
+#("Informe de Aprendizaje") es un documento distinto al "Boletín de
+#Calificaciones" de Secundaria, no una variación menor -por eso vive en su
+#propio módulo en vez de una rama más dentro del mismo dibujante:
+#- 3 grupos de competencias (no 4) -ver GRUPOS_DISPLAY_PRIMARIA en
+#boletin_minerd.py-, con columnas "Calificación final por competencia"
+#(C1-C3) en vez de "Promedio Grupo de Competencias Específicas" (PC1-PC4).
+#- Columnas de Recuperación Pedagógica (RP1-RP4) intercaladas entre cada
+#período, cuando el área tiene esa recuperación registrada (algunos
+#grados de Primaria las usan, otros no -se decide por los datos, no por
+#el nombre del grado, para no depender de convenciones de texto en
+#`grados.nombre`).
+#- Escala DESCRIPTIVA (Destacado/Logrado/En Proceso/Insuficiente) como
+#leyenda -las celdas siguen siendo numéricas (0-100), igual que el resto
+#de AcaDeXI; la leyenda solo explica cómo leerlas, tal como en la
+#plantilla real.
+#- Situación en 3 estados (Promovido/a, Aplazado/a, Repitiente) en vez del
+#A/R por asignatura de Secundaria -en Primaria la situación es del año
+#completo, no por área-.
+#- Caja de Observaciones por período (texto libre del docente).
 from datetime import datetime
 
 from src.nucleo.bd import obtener_conexion
@@ -37,6 +36,7 @@ COL_FINAL= 38
 
 
 def _observaciones_por_periodo(estudiante_id, periodos):
+
     conn= obtener_conexion()
     c= conn.cursor()
     resultado= {}
@@ -52,13 +52,14 @@ def _observaciones_por_periodo(estudiante_id, periodos):
     return resultado
 
 
+#Reutiliza las mismas tablas de la cascada de Secundaria
+#(`evaluacion_completiva` / `evaluacion_especial`): no son específicas de
+#nivel, solo registran "una nota de recuperación de fin de año" para una
+#materia -el nombre de columna que se les da en el PDF es lo que cambia
+#según el documento (Secundaria las llama C.E.C./C.E.; Primaria las
+#llama "Calificación recuperación final/especial").
 def _recuperacion_final_area(estudiante_id, materia_id, anio_academico):
-    """Reutiliza las mismas tablas de la cascada de Secundaria
-    (`evaluacion_completiva` / `evaluacion_especial`): no son específicas de
-    nivel, solo registran "una nota de recuperación de fin de año" para una
-    materia -el nombre de columna que se les da en el PDF es lo que cambia
-    según el documento (Secundaria las llama C.E.C./C.E.; Primaria las
-    llama "Calificación recuperación final/especial")."""
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT nota_completiva FROM evaluacion_completiva WHERE estudiante_id=? AND materia_id=? AND anio_academico=?",
@@ -73,6 +74,7 @@ def _recuperacion_final_area(estudiante_id, materia_id, anio_academico):
 
 
 def _dimensiones_pagina_primaria(boletin):
+
     mostrar_rp= any(a.get("tiene_rp") for a in boletin["areas"])
     n_periodos= max(len(boletin["periodos"]), 1)
     subcols= 2 if mostrar_rp else 1
@@ -83,6 +85,7 @@ def _dimensiones_pagina_primaria(boletin):
 
 
 def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
+
     colores= colores or colores_boletin(boletin["estudiante"]["nivel_educativo"])
     rgb_banda= _hex_a_rgb01(colores["banda"])
     rgb_texto_banda= _hex_a_rgb01(colores["texto_banda"])
@@ -128,6 +131,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
     alto_doble= 40
 
     def rect_relleno(x, y_top, w, h):
+
         cvs.setFillColorRGB(*rgb_banda)
         cvs.rect(x, y_top - h, w, h, fill=1, stroke=1)
         cvs.setFillColorRGB(*rgb_texto_banda)
@@ -152,7 +156,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
             cvs.rect(cx, fila2_y - 14, COL_PERIODO, 14, stroke=1, fill=0)
             cvs.setFont("Helvetica-Bold", 6)
             cvs.drawCentredString(cx + COL_PERIODO / 2, fila2_y - 10, periodo["nombre"])
-            et_local, idx_local = etiqueta, i
+            et_local, idx_local= etiqueta, i
             columnas.append((cx, COL_PERIODO,
                               lambda a, et=et_local, ix=idx_local: _fmt(a["grilla"]["grupos"].get(et, [None] * n_periodos)[ix])))
             if mostrar_rp:
@@ -186,6 +190,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
     cvs.setFillColorRGB(0, 0, 0)
 
     def _texto_recuperacion(area):
+
         rec= recuperaciones.get(area["materia_id"], {})
         partes= []
         if rec.get("recuperacion_final") is not None:
@@ -271,6 +276,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
 
 
 def exportar_informe_primaria_pdf(estudiante_id, ruta_pdf, institucion, boletin=None):
+
     from reportlab.pdfgen import canvas as _canvas_mod
     from src.boletines.boletin_minerd import construir_boletin_general
 
@@ -279,7 +285,7 @@ def exportar_informe_primaria_pdf(estudiante_id, ruta_pdf, institucion, boletin=
         if boletin is None:
             return None
 
-    ancho, alto = _dimensiones_pagina_primaria(boletin)
+    ancho, alto= _dimensiones_pagina_primaria(boletin)
     cvs= _canvas_mod.Canvas(ruta_pdf, pagesize=(ancho, alto))
     dibujar_informe_primaria_oficial(cvs, institucion, boletin)
     cvs.save()

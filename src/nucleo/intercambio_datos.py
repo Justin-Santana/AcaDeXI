@@ -1,5 +1,6 @@
-#-----------------------------------------
-#intercambio de datos entre las cuatro ediciones
+# -----------------------------------------
+# intercambio de datos entre las cuatro ediciones
+# -----------------------------------------
 #permisos.py resuelve qué puede ver cada edición; esto resuelve otra cosa: cómo un estudiante, una
 #calificación o una asistencia capturada en UNA edición viaja y se entiende en OTRA, aunque el
 #esquema de base de datos sea distinto (Single Teacher no tiene nada institucional debajo, Full y
@@ -22,7 +23,6 @@
 #El emparejamiento nunca usa el id interno, que es distinto en cada instalación: los estudiantes
 #se emparejan por nombre, apellidos y fecha de nacimiento, y las calificaciones por el NOMBRE de
 #la materia y del periodo. Si el estudiante ya existe se actualiza; si no, se crea.
-#-----------------------------------------
 import json
 from datetime import datetime
 
@@ -33,14 +33,15 @@ CAMPOS_CANONICOS_ESTUDIANTE= ["nombre", "apellidos", "sexo", "fecha_nacimiento",
                               "direccion", "telefono", "correo", "tutor", "tutor2", "estado"]
 
 
-#-----------------------------------------
-#conexión según la edición
+# -----------------------------------------
+# conexión según la edición
+# -----------------------------------------
 #el resto del módulo trabaja siempre sobre listas de dicts, así que este es el único punto que
 #sabe de qué esquema vienen y a cuál van.
-#-----------------------------------------
 def _conexion_para_edicion(main_window):
 
     try:
+
         from src.nucleo.edicion import edicion_actual
         edicion= edicion_actual()
 
@@ -56,9 +57,9 @@ def _conexion_para_edicion(main_window):
     return obtener_conexion(), edicion
 
 
-#-----------------------------------------
-#estudiantes
-#-----------------------------------------
+# -----------------------------------------
+# estudiantes
+# -----------------------------------------
 #exporta los estudiantes de una sección, o todos si seccion_id es None. En la edición Docentes se
 #exporta la versión ya combinada con los overrides locales, que es la que el docente ve como
 #correcta, no el dato institucional crudo.
@@ -133,11 +134,11 @@ def importar_estudiantes(main_window, ruta_archivo, seccion_id_destino=None):
     return {"creados": creados, "actualizados": actualizados}
 
 
-#-----------------------------------------
-#calificaciones
+# -----------------------------------------
+# calificaciones
+# -----------------------------------------
 #acá el destino siempre se pide explícito: mezclar notas de una materia con otra por nombre sería
 #demasiado arriesgado para hacerlo solo.
-#-----------------------------------------
 def exportar_calificaciones(main_window, ruta_archivo, materia_id, periodo_id=None):
 
     conn, edicion= _conexion_para_edicion(main_window)
@@ -220,9 +221,9 @@ def importar_calificaciones(main_window, ruta_archivo, materia_id_destino, perio
     return {"importadas": importadas, "estudiantes_faltantes": faltantes}
 
 
-#-----------------------------------------
-#leer y escribir el paquete
-#-----------------------------------------
+# -----------------------------------------
+# leer y escribir el paquete
+# -----------------------------------------
 def _escribir_paquete(ruta_archivo, tipo, edicion, registros):
 
     paquete= {

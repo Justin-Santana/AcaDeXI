@@ -204,6 +204,7 @@ def tareas_de_materia(materia_id=None, seccion_id=None, main_window=None):
     conn= bd_single_teacher.obtener_conexion(main_window)
 
     try:
+
         return [dict(fila) for fila in conn.execute(consulta + " ORDER BY fecha_entrega, titulo", valores)]
 
     finally:
@@ -218,6 +219,7 @@ def eliminar_secuencia(secuencia_id, main_window=None):
     conn= bd_single_teacher.obtener_conexion(main_window)
 
     try:
+
         conn.execute("DELETE FROM secuencias_didacticas WHERE id=?", (secuencia_id,))
         conn.commit()
 

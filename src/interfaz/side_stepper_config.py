@@ -1,27 +1,26 @@
-"""Pantalla de configuración de módulos por rol para AcaDeXI Side Stepper
-(Pieza 2 del motor de permisos, prompt_arquitectura_4_ediciones.md).
-
-Un solo widget (`PanelPermisosSideStepper`) sirve para los DOS orígenes de
-configuración descritos en el prompt:
-
-  A) Full Institutional, Configuración → "Exportar Side Stepper": el
-     Director la abre ANTES de exportar, para decidir qué rol(es) y qué
-     módulos tendrá la copia que está por generar.
-  B) Wizard standalone de Side Stepper (Pieza 5, primer arranque): el
-     propio usuario la usa para elegir su rol y sus módulos.
-
-La única diferencia entre A y B es QUIÉN la abre y en qué momento -el
-widget en sí no sabe ni le importa cuál de los dos casos es; ambos llaman a
-las mismas funciones de permisos.py (guardar_permisos_side_stepper, etc.),
-así que un cambio futuro en la lógica de permisos se aplica a ambos casos
-automáticamente.
-
-Soporta ROLES PERSONALIZADOS: además de los 5 roles fijos de
-permisos.ROLES, se puede escribir cualquier nombre de rol nuevo (ej.
-"Bibliotecario") y configurarle su propio conjunto de módulos, con
-MODULOS_EXISTENTES completo como techo (ver permisos.py,
-guardar_permisos_side_stepper).
-"""
+#Pantalla de configuración de módulos por rol para AcaDeXI Side Stepper
+#(Pieza 2 del motor de permisos, prompt_arquitectura_4_ediciones.md).
+#
+#Un solo widget (`PanelPermisosSideStepper`) sirve para los DOS orígenes de
+#configuración descritos en el prompt:
+#
+#A) Full Institutional, Configuración → "Exportar Side Stepper": el
+#Director la abre ANTES de exportar, para decidir qué rol(es) y qué
+#módulos tendrá la copia que está por generar.
+#B) Wizard standalone de Side Stepper (Pieza 5, primer arranque): el
+#propio usuario la usa para elegir su rol y sus módulos.
+#
+#La única diferencia entre A y B es QUIÉN la abre y en qué momento -el
+#widget en sí no sabe ni le importa cuál de los dos casos es; ambos llaman a
+#las mismas funciones de permisos.py (guardar_permisos_side_stepper, etc.),
+#así que un cambio futuro en la lógica de permisos se aplica a ambos casos
+#automáticamente.
+#
+#Soporta ROLES PERSONALIZADOS: además de los 5 roles fijos de
+#permisos.ROLES, se puede escribir cualquier nombre de rol nuevo (ej.
+#"Bibliotecario") y configurarle su propio conjunto de módulos, con
+#MODULOS_EXISTENTES completo como techo (ver permisos.py,
+#guardar_permisos_side_stepper).
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox,
     QLineEdit, QListWidget, QListWidgetItem, QCheckBox, QScrollArea, QFrame, QMessageBox, QDialog,
     QDialogButtonBox, QInputDialog, QFormLayout)
@@ -33,12 +32,13 @@ from src.nucleo.limite_campos import limitar_campo_texto
 from src.nucleo import permisos
 
 
+#Widget embebible (no es un QDialog en sí: quien lo use decide si lo
+#mete dentro de un QDialog propio -como hace DialogoExportarSideStepper
+#más abajo- o directamente en una página de wizard).
 class PanelPermisosSideStepper(QWidget):
-    """Widget embebible (no es un QDialog en sí: quien lo use decide si lo
-    mete dentro de un QDialog propio -como hace DialogoExportarSideStepper
-    más abajo- o directamente en una página de wizard)."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         layout= QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -108,11 +108,13 @@ class PanelPermisosSideStepper(QWidget):
         self._refrescar_checkboxes(self.combo_rol.currentText())
 
     def _cargar_roles_ya_configurados(self):
+
         for info_rol in permisos.listar_roles_side_stepper_configurados():
             if self.combo_rol.findText(info_rol["rol"]) < 0:
                 self.combo_rol.addItem(info_rol["rol"])
 
     def _refrescar_checkboxes(self, rol_texto):
+
         rol_texto= (rol_texto or "").strip()
         for i in reversed(range(self.layout_checks.count())):
             widget= self.layout_checks.itemAt(i).widget()
@@ -140,16 +142,19 @@ class PanelPermisosSideStepper(QWidget):
         self.layout_checks.addStretch()
 
     def _marcar_todos(self, estado):
+
         for check in self._checks.values():
             check.setChecked(estado)
 
+    #Acceso público a los módulos actualmente marcados para el rol en
+    #pantalla, sin guardar -lo usa WizardSideStepper para validar antes
+    #de crear la cuenta, sin depender de un atributo "privado".
     def modulos_marcados(self):
-        """Acceso público a los módulos actualmente marcados para el rol en
-        pantalla, sin guardar -lo usa WizardSideStepper para validar antes
-        de crear la cuenta, sin depender de un atributo "privado"."""
+
         return [modulo for modulo, check in self._checks.items() if check.isChecked()]
 
     def _guardar_rol_actual(self):
+
         rol_texto= self.combo_rol.currentText().strip()
         if not rol_texto:
             mostrar_mensaje("advertencia", "Falta el rol", "Escribe o elige un rol primero.", self)
@@ -164,6 +169,7 @@ class PanelPermisosSideStepper(QWidget):
                          self)
 
     def _refrescar_lista_configurados(self):
+
         self.lista_roles_configurados.clear()
         for info_rol in permisos.listar_roles_side_stepper_configurados():
             etiqueta= f"{info_rol['rol']} — {len(info_rol['modulos'])} módulo(s)"
@@ -174,6 +180,7 @@ class PanelPermisosSideStepper(QWidget):
             self.lista_roles_configurados.addItem(item)
 
     def _eliminar_rol_seleccionado(self):
+
         item= self.lista_roles_configurados.currentItem()
         if not item:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona un rol de la lista primero.", self)
@@ -188,15 +195,16 @@ class PanelPermisosSideStepper(QWidget):
             self._refrescar_checkboxes(self.combo_rol.currentText())
 
 
+#Uso A del prompt: Full Institutional, Configuración → "Exportar Side
+#Stepper". El Director configura los roles/módulos con
+#PanelPermisosSideStepper y, cuando está conforme, dispara la generación
+#del paquete exportado (mismo mecanismo de empaquetado que ya usa el
+#.acdx de Docentes — ver instalador.py) más el instalador
+#AcaDeXI_SideStepper_Setup.exe para entregar a la persona.
 class DialogoExportarSideStepper(QDialog):
-    """Uso A del prompt: Full Institutional, Configuración → "Exportar Side
-    Stepper". El Director configura los roles/módulos con
-    PanelPermisosSideStepper y, cuando está conforme, dispara la generación
-    del paquete exportado (mismo mecanismo de empaquetado que ya usa el
-    .acdx de Docentes — ver instalador.py) más el instalador
-    AcaDeXI_SideStepper_Setup.exe para entregar a la persona."""
 
     def __init__(self, main_window, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.setWindowTitle("Exportar Side Stepper")
@@ -227,20 +235,21 @@ class DialogoExportarSideStepper(QDialog):
 #(DialogoExportarSideStepper, arriba, lo llena el Director ANTES de exportar), aquí lo llena el propio usuario,
 #en su propio primer arranque, y termina creando su propia cuenta de acceso -no hay ningún Director que la haya
 #creado por él.
+#Se ejecuta DESPUÉS de que la estructura institucional base ya existe
+#(mismo WizardConfiguracion institucional que usa Full Institutional: ver
+#main.py -Side Stepper reutiliza el esquema completo de bd.py, así que
+#también necesita Cursos/Grados/Secciones antes de que tenga sentido
+#elegir qué módulos de Estudiantes/Materias/etc. va a usar este rol).
+#Dos pasos en un solo diálogo:
+#1) Elegir rol y módulos (PanelPermisosSideStepper, el MISMO widget que
+#usa el Director en Uso A -mismo motor, distinto quién lo llena).
+#2) Crear la cuenta de acceso (usuario/contraseña) para ESE rol -no
+#hay ningún Director que la haya creado de antemano, como sí pasa
+#en el Uso A exportado.
 class WizardSideStepper(QDialog):
-    """Se ejecuta DESPUÉS de que la estructura institucional base ya existe
-    (mismo WizardConfiguracion institucional que usa Full Institutional: ver
-    main.py -Side Stepper reutiliza el esquema completo de bd.py, así que
-    también necesita Cursos/Grados/Secciones antes de que tenga sentido
-    elegir qué módulos de Estudiantes/Materias/etc. va a usar este rol).
-    Dos pasos en un solo diálogo:
-      1) Elegir rol y módulos (PanelPermisosSideStepper, el MISMO widget que
-         usa el Director en Uso A -mismo motor, distinto quién lo llena).
-      2) Crear la cuenta de acceso (usuario/contraseña) para ESE rol -no
-         hay ningún Director que la haya creado de antemano, como sí pasa
-         en el Uso A exportado."""
 
     def __init__(self, main_window, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         self.setWindowTitle("Bienvenido a AcaDeXI Side Stepper")
@@ -288,6 +297,7 @@ class WizardSideStepper(QDialog):
         centrar_y_al_frente(self, parent)
 
     def _finalizar(self):
+
         rol= self.panel.combo_rol.currentText().strip()
         nombre= self.in_nombre.text().strip()
         usuario= self.in_usuario.text().strip()

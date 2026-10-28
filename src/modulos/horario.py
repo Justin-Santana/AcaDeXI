@@ -1,24 +1,23 @@
 #Horario.py - calendario semanal dinámico (pintado a medida) v2
-"""Horario de AcaDeXI — vista semanal tipo calendario, con animaciones y
-carga diferida para que el módulo aparezca al instante desde la barra
-lateral.
-
-Notas de rendimiento (por qué se ve así):
-- La grilla semanal YA NO es un QTableWidget con texto multilínea: es un
-  único QWidget que se dibuja con QPainter (VistaSemanalHorario). Eso evita
-  el costo de crear cientos de QTableWidgetItem y de recalcular alturas de
-  fila con resizeRowsToContents() cada vez que cambia un filtro, que era la
-  causa principal de las trabadas al filtrar o hacer scroll.
-- Los datos institucionales y locales se leen de la base UNA sola vez por
-  refresco (self._todas_clases). Escribir en el buscador o cambiar un
-  filtro NO vuelve a consultar la base: solo se filtra la lista que ya
-  está en memoria y se repinta, así que se siente instantáneo.
-- El __init__ del módulo ya NO llama a refrescar(): construye la UI vacía
-  (con un estado de carga liviano) y deja que main.py haga su
-  QTimer.singleShot(10, pagina.refrescar) de siempre. Así el clic en la
-  barra lateral pinta la pantalla al toque; los datos llegan un instante
-  después sin congelar la animación de navegación.
-"""
+#Horario de AcaDeXI — vista semanal tipo calendario, con animaciones y
+#carga diferida para que el módulo aparezca al instante desde la barra
+#lateral.
+#
+#Notas de rendimiento (por qué se ve así):
+#- La grilla semanal YA NO es un QTableWidget con texto multilínea: es un
+#único QWidget que se dibuja con QPainter (VistaSemanalHorario). Eso evita
+#el costo de crear cientos de QTableWidgetItem y de recalcular alturas de
+#fila con resizeRowsToContents() cada vez que cambia un filtro, que era la
+#causa principal de las trabadas al filtrar o hacer scroll.
+#- Los datos institucionales y locales se leen de la base UNA sola vez por
+#refresco (self._todas_clases). Escribir en el buscador o cambiar un
+#filtro NO vuelve a consultar la base: solo se filtra la lista que ya
+#está en memoria y se repinta, así que se siente instantáneo.
+#- El __init__ del módulo ya NO llama a refrescar(): construye la UI vacía
+#(con un estado de carga liviano) y deja que main.py haga su
+#QTimer.singleShot(10, pagina.refrescar) de siempre. Así el clic en la
+#barra lateral pinta la pantalla al toque; los datos llegan un instante
+#después sin congelar la animación de navegación.
 import unicodedata
 from datetime import datetime
 
@@ -69,8 +68,10 @@ _COLORES_DEFECTO= {
 
 
 def _minutos(hora_txt):
+
     try:
-        h, m = hora_txt.strip().split(":")
+
+        h, m= hora_txt.strip().split(":")
         return int(h) * 60 + int(m)
     except Exception:
         return 0
@@ -79,16 +80,17 @@ def _minutos(hora_txt):
 _CACHE_INDICE_COLOR_AUTOMATICO= {}
 
 
+#Color para una materia/nota. Si el docente personalizó ese color
+#(overrides), gana la personalización; si no, se usa el color automático
+#de siempre (determinado por el propio texto, así es estable entre
+#sesiones).
+#
+#El índice del color automático (sum(ord(c)...) % N) se cachea por texto:
+#con una vista institucional completa el mismo nombre de materia se
+#repite en decenas/cientos de clases, y antes ese cálculo se rehacía,
+#idéntico, en cada una de ellas en cada repintado.
 def _color_para(texto, overrides=None):
-    """Color para una materia/nota. Si el docente personalizó ese color
-    (overrides), gana la personalización; si no, se usa el color automático
-    de siempre (determinado por el propio texto, así es estable entre
-    sesiones).
 
-    El índice del color automático (sum(ord(c)...) % N) se cachea por texto:
-    con una vista institucional completa el mismo nombre de materia se
-    repite en decenas/cientos de clases, y antes ese cálculo se rehacía,
-    idéntico, en cada una de ellas en cada repintado."""
     if overrides and texto in overrides:
         return overrides[texto]
     if not texto:
@@ -100,9 +102,10 @@ def _color_para(texto, overrides=None):
     return _PALETA_CLASES[indice]
 
 
+#Quita mayúsculas y acentos para que el buscador no sea estricto:
+#'matemáticas', 'Matemáticas' y 'MATEMATICAS' encuentran lo mismo.
 def _normalizar(texto):
-    """Quita mayúsculas y acentos para que el buscador no sea estricto:
-    'matemáticas', 'Matemáticas' y 'MATEMATICAS' encuentran lo mismo."""
+
     if not texto:
         return ""
     descompuesto= unicodedata.normalize("NFKD", str(texto))
@@ -111,7 +114,9 @@ def _normalizar(texto):
 
 
 def _colores_tema(main_window):
+
     try:
+
         paleta= main_window.theme_palettes[main_window.tema_actual]
         idx= 1 if main_window.modo_oscuro else 0
         return {
@@ -127,12 +132,13 @@ def _colores_tema(main_window):
 
 
 #Panel desplegable (acordeón animado, para no abarrotar la pantalla)
+#Ver la copia idéntica de esta función en calendario.py ▸
+#PanelDesplegable: mismo icono circular verde ('+'/'−' dibujados a mano,
+#sin depender de que el sistema tenga un glifo instalado) para que
+#'Agregar una clase local' luzca igual que el resto de paneles
+#colapsables de la app.
 def _pixmap_circulo_mas_menos(expandido, diametro=18):
-    """Ver la copia idéntica de esta función en calendario.py ▸
-    PanelDesplegable: mismo icono circular verde ('+'/'−' dibujados a mano,
-    sin depender de que el sistema tenga un glifo instalado) para que
-    'Agregar una clase local' luzca igual que el resto de paneles
-    colapsables de la app."""
+
     pixmap= QPixmap(diametro, diametro)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter= QPainter(pixmap)
@@ -155,7 +161,9 @@ def _pixmap_circulo_mas_menos(expandido, diametro=18):
 
 
 class PanelDesplegable(QWidget):
+
     def __init__(self, titulo, parent=None):
+
         super().__init__(parent)
         self._titulo= titulo
         self._expandido= False
@@ -187,15 +195,18 @@ class PanelDesplegable(QWidget):
         self._anim.finished.connect(self._al_terminar_animacion)
 
     def cuerpo_layout(self):
+
         return self.contenedor_layout
 
     def _alternar(self):
+
         self.expandir(not self._expandido)
 
+    #Color del texto del encabezado según el modo claro/oscuro:
+    #negro (casi) puro en claro, blanco en oscuro. El fondo gris
+    #translúcido funciona igual en ambos modos.
     def _aplicar_color_tema(self):
-        """Color del texto del encabezado según el modo claro/oscuro:
-        negro (casi) puro en claro, blanco en oscuro. El fondo gris
-        translúcido funciona igual en ambos modos."""
+
         modo_oscuro= getattr(self.window(), "modo_oscuro", False)
         color= "#FFFFFF" if modo_oscuro else "#0F172A"
         self.btn_cabecera.setStyleSheet(f"""
@@ -205,25 +216,30 @@ class PanelDesplegable(QWidget):
             QPushButton:hover {{ background: rgba(127,127,127,0.18); }}
         """)
 
+    #Refresca el color del texto del encabezado al cambiar de tema en
+    #runtime; el showEvent solo dispara la primera vez que se muestra.
     def actualizar_color_tema(self):
-        """Refresca el color del texto del encabezado al cambiar de tema en
-        runtime; el showEvent solo dispara la primera vez que se muestra."""
+
         self._aplicar_color_tema()
 
     def showEvent(self, event):
+
         #Al mostrarse la ventana ya está enganchada al main window, así que aquí el modo claro/oscuro se conoce con
         #certeza (en __init__ puede no estarlo todavía si el panel se crea antes de asignar el padre).
         try:
+
             self._aplicar_color_tema()
         except RuntimeError:
             pass
         super().showEvent(event)
 
     def _al_terminar_animacion(self):
+
         if not self._expandido:
             self.contenedor.setVisible(False)
 
     def expandir(self, expandir=True, animar=True):
+
         self._expandido= expandir
         self.btn_cabecera.setIcon(QIcon(_pixmap_circulo_mas_menos(expandir)))
         if expandir:
@@ -251,16 +267,20 @@ class PanelDesplegable(QWidget):
 #Ícono de lupa (dibujado a mano, no depende de que el sistema tenga instalado el glifo del emoji 🔎 — en algunos
 #Windows se ve como "|||")
 class IconoLupa(QWidget):
+
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(17, 17)
         self._color= _COLORES_DEFECTO["texto_sec"]
 
     def establecer_color(self, color):
+
         self._color= color
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pen= QPen(QColor(self._color), 1.7)
@@ -272,20 +292,21 @@ class IconoLupa(QWidget):
 
 
 #Mini gráfico de barras: carga de clases por día (animado)
+#Barras de carga semanal (una por día, aunque el número de columnas que
+#llegue a `establecer_datos` puede variar: instituciones sin sábado, por
+#ejemplo, envían menos). Tanto el tamaño mínimo como todo lo que se dibuja
+#(ancho de barra, tipografías, márgenes) se recalculan a partir de la
+#cantidad de valores y del espacio real disponible, así que el gráfico se
+#ve bien igual de apretado con 3 columnas que con 10, y también aprovecha
+#el espacio extra si el contenedor le da más lugar (no se queda "flotando"
+#en una esquina con tamaño fijo).
 class CargaSemanalWidget(QWidget):
-    """Barras de carga semanal (una por día, aunque el número de columnas que
-    llegue a `establecer_datos` puede variar: instituciones sin sábado, por
-    ejemplo, envían menos). Tanto el tamaño mínimo como todo lo que se dibuja
-    (ancho de barra, tipografías, márgenes) se recalculan a partir de la
-    cantidad de valores y del espacio real disponible, así que el gráfico se
-    ve bien igual de apretado con 3 columnas que con 10, y también aprovecha
-    el espacio extra si el contenedor le da más lugar (no se queda "flotando"
-    en una esquina con tamaño fijo)."""
 
     ANCHO_MIN_POR_BARRA= 36
     ALTO_MIN= 96
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._valores= [0] * 6
@@ -299,14 +320,17 @@ class CargaSemanalWidget(QWidget):
         self._actualizar_tamano_minimo()
 
     def _actualizar_tamano_minimo(self):
+
         n= max(len(self._valores), 1)
         self.setMinimumSize(self.ANCHO_MIN_POR_BARRA * n, self.ALTO_MIN)
 
     def establecer_colores(self, colores):
+
         self._colores= colores
         self.update()
 
     def establecer_datos(self, valores):
+
         self._origen= list(self._valores_animados)
         cambio_cantidad= len(valores) != len(self._valores)
         self._valores= valores
@@ -323,13 +347,15 @@ class CargaSemanalWidget(QWidget):
         self._anim.start()
 
     def _paso_animacion(self, t):
+
         self._valores_animados= [o + (v - o) * t for o, v in zip(self._origen, self._valores)]
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        ancho, alto = self.width(), self.height()
+        ancho, alto= self.width(), self.height()
         n= len(self._valores_animados)
         if n == 0:
             return
@@ -341,7 +367,9 @@ class CargaSemanalWidget(QWidget):
         pt_valor= max(7, round(8 * escala))
         pt_etq= max(7, round(8 * escala))
 
-        titulo= QFont(self.font()); titulo.setPointSize(pt_titulo); titulo.setBold(True)
+        titulo= QFont(self.font())
+        titulo.setPointSize(pt_titulo)
+        titulo.setBold(True)
         painter.setFont(titulo)
         painter.setPen(QColor(self._colores["texto_sec"]))
         alto_titulo= pt_titulo + 8
@@ -364,8 +392,11 @@ class CargaSemanalWidget(QWidget):
         #"dispararse" sobre las columnas vecinas.
         ancho_texto_col= max(espacio - 4, 16)
 
-        f_valor= QFont(self.font()); f_valor.setPointSize(pt_valor); f_valor.setBold(True)
-        f_etq= QFont(self.font()); f_etq.setPointSize(pt_etq)
+        f_valor= QFont(self.font())
+        f_valor.setPointSize(pt_valor)
+        f_valor.setBold(True)
+        f_etq= QFont(self.font())
+        f_etq.setPointSize(pt_etq)
 
         for i, v in enumerate(self._valores_animados):
             cx= espacio * i + espacio / 2
@@ -404,7 +435,9 @@ class CargaSemanalWidget(QWidget):
 
 #ANILLO: proporción de clases institucionales vs. locales (animado)
 class AnilloProporcionWidget(QWidget):
+
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setFixedSize(88, 88)
         self._fraccion_animada= 0.0
@@ -416,10 +449,12 @@ class AnilloProporcionWidget(QWidget):
         self._anim.valueChanged.connect(self._paso)
 
     def establecer_colores(self, colores):
+
         self._colores= colores
         self.update()
 
     def establecer(self, institucionales, locales):
+
         total= institucionales + locales
         objetivo= (institucionales / total) if total else 0.0
         self._texto_centro= str(total)
@@ -429,10 +464,12 @@ class AnilloProporcionWidget(QWidget):
         self._anim.start()
 
     def _paso(self, v):
+
         self._fraccion_animada= v
         self.update()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         grosor= 9
@@ -449,7 +486,9 @@ class AnilloProporcionWidget(QWidget):
         if span:
             painter.drawArc(rect, 90 * 16, -span)
 
-        f= QFont(self.font()); f.setPointSize(13); f.setBold(True)
+        f= QFont(self.font())
+        f.setPointSize(13)
+        f.setBold(True)
         painter.setFont(f)
         painter.setPen(QColor(self._colores["texto"]))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self._texto_centro)
@@ -457,6 +496,7 @@ class AnilloProporcionWidget(QWidget):
 
 #Calendario semanal (pintado a medida, con hover y clic al detalle)
 class VistaSemanalHorario(QWidget):
+
     clase_activada= Signal(dict)
     overflow_activado= Signal(list)
 
@@ -467,6 +507,7 @@ class VistaSemanalHorario(QWidget):
     MOSTRAR_MAX= 3
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setMouseTracking(True)
         self._clases= []
@@ -500,16 +541,19 @@ class VistaSemanalHorario(QWidget):
         self._anim_opacidad= None
 
     def establecer_colores(self, colores):
+
         self._colores= colores
         self.update()
 
+    #overrides: {texto_materia_o_nota: (color, color_hv)} con las
+    #personalizaciones del docente. Repinta al instante.
     def establecer_colores_materias(self, overrides):
-        """overrides: {texto_materia_o_nota: (color, color_hv)} con las
-        personalizaciones del docente. Repinta al instante."""
+
         self._colores_materias= overrides or {}
         self.update()
 
     def establecer_clases(self, clases, animar=True):
+
         self._clases= clases
         self._franjas= sorted({(c["hora_inicio"], c["hora_fin"]) for c in clases},
                                 key= lambda t: _minutos(t[0]))
@@ -521,6 +565,7 @@ class VistaSemanalHorario(QWidget):
             self._iniciar_fundido_entrada()
 
     def _iniciar_fundido_entrada(self):
+
         if self._anim_opacidad is not None:
             self._anim_opacidad.stop()
         self._efecto= QGraphicsOpacityEffect(self)
@@ -535,16 +580,19 @@ class VistaSemanalHorario(QWidget):
         self._anim_opacidad.start()
 
     def _quitar_efecto_opacidad(self):
+
         #Quitamos el efecto (en vez de solo dejarlo en opacidad 1.0) para que el widget vuelva a pintarse de forma
         #normal, sin el pixmap cacheado que causaba el recorte de chips al hacer scroll.
         self.setGraphicsEffect(None)
         self._efecto= None
 
     def resizeEvent(self, event):
+
         super().resizeEvent(event)
         self._recalcular_geometria()
 
     def _recalcular_geometria(self):
+
         self._hitboxes= []
         self._celda_hitboxes= {}
         ancho_dias= max(self.width() - self.ANCHO_GUTTER, 90)
@@ -554,6 +602,7 @@ class VistaSemanalHorario(QWidget):
         celdas= {}
         for c in self._clases:
             try:
+
                 col= DIAS.index(c["dia"])
             except ValueError:
                 continue
@@ -574,6 +623,7 @@ class VistaSemanalHorario(QWidget):
                 ancho_chip= max((ancho_col - margen * (n_chips + 1)) / n_chips, 20)
 
                 def _agregar(rect, item, fila_idx=fila_idx, col=col):
+
                     #idx es la posición en self._hitboxes -se usa para que
                     #self._indice_hover (que paintEvent compara por índice)
                     #siga siendo válido aunque el hover se detecte por la ruta rápida (celda) en vez de recorriendo toda la lista.
@@ -589,9 +639,11 @@ class VistaSemanalHorario(QWidget):
                     _agregar(QRectF(x, y, ancho_chip, self.ALTO_FILA), {"_overflow": resto})
 
     def _fila_y(self, indice):
+
         return self.ALTO_CABECERA + indice * (self.ALTO_FILA + self.ESPACIO_FILA)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         ancho= self.width()
@@ -612,7 +664,7 @@ class VistaSemanalHorario(QWidget):
         #separación entre filas/columnas (inspirado, solo ligeramente, en el diseño de tabla clásica de aSc Horarios):
         #dan la misma sensación de orden y guían el ojo fila por fila, pero sin pelear visualmente con el color de cada
         #chip. El espacio entre filas también se agrandó (ESPACIO_FILA) para que respiren.
-        #        #Rendimiento: con horarios institucionales completos puede haber muchísimas franjas horarias distintas (grilla
+        ##Rendimiento: con horarios institucionales completos puede haber muchísimas franjas horarias distintas (grilla
         #muy alta). En vez de dibujar TODAS las líneas/etiquetas de hora aunque el usuario solo esté viendo 8 filas por
         #la ventana/scroll, se calcula el rango de filas que realmente cae dentro de "clip" y solo esas se dibujan.
         fila_alto= self.ALTO_FILA + self.ESPACIO_FILA
@@ -633,7 +685,9 @@ class VistaSemanalHorario(QWidget):
 
         #Cabecera de días (solo si el área dañada la incluye)
         if clip.top() <= self.ALTO_CABECERA:
-            f_dia= QFont(self.font()); f_dia.setPointSize(10); f_dia.setBold(True)
+            f_dia= QFont(self.font())
+            f_dia.setPointSize(10)
+            f_dia.setBold(True)
             for col, nombre in enumerate(DIAS):
                 x= self.ANCHO_GUTTER + col * ancho_col
                 rect= QRectF(x + 5, 6, ancho_col - 10, self.ALTO_CABECERA - 12)
@@ -652,11 +706,12 @@ class VistaSemanalHorario(QWidget):
                 painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, etiqueta)
 
         #Etiquetas de hora (gutter) -solo las filas visibles
-        f_hora= QFont(self.font()); f_hora.setPointSize(8)
+        f_hora= QFont(self.font())
+        f_hora.setPointSize(8)
         painter.setFont(f_hora)
         painter.setPen(QColor(self._colores["texto_sec"]))
         for i in range(max(primera_fila, 0), min(ultima_fila, len(self._franjas) - 1) + 1):
-            ini, fin = self._franjas[i]
+            ini, fin= self._franjas[i]
             y= self._fila_y(i)
             rect= QRectF(4, y, self.ANCHO_GUTTER - 8, self.ALTO_FILA)
             ini_fmt= formatear_hora(ini, self.main_window)
@@ -669,8 +724,11 @@ class VistaSemanalHorario(QWidget):
         #cada chip, cientos de veces por repintado) y se salta por completo
         #el trabajo de dibujar cualquier chip que no intersecte "clip":
         #con hover, eso reduce el repintado de 600-800 chips a 1 o 2.
-        f_titulo= QFont(self.font()); f_titulo.setPointSize(9); f_titulo.setBold(True)
-        f_sub= QFont(self.font()); f_sub.setPointSize(8)
+        f_titulo= QFont(self.font())
+        f_titulo.setPointSize(9)
+        f_titulo.setBold(True)
+        f_sub= QFont(self.font())
+        f_sub.setPointSize(8)
         metrica_titulo= QFontMetrics(f_titulo)
         metrica_sub= QFontMetrics(f_sub)
         for indice, (rect, item) in enumerate(self._hitboxes):
@@ -683,7 +741,8 @@ class VistaSemanalHorario(QWidget):
             self._pintar_chip(painter, rect, item, en_hover, f_titulo, f_sub, metrica_titulo, metrica_sub)
 
     def _pintar_chip(self, painter, rect, item, en_hover, f_titulo, f_sub, metrica, metrica2):
-        base, base_hv = _color_para(item.get("materia_nombre") or item.get("notas") or "",
+
+        base, base_hv= _color_para(item.get("materia_nombre") or item.get("notas") or "",
                                      self._colores_materias)
         es_local= bool(item.get("es_local"))
         elevacion= 3 if en_hover else 1
@@ -742,11 +801,12 @@ class VistaSemanalHorario(QWidget):
             self._dibujar_linea_chip(painter, interior, y_linea, 14, aula_texto,
                                       metrica2, self._pm_aula)
 
+    #Dibuja una línea de texto del chip, con un icono real (QPixmap,
+    #NO un caracter emoji dentro del string) opcional a la izquierda.
+    #Centraliza el desplazamiento del texto para que el icono nunca
+    #quede pisando las letras ni descuadrado entre título/curso/aula.
     def _dibujar_linea_chip(self, painter, interior, y, alto, texto, metrica, icono=None):
-        """Dibuja una línea de texto del chip, con un icono real (QPixmap,
-        NO un caracter emoji dentro del string) opcional a la izquierda.
-        Centraliza el desplazamiento del texto para que el icono nunca
-        quede pisando las letras ni descuadrado entre título/curso/aula."""
+
         x= interior.x()
         ancho_disponible= interior.width()
         if icono is not None and not icono.isNull():
@@ -761,6 +821,7 @@ class VistaSemanalHorario(QWidget):
                           metrica.elidedText(texto, Qt.TextElideMode.ElideRight, int(max(ancho_disponible, 0))))
 
     def _pintar_chip_overflow(self, painter, rect, items, en_hover, f_titulo):
+
         painter.setPen(QPen(QColor(self._colores["texto_sec"]), 1.4, Qt.PenStyle.DashLine))
         painter.setBrush(_con_alfa(self._colores["borde"], 140 if en_hover else 90))
         painter.drawRoundedRect(rect, 9, 9)
@@ -768,9 +829,10 @@ class VistaSemanalHorario(QWidget):
         painter.setPen(QColor(self._colores["texto"]))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"+{len(items)}\nmás")
 
+    #Fila/columna bajo el cursor, calculadas directamente por
+    #aritmética -O(1)-, sin tocar self._hitboxes.
     def _celda_en(self, punto):
-        """Fila/columna bajo el cursor, calculadas directamente por
-        aritmética -O(1)-, sin tocar self._hitboxes."""
+
         fila_alto= self.ALTO_FILA + self.ESPACIO_FILA
         rel_y= punto.y() - self.ALTO_CABECERA
         if rel_y < 0 or fila_alto <= 0:
@@ -791,17 +853,19 @@ class VistaSemanalHorario(QWidget):
             return None
         return fila, col
 
+    #Encuentra el chip bajo el cursor. Antes recorría self._hitboxes
+    #completo (podían ser 600-800 en una vista institucional completa)
+    #por cada evento de mouse. Ahora primero calcula en qué celda
+    #fila/columna cayó el cursor (_celda_en, O(1)) y solo revisa los
+    #3-4 chips que puede haber en esa celda -el resto del horario ni
+    #se toca.
     def _item_en(self, punto):
-        """Encuentra el chip bajo el cursor. Antes recorría self._hitboxes
-        completo (podían ser 600-800 en una vista institucional completa)
-        por cada evento de mouse. Ahora primero calcula en qué celda
-        fila/columna cayó el cursor (_celda_en, O(1)) y solo revisa los
-        3-4 chips que puede haber en esa celda -el resto del horario ni
-        se toca."""
-        idx, _rect, item = self._item_en_detalle(punto)
+
+        idx, _rect, item= self._item_en_detalle(punto)
         return item
 
     def _item_en_detalle(self, punto):
+
         celda= self._celda_en(punto)
         if celda is None:
             return None, None, None
@@ -811,6 +875,7 @@ class VistaSemanalHorario(QWidget):
         return None, None, None
 
     def mousePressEvent(self, event):
+
         punto= event.position()
         item= self._item_en(punto)
         if item is not None:
@@ -821,8 +886,9 @@ class VistaSemanalHorario(QWidget):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+
         punto= event.position()
-        nuevo, rect_nuevo, item_hover = self._item_en_detalle(punto)
+        nuevo, rect_nuevo, item_hover= self._item_en_detalle(punto)
         nuevo= -1 if nuevo is None else nuevo
         if nuevo != self._indice_hover:
             rect_anterior= (self._hitboxes[self._indice_hover][0]
@@ -847,6 +913,7 @@ class VistaSemanalHorario(QWidget):
         super().mouseMoveEvent(event)
 
     def leaveEvent(self, event):
+
         if self._indice_hover != -1:
             rect_anterior= (self._hitboxes[self._indice_hover][0]
                               if self._indice_hover < len(self._hitboxes) else None)
@@ -859,6 +926,7 @@ class VistaSemanalHorario(QWidget):
         super().leaveEvent(event)
 
     def _texto_tooltip(self, item):
+
         if "_overflow" in item:
             resto= item["_overflow"]
             lineas= [f"• {it.get('materia_nombre') or it.get('notas') or '(sin materia)'}"
@@ -884,6 +952,7 @@ class VistaSemanalHorario(QWidget):
 
 
 def _con_alfa(hex_color, alfa):
+
     color= QColor(hex_color)
     color.setAlpha(alfa)
     return color
@@ -891,7 +960,9 @@ def _con_alfa(hex_color, alfa):
 
 #Módulo principal
 class ModuloHorario(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.restringido= es_profesor_restringido(self.main_window)
@@ -913,6 +984,7 @@ class ModuloHorario(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Horario"
         #Las clases "locales" (datos_locales_docente.py) son 100% del equipo/docente actual, y el formulario
         #correspondiente (y sus widgets internos, que estos cuatro atajos tocan directamente) solo se construye más
@@ -931,6 +1003,7 @@ class ModuloHorario(QWidget):
 
     #--------------------------------------------------------
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -1189,21 +1262,32 @@ class ModuloHorario(QWidget):
             self.combo_dia_local.setMinimumWidth(190)
             self.combo_dia_local.addItems(DIAS)
             conectar_tooltip_seleccion(self.combo_dia_local, "Día de la semana de esta clase local")
-            self.time_inicio_local= QTimeEdit(); self.time_inicio_local.setTime(QTime(8, 0))
-            self.time_fin_local= QTimeEdit(); self.time_fin_local.setTime(QTime(9, 0))
+            self.time_inicio_local= QTimeEdit()
+            self.time_inicio_local.setTime(QTime(8, 0))
+            self.time_fin_local= QTimeEdit()
+            self.time_fin_local.setTime(QTime(9, 0))
             aplicar_formato_widget_hora(self.time_inicio_local, self.main_window)
             aplicar_formato_widget_hora(self.time_fin_local, self.main_window)
-            self.in_aula_local= QLineEdit(); self.in_aula_local.setPlaceholderText("Aula (opcional)")
+            self.in_aula_local= QLineEdit()
+            self.in_aula_local.setPlaceholderText("Aula (opcional)")
             limitar_campo_texto(self.in_aula_local, 300)
-            self.in_notas_local= QLineEdit(); self.in_notas_local.setPlaceholderText("Notas (opcional)")
+            self.in_notas_local= QLineEdit()
+            self.in_notas_local.setPlaceholderText("Notas (opcional)")
             limitar_campo_texto(self.in_notas_local, 300)
-            form_local.addWidget(QLabel("Materia:"), 0, 0); form_local.addWidget(self.combo_materia_local, 0, 1)
-            form_local.addWidget(QLabel("Curso:"), 0, 2); form_local.addWidget(self.combo_curso_local, 0, 3)
-            form_local.addWidget(QLabel("Sección:"), 1, 0); form_local.addWidget(self.combo_seccion_local, 1, 1)
-            form_local.addWidget(QLabel("Día:"), 1, 2); form_local.addWidget(self.combo_dia_local, 1, 3)
-            form_local.addWidget(QLabel("Hora inicio:"), 2, 0); form_local.addWidget(self.time_inicio_local, 2, 1)
-            form_local.addWidget(QLabel("Hora fin:"), 2, 2); form_local.addWidget(self.time_fin_local, 2, 3)
-            form_local.addWidget(self.in_aula_local, 3, 0, 1, 2); form_local.addWidget(self.in_notas_local, 3, 2, 1, 2)
+            form_local.addWidget(QLabel("Materia:"), 0, 0)
+            form_local.addWidget(self.combo_materia_local, 0, 1)
+            form_local.addWidget(QLabel("Curso:"), 0, 2)
+            form_local.addWidget(self.combo_curso_local, 0, 3)
+            form_local.addWidget(QLabel("Sección:"), 1, 0)
+            form_local.addWidget(self.combo_seccion_local, 1, 1)
+            form_local.addWidget(QLabel("Día:"), 1, 2)
+            form_local.addWidget(self.combo_dia_local, 1, 3)
+            form_local.addWidget(QLabel("Hora inicio:"), 2, 0)
+            form_local.addWidget(self.time_inicio_local, 2, 1)
+            form_local.addWidget(QLabel("Hora fin:"), 2, 2)
+            form_local.addWidget(self.time_fin_local, 2, 3)
+            form_local.addWidget(self.in_aula_local, 3, 0, 1, 2)
+            form_local.addWidget(self.in_notas_local, 3, 2, 1, 2)
             cuerpo.addLayout(form_local)
 
             fila_botones_local= QHBoxLayout()
@@ -1326,6 +1410,7 @@ class ModuloHorario(QWidget):
         layout_raiz.addWidget(scroll, 1)
 
     def _construir_leyenda(self):
+
         lay= QVBoxLayout()
         lay.setSpacing(4)
         lay.addWidget(self._fila_leyenda("#6366F1", "Institucional"))
@@ -1335,6 +1420,7 @@ class ModuloHorario(QWidget):
         return lay
 
     def _fila_leyenda(self, color, texto):
+
         fila= QWidget()
         h= QHBoxLayout(fila)
         h.setContentsMargins(0, 0, 0, 0)
@@ -1349,7 +1435,9 @@ class ModuloHorario(QWidget):
         return fila
 
     def _texto_fecha_hoy(self):
+
         try:
+
             hoy= datetime.now()
             if hoy.weekday() < 6:
                 return f"Hoy es {DIAS[hoy.weekday()]}, {hoy.day:02d}/{hoy.month:02d}/{hoy.year}."
@@ -1359,6 +1447,7 @@ class ModuloHorario(QWidget):
 
     #--------------------------------------------------------
     def _mostrar_info_docente(self):
+
         mostrar_mensaje("info", "Horario · Modo Docente",
             "Aquí ves tu horario semanal: las clases que Dirección/Coordinación ya programó "
             "institucionalmente, junto con las entradas que tú agregues manualmente (marcadas "
@@ -1374,9 +1463,10 @@ class ModuloHorario(QWidget):
             "Todo lo que agregues aquí se guarda SOLO en este equipo (tu Modo Docente). "
             "Dirección/Coordinación no ve ni recibe estos cambios.", self)
 
+    #Diálogo para elegir un color propio por materia en ESTE calendario.
+    #Se guarda por usuario, solo en este equipo (no lo ven otros roles).
     def _abrir_colores_materias(self):
-        """Diálogo para elegir un color propio por materia en ESTE calendario.
-        Se guarda por usuario, solo en este equipo (no lo ven otros roles)."""
+
         claves= []
         vistos= set()
         for c in self._todas_clases:
@@ -1412,7 +1502,7 @@ class ModuloHorario(QWidget):
             fila= QHBoxLayout()
             fila.addWidget(QLabel(clave), 1)
 
-            base, base_hv = _color_para(clave, self._colores_materias)
+            base, base_hv= _color_para(clave, self._colores_materias)
             btn_swatch= QPushButton("Cambiar")
             btn_swatch.setIcon(icono_emoji("🎨"))
             btn_swatch.setIconSize(_QSize_emoji(16, 16))
@@ -1449,7 +1539,8 @@ class ModuloHorario(QWidget):
         dialogo.exec()
 
     def _elegir_color_materia(self, clave, boton):
-        base, _ = _color_para(clave, self._colores_materias)
+
+        base, _= _color_para(clave, self._colores_materias)
         dialogo_color= QColorDialog(QColor(base), self)
         dialogo_color.setWindowTitle(f"Color para '{clave}'")
         aplicar_icono_ventana(dialogo_color, ICONO_COLOR)
@@ -1469,9 +1560,10 @@ class ModuloHorario(QWidget):
         self.canvas.establecer_colores_materias(self._colores_materias)
 
     def _restablecer_color_materia(self, clave, boton):
+
         eliminar_color_materia_local(self.main_window, clave)
         self._colores_materias.pop(clave, None)
-        base, _ = _color_para(clave, self._colores_materias)
+        base, _= _color_para(clave, self._colores_materias)
         boton.setStyleSheet(
             f"QPushButton {{ background-color: {base}; color: white; border: none; "
             f"border-radius: 8px; padding: 6px 12px; font-weight: 600; }}"
@@ -1479,30 +1571,32 @@ class ModuloHorario(QWidget):
         self.canvas.establecer_colores_materias(self._colores_materias)
 
     def _mostrar_detalle_clase(self, item):
+
         mostrar_mensaje("info", "Detalle de la Clase", self._texto_detalle(item), self)
 
+    #Antes esto armaba un solo bloque de HTML gigante y se lo pasaba a
+    #mostrar_mensaje() (un QMessageBox de tamaño fijo). Con pocas clases
+    #no se notaba, pero con decenas -como en una franja compartida por
+    #muchos cursos institucionales- el QMessageBox no tiene forma de
+    #crecer ni de hacer scroll: el texto se comprime, los iconos se
+    #amontonan y la ventana queda rota (ver captura del bug). Un diálogo
+    #propio con QScrollArea no tiene ese límite: cabe una clase o
+    #quinientas, siempre legible.
+    #
+    #Rendimiento: _texto_detalle() usa html_icono_emoji(), que RASTERIZA
+    #cada emoji a una imagen incrustada en el HTML (necesario para que
+    #el QMessageBox de _mostrar_detalle_clase, que no acepta QIcon, los
+    #pinte). Repetir eso ~7 veces por clase x 85 clases = cientos de
+    #rasterizados síncronos ANTES de que la ventana llegue a pintarse:
+    #de ahí la demora y el "no responde". Aquí no hace falta ese truco
+    #-el QLabel de esta tarjeta sí acepta emoji normal en el texto- así
+    #que se usa un texto liviano sin rasterizar nada. Y para que la
+    #ventana aparezca al instante incluso con listas enormes, las
+    #tarjetas se agregan en tandas vía QTimer en vez de todas de un
+    #tirón: la ventana nunca se congela ni el SO la marca como
+    #'no responde', sin importar cuántas clases haya.
     def _mostrar_detalle_overflow(self, items):
-        """Antes esto armaba un solo bloque de HTML gigante y se lo pasaba a
-        mostrar_mensaje() (un QMessageBox de tamaño fijo). Con pocas clases
-        no se notaba, pero con decenas -como en una franja compartida por
-        muchos cursos institucionales- el QMessageBox no tiene forma de
-        crecer ni de hacer scroll: el texto se comprime, los iconos se
-        amontonan y la ventana queda rota (ver captura del bug). Un diálogo
-        propio con QScrollArea no tiene ese límite: cabe una clase o
-        quinientas, siempre legible.
 
-        Rendimiento: _texto_detalle() usa html_icono_emoji(), que RASTERIZA
-        cada emoji a una imagen incrustada en el HTML (necesario para que
-        el QMessageBox de _mostrar_detalle_clase, que no acepta QIcon, los
-        pinte). Repetir eso ~7 veces por clase x 85 clases = cientos de
-        rasterizados síncronos ANTES de que la ventana llegue a pintarse:
-        de ahí la demora y el "no responde". Aquí no hace falta ese truco
-        -el QLabel de esta tarjeta sí acepta emoji normal en el texto- así
-        que se usa un texto liviano sin rasterizar nada. Y para que la
-        ventana aparezca al instante incluso con listas enormes, las
-        tarjetas se agregan en tandas vía QTimer en vez de todas de un
-        tirón: la ventana nunca se congela ni el SO la marca como
-        'no responde', sin importar cuántas clases haya."""
         dialogo= QDialog(self)
         dialogo.setWindowTitle(f"{len(items)} clases en esta franja")
         aplicar_icono_ventana(dialogo, ICONO_FILTRO)
@@ -1578,6 +1672,7 @@ class ModuloHorario(QWidget):
         TANDA= 15
 
         def _agregar_tanda(inicio=0):
+
             fin= min(inicio + TANDA, len(items))
             for it in items[inicio:fin]:
                 lyt_lista.addWidget(self._tarjeta_overflow(it, c))
@@ -1589,11 +1684,12 @@ class ModuloHorario(QWidget):
         QTimer.singleShot(0, lambda: _agregar_tanda(0))
         dialogo.exec()
 
+    #Tarjeta liviana para el diálogo de overflow: texto con emoji
+    #normal (sin rasterizar), a diferencia de _texto_detalle().
     def _tarjeta_overflow(self, item, c):
-        """Tarjeta liviana para el diálogo de overflow: texto con emoji
-        normal (sin rasterizar), a diferencia de _texto_detalle()."""
+
         clave= item.get("materia_nombre") or item.get("notas") or ""
-        color_barra, _ = _color_para(clave, self._colores_materias)
+        color_barra, _= _color_para(clave, self._colores_materias)
 
         tarjeta= QFrame()
         tarjeta.setObjectName("TarjetaOverflowHorario")
@@ -1614,11 +1710,12 @@ class ModuloHorario(QWidget):
         lyt_tarjeta.addWidget(lbl)
         return tarjeta
 
+    #Misma info que _texto_detalle(), pero con emoji de texto plano
+    #en vez de html_icono_emoji(): esta versión se usa donde se repite
+    #muchas veces seguidas (overflow con decenas/cientos de clases) y no
+    #puede pagar el costo de rasterizar cada icono cada vez.
     def _texto_detalle_ligero(self, item):
-        """Misma info que _texto_detalle(), pero con emoji de texto plano
-        en vez de html_icono_emoji(): esta versión se usa donde se repite
-        muchas veces seguidas (overflow con decenas/cientos de clases) y no
-        puede pagar el costo de rasterizar cada icono cada vez."""
+
         partes= [f"📚 Materia: {item.get('materia_nombre') or '(sin materia)'}"]
         curso= item.get("grado_nombre")
         seccion_sola= item.get("seccion_nombre_sola")
@@ -1643,6 +1740,7 @@ class ModuloHorario(QWidget):
         return "<br>".join(partes)
 
     def _texto_detalle(self, item):
+
         #Cada línea lleva su icono real (imagen incrustada vía html_icono_emoji, dibujada con QPainter) en vez del
         #caracter emoji suelto de antes -mostrar_mensaje() usa un QMessageBox, que solo puede mostrar imágenes dentro
         #de texto enriquecido (HTML), nunca un QIcon aparte.
@@ -1670,27 +1768,32 @@ class ModuloHorario(QWidget):
         return "<br>".join(partes)
 
     #Filtros y búsqueda (todo en memoria, sin volver a tocar la BD)
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo). Mismo criterio usado en estudiantes.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo). Mismo criterio usado en estudiantes.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #Igual que en Estudiantes: los combos de Área Técnica y Carrera solo
+    #se muestran/pueblan si la institución tiene ese módulo activo.
     def _cargar_especialidad_carrera_filtro_horario(self):
-        """Igual que en Estudiantes: los combos de Área Técnica y Carrera solo
-        se muestran/pueblan si la institución tiene ese módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_hor.setVisible(es_poli)
         self.combo_filtro_especialidad_hor.setVisible(es_poli)
@@ -1727,11 +1830,12 @@ class ModuloHorario(QWidget):
             self.combo_filtro_carrera_hor.setCurrentIndex(idx if idx >= 0 else 0)
             self.combo_filtro_carrera_hor.blockSignals(False)
 
+    #Secciones que tienen al menos un estudiante activo de esa carrera.
+    #Las secciones no llevan carrera_id propio (es un dato por estudiante,
+    #no por grupo — a diferencia de especialidad_id, que sí vive en
+    #`secciones`), así que se resuelve con una consulta aparte.
     def _secciones_de_la_carrera(self, carrera_id):
-        """Secciones que tienen al menos un estudiante activo de esa carrera.
-        Las secciones no llevan carrera_id propio (es un dato por estudiante,
-        no por grupo — a diferencia de especialidad_id, que sí vive en
-        `secciones`), así que se resuelve con una consulta aparte."""
+
         if carrera_id is None:
             return None
         conn= obtener_conexion()
@@ -1742,11 +1846,12 @@ class ModuloHorario(QWidget):
         conn.close()
         return secciones
 
+    #Crea (una sola vez) la ventanita con todos los filtros. No es modal:
+    #se puede dejar abierta mientras se ajustan los combos y el calendario
+    #de atrás se sigue actualizando en vivo -mismo patrón que en
+    #estudiantes.py-.
     def _construir_dialogo_filtros(self):
-        """Crea (una sola vez) la ventanita con todos los filtros. No es modal:
-        se puede dejar abierta mientras se ajustan los combos y el calendario
-        de atrás se sigue actualizando en vivo -mismo patrón que en
-        estudiantes.py-."""
+
         self.dialogo_filtros= QDialog(self)
         self.dialogo_filtros.setObjectName("DialogoFiltros")
         self.dialogo_filtros.setWindowTitle("Filtros de Horario")
@@ -1818,6 +1923,7 @@ class ModuloHorario(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros.parent() is not _fc:
@@ -1827,6 +1933,7 @@ class ModuloHorario(QWidget):
         self.dialogo_filtros.activateWindow()
 
     def _limpiar_filtros(self):
+
         self.in_busqueda.blockSignals(True)
         self.in_busqueda.clear()
         self.in_busqueda.blockSignals(False)
@@ -1851,6 +1958,7 @@ class ModuloHorario(QWidget):
         self._aplicar_filtros(animar=False)
 
     def _aplicar_filtros(self, animar=True):
+
         curso_id= self.combo_filtro_curso.currentData() if hasattr(self, "combo_filtro_curso") else None
         seccion_id= self.combo_filtro_seccion.currentData() if hasattr(self, "combo_filtro_seccion") else None
         materia_id= self.combo_filtro_materia.currentData() if hasattr(self, "combo_filtro_materia") else None
@@ -1887,6 +1995,7 @@ class ModuloHorario(QWidget):
             else:
                 institucionales += 1
             try:
+
                 conteo_dias[DIAS.index(c["dia"])] += 1
             except ValueError:
                 pass
@@ -1905,29 +2014,34 @@ class ModuloHorario(QWidget):
             self.canvas.establecer_clases(resultado, animar=animar)
 
     def _curso_filtro_cambio(self):
+
         self._filtrar_secciones_por_curso()
         self._aplicar_filtros(animar=False)
 
     def _secciones_permitidas_con_nivel(self):
+
         base= obtener_secciones_permitidas(self.main_window)
         nivel= self.combo_filtro_nivel.currentData() if hasattr(self, "combo_filtro_nivel") else None
         return interseccion_opcional(base, secciones_del_nivel_educativo(nivel))
 
     def _nivel_filtro_cambio(self):
+
         secciones_permitidas= self._secciones_permitidas_con_nivel()
         poblar_combo_curso(self.combo_filtro_curso, incluir_todos=False, secciones_permitidas=secciones_permitidas)
         self._filtrar_secciones_por_curso()
         self._aplicar_filtros(animar=False)
 
+    #Recarga el combo de sección para que solo muestre las secciones
+    #del curso elegido (o todas, si no hay curso seleccionado).
     def _filtrar_secciones_por_curso(self):
-        """Recarga el combo de sección para que solo muestre las secciones
-        del curso elegido (o todas, si no hay curso seleccionado)."""
+
         cascada_seccion_por_curso(self.combo_filtro_curso, self.combo_filtro_seccion,
                                    incluir_todas= False,
                                    secciones_permitidas= self._secciones_permitidas_con_nivel())
 
     #--------------------------------------------------------
     def _cargar_combos_filtro(self):
+
         self.combo_filtro_materia.blockSignals(True)
         sel_materia= self.combo_filtro_materia.currentData()
         self.combo_filtro_materia.clear()
@@ -1958,6 +2072,7 @@ class ModuloHorario(QWidget):
         self.combo_filtro_materia.blockSignals(False)
 
     def _poblar_filtro_tecnico_local(self):
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_local.setVisible(es_poli)
         self.combo_filtro_especialidad_local.setVisible(es_poli)
@@ -1995,6 +2110,7 @@ class ModuloHorario(QWidget):
             self.combo_filtro_carrera_local.blockSignals(False)
 
     def _cargar_combos_edicion_local(self):
+
         materias_permitidas= obtener_materias_permitidas(self.main_window)
         secciones_permitidas= obtener_secciones_permitidas(self.main_window)
         if hasattr(self, "combo_filtro_especialidad_local"):
@@ -2039,16 +2155,19 @@ class ModuloHorario(QWidget):
         self._filtrar_secciones_local_por_curso()
 
     def _curso_local_cambio(self):
+
         self._filtrar_secciones_local_por_curso()
 
+    #Recarga 'Sección' con solo las secciones del curso elegido — igual que
+    #TODOS los combos Curso->Sección de AcaDeXI: Curso obligatorio primero,
+    #sin excepciones.
     def _filtrar_secciones_local_por_curso(self):
-        """Recarga 'Sección' con solo las secciones del curso elegido — igual que
-        TODOS los combos Curso->Sección de AcaDeXI: Curso obligatorio primero,
-        sin excepciones."""
+
         cascada_seccion_por_curso(self.combo_curso_local, self.combo_seccion_local, incluir_todas=False,
                                    secciones_permitidas= obtener_secciones_permitidas(self.main_window))
 
     def _limpiar_form_local(self):
+
         self.id_edicion_local= None
         if self.combo_curso_local.count():
             self.combo_curso_local.setCurrentIndex(0)
@@ -2064,6 +2183,7 @@ class ModuloHorario(QWidget):
         desactivar_modo_edicion(self.in_aula_local)
 
     def _guardar_local(self):
+
         materia_id= self.combo_materia_local.currentData()
         seccion_id= self.combo_seccion_local.currentData()
         dia= self.combo_dia_local.currentText()
@@ -2087,6 +2207,7 @@ class ModuloHorario(QWidget):
         self.refrescar()
 
     def _cargar_local_seleccionada(self):
+
         fila= self.tabla_local.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una clase local de la tabla.", self)
@@ -2113,6 +2234,7 @@ class ModuloHorario(QWidget):
         activar_modo_edicion(self.in_aula_local, "Editando clase local")
 
     def _eliminar_local(self):
+
         fila= self.tabla_local.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una clase local de la tabla.", self)
@@ -2126,10 +2248,11 @@ class ModuloHorario(QWidget):
         self.refrescar()
 
     def _poblar_tabla_local(self):
+
         self.tabla_local.setUpdatesEnabled(False)
         self.tabla_local.setSortingEnabled(False)
         self.paginacion_local.establecer_total(len(self._entradas_locales))
-        inicio, fin = self.paginacion_local.rango_actual()
+        inicio, fin= self.paginacion_local.rango_actual()
         pagina= self._entradas_locales[inicio:fin]
         self.tabla_local.setRowCount(len(pagina))
         for i, e in enumerate(pagina):
@@ -2152,6 +2275,7 @@ class ModuloHorario(QWidget):
 
     #Carga de datos (una sola pasada por refresco, sin consultas N+1)
     def _cargar_datos(self):
+
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""SELECT horarios.dia, horarios.hora_inicio, horarios.hora_fin,
@@ -2256,6 +2380,7 @@ class ModuloHorario(QWidget):
 
     #--------------------------------------------------------
     def _refrescar_colores_tema(self):
+
         colores= _colores_tema(self.main_window)
         #Refrescar colores de los encabezados colapsables (PanelDesplegable)
         for panel in self.findChildren(PanelDesplegable):
@@ -2362,6 +2487,7 @@ class ModuloHorario(QWidget):
             """)
 
     def refrescar(self):
+
         if hasattr(self, "combo_filtro_nivel"):
             poblar_combo_nivel_educativo(self.combo_filtro_nivel)
         self._cargar_combos_filtro()
@@ -2375,4 +2501,5 @@ class ModuloHorario(QWidget):
         self._aplicar_filtros(animar=True)
 
     def actualizar_tema(self):
+
         self._refrescar_colores_tema()

@@ -1,41 +1,40 @@
-"""Boletín General — Formato Oficial República Dominicana (MINERD).
-
-FASE 1 de 3 (general -> técnico -> boletín completo).
-
-v2: reescrito contra la plantilla oficial en blanco del MINERD (Segundo
-Ciclo Nivel Secundario / Informe de Aprendizaje Nivel Primario) en vez del
-boletín ya diligenciado de una institución particular. Cambios de fondo
-respecto a v1:
-
-  - La grilla va TRANSPUESTA: filas = Áreas Curriculares, columnas =
-    grupos de Competencias Fundamentales × Período (la plantilla real la
-    dibuja así, no al revés).
-  - Las 7 Competencias Fundamentales oficiales (ver
-    configuracion.COMPETENCIAS_FUNDAMENTALES_RD) se AGRUPAN para mostrarse
-    en columnas: 4 grupos en Secundaria, 3 grupos en Primaria -distinto
-    agrupamiento por nivel, tal como en la plantilla real-. Ver
-    GRUPOS_DISPLAY_SECUNDARIA / GRUPOS_DISPLAY_PRIMARIA.
-  - Secundaria: se añade el desglose completo de la cascada de evaluación
-    (50% C.F./50% C.E.C. -> C.C.F.; 30% C.F./70% C.E.EX -> C.EX.F.;
-    Evaluación Especial; Situación Final A/R), Resumen de Asistencia y
-    Leyenda, igual que la plantilla.
-  - Primaria tiene su PROPIO documento ("Informe de Aprendizaje"): grupos
-    de competencias distintos, columnas "Calificación final por
-    competencia" (C1-C3) en vez de PC1-PC4, columnas de Recuperación
-    Pedagógica (RP) por período cuando existan datos, escala descriptiva
-    cualitativa (Destacado/Logrado/En Proceso/Insuficiente) en vez de A/R,
-    y situación en 3 estados (Promovido/a, Aplazado/a, Repitiente).
-  - Los colores del boletín ahora son DOS pares configurables (Primaria y
-    Secundaria son documentos distintos con paletas distintas en la
-    plantilla real), no uno solo para toda la institución.
-
-Se sigue sin duplicar esquema para los datos (motor de Competencias
-Específicas ya existente en bd.py); lo nuevo en `configuracion` son solo
-columnas de preferencia (formato + 4 colores), y en `periodos` dos columnas
-opcionales de fecha para poder repartir la asistencia por período -sin
-ellas, esa caja del boletín queda en blanco, como en un boletín impreso sin
-diligenciar.
-"""
+#Boletín General — Formato Oficial República Dominicana (MINERD).
+#
+#FASE 1 de 3 (general -> técnico -> boletín completo).
+#
+#v2: reescrito contra la plantilla oficial en blanco del MINERD (Segundo
+#Ciclo Nivel Secundario / Informe de Aprendizaje Nivel Primario) en vez del
+#boletín ya diligenciado de una institución particular. Cambios de fondo
+#respecto a v1:
+#
+#- La grilla va TRANSPUESTA: filas = Áreas Curriculares, columnas =
+#grupos de Competencias Fundamentales × Período (la plantilla real la
+#dibuja así, no al revés).
+#- Las 7 Competencias Fundamentales oficiales (ver
+#configuracion.COMPETENCIAS_FUNDAMENTALES_RD) se AGRUPAN para mostrarse
+#en columnas: 4 grupos en Secundaria, 3 grupos en Primaria -distinto
+#agrupamiento por nivel, tal como en la plantilla real-. Ver
+#GRUPOS_DISPLAY_SECUNDARIA / GRUPOS_DISPLAY_PRIMARIA.
+#- Secundaria: se añade el desglose completo de la cascada de evaluación
+#(50% C.F./50% C.E.C. -> C.C.F.; 30% C.F./70% C.E.EX -> C.EX.F.;
+#Evaluación Especial; Situación Final A/R), Resumen de Asistencia y
+#Leyenda, igual que la plantilla.
+#- Primaria tiene su PROPIO documento ("Informe de Aprendizaje"): grupos
+#de competencias distintos, columnas "Calificación final por
+#competencia" (C1-C3) en vez de PC1-PC4, columnas de Recuperación
+#Pedagógica (RP) por período cuando existan datos, escala descriptiva
+#cualitativa (Destacado/Logrado/En Proceso/Insuficiente) en vez de A/R,
+#y situación en 3 estados (Promovido/a, Aplazado/a, Repitiente).
+#- Los colores del boletín ahora son DOS pares configurables (Primaria y
+#Secundaria son documentos distintos con paletas distintas en la
+#plantilla real), no uno solo para toda la institución.
+#
+#Se sigue sin duplicar esquema para los datos (motor de Competencias
+#Específicas ya existente en bd.py); lo nuevo en `configuracion` son solo
+#columnas de preferencia (formato + 4 colores), y en `periodos` dos columnas
+#opcionales de fecha para poder repartir la asistencia por período -sin
+#ellas, esa caja del boletín queda en blanco, como en un boletín impreso sin
+#diligenciar.
 from datetime import datetime
 
 from src.nucleo.bd import obtener_conexion, _agregar_columna_si_falta
@@ -82,19 +81,23 @@ ORDEN_AREAS_PRIMARIA= [
 
 
 def _ordenar_areas_curricular(materias, primaria):
+
     orden= ORDEN_AREAS_PRIMARIA if primaria else ORDEN_AREAS_SECUNDARIA
     indice= {nombre: i for i, nombre in enumerate(orden)}
 
     def clave(materia):
+
         return (indice.get(materia["nombre"], len(orden)), materia["nombre"])
     return sorted(materias, key=clave)
 
 
 def es_nivel_primaria(nivel_educativo):
+
     return (nivel_educativo or "").strip().lower().startswith("primaria")
 
 
 def migrar_configuracion_boletin(conn):
+
     _agregar_columna_si_falta(conn, "configuracion", "formato_boletin_general", "TEXT DEFAULT 'simple'")
     _agregar_columna_si_falta(conn, "configuracion", "boletin_color_banda_secundaria", "TEXT DEFAULT '#1F9E9E'")
     _agregar_columna_si_falta(conn, "configuracion", "boletin_color_texto_banda_secundaria", "TEXT DEFAULT '#FFFFFF'")
@@ -106,6 +109,7 @@ def migrar_configuracion_boletin(conn):
 
 
 def formato_boletin_general():
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT formato_boletin_general FROM configuracion WHERE id=1")
@@ -115,6 +119,7 @@ def formato_boletin_general():
 
 
 def guardar_formato_boletin_general(formato):
+
     if formato not in ("simple", "oficial_rd"):
         raise ValueError("formato debe ser 'simple' u 'oficial_rd'")
     conn= obtener_conexion()
@@ -125,6 +130,7 @@ def guardar_formato_boletin_general(formato):
 
 
 def colores_boletin(nivel_educativo=None):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("""SELECT boletin_color_banda_secundaria, boletin_color_texto_banda_secundaria,
@@ -140,6 +146,7 @@ def colores_boletin(nivel_educativo=None):
 
 
 def guardar_colores_boletin(nivel_educativo, color_banda, color_texto_banda):
+
     campo_banda= "boletin_color_banda_primaria" if es_nivel_primaria(nivel_educativo) else "boletin_color_banda_secundaria"
     campo_texto= ("boletin_color_texto_banda_primaria" if es_nivel_primaria(nivel_educativo)
                    else "boletin_color_texto_banda_secundaria")
@@ -152,6 +159,7 @@ def guardar_colores_boletin(nivel_educativo, color_banda, color_texto_banda):
 
 
 def datos_estudiante_boletin(estudiante_id):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("""SELECT estudiantes.id, estudiantes.nombre, estudiantes.apellidos,
@@ -187,6 +195,7 @@ def datos_estudiante_boletin(estudiante_id):
 
 
 def materias_de_estudiante(estudiante_id, seccion_id=None):
+
     conn= obtener_conexion()
     c= conn.cursor()
     if seccion_id is None:
@@ -208,6 +217,7 @@ def materias_de_estudiante(estudiante_id, seccion_id=None):
 
 
 def periodos_del_anio(anio_academico):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT id, nombre, fecha_inicio, fecha_fin FROM periodos WHERE anio_academico=? ORDER BY orden",
@@ -218,11 +228,13 @@ def periodos_del_anio(anio_academico):
 
 
 def _promedio(valores):
+
     limpios= [v for v in valores if v is not None]
     return (sum(limpios) / len(limpios)) if limpios else None
 
 
 def grilla_area(estudiante_id, materia_id, grado_id, periodos, grupos_display):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("""SELECT id, competencia_fundamental FROM competencias_especificas
@@ -267,6 +279,7 @@ def grilla_area(estudiante_id, materia_id, grado_id, periodos, grupos_display):
 
 
 def _nota_simple_area(estudiante_id, materia_id, periodos, metodo):
+
     from src.modulos.calificaciones import calcular_nota_final
     conn= obtener_conexion()
     c= conn.cursor()
@@ -285,6 +298,7 @@ def _nota_simple_area(estudiante_id, materia_id, periodos, metodo):
 
 
 def _recuperacion_pedagogica_area(estudiante_id, materia_id, periodos):
+
     conn= obtener_conexion()
     c= conn.cursor()
     valores= []
@@ -299,6 +313,7 @@ def _recuperacion_pedagogica_area(estudiante_id, materia_id, periodos):
 
 
 def _cascada_evaluacion(estudiante_id, materia_id, anio_academico):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT nota_completiva FROM evaluacion_completiva WHERE estudiante_id=? AND materia_id=? AND anio_academico=?",
@@ -319,6 +334,7 @@ def _cascada_evaluacion(estudiante_id, materia_id, anio_academico):
 
 
 def _desglose_cascada_secundaria(cf, cascada):
+
     d= {"cf_50": None, "cec": cascada.get("completiva"), "cec_50": None, "ccf": None,
          "cf_30": None, "ce_ex": cascada.get("extraordinaria"), "ce_ex_70": None, "cexf": None,
          "especial_cf": cf, "especial_ce": cascada.get("especial")}
@@ -337,6 +353,7 @@ def _desglose_cascada_secundaria(cf, cascada):
 
 
 def _situacion_general_estudiante(estudiante_id, anio_academico):
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT decision FROM decision_promocion WHERE estudiante_id=? AND anio_academico=?",
@@ -351,6 +368,7 @@ def _situacion_general_estudiante(estudiante_id, anio_academico):
 
 
 def resumen_asistencia(estudiante_id, seccion_id, periodos):
+
     conn= obtener_conexion()
     c= conn.cursor()
     resultado= {}
@@ -372,6 +390,7 @@ def resumen_asistencia(estudiante_id, seccion_id, periodos):
 
 
 def construir_boletin_general(estudiante_id, metodo="Promedio Ponderado", anio_academico=None):
+
     datos= datos_estudiante_boletin(estudiante_id)
     if not datos:
         return None
@@ -394,7 +413,7 @@ def construir_boletin_general(estudiante_id, metodo="Promedio Ponderado", anio_a
     for materia in materias:
         grilla= grilla_area(estudiante_id, materia["id"], datos["grado_id"], periodos, grupos_display)
         if not grilla["con_curriculo"]:
-            valores_simples, final = _nota_simple_area(estudiante_id, materia["id"], periodos, metodo)
+            valores_simples, final= _nota_simple_area(estudiante_id, materia["id"], periodos, metodo)
             grilla= {"grupos": {}, "finales_por_grupo": [None] * len(grupos_display),
                       "pc": valores_simples, "final": final, "con_curriculo": False}
         area= {"materia_id": materia["id"], "materia_nombre": materia["nombre"], "grilla": grilla}
@@ -430,27 +449,31 @@ def construir_boletin_general(estudiante_id, metodo="Promedio Ponderado", anio_a
 
 #PDF — utilidades compartidas
 def _hex_a_rgb01(hexcolor):
+
     hexcolor= (hexcolor or "#1F9E9E").lstrip("#")
     if len(hexcolor) != 6:
         hexcolor= "1F9E9E"
     return tuple(int(hexcolor[i:i + 2], 16) / 255 for i in (0, 2, 4))
 
 
+#Tono más claro del color de banda -se usa para resaltar la columna
+#'Calificación Final del Área' en el cuerpo de la grilla, igual que la
+#plantilla real la resalta en celeste sobre un encabezado turquesa. No
+#es un color nuevo que haya que configurar aparte: se deriva del mismo
+#color de banda que la institución ya eligió, así que cambiar un color
+#sigue moviendo el boletín completo de forma consistente.
 def _aclarar(rgb, factor=0.75):
-    """Tono más claro del color de banda -se usa para resaltar la columna
-    'Calificación Final del Área' en el cuerpo de la grilla, igual que la
-    plantilla real la resalta en celeste sobre un encabezado turquesa. No
-    es un color nuevo que haya que configurar aparte: se deriva del mismo
-    color de banda que la institución ya eligió, así que cambiar un color
-    sigue moviendo el boletín completo de forma consistente."""
+
     return tuple(c + (1 - c) * factor for c in rgb)
 
 
 def _fmt(valor, decimales=0):
+
     return f"{valor:.{decimales}f}" if valor is not None else ""
 
 
 def _dibujar_texto_ajustado(cvs, texto, x, y, ancho_max, centrado=True, tamano_inicial=6.5, negrita=True):
+
     fuente_base= "Helvetica-Bold" if negrita else "Helvetica"
     tam= tamano_inicial
     while tam > 4 and cvs.stringWidth(texto, fuente_base, tam) > ancho_max:
@@ -462,21 +485,22 @@ def _dibujar_texto_ajustado(cvs, texto, x, y, ancho_max, centrado=True, tamano_i
         cvs.drawString(x, y, texto)
 
 
+#Reparte `texto` en varias líneas (ajuste de palabras, no solo por
+#'/') hasta que quepa en ancho_max de ancho y alto_max de alto,
+#reduciendo el tamaño de fuente si hace falta. Los encabezados oficiales
+#(nombres de competencias fundamentales, "PROMEDIO GRUPO DE COMPETENCIAS
+#ESPECÍFICAS", etc.) son demasiado largos para una sola línea en una
+#columna angosta -por eso todo encabezado de la grilla pasa por aquí en
+#vez de por el ajuste de una sola línea que sí sirve para celdas de
+#datos.
 def _dibujar_texto_multilinea(cvs, texto, cx, y_centro, ancho_max, alto_max, tamano_inicial=6.5, negrita=True):
-    """Reparte `texto` en varias líneas (ajuste de palabras, no solo por
-    '/') hasta que quepa en ancho_max de ancho y alto_max de alto,
-    reduciendo el tamaño de fuente si hace falta. Los encabezados oficiales
-    (nombres de competencias fundamentales, "PROMEDIO GRUPO DE COMPETENCIAS
-    ESPECÍFICAS", etc.) son demasiado largos para una sola línea en una
-    columna angosta -por eso todo encabezado de la grilla pasa por aquí en
-    vez de por el ajuste de una sola línea que sí sirve para celdas de
-    datos."""
+
     fuente= "Helvetica-Bold" if negrita else "Helvetica"
     tam= tamano_inicial
     palabras= texto.replace(" / ", " /").split(" ")
     while tam >= 4:
         interlineado= tam + 1.5
-        lineas, actual = [], ""
+        lineas, actual= [], ""
         for palabra in palabras:
             candidato= (actual + " " + palabra).strip()
             if cvs.stringWidth(candidato, fuente, tam) <= ancho_max or not actual:
@@ -500,11 +524,13 @@ def _dibujar_texto_multilinea(cvs, texto, cx, y_centro, ancho_max, alto_max, tam
 
 
 def _encabezado_institucional(cvs, ancho, y, institucion, titulo, subtitulo, rgb_banda, rgb_texto_banda, margen):
+
     from reportlab.lib.utils import ImageReader
     if institucion.get("logo"):
         try:
+
             img= ImageReader(institucion["logo"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 36
             cvs.drawImage(img, margen, y - 28, width=alto_img * (iw / ih), height=alto_img,
                           preserveAspectRatio= True, mask='auto')
@@ -526,14 +552,16 @@ def _encabezado_institucional(cvs, ancho, y, institucion, titulo, subtitulo, rgb
 
 
 def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der):
+
     from reportlab.lib.utils import ImageReader
     ancho_firma= 170
     x_izq= margen + 20
     x_der= ancho - margen - 20 - ancho_firma
     if institucion.get("firma"):
         try:
+
             img= ImageReader(institucion["firma"])
-            iw, ih = img.getSize()
+            iw, ih= img.getSize()
             alto_img= 26
             cvs.drawImage(img, x_der + ancho_firma / 2 - (alto_img * (iw / ih)) / 2, y_base + 4,
                           width= alto_img * (iw / ih), height=alto_img, preserveAspectRatio=True, mask='auto')
@@ -555,6 +583,7 @@ COL_AR= 20
 
 
 def _ancho_pagina_secundaria(n_grupos, n_periodos):
+
     margen= 24
     ancho_grupos= n_grupos * n_periodos * COL_PERIODO
     ancho_pc= n_periodos * COL_PERIODO
@@ -564,6 +593,7 @@ def _ancho_pagina_secundaria(n_grupos, n_periodos):
 
 
 def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
+
     colores= colores or colores_boletin(boletin["estudiante"]["nivel_educativo"])
     rgb_banda= _hex_a_rgb01(colores["banda"])
     rgb_texto_banda= _hex_a_rgb01(colores["texto_banda"])
@@ -574,7 +604,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
     grupos_display= boletin["grupos_display"]
     areas= boletin["areas"]
 
-    ancho, margen = _ancho_pagina_secundaria(len(grupos_display), n_periodos)
+    ancho, margen= _ancho_pagina_secundaria(len(grupos_display), n_periodos)
     alto_fila= 13
     n_filas_cuerpo= max(len(areas), 1)
     alto= (170 + n_filas_cuerpo * alto_fila + 210)  #cabecera + grilla + cajas inferiores
@@ -599,6 +629,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
     alto_doble= 40
 
     def rect_relleno(x, y_top, w, h):
+
         cvs.setFillColorRGB(*rgb_banda)
         cvs.rect(x, y_top - h, w, h, fill=1, stroke=1)
         cvs.setFillColorRGB(*rgb_texto_banda)
@@ -654,6 +685,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
     x += COL_CF
 
     def bloque_cascada(titulo, subcols):
+
         nonlocal x
         ancho_bloque= len(subcols) * COL_CASCADA
         rect_relleno(x, fila1_y, ancho_bloque, alto_doble - 14)
@@ -728,7 +760,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
         cvs.drawCentredString(cx + w / 2, y - 9, h)
         cx += w
     y -= 12
-    total_asist, total_ausen = 0, 0
+    total_asist, total_ausen= 0, 0
     hay_datos_asistencia= any(v.get("asistencia") is not None for v in boletin["asistencia"].values())
     for periodo in periodos:
         datos_p= boletin["asistencia"].get(periodo["id"], {})
@@ -805,14 +837,16 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
 
 
 def _dimensiones_pagina_secundaria(boletin):
+
     n_grupos= len(boletin["grupos_display"])
     n_periodos= max(len(boletin["periodos"]), 1)
-    ancho, _ = _ancho_pagina_secundaria(n_grupos, n_periodos)
+    ancho, _= _ancho_pagina_secundaria(n_grupos, n_periodos)
     alto= 170 + max(len(boletin["areas"]), 1) * 13 + 210
     return ancho, alto
 
 
 def exportar_boletin_general_oficial_pdf(estudiante_id, ruta_pdf, institucion, metodo="Promedio Ponderado"):
+
     from reportlab.pdfgen import canvas as _canvas_mod
 
     boletin= construir_boletin_general(estudiante_id, metodo=metodo)
@@ -825,7 +859,7 @@ def exportar_boletin_general_oficial_pdf(estudiante_id, ruta_pdf, institucion, m
     #Se dibuja en dos pasadas: la primera calcula el tamaño exacto de página que necesita esta cantidad de
     #áreas/grupos/columnas (para no cortar ni sobrar espacio), la segunda dibuja de verdad sobre un canvas ya del
     #tamaño correcto.
-    ancho, alto_estimado = _dimensiones_pagina_secundaria(boletin)
+    ancho, alto_estimado= _dimensiones_pagina_secundaria(boletin)
     cvs= _canvas_mod.Canvas(ruta_pdf, pagesize=(ancho, alto_estimado))
     dibujar_boletin_secundaria_oficial(cvs, institucion, boletin)
     cvs.save()

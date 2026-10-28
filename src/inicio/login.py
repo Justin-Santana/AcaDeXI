@@ -17,17 +17,19 @@ from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_tex
 
 
 def _hex_a_rgba(hex_color, alpha):
+
     hex_color= hex_color.lstrip("#")
-    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Centra `dialogo` sobre su ventana padre (o sobre la pantalla si no hay
+#padre visible) y se asegura de que aparezca POR ENCIMA de todas las demás
+#ventanas de la app, aunque el usuario haya cambiado de ventana mientras
+#tanto. Sin esto, en apps con varias ventanas los diálogos pueden abrirse
+#"detrás" y el usuario tiene que buscarlos en la barra de tareas.
 def _centrar_y_al_frente(dialogo, parent):
-    """Centra `dialogo` sobre su ventana padre (o sobre la pantalla si no hay
-    padre visible) y se asegura de que aparezca POR ENCIMA de todas las demás
-    ventanas de la app, aunque el usuario haya cambiado de ventana mientras
-    tanto. Sin esto, en apps con varias ventanas los diálogos pueden abrirse
-    "detrás" y el usuario tiene que buscarlos en la barra de tareas."""
+
     dialogo.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
     referencia= parent if (parent is not None and parent.isVisible()) else None
     if referencia is not None:
@@ -49,15 +51,17 @@ def _centrar_y_al_frente(dialogo, parent):
 
 
 def _msg(main_window, parent, icono, titulo, texto):
+
     try:
+
         paleta= main_window.theme_palettes.get(
             main_window.tema_actual, main_window.theme_palettes["Indigo"])
         idx= 1 if main_window.modo_oscuro else 0
-        bg, txt = paleta["display_bg"][idx], paleta["text_primary"][idx]
+        bg, txt= paleta["display_bg"][idx], paleta["text_primary"][idx]
         accent= paleta["btn_op_bg"][idx]
         hv_accent= paleta["btn_op_hover"][idx]
     except Exception:
-        bg, txt, accent, hv_accent = "#1E293B", "#F8FAFC", "#6366F1", "#4F46E5"
+        bg, txt, accent, hv_accent= "#1E293B", "#F8FAFC", "#6366F1", "#4F46E5"
 
     box= QMessageBox(parent)
     box.setWindowTitle(titulo)
@@ -88,7 +92,9 @@ def _msg(main_window, parent, icono, titulo, texto):
 
 
 class LoginWindow(QDialog):
+
     def __init__(self, main_window):
+
         super().__init__()
         self.main_window= main_window
         self.usuario_actual= None
@@ -104,6 +110,7 @@ class LoginWindow(QDialog):
         self._cargar_usuario_recordado()
 
     def _build_ui(self):
+
         self.setWindowTitle("Iniciar Sesión - AcaDeXI")
         self.setFixedWidth(440)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -160,6 +167,7 @@ class LoginWindow(QDialog):
         logo_cargado= False
         self.nombre_institucion= None
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT logo_path, nombre_institucion FROM configuracion WHERE id = 1")
@@ -301,13 +309,15 @@ class LoginWindow(QDialog):
 
         layout_principal.addWidget(self.frame_fondo)
 
+    #Devuelve el estado REAL de Bloq Mayús según el sistema operativo.
+    #En Windows se usa GetKeyState(VK_CAPITAL); en otras plataformas se
+    #intenta el equivalente y, si no es posible consultarlo, devuelve None
+    #(no se puede saber) para no mostrar un aviso falso.
     @staticmethod
     def _consultar_capslock():
-        """Devuelve el estado REAL de Bloq Mayús según el sistema operativo.
-        En Windows se usa GetKeyState(VK_CAPITAL); en otras plataformas se
-        intenta el equivalente y, si no es posible consultarlo, devuelve None
-        (no se puede saber) para no mostrar un aviso falso."""
+
         try:
+
             if sys.platform == "win32":
                 import ctypes
                 #VK_CAPITAL = 0x14; el bit menos significativo indica toggle activo
@@ -320,14 +330,16 @@ class LoginWindow(QDialog):
             pass
         return None
 
+    #Sincroniza el aviso con el estado real de Bloq Mayús del sistema.
     def _actualizar_capslock(self):
-        """Sincroniza el aviso con el estado real de Bloq Mayús del sistema."""
+
         estado= self._consultar_capslock()
         if estado is not None:
             self._capslock_on= estado
             self.lbl_capslock.setVisible(estado)
 
     def eventFilter(self, obj, event):
+
         if obj in (self.input_usuario, self.input_password):
             if event.type() == event.Type.KeyPress and event.key() == Qt.Key.Key_CapsLock:
                 #Al presionar CapsLock consultamos el estado real del SO (GetKeyState), en lugar de alternar una bandera. OJO:
@@ -342,17 +354,20 @@ class LoginWindow(QDialog):
         return super().eventFilter(obj, event)
 
     def showEvent(self, event):
+
         #Estado real de Bloq Mayús ya al abrir el diálogo de login.
         self._actualizar_capslock()
         super().showEvent(event)
 
     def keyPressEvent(self, event):
+
         if event.key() == Qt.Key.Key_Escape:
             self.close()
             return
         super().keyPressEvent(event)
 
     def _cargar_usuario_recordado(self):
+
         if getattr(self.main_window, "recordar_usuario", False):
             self.input_usuario.setText(getattr(self.main_window, "ultimo_usuario", ""))
             self.chk_recordar.setChecked(True)
@@ -361,15 +376,17 @@ class LoginWindow(QDialog):
             self.input_usuario.setFocus()
 
     def _importar_perfil(self):
+
         from src.interfaz.perfil import (leer_perfil_archivo, aplicar_perfil, EXTENSION,
                             perfil_incluye_bd_base, local_ya_tiene_usuarios, aplicar_bd_base,
                             descifrar_password_perfil)
         from src.nucleo.iconos import mostrar_mensaje
-        ruta, _ = QFileDialog.getOpenFileName(
+        ruta, _= QFileDialog.getOpenFileName(
             self, "Importar Perfil Institucional", "", f"Perfil AcaDeXI (*{EXTENSION})")
         if not ruta:
             return
         try:
+
             datos= leer_perfil_archivo(ruta)
         except Exception as e:
             mostrar_mensaje("error", "Perfil inválido", str(e), self)
@@ -390,6 +407,7 @@ class LoginWindow(QDialog):
                     self) == QMessageBox.StandardButton.Yes
             if proceder:
                 try:
+
                     ruta_backup_bd= aplicar_bd_base(datos)
                 except Exception as e:
                     mostrar_mensaje("error", "Error",
@@ -406,13 +424,14 @@ class LoginWindow(QDialog):
         password_protegida= bool(datos.get("password_cifrada"))
         pin_incorrecto= False
         if password_protegida:
-            pin, ok = QInputDialog.getText(
+            pin, ok= QInputDialog.getText(
                 self, "Contraseña protegida por PIN",
                 "Este perfil incluye una contraseña protegida con PIN.\n"
                 "Ingresa el PIN para autocompletarla (o cancela para escribirla tú mismo):",
                 QLineEdit.EchoMode.Password)
             if ok and pin:
                 try:
+
                     password_incluida= descifrar_password_perfil(datos, pin.strip())
                 except Exception:
                     pin_incorrecto= True
@@ -455,6 +474,7 @@ class LoginWindow(QDialog):
                         f"Modo de trabajo: {datos.get('modo', '')}" + aviso_password + aviso_bd + aviso_extra, self)
 
     def _toggle_password(self):
+
         self.password_visible= not self.password_visible
         self.input_password.setEchoMode(
             QLineEdit.EchoMode.Normal if self.password_visible else QLineEdit.EchoMode.Password)
@@ -466,6 +486,7 @@ class LoginWindow(QDialog):
 
 
     def _toggle_translucido(self):
+
         self.translucido= not self.translucido
         self.main_window.login_translucido= self.translucido
         self.main_window.guardar_configuracion()
@@ -478,10 +499,12 @@ class LoginWindow(QDialog):
         self._apply_theme()
 
     def _abrir_recuperacion(self):
+
         dialogo= RecuperarPasswordDialog(self.main_window, self)
         dialogo.exec()
 
     def _iniciar_sesion(self):
+
         usuario= self.input_usuario.text().strip()
         password= self.input_password.text().strip()
 
@@ -493,9 +516,10 @@ class LoginWindow(QDialog):
         #Protección contra fuerza bruta: si esta cuenta acumuló demasiados intentos fallidos recientes, se rechaza sin
         #siquiera consultar la contraseña, aunque la que están escribiendo ahora sea la correcta.
         try:
-            bloqueada, minutos_restantes = verificar_bloqueo_login(usuario)
+
+            bloqueada, minutos_restantes= verificar_bloqueo_login(usuario)
         except Exception:
-            bloqueada, minutos_restantes = False, 0
+            bloqueada, minutos_restantes= False, 0
         if bloqueada:
             _msg(self.main_window, self, QMessageBox.Icon.Warning, "Cuenta bloqueada temporalmente",
                  f"Esta cuenta se bloqueó por demasiados intentos fallidos.\n\n"
@@ -509,7 +533,9 @@ class LoginWindow(QDialog):
         self.btn_ingresar.setText("⏳ Verificando...")
         QApplication.processEvents()
         try:
+
             try:
+
                 conn= obtener_conexion()
                 c= conn.cursor()
                 c.execute("SELECT * FROM usuarios WHERE username = ?", (usuario,))
@@ -526,9 +552,10 @@ class LoginWindow(QDialog):
                     #Solo se cuenta el intento contra el bloqueo si la cuenta existe: así un simple error de tipeo en el usuario no
                     #puede usarse para bloquear cuentas ajenas (bloqueo por nombre de usuario inexistente no tiene sentido).
                     try:
-                        bloqueada_ahora, intentos_restantes = registrar_intento_fallido_login(usuario)
+
+                        bloqueada_ahora, intentos_restantes= registrar_intento_fallido_login(usuario)
                     except Exception:
-                        bloqueada_ahora, intentos_restantes = False, None
+                        bloqueada_ahora, intentos_restantes= False, None
                     if bloqueada_ahora:
                         registrar_auditoria("Login", "Cuenta bloqueada por intentos fallidos", usuario)
                         _msg(self.main_window, self, QMessageBox.Icon.Critical, "Cuenta bloqueada",
@@ -556,6 +583,7 @@ class LoginWindow(QDialog):
             self.nombre_completo= fila["nombre_completo"] or fila["username"]
 
             try:
+
                 resetear_intentos_login(usuario)
             except Exception:
                 pass
@@ -571,12 +599,13 @@ class LoginWindow(QDialog):
             self.btn_ingresar.setText("Iniciar Sesión")
 
     def _apply_theme(self):
+
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
         idx= 1 if self.main_window.modo_oscuro else 0
-        bg_window, bg_panel = paleta["window_bg"][idx], paleta["display_bg"][idx]
-        txt_prim, txt_sec = paleta["text_primary"][idx], paleta["text_secondary"][idx]
-        bg_btn, accent = paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
+        bg_window, bg_panel= paleta["window_bg"][idx], paleta["display_bg"][idx]
+        txt_prim, txt_sec= paleta["text_primary"][idx], paleta["text_secondary"][idx]
+        bg_btn, accent= paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
         hv_accent= paleta["btn_op_hover"][idx]
 
         opacidad_panel= 235 if self.translucido else 255
@@ -622,25 +651,29 @@ class LoginWindow(QDialog):
         """)
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_pos= event.globalPosition().toPoint() - self.frameGeometry().topLeft()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+
         if self._drag_pos is not None and event.buttons() & Qt.MouseButton.LeftButton:
             self.move(event.globalPosition().toPoint() - self._drag_pos)
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+
         self._drag_pos= None
         super().mouseReleaseEvent(event)
 
 
+#Recuperación de contraseña: por autorización de un Administrador activo,
+#o por código enviado al correo registrado del usuario.
 class RecuperarPasswordDialog(QDialog):
-    """Recuperación de contraseña: por autorización de un Administrador activo,
-    o por código enviado al correo registrado del usuario."""
 
     def __init__(self, main_window, parent=None):
+
         super().__init__(parent)
         self.main_window= main_window
         aplicar_icono_ventana(self, ICONO_LOGIN)
@@ -653,6 +686,7 @@ class RecuperarPasswordDialog(QDialog):
         _centrar_y_al_frente(self, parent)
 
     def _campo(self, layout, etiqueta, placeholder="", es_password=False):
+
         lbl= QLabel(etiqueta)
         lbl.setObjectName("LoginLabel")
         layout.addWidget(lbl)
@@ -687,6 +721,7 @@ class RecuperarPasswordDialog(QDialog):
         return entrada
 
     def _build_ui(self):
+
         layout_principal= QVBoxLayout(self)
         layout_principal.setContentsMargins(24, 24, 24, 24)
 
@@ -730,6 +765,7 @@ class RecuperarPasswordDialog(QDialog):
         layout_principal.addWidget(self.frame)
 
     def keyPressEvent(self, event):
+
         if event.key() == Qt.Key.Key_Escape:
             self.reject()
             return
@@ -737,6 +773,7 @@ class RecuperarPasswordDialog(QDialog):
 
     #---------------- TAB: AUTORIZACIÓN DE ADMINISTRADOR ----------------
     def _tab_admin(self):
+
         w= QWidget()
         layout= QVBoxLayout(w)
         layout.setContentsMargins(0, 8, 0, 0)
@@ -773,6 +810,7 @@ class RecuperarPasswordDialog(QDialog):
 
     #---------------- TAB: RECUPERACIÓN POR CORREO ----------------
     def _tab_correo(self):
+
         w= QWidget()
         layout= QVBoxLayout(w)
         layout.setContentsMargins(0, 8, 0, 0)
@@ -824,12 +862,13 @@ class RecuperarPasswordDialog(QDialog):
         return w
 
     def _apply_theme(self):
+
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
         idx= 1 if self.main_window.modo_oscuro else 0
-        bg_window, bg_panel = paleta["window_bg"][idx], paleta["display_bg"][idx]
-        txt_prim, txt_sec = paleta["text_primary"][idx], paleta["text_secondary"][idx]
-        bg_btn, accent = paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
+        bg_window, bg_panel= paleta["window_bg"][idx], paleta["display_bg"][idx]
+        txt_prim, txt_sec= paleta["text_primary"][idx], paleta["text_secondary"][idx]
+        bg_btn, accent= paleta["btn_num_bg"][idx], paleta["btn_op_bg"][idx]
         hv_accent= paleta["btn_op_hover"][idx]
 
         self.setStyleSheet(f"""
@@ -866,6 +905,7 @@ class RecuperarPasswordDialog(QDialog):
         """)
 
     def _restablecer_por_admin(self):
+
         cuenta= self.input_cuenta.text().strip()
         admin_user= self.input_admin_user.text().strip()
         admin_pass= self.input_admin_pass.text().strip()
@@ -886,6 +926,7 @@ class RecuperarPasswordDialog(QDialog):
             return
 
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, rol, activo, password FROM usuarios WHERE username=?", (admin_user,))
@@ -901,7 +942,7 @@ class RecuperarPasswordDialog(QDialog):
             #compartir el mismo límite de intentos: sin esto, alguien podía probar la contraseña del administrador aquí sin
             #ningún freno, evadiendo por completo el bloqueo de _iniciar_sesion.
             conn.close()
-            bloqueada, minutos_restantes = verificar_bloqueo_login(admin_user)
+            bloqueada, minutos_restantes= verificar_bloqueo_login(admin_user)
             if bloqueada:
                 _msg(self.main_window, self, QMessageBox.Icon.Warning, "Cuenta bloqueada temporalmente",
                      f"La cuenta '{admin_user}' se bloqueó por demasiados intentos fallidos.\n\n"
@@ -910,7 +951,7 @@ class RecuperarPasswordDialog(QDialog):
 
             if not verificar_contrasena(admin_pass, admin["password"]):
                 registrar_auditoria("Seguridad", "Intento fallido de autorización de admin", admin_user)
-                bloqueada_ahora, intentos_restantes = registrar_intento_fallido_login(admin_user)
+                bloqueada_ahora, intentos_restantes= registrar_intento_fallido_login(admin_user)
                 if bloqueada_ahora:
                     registrar_auditoria("Seguridad", "Cuenta bloqueada por intentos fallidos (recuperación)", admin_user)
                     _msg(self.main_window, self, QMessageBox.Icon.Critical, "Cuenta bloqueada",
@@ -948,12 +989,14 @@ class RecuperarPasswordDialog(QDialog):
 
     #---------------- LÓGICA: RECUPERACIÓN POR CORREO ----------------
     def _enviar_codigo(self):
+
         cuenta= self.input_cuenta_correo.text().strip()
         if not cuenta:
             _msg(self.main_window, self, QMessageBox.Icon.Warning, "Campo requerido",
                  "Ingresa el usuario de la cuenta.")
             return
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, correo, activo FROM usuarios WHERE username=?", (cuenta,))
@@ -1009,6 +1052,7 @@ class RecuperarPasswordDialog(QDialog):
              f"Se envió un código de verificación a {usuario['correo']}.")
 
     def _restablecer_por_correo(self):
+
         cuenta= self.input_cuenta_correo.text().strip()
         codigo= self.input_codigo.text().strip()
         nueva= self.input_nueva_correo.text().strip()
@@ -1028,6 +1072,7 @@ class RecuperarPasswordDialog(QDialog):
             return
 
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id FROM usuarios WHERE username=?", (cuenta,))

@@ -1,30 +1,29 @@
-"""Sincronización (Fase A) de AcaDeXI — patrón "carpeta compartida".
-
-El usuario indica la ruta local de un cliente de nube ya instalado
-(Google Drive, OneDrive, Dropbox, Nextcloud) o de un servidor NAS montado
-en su equipo. AcaDeXI copia allí un archivo canónico `acadexi_sync.db` y
-lo compara por hash SHA-256 contra la última versión conocida por ESTE
-equipo (guardada en config.json local, no en la BD, porque cada equipo
-tiene su propio estado) para detectar:
-- Sincronizado: nada que hacer.
-- Hay novedades: el remoto cambió (otro equipo subió) -> Descargar.
-- Cambios locales: solo este equipo cambió -> Subir.
-- Conflicto: ambos cambiaron desde la última sincronización -> el usuario
-  elige cuál gana, con backup de seguridad automático antes de sobrescribir.
-
-Sin credenciales OAuth ni API: depende 100% de que el cliente de escritorio
-de la nube ya sincronice esa carpeta a sus servidores. La integración
-directa (Fase B: PyDrive2/MSAL/Dropbox SDK) requeriría credenciales propias
-del usuario/institución y queda fuera de este alcance.
-
---------------------------------------------------------------------------
-Capa visual: tarjetas con esquinas redondeadas, "latido" de color en el
-estado cuando hace falta una acción del usuario, un spinner circular propio
-(sin depender de imágenes) para las operaciones que corren en segundo plano,
-y un acordeón animado para la sección avanzada. Toda la lógica de datos es
-la misma de siempre; sólo cambió cómo se presenta.
---------------------------------------------------------------------------
-"""
+#Sincronización (Fase A) de AcaDeXI — patrón "carpeta compartida".
+#
+#El usuario indica la ruta local de un cliente de nube ya instalado
+#(Google Drive, OneDrive, Dropbox, Nextcloud) o de un servidor NAS montado
+#en su equipo. AcaDeXI copia allí un archivo canónico `acadexi_sync.db` y
+#lo compara por hash SHA-256 contra la última versión conocida por ESTE
+#equipo (guardada en config.json local, no en la BD, porque cada equipo
+#tiene su propio estado) para detectar:
+#- Sincronizado: nada que hacer.
+#- Hay novedades: el remoto cambió (otro equipo subió) -> Descargar.
+#- Cambios locales: solo este equipo cambió -> Subir.
+#- Conflicto: ambos cambiaron desde la última sincronización -> el usuario
+#elige cuál gana, con backup de seguridad automático antes de sobrescribir.
+#
+#Sin credenciales OAuth ni API: depende 100% de que el cliente de escritorio
+#de la nube ya sincronice esa carpeta a sus servidores. La integración
+#directa (Fase B: PyDrive2/MSAL/Dropbox SDK) requeriría credenciales propias
+#del usuario/institución y queda fuera de este alcance.
+#
+# -----------------------------------------
+# capa visual: tarjetas con esquinas redondeadas, "latido" de color en el
+# -----------------------------------------
+#estado cuando hace falta una acción del usuario, un spinner circular propio
+#(sin depender de imágenes) para las operaciones que corren en segundo plano,
+#y un acordeón animado para la sección avanzada. Toda la lógica de datos es
+#la misma de siempre; sólo cambió cómo se presenta.
 import os
 import hashlib
 import shutil
@@ -223,10 +222,12 @@ _CACHE_HASHES= {}  #ruta -> ((mtime_ns, tamaño), hash) — evita rehashear arch
 
 
 def _hash_archivo(ruta):
+
     if not ruta or not os.path.exists(ruta):
         return None
     firma= None
     try:
+
         est= os.stat(ruta)
         firma= (est.st_mtime_ns, est.st_size)
     except OSError:
@@ -246,12 +247,14 @@ def _hash_archivo(ruta):
 
 
 def _ruta_remota(carpeta):
+
     return os.path.join(carpeta, NOMBRE_ARCHIVO_SYNC) if carpeta else None
 
 
+#Devuelve el estado de sincronización de este equipo frente a la
+#carpeta compartida configurada localmente (main_window.carpeta_sincronizacion).
 def obtener_estado(main_window):
-    """Devuelve el estado de sincronización de este equipo frente a la
-    carpeta compartida configurada localmente (main_window.carpeta_sincronizacion)."""
+
     carpeta= getattr(main_window, "carpeta_sincronizacion", "") or ""
     if not carpeta or not os.path.isdir(carpeta):
         return {"estado": "sin_carpeta", "carpeta": carpeta}
@@ -280,9 +283,10 @@ def obtener_estado(main_window):
             "hash_local": hash_local, "hash_remoto": hash_remoto}
 
 
+#Copia la BD local a la carpeta compartida; el cliente de nube ya
+#instalado se encarga de subirla a sus servidores.
 def subir_cambios(main_window):
-    """Copia la BD local a la carpeta compartida; el cliente de nube ya
-    instalado se encarga de subirla a sus servidores."""
+
     carpeta= getattr(main_window, "carpeta_sincronizacion", "") or ""
     if not carpeta or not os.path.isdir(carpeta):
         raise RuntimeError("No hay una carpeta de sincronización configurada o la ruta ya no existe.")
@@ -294,9 +298,10 @@ def subir_cambios(main_window):
     return destino
 
 
+#Trae la copia de la carpeta compartida a este equipo. Antes crea un
+#backup de seguridad local por si hay que revertir.
 def descargar_novedades(main_window):
-    """Trae la copia de la carpeta compartida a este equipo. Antes crea un
-    backup de seguridad local por si hay que revertir."""
+
     carpeta= getattr(main_window, "carpeta_sincronizacion", "") or ""
     if not carpeta or not os.path.isdir(carpeta):
         raise RuntimeError("No hay una carpeta de sincronización configurada o la ruta ya no existe.")
@@ -335,13 +340,15 @@ ESTADOS_VISUAL= {
 
 
 def _hex_a_rgba(color_hex, alpha):
+
     color_hex= color_hex.lstrip("#")
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
 
+#Pequeño 'rebote' visual al presionar un botón.
 def _animar_click(boton):
-    """Pequeño 'rebote' visual al presionar un botón."""
+
     geo= boton.geometry()
     if geo.width() <= 0 or geo.height() <= 0:
         return
@@ -359,6 +366,7 @@ def _animar_click(boton):
 
 
 def _crear_sombra(color="#000000", blur=20, y=5, alpha=110):
+
     efecto= QGraphicsDropShadowEffect()
     c= QColor(color)
     c.setAlpha(alpha)
@@ -368,9 +376,10 @@ def _crear_sombra(color="#000000", blur=20, y=5, alpha=110):
     return efecto
 
 
+#Animación de 'respiración' (sube y baja en bucle) sobre una propiedad Qt.
+#Se usa para dar un latido sutil a las tarjetas que requieren atención.
 def _crear_pulso(objetivo, propiedad, minimo, maximo, duracion=950):
-    """Animación de 'respiración' (sube y baja en bucle) sobre una propiedad Qt.
-    Se usa para dar un latido sutil a las tarjetas que requieren atención."""
+
     grupo= QSequentialAnimationGroup(objetivo)
     subir= QPropertyAnimation(objetivo, propiedad)
     subir.setStartValue(minimo)
@@ -388,15 +397,16 @@ def _crear_pulso(objetivo, propiedad, minimo, maximo, duracion=950):
     return grupo
 
 
+#Aplica un fundido de entrada (opacidad 0→1) a `widget` y, esto es lo
+#importante, DESPRENDE el QGraphicsOpacityEffect apenas termina
+#(setGraphicsEffect(None)). Un efecto que se queda pegado permanentemente
+#a un widget hace que Qt, en ciertos casos, no repinte correctamente
+#actualizaciones que llegan después de que la animación terminó — el
+#widget queda invisible hasta la próxima interacción manual del usuario
+#(mover el mouse encima, hacer click, etc.). Se usa cada vez que un panel
+#o tarjeta aparece o cambia de contenido.
 def _fundido_entrada(widget, duracion=260):
-    """Aplica un fundido de entrada (opacidad 0→1) a `widget` y, esto es lo
-    importante, DESPRENDE el QGraphicsOpacityEffect apenas termina
-    (setGraphicsEffect(None)). Un efecto que se queda pegado permanentemente
-    a un widget hace que Qt, en ciertos casos, no repinte correctamente
-    actualizaciones que llegan después de que la animación terminó — el
-    widget queda invisible hasta la próxima interacción manual del usuario
-    (mover el mouse encima, hacer click, etc.). Se usa cada vez que un panel
-    o tarjeta aparece o cambia de contenido."""
+
     efecto= QGraphicsOpacityEffect(widget)
     widget.setGraphicsEffect(efecto)
     anim= QPropertyAnimation(efecto, b"opacity", widget)
@@ -408,6 +418,7 @@ def _fundido_entrada(widget, duracion=260):
     widget._anim_fundido= anim  #evita que el recolector de basura la corte a mitad de vuelo
 
     def _limpiar(w=widget):
+
         w.setGraphicsEffect(None)
         w.update()
 
@@ -415,11 +426,12 @@ def _fundido_entrada(widget, duracion=260):
     anim.start()
 
 
+#Indicador de carga circular animado (arco giratorio), dibujado a mano
+#para no depender de ningún archivo de imagen/GIF.
 class SpinnerCircular(QWidget):
-    """Indicador de carga circular animado (arco giratorio), dibujado a mano
-    para no depender de ningún archivo de imagen/GIF."""
 
     def __init__(self, parent=None, diametro=20, color="#6366F1", grosor=3):
+
         super().__init__(parent)
         self._angulo= 0.0
         self._color= QColor(color)
@@ -433,27 +445,33 @@ class SpinnerCircular(QWidget):
         self.hide()
 
     def _leer_angulo(self):
+
         return self._angulo
 
     def _poner_angulo(self, valor):
+
         self._angulo= valor
         self.update()
 
     angulo= Property(float, _leer_angulo, _poner_angulo)
 
     def poner_color(self, color):
+
         self._color= QColor(color)
         self.update()
 
     def iniciar(self):
+
         self.show()
         self._anim.start()
 
     def detener(self):
+
         self._anim.stop()
         self.hide()
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         margen= self._grosor
@@ -465,29 +483,34 @@ class SpinnerCircular(QWidget):
         painter.drawArc(rect, int(-self._angulo * 16), 100 * 16)
 
 
+#Ejecuta una operación de sincronización (copiar/subir/descargar) en
+#segundo plano para que la interfaz no se congele y el spinner se anime
+#con fluidez mientras dura la operación.
 class _HiloOperacionSync(QThread):
-    """Ejecuta una operación de sincronización (copiar/subir/descargar) en
-    segundo plano para que la interfaz no se congele y el spinner se anime
-    con fluidez mientras dura la operación."""
+
     terminado= Signal(object, object)  #(resultado, excepción o None)
 
     def __init__(self, funcion, parent=None):
+
         super().__init__(parent)
         self._funcion= funcion
 
     def run(self):
+
         try:
+
             resultado= self._funcion()
             self.terminado.emit(resultado, None)
         except Exception as e:  #se reporta al usuario en el hilo principal, no se silencia
             self.terminado.emit(None, e)
 
 
+#Tarjeta grande que resume el estado de sincronización, con un latido
+#de color sutil cuando hace falta una acción del usuario.
 class TarjetaEstado(QFrame):
-    """Tarjeta grande que resume el estado de sincronización, con un latido
-    de color sutil cuando hace falta una acción del usuario."""
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setObjectName("TarjetaEstadoSync")
         self._pulso= None
@@ -522,6 +545,7 @@ class TarjetaEstado(QFrame):
         self._color_actual= "#94A3B8"
 
     def actualizar(self, clave_estado):
+
         info= ESTADOS_VISUAL.get(clave_estado, ESTADOS_VISUAL["sin_carpeta"])
         color= info["color"]
         self._color_actual= color
@@ -563,27 +587,30 @@ class TarjetaEstado(QFrame):
             self._pulso.start()
 
     def mostrar_ocupado(self, texto="Sincronizando…"):
+
         self.lbl_titulo.setText(texto)
         self.spinner.poner_color(self._color_actual)
         self.spinner.iniciar()
 
     def ocultar_ocupado(self):
+
         self.spinner.detener()
 
 
+#Arma, al vuelo, un ZIP autocontenido con servidor_institucional.py,
+#sus dependencias, scripts para iniciarlo con un doble clic (sin
+#terminal) y una guía en español con 3 formas reales de tenerlo
+#accesible — de gratis (un equipo del colegio, o una capa gratuita en
+#la nube) a de pago (un VPS propio) — pensadas para instituciones con
+#presupuestos muy distintos, no solo para las que puedan pagar un
+#servidor dedicado. Es una función de módulo (no un método) para que
+#tanto el panel de Sincronización como el Asistente de Configuración
+#puedan ofrecer el mismo botón sin duplicar esta lógica.
+#
+#`padre` es el widget que sirve de contexto para los diálogos (el
+#propio panel o la página del asistente que llama a esta función).
 def exportar_paquete_servidor(main_window, padre):
-    """Arma, al vuelo, un ZIP autocontenido con servidor_institucional.py,
-    sus dependencias, scripts para iniciarlo con un doble clic (sin
-    terminal) y una guía en español con 3 formas reales de tenerlo
-    accesible — de gratis (un equipo del colegio, o una capa gratuita en
-    la nube) a de pago (un VPS propio) — pensadas para instituciones con
-    presupuestos muy distintos, no solo para las que puedan pagar un
-    servidor dedicado. Es una función de módulo (no un método) para que
-    tanto el panel de Sincronización como el Asistente de Configuración
-    puedan ofrecer el mismo botón sin duplicar esta lógica.
 
-    `padre` es el widget que sirve de contexto para los diálogos (el
-    propio panel o la página del asistente que llama a esta función)."""
     ruta_servidor= buscar_dato("servidor_institucional.py")
     ruta_requisitos= buscar_dato("requirements_servidor.txt")
     if not os.path.exists(ruta_servidor) or not os.path.exists(ruta_requisitos):
@@ -592,7 +619,7 @@ def exportar_paquete_servidor(main_window, padre):
                         "requirements_servidor.txt junto a la aplicación.", padre)
         return
 
-    destino, _ = QFileDialog.getSaveFileName(
+    destino, _= QFileDialog.getSaveFileName(
         padre, "Exportar Servidor Institucional",
         "AcaDeXI_Servidor_Institucional.zip", "Archivo ZIP (*.zip)")
     if not destino:
@@ -601,6 +628,7 @@ def exportar_paquete_servidor(main_window, padre):
         destino += ".zip"
 
     try:
+
         with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as z:
             z.write(ruta_servidor, "servidor_institucional.py")
             z.write(ruta_requisitos, "requirements_servidor.txt")
@@ -623,11 +651,12 @@ def exportar_paquete_servidor(main_window, padre):
 
 
 #Módulo principal
+#Vista de 'este equipo': modo de trabajo, carpeta compartida y las
+#acciones reales de sincronización (Fase A, sin OAuth).
 class ModuloSincronizacion(QWidget):
-    """Vista de 'este equipo': modo de trabajo, carpeta compartida y las
-    acciones reales de sincronización (Fase A, sin OAuth)."""
 
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self._hilo= None
@@ -643,6 +672,7 @@ class ModuloSincronizacion(QWidget):
 
     #Atajos de teclado (ver atajos.py)
     def _configurar_atajos(self):
+
         registrar_atajo(self, self.main_window, "Ctrl+Up", "Subir cambios", self._subir)
         registrar_atajo(self, self.main_window, "Ctrl+Down", "Descargar novedades", self._descargar)
         registrar_atajo(self, self.main_window, "Ctrl+R", "Verificar ahora", self._refrescar_estado)
@@ -651,6 +681,7 @@ class ModuloSincronizacion(QWidget):
 
     #Construcción de la interfaz
     def _build_ui(self):
+
         layout_externo= QVBoxLayout(self)
         layout_externo.setContentsMargins(0, 0, 0, 0)
 
@@ -728,6 +759,7 @@ class ModuloSincronizacion(QWidget):
         layout_externo.addWidget(scroll)
 
     def _boton_accion(self, texto, object_name, callback):
+
         boton= QPushButton(texto)
         boton.setObjectName(object_name)
         boton.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -746,6 +778,7 @@ class ModuloSincronizacion(QWidget):
         return boton
 
     def _tarjeta_este_equipo(self):
+
         tarjeta= QFrame()
         tarjeta.setObjectName("TarjetaSeccionSync")
         tarjeta.setGraphicsEffect(_crear_sombra(blur=16, y=3, alpha=55))
@@ -797,6 +830,7 @@ class ModuloSincronizacion(QWidget):
         return tarjeta
 
     def _tarjeta_avanzada(self):
+
         tarjeta= QFrame()
         tarjeta.setObjectName("TarjetaSeccionSync")
         tarjeta.setGraphicsEffect(_crear_sombra(blur=16, y=3, alpha=55))
@@ -825,9 +859,10 @@ class ModuloSincronizacion(QWidget):
 
         return tarjeta
 
+    #Construye los formularios de los backends avanzados. Se llama una
+    #sola vez, la primera vez que el usuario despliega esta sección.
     def _construir_contenido_avanzado(self):
-        """Construye los formularios de los backends avanzados. Se llama una
-        sola vez, la primera vez que el usuario despliega esta sección."""
+
         if self._contenido_avanzado_listo:
             return
         self._contenido_avanzado_listo= True
@@ -932,6 +967,7 @@ class ModuloSincronizacion(QWidget):
 
     #Paneles de configuración por backend avanzado
     def _crear_panel_google(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
@@ -950,6 +986,7 @@ class ModuloSincronizacion(QWidget):
         return w
 
     def _crear_panel_dropbox(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
@@ -968,6 +1005,7 @@ class ModuloSincronizacion(QWidget):
         return w
 
     def _crear_panel_onedrive(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
@@ -981,6 +1019,7 @@ class ModuloSincronizacion(QWidget):
         return w
 
     def _crear_panel_servidor(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setContentsMargins(0, 4, 0, 0)
@@ -1000,6 +1039,7 @@ class ModuloSincronizacion(QWidget):
 
     #Acordeón / selector de backend (animaciones de interfaz)
     def _alternar_avanzado(self):
+
         if not self._contenido_avanzado_listo:
             self._construir_contenido_avanzado()
             #Qt encola (no ejecuta al instante) las peticiones de recálculo de geometría de los widgets recién creados — y
@@ -1027,12 +1067,14 @@ class ModuloSincronizacion(QWidget):
         self._anim_avanzado.start()
 
     def _cambiar_metodo_avanzado(self, indice, clave):
+
         self._metodo_avanzado_actual_clave= clave
         self.stack_config_avanzada.setCurrentIndex(indice)
         self._efecto_transicion_panel()
         self._refrescar_estado_avanzado()
 
     def _efecto_transicion_panel(self):
+
         widget= self.stack_config_avanzada.currentWidget()
         if widget is None:
             return
@@ -1042,23 +1084,26 @@ class ModuloSincronizacion(QWidget):
         _fundido_entrada(widget, duracion=220)
 
     def _abrir_asistente(self):
+
         from src.sincronizacion.asistente_sincronizacion import AsistenteSincronizacion
         asistente= AsistenteSincronizacion(self.main_window)
         asistente.exec()
         self._refrescar_estado_avanzado()
 
     def _descargar_guia_pdf(self):
+
         ruta_guia= buscar_dato("guia_sincronizacion_directa.pdf")
         if not os.path.exists(ruta_guia):
             mostrar_mensaje("advertencia", "Guía no encontrada",
                             "No se encontró guia_sincronizacion_directa.pdf junto a la aplicación.", self)
             return
-        destino, _ = QFileDialog.getSaveFileName(
+        destino, _= QFileDialog.getSaveFileName(
             self, "Guardar Guía de Sincronización Directa",
             "Guia_Sincronizacion_Directa_AcaDeXI.pdf", "PDF (*.pdf)")
         if not destino:
             return
         try:
+
             shutil.copy2(ruta_guia, destino)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo guardar la guía:\n{e}", self)
@@ -1068,12 +1113,15 @@ class ModuloSincronizacion(QWidget):
         mostrar_mensaje("exito", "Guía guardada", f"La guía se guardó en:\n{destino}", self)
 
     def _exportar_paquete_servidor(self):
+
         exportar_paquete_servidor(self.main_window, self)
 
     def _metodo_avanzado_actual(self):
+
         return self._metodo_avanzado_actual_clave
 
     def _refrescar_estado_avanzado(self):
+
         if not self._contenido_avanzado_listo:
             return  #el panel avanzado aún no se ha construido (carga perezosa)
         metodo= self._metodo_avanzado_actual()
@@ -1089,6 +1137,7 @@ class ModuloSincronizacion(QWidget):
 
     #Conexión OAuth / servidor por backend (sin cambios de lógica)
     def _conectar_google(self):
+
         client_id= self.in_google_client_id.text().strip()
         client_secret= self.in_google_client_secret.text().strip()
         if not client_id or not client_secret:
@@ -1098,6 +1147,7 @@ class ModuloSincronizacion(QWidget):
                         "Se abrirá tu navegador para autorizar el acceso. Vuelve a la aplicación "
                         "después de aceptar.", self)
         try:
+
             avanzado.google_drive_conectar(client_id, client_secret)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo conectar Google Drive:\n{e}", self)
@@ -1106,24 +1156,27 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado_avanzado()
 
     def _conectar_dropbox(self):
+
         app_key= self.in_dropbox_key.text().strip()
         app_secret= self.in_dropbox_secret.text().strip()
         if not app_key or not app_secret:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa el App Key y App Secret.", self)
             return
         try:
-            flow, url = avanzado.dropbox_conectar(app_key, app_secret)
+
+            flow, url= avanzado.dropbox_conectar(app_key, app_secret)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo iniciar la conexión con Dropbox:\n{e}", self)
             return
         webbrowser.open(url)
-        codigo, ok = QInputDialog.getText(
+        codigo, ok= QInputDialog.getText(
             self, "Conectar Dropbox",
             f"Se abrió tu navegador para autorizar el acceso.\nSi no se abrió, visita:\n{url}\n\n"
             "Pega aquí el código de autorización que te muestra Dropbox:")
         if not ok or not codigo.strip():
             return
         try:
+
             avanzado.dropbox_finalizar_conexion(flow, codigo, app_key, app_secret)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo completar la conexión con Dropbox:\n{e}", self)
@@ -1132,12 +1185,14 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado_avanzado()
 
     def _conectar_onedrive(self):
+
         client_id= self.in_onedrive_client_id.text().strip()
         if not client_id:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa el Client ID.", self)
             return
         try:
-            app, flujo = avanzado.onedrive_conectar(client_id)
+
+            app, flujo= avanzado.onedrive_conectar(client_id)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo iniciar la conexión con OneDrive:\n{e}", self)
             return
@@ -1146,6 +1201,7 @@ class ModuloSincronizacion(QWidget):
                 self) != QMessageBox.StandardButton.Yes:
             return
         try:
+
             avanzado.onedrive_finalizar_conexion(app, flujo, client_id)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo completar la conexión con OneDrive:\n{e}", self)
@@ -1154,12 +1210,14 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado_avanzado()
 
     def _conectar_servidor(self):
+
         url= self.in_servidor_url.text().strip()
         token= self.in_servidor_token.text().strip()
         if not url or not token:
             mostrar_mensaje("advertencia", "Datos incompletos", "Ingresa la URL y el token.", self)
             return
         try:
+
             avanzado.servidor_conectar(url, token)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo conectar con el servidor:\n{e}", self)
@@ -1167,12 +1225,13 @@ class ModuloSincronizacion(QWidget):
         mostrar_mensaje("exito", "Conectado", "Servidor institucional conectado correctamente.", self)
         self._refrescar_estado_avanzado()
 
+    #Rompe la conexión con el backend actualmente seleccionado en los
+    #chips (Google Drive / Dropbox / OneDrive / Servidor). Pensado como
+    #vía de recuperación: si algo falló (token vencido, credenciales
+    #equivocadas, etc.), esto borra la conexión guardada en este equipo
+    #para poder volver a conectarla desde cero, sin tocar nada remoto.
     def _desvincular_avanzado(self):
-        """Rompe la conexión con el backend actualmente seleccionado en los
-        chips (Google Drive / Dropbox / OneDrive / Servidor). Pensado como
-        vía de recuperación: si algo falló (token vencido, credenciales
-        equivocadas, etc.), esto borra la conexión guardada en este equipo
-        para poder volver a conectarla desde cero, sin tocar nada remoto."""
+
         metodo= self._metodo_avanzado_actual()
         if metodo is None or not avanzado.conectado(metodo):
             return
@@ -1190,10 +1249,11 @@ class ModuloSincronizacion(QWidget):
         mostrar_mensaje("exito", "Desvinculado", f"{nombre} se desvinculó de este equipo.", self)
         self._refrescar_estado_avanzado()
 
+    #Vacía los campos de credenciales del formulario del backend
+    #recién desvinculado, para que no queden datos viejos a la vista si
+    #el usuario decide volver a conectarlo.
     def _limpiar_campos_backend(self, metodo):
-        """Vacía los campos de credenciales del formulario del backend
-        recién desvinculado, para que no queden datos viejos a la vista si
-        el usuario decide volver a conectarlo."""
+
         campos= {
             "google_drive": [self.in_google_client_id, self.in_google_client_secret],
             "dropbox": [self.in_dropbox_key, self.in_dropbox_secret],
@@ -1205,6 +1265,7 @@ class ModuloSincronizacion(QWidget):
 
     #Subir / Descargar (carpeta compartida) — corren en segundo plano
     def _ejecutar_en_hilo(self, funcion, texto_ocupado, al_terminar):
+
         if self._hilo is not None and self._hilo.isRunning():
             return
         self._alternar_botones_ocupado(True)
@@ -1212,6 +1273,7 @@ class ModuloSincronizacion(QWidget):
         self._hilo= _HiloOperacionSync(funcion, self)
 
         def _al_finalizar(resultado, error):
+
             self.tarjeta_estado.ocultar_ocupado()
             self._alternar_botones_ocupado(False)
             al_terminar(resultado, error)
@@ -1220,10 +1282,12 @@ class ModuloSincronizacion(QWidget):
         self._hilo.start()
 
     def _alternar_botones_ocupado(self, ocupado):
+
         self.btn_subir.setEnabled(not ocupado)
         self.btn_descargar.setEnabled(not ocupado)
 
     def _subir(self):
+
         estado= obtener_estado(self.main_window)
         if estado["estado"] == "conflicto":
             if mostrar_mensaje("pregunta", "Conflicto de sincronización",
@@ -1236,6 +1300,7 @@ class ModuloSincronizacion(QWidget):
                                "Subiendo cambios…", self._al_terminar_subir)
 
     def _al_terminar_subir(self, destino, error):
+
         if error is not None:
             mostrar_mensaje("error", "Error", f"No se pudo subir:\n{error}", self)
         else:
@@ -1246,6 +1311,7 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado()
 
     def _descargar(self):
+
         estado= obtener_estado(self.main_window)
         if estado["estado"] == "conflicto":
             if mostrar_mensaje("pregunta", "Conflicto de sincronización",
@@ -1258,6 +1324,7 @@ class ModuloSincronizacion(QWidget):
                                "Descargando novedades…", self._al_terminar_descargar)
 
     def _al_terminar_descargar(self, respaldo, error):
+
         if error is not None:
             mostrar_mensaje("error", "Error", f"No se pudo descargar:\n{error}", self)
         else:
@@ -1269,6 +1336,7 @@ class ModuloSincronizacion(QWidget):
 
     #Subir / Descargar con el backend avanzado seleccionado
     def _subir_avanzado(self):
+
         metodo= self._metodo_avanzado_actual()
         if not avanzado.conectado(metodo):
             mostrar_mensaje("advertencia", "No conectado", f"Primero conecta {avanzado.METODOS[metodo]}.", self)
@@ -1277,6 +1345,7 @@ class ModuloSincronizacion(QWidget):
         self._hilo_avanzado= _HiloOperacionSync(lambda: avanzado.subir(metodo), self)
 
         def _terminado(destino, error):
+
             self._alternar_botones_avanzado_ocupado(False)
             if error is not None:
                 mostrar_mensaje("error", "Error", f"No se pudo subir:\n{error}", self)
@@ -1289,6 +1358,7 @@ class ModuloSincronizacion(QWidget):
         self._hilo_avanzado.start()
 
     def _descargar_avanzado(self):
+
         metodo= self._metodo_avanzado_actual()
         if not avanzado.conectado(metodo):
             mostrar_mensaje("advertencia", "No conectado", f"Primero conecta {avanzado.METODOS[metodo]}.", self)
@@ -1297,6 +1367,7 @@ class ModuloSincronizacion(QWidget):
         self._hilo_avanzado= _HiloOperacionSync(lambda: avanzado.descargar(metodo), self)
 
         def _terminado(respaldo, error):
+
             self._alternar_botones_avanzado_ocupado(False)
             if error is not None:
                 mostrar_mensaje("error", "Error", f"No se pudo descargar:\n{error}", self)
@@ -1311,6 +1382,7 @@ class ModuloSincronizacion(QWidget):
         self._hilo_avanzado.start()
 
     def _alternar_botones_avanzado_ocupado(self, ocupado):
+
         self.btn_subir_avanzado.setEnabled(not ocupado)
         self.btn_descargar_avanzado.setEnabled(not ocupado)
         if ocupado:
@@ -1320,11 +1392,13 @@ class ModuloSincronizacion(QWidget):
 
     #Carpeta / preferencias de este equipo
     def _elegir_carpeta(self):
+
         carpeta= QFileDialog.getExistingDirectory(self, "Seleccionar carpeta de sincronización")
         if carpeta:
             self.in_carpeta.setText(carpeta)
 
     def _guardar(self):
+
         self.main_window.modo_trabajo= self.combo_modo.currentText()
         self.main_window.carpeta_sincronizacion= self.in_carpeta.text().strip()
         self.main_window.guardar_configuracion()
@@ -1333,15 +1407,17 @@ class ModuloSincronizacion(QWidget):
         mostrar_mensaje("exito", "Guardado", "Preferencia de este equipo actualizada.", self)
         self._refrescar_estado()
 
+    #Consulta el estado (implica hashear archivos) en un hilo aparte para
+    #que abrir el módulo o pulsar 'Verificar Ahora' nunca congele la UI.
     def _refrescar_estado(self):
-        """Consulta el estado (implica hashear archivos) en un hilo aparte para
-        que abrir el módulo o pulsar 'Verificar Ahora' nunca congele la UI."""
+
         if self._hilo_estado is not None and self._hilo_estado.isRunning():
             return
         self.tarjeta_estado.mostrar_ocupado("Verificando…")
         self._hilo_estado= _HiloOperacionSync(lambda: obtener_estado(self.main_window), self)
 
         def _listo(estado, error):
+
             self.tarjeta_estado.ocultar_ocupado()
             if error is not None or not estado:
                 self.tarjeta_estado.actualizar("sin_carpeta")
@@ -1356,12 +1432,14 @@ class ModuloSincronizacion(QWidget):
 
     #Ciclo de vida del módulo
     def refrescar(self):
+
         self.combo_modo.setCurrentText(getattr(self.main_window, "modo_trabajo", "Local"))
         self.in_carpeta.setText(getattr(self.main_window, "carpeta_sincronizacion", "") or "")
         self._refrescar_estado()
         self._refrescar_estado_avanzado()
 
     def showEvent(self, event):
+
         super().showEvent(event)
         if self.tarjeta_estado._pulso is not None:
             self.tarjeta_estado._pulso.resume()
@@ -1374,6 +1452,7 @@ class ModuloSincronizacion(QWidget):
         _fundido_entrada(self._contenido, duracion=380)
 
     def hideEvent(self, event):
+
         super().hideEvent(event)
         #El módulo pasa a segundo plano (otra pestaña de la sidebar está activa): pausamos el 'latido' de la tarjeta de
         #estado para no gastar ciclos de CPU en una animación que nadie está viendo.
@@ -1381,6 +1460,7 @@ class ModuloSincronizacion(QWidget):
             self.tarjeta_estado._pulso.pause()
 
     def _paleta(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None)
         tema= getattr(mw, "tema_actual", None)
@@ -1396,6 +1476,7 @@ class ModuloSincronizacion(QWidget):
                 "txt_sec": p["text_secondary"][idx]}
 
     def actualizar_tema(self):
+
         c= self._paleta()
         accent_suave= _hex_a_rgba(c["accent"], 0.14)
         accent_borde= _hex_a_rgba(c["accent"], 0.45)

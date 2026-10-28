@@ -1,4 +1,4 @@
-"""Banco de Tareas de AcaDeXI."""
+#Banco de Tareas de AcaDeXI.
 import unicodedata
 from datetime import datetime, timedelta
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -77,36 +77,40 @@ COLORES_CATEGORIA= {
 ALTURA_FILA= 40
 
 
+#Reemplaza el texto del placeholder (ítem 0, sin dato asociado) de un
+#combo de Curso/Sección poblado por filtros_curso_seccion.poblar_combo_curso /
+#cascada_seccion_por_curso. Ajuste puramente visual y LOCAL a la pestaña
+#Entregas de Banco de Tareas: no modifica filtros_curso_seccion.py, así que
+#el resto de la app sigue mostrando el placeholder largo original. Si el
+#ítem 0 ya tiene un curso/sección real seleccionado, no se toca.
 def _acortar_placeholder_combo(combo, texto):
-    """Reemplaza el texto del placeholder (ítem 0, sin dato asociado) de un
-    combo de Curso/Sección poblado por filtros_curso_seccion.poblar_combo_curso /
-    cascada_seccion_por_curso. Ajuste puramente visual y LOCAL a la pestaña
-    Entregas de Banco de Tareas: no modifica filtros_curso_seccion.py, así que
-    el resto de la app sigue mostrando el placeholder largo original. Si el
-    ítem 0 ya tiene un curso/sección real seleccionado, no se toca."""
+
     if combo.count() > 0 and combo.itemData(0) is None:
         combo.setItemText(0, texto)
 
 
 def _rgba(color_hex, alpha):
+
     color_hex= (color_hex or "#000000").lstrip("#")
     if len(color_hex) < 6:
         color_hex= "000000"
-    r, g, b = int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r},{g},{b},{alpha})"
 
 
+#Minúsculas y sin acentos/diacríticos, para que la búsqueda encuentre
+#'Práctica' al escribir 'practica', 'PRACTICA' o 'práctica' indistintamente.
 def _normalizar_texto(texto):
-    """Minúsculas y sin acentos/diacríticos, para que la búsqueda encuentre
-    'Práctica' al escribir 'practica', 'PRACTICA' o 'práctica' indistintamente."""
+
     texto= (texto or "").lower()
     texto= unicodedata.normalize("NFKD", texto)
     return "".join(c for c in texto if not unicodedata.combining(c))
 
 
+#Insignia de estado/categoría (QLabel liviano, sin QGraphicsEffect). Se
+#coloca como cellWidget encima de la celda.
 def _crear_chip(texto, color_hex):
-    """Insignia de estado/categoría (QLabel liviano, sin QGraphicsEffect). Se
-    coloca como cellWidget encima de la celda."""
+
     contenedor= QWidget()
     contenedor.setStyleSheet("background: transparent;")
     lay= QHBoxLayout(contenedor)
@@ -126,13 +130,14 @@ def _crear_chip(texto, color_hex):
     return contenedor
 
 
+#QTableWidgetItem SIN texto visible: se usa detrás de un cellWidget
+#(chip) para que no se vea duplicado. Un simple `setForeground(transparente)`
+#no basta, porque el estilo de fila seleccionada del tema fuerza el color
+#del texto (`color: white`) y lo vuelve a mostrar al hacer clic en la fila;
+#por eso aquí el texto del item queda vacío de verdad, y el valor real se
+#guarda en Qt.ItemDataRole.UserRole para el código que necesite leerlo.
 def _item_oculto(texto):
-    """QTableWidgetItem SIN texto visible: se usa detrás de un cellWidget
-    (chip) para que no se vea duplicado. Un simple `setForeground(transparente)`
-    no basta, porque el estilo de fila seleccionada del tema fuerza el color
-    del texto (`color: white`) y lo vuelve a mostrar al hacer clic en la fila;
-    por eso aquí el texto del item queda vacío de verdad, y el valor real se
-    guarda en Qt.ItemDataRole.UserRole para el código que necesite leerlo."""
+
     item= QTableWidgetItem("")
     item.setData(Qt.ItemDataRole.UserRole, texto or "")
     #El detalle genérico de tablas usa el tooltip cuando la celda tiene un widget visual encima. Así el mismo
@@ -141,16 +146,18 @@ def _item_oculto(texto):
     return item
 
 
+#Barra de progreso segmentada y animada — reemplaza a las tarjetas KPI.
+#Cada segmento representa una categoría (p. ej. Vencidas/Por vencer/Vigentes/
+#Archivadas) como un tramo de color cuyo ancho se anima suavemente cuando
+#cambian los datos. Un clic en un segmento filtra la tabla por esa categoría
+#(un segundo clic la quita). Se dibuja con QPainter (un solo widget, sin
+#QGraphicsEffect ni sub-widgets), por lo que es muy liviana de repintar.
 class BarraSegmentada(QWidget):
-    """Barra de progreso segmentada y animada — reemplaza a las tarjetas KPI.
-    Cada segmento representa una categoría (p. ej. Vencidas/Por vencer/Vigentes/
-    Archivadas) como un tramo de color cuyo ancho se anima suavemente cuando
-    cambian los datos. Un clic en un segmento filtra la tabla por esa categoría
-    (un segundo clic la quita). Se dibuja con QPainter (un solo widget, sin
-    QGraphicsEffect ni sub-widgets), por lo que es muy liviana de repintar."""
+
     segmento_clicado= Signal(str)
 
     def __init__(self, segmentos, parent=None):
+
         super().__init__(parent)
         self._segmentos= segmentos
         self._valores= {clave: 0 for clave, _, _ in segmentos}
@@ -171,11 +178,13 @@ class BarraSegmentada(QWidget):
         self._anim.valueChanged.connect(self._en_paso_animacion)
 
     def aplicar_paleta(self, color_borde, color_vacio, _color_texto):
+
         self._color_borde= color_borde
         self._color_vacio= color_vacio
         self.update()
 
     def establecer_valores(self, valores):
+
         total= sum(valores.get(clave, 0) for clave, _, _ in self._segmentos) or 1
         self._fracciones_inicio= dict(self._fracciones)
         self._fracciones_objetivo= {clave: valores.get(clave, 0) / total for clave, _, _ in self._segmentos}
@@ -186,6 +195,7 @@ class BarraSegmentada(QWidget):
         self._anim.start()
 
     def _en_paso_animacion(self, t):
+
         for clave, _, _ in self._segmentos:
             ini= self._fracciones_inicio.get(clave, 0.0)
             fin= self._fracciones_objetivo.get(clave, 0.0)
@@ -193,10 +203,12 @@ class BarraSegmentada(QWidget):
         self.update()
 
     def establecer_filtro_activo(self, claves_activas):
+
         self._claves_activas= set(claves_activas) if claves_activas else None
         self.update()
 
     def _segmento_en_x(self, x):
+
         ancho= self.width()
         acumulado= 0.0
         for clave, _, _ in self._segmentos:
@@ -209,6 +221,7 @@ class BarraSegmentada(QWidget):
         return None
 
     def mouseMoveEvent(self, event):
+
         clave= self._segmento_en_x(event.position().x())
         if clave != self._segmento_hover:
             self._segmento_hover= clave
@@ -218,11 +231,13 @@ class BarraSegmentada(QWidget):
         super().mouseMoveEvent(event)
 
     def leaveEvent(self, event):
+
         self._segmento_hover= None
         self.update()
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             clave= self._segmento_en_x(event.position().x())
             if clave:
@@ -230,6 +245,7 @@ class BarraSegmentada(QWidget):
         super().mousePressEvent(event)
 
     def paintEvent(self, event):
+
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect= self.rect().adjusted(0, 4, 0, -4)
@@ -259,13 +275,15 @@ class BarraSegmentada(QWidget):
         painter.end()
 
 
+#Punto de la leyenda: un contador que 'cuenta' de forma animada hasta el
+#valor nuevo. Hace de leyenda de la barra segmentada y, a la vez, de filtro:
+#un clic filtra la tabla por esa categoría (otro clic lo quita).
 class EtiquetaContadorClicable(QLabel):
-    """Punto de la leyenda: un contador que 'cuenta' de forma animada hasta el
-    valor nuevo. Hace de leyenda de la barra segmentada y, a la vez, de filtro:
-    un clic filtra la tabla por esa categoría (otro clic lo quita)."""
+
     clicada= Signal()
 
     def __init__(self, etiqueta_texto, color, parent=None):
+
         super().__init__(parent)
         self._etiqueta_texto= etiqueta_texto
         self._color= color
@@ -280,9 +298,11 @@ class EtiquetaContadorClicable(QLabel):
         self.establecer_activa(False)
 
     def _refrescar_texto(self, valor):
+
         self.setText(f"●  <b>{valor}</b>  {self._etiqueta_texto}")
 
     def establecer_valor(self, valor):
+
         self._anim.stop()
         self._anim.setStartValue(self._valor_actual)
         self._anim.setEndValue(valor)
@@ -290,6 +310,7 @@ class EtiquetaContadorClicable(QLabel):
         self._valor_actual= valor
 
     def establecer_activa(self, activa):
+
         fondo= _rgba(self._color, 0.16) if activa else "transparent"
         borde= self._color if activa else "transparent"
         self.setStyleSheet(f"""
@@ -305,19 +326,22 @@ class EtiquetaContadorClicable(QLabel):
         """)
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
         super().mousePressEvent(event)
 
 
+#Franja de alerta compacta: solo aparece cuando hay algo que atender
+#(tareas vencidas, entregas atrasadas...). Entra/sale animando su altura
+#máxima — una propiedad normal de QWidget, no requiere QGraphicsEffect, así
+#que es barata y no afecta la fluidez del scroll. Un clic filtra la tabla.
 class CintaAlerta(QFrame):
-    """Franja de alerta compacta: solo aparece cuando hay algo que atender
-    (tareas vencidas, entregas atrasadas...). Entra/sale animando su altura
-    máxima — una propiedad normal de QWidget, no requiere QGraphicsEffect, así
-    que es barata y no afecta la fluidez del scroll. Un clic filtra la tabla."""
+
     clicada= Signal()
 
     def __init__(self, parent=None):
+
         super().__init__(parent)
         self.setObjectName("CintaAlerta")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -347,6 +371,7 @@ class CintaAlerta(QFrame):
         self._visible_actual= False
 
     def mostrar_mensaje(self, texto):
+
         self.lbl_texto.setText(texto)
         if not self._visible_actual:
             self._visible_actual= True
@@ -356,6 +381,7 @@ class CintaAlerta(QFrame):
             self._anim.start()
 
     def ocultar(self):
+
         if self._visible_actual:
             self._visible_actual= False
             self._anim.stop()
@@ -364,12 +390,14 @@ class CintaAlerta(QFrame):
             self._anim.start()
 
     def mousePressEvent(self, event):
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
         super().mousePressEvent(event)
 
 
 def _sistema_calificacion_actual():
+
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT sistema_calificacion FROM configuracion WHERE id=1")
@@ -378,9 +406,11 @@ def _sistema_calificacion_actual():
     return cfg["sistema_calificacion"] if cfg else "Numérico (Personalizado)"
 
 
+#Selector múltiple de Competencias Fundamentales (MINERD) para una tarea.
 class DialogoCompetencias(QDialog):
-    """Selector múltiple de Competencias Fundamentales (MINERD) para una tarea."""
+
     def __init__(self, seleccionadas, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Competencias Fundamentales de la tarea")
         self.setMinimumWidth(430)
@@ -404,17 +434,19 @@ class DialogoCompetencias(QDialog):
 
 
     def seleccionadas(self):
+
         return [chk.text() for chk in self._checks if chk.isChecked()]
 
 
+#Selector de Competencias Específicas (currículo dinámico) para una tarea del
+#Banco de Tareas. Una tarea no tiene un grado fijo propio (la misma materia puede
+#darse en varios grados), así que se agrupan las CE por cada grado en el que la
+#materia se imparte. Al calificar una entrega de esta tarea, estas CE se copian
+#automáticamente a la evidencia (calificacion_competencia) — ver _calificar_entrega.
 class DialogoCompetenciasEspecificasTarea(QDialog):
-    """Selector de Competencias Específicas (currículo dinámico) para una tarea del
-    Banco de Tareas. Una tarea no tiene un grado fijo propio (la misma materia puede
-    darse en varios grados), así que se agrupan las CE por cada grado en el que la
-    materia se imparte. Al calificar una entrega de esta tarea, estas CE se copian
-    automáticamente a la evidencia (calificacion_competencia) — ver _calificar_entrega."""
 
     def __init__(self, materia_id, seleccionadas_ids=None, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Vincular tarea a Competencias Específicas (CE)")
         self.setMinimumWidth(480)
@@ -470,19 +502,21 @@ class DialogoCompetenciasEspecificasTarea(QDialog):
 
 
     def seleccionadas(self):
+
         return [chk.property("competencia_id") for chk in self._checks if chk.isChecked()]
 
 
+#Selector de Resultados de Aprendizaje (RA) para una tarea del Banco de
+#Tareas, cuando la materia de la tarea usa el modelo técnico (Politécnico:
+#materias.modelo_evaluacion= MODELO_EVALUACION_TECNICA). A diferencia de las
+#Competencias Específicas, un RA se define directamente sobre la materia (no
+#por grado), así que aquí no hace falta agrupar. Al calificar una entrega,
+#estos RA se copian automáticamente hacia `calificacion_ra` — ver
+#_calificar_entrega — para que 📐 Calificaciones Técnicas quede sincronizado.
 class DialogoResultadosAprendizajeTarea(QDialog):
-    """Selector de Resultados de Aprendizaje (RA) para una tarea del Banco de
-    Tareas, cuando la materia de la tarea usa el modelo técnico (Politécnico:
-    materias.modelo_evaluacion= MODELO_EVALUACION_TECNICA). A diferencia de las
-    Competencias Específicas, un RA se define directamente sobre la materia (no
-    por grado), así que aquí no hace falta agrupar. Al calificar una entrega,
-    estos RA se copian automáticamente hacia `calificacion_ra` — ver
-    _calificar_entrega — para que 📐 Calificaciones Técnicas quede sincronizado."""
 
     def __init__(self, materia_id, seleccionadas_ids=None, parent=None):
+
         super().__init__(parent)
         self.setWindowTitle("Vincular tarea a Resultados de Aprendizaje (RA)")
         self.setMinimumWidth(480)
@@ -528,6 +562,7 @@ class DialogoResultadosAprendizajeTarea(QDialog):
 
 
     def seleccionadas(self):
+
         return [chk.property("ra_id") for chk in self._checks if chk.isChecked()]
 
 
@@ -538,7 +573,9 @@ class DialogoResultadosAprendizajeTarea(QDialog):
 #estudiante todavía no tenía una fila para esa tarea (p. ej. no se había generado su lista de entregas
 #todavía), se crea; si ya la tenía, se actualiza su estado.
 class DialogoAjusteEntrega(QDialog):
+
     def __init__(self, estudiante_id, texto_observacion, naturaleza, materia_id, parent=None):
+
         super().__init__(parent)
         self.estudiante_id= estudiante_id
         self.setWindowTitle("Marcar Entrega por Observación")
@@ -586,6 +623,7 @@ class DialogoAjusteEntrega(QDialog):
         centrar_y_al_frente(self, parent)
 
     def _cargar_tareas(self, materia_id):
+
         if materia_id is None:
             return
         conn= obtener_conexion()
@@ -599,13 +637,15 @@ class DialogoAjusteEntrega(QDialog):
             self.combo_tarea.addItem(etiqueta, f["id"])
 
     def datos(self):
+
         return {"tarea_id": self.combo_tarea.currentData(), "estado": self.combo_estado.currentData()}
 
 
+#Usado por observaciones.py para decidir si vale la pena ofrecer
+#'Marcar entrega' -no tiene sentido mostrar el botón si la materia
+#todavía no tiene ninguna tarea cargada en el Banco de Tareas.
 def _hay_tareas_activas_en_materia(materia_id):
-    """Usado por observaciones.py para decidir si vale la pena ofrecer
-    'Marcar entrega' -no tiene sentido mostrar el botón si la materia
-    todavía no tiene ninguna tarea cargada en el Banco de Tareas."""
+
     if materia_id is None:
         return False
     conn= obtener_conexion()
@@ -616,10 +656,11 @@ def _hay_tareas_activas_en_materia(materia_id):
     return hay
 
 
+#Crea o actualiza la fila de `tarea_entregas` de este estudiante para
+#esa tarea (mismo UPSERT por (tarea_id, estudiante_id) que usa el resto
+#del módulo), a partir de un ajuste hecho desde Observaciones.
 def guardar_ajuste_entrega(main_window, estudiante_id, tarea_id, estado, texto_obs):
-    """Crea o actualiza la fila de `tarea_entregas` de este estudiante para
-    esa tarea (mismo UPSERT por (tarea_id, estudiante_id) que usa el resto
-    del módulo), a partir de un ajuste hecho desde Observaciones."""
+
     conn= obtener_conexion()
     c= conn.cursor()
     fecha_real= datetime.now().strftime("%Y-%m-%d") if estado == "Entregada" else None
@@ -636,7 +677,9 @@ def guardar_ajuste_entrega(main_window, estudiante_id, tarea_id, estado, texto_o
 
 
 class ModuloBancoTareas(QWidget):
+
     def __init__(self, main_window):
+
         super().__init__(main_window)
         self.main_window= main_window
         self.id_edicion_tarea= None
@@ -652,6 +695,7 @@ class ModuloBancoTareas(QWidget):
         self._registrar_atajos_teclado()
 
     def _registrar_atajos_teclado(self):
+
         self._titulo_modulo_atajos= "Banco de Tareas"
         registrar_atajo(self, self.main_window, "Ctrl+G", "Guardar tarea", self._guardar_tarea)
         registrar_atajo(self, self.main_window, "Ctrl+L", "Limpiar formulario", self._limpiar_tarea)
@@ -663,6 +707,7 @@ class ModuloBancoTareas(QWidget):
 
     #Construcción de la interfaz
     def _build_ui(self):
+
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
@@ -739,10 +784,11 @@ class ModuloBancoTareas(QWidget):
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
 
+    #Feedback visual breve en el botón que disparó la acción: cambia de
+    #texto/color un momento y luego vuelve a su estilo normal (el de su
+    #objectName, definido por el tema global). No usa QGraphicsEffect.
     def _pulso_exito(self, boton, texto_temporal="¡Listo!"):
-        """Feedback visual breve en el botón que disparó la acción: cambia de
-        texto/color un momento y luego vuelve a su estilo normal (el de su
-        objectName, definido por el tema global). No usa QGraphicsEffect."""
+
         if boton is None:
             return
         texto_original= boton.text()
@@ -752,14 +798,16 @@ class ModuloBancoTareas(QWidget):
             "padding: 9px 16px; font-weight: 700;")
 
         def _restaurar():
+
             boton.setText(texto_original)
             boton.setStyleSheet("")
         QTimer.singleShot(900, _restaurar)
 
+    #Barra de búsqueda con lupa dibujada a mano e insensible a mayúsculas/
+    #acentos — mismo diseño y comportamiento que en Configuración, para que
+    #todos los módulos del sistema busquen exactamente igual.
     def _crear_barra_busqueda(self, placeholder, callback_filtro):
-        """Barra de búsqueda con lupa dibujada a mano e insensible a mayúsculas/
-        acentos — mismo diseño y comportamiento que en Configuración, para que
-        todos los módulos del sistema busquen exactamente igual."""
+
         marco= QFrame()
         marco.setStyleSheet("QFrame { background: rgba(127,127,127,0.10); border-radius: 16px; }")
         lay= QHBoxLayout(marco)
@@ -785,6 +833,7 @@ class ModuloBancoTareas(QWidget):
 
     #Pestaña: Catálogo de Tareas
     def _tab_tareas(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(12)
@@ -1019,7 +1068,7 @@ class ModuloBancoTareas(QWidget):
         l.addWidget(self.panel_form_tarea)
 
         fila_busqueda_tareas= QHBoxLayout()
-        marco_busqueda_tareas, self.in_buscar_tareas = self._crear_barra_busqueda(
+        marco_busqueda_tareas, self.in_buscar_tareas= self._crear_barra_busqueda(
             "Buscar por título, materia o categoría…", self._filtro_tareas_cambio)
         fila_busqueda_tareas.addWidget(marco_busqueda_tareas, 1)
         self.btn_filtros_tareas= QPushButton("Filtros")
@@ -1113,15 +1162,16 @@ class ModuloBancoTareas(QWidget):
 
         return w
 
+    #Ventanita (no modal) con los filtros del CATÁLOGO de tareas — Curso,
+    #Sección, Área Técnica, Carrera y Materia, todos opcionales. Mismo
+    #patrón que usan calendario.py/estudiantes.py/horario.py: los combos
+    #viven aquí para no apilarlos en la pantalla principal, y la tabla de
+    #atrás se sigue actualizando en vivo mientras el diálogo queda abierto.
+    #Una tarea sin alcance restringido (curso/sección/área técnica/carrera
+    #en "Todos") se sigue mostrando con cualquier filtro elegido, porque
+    #significa que aplica a todo el mundo.
     def _construir_dialogo_filtros_tareas(self):
-        """Ventanita (no modal) con los filtros del CATÁLOGO de tareas — Curso,
-        Sección, Área Técnica, Carrera y Materia, todos opcionales. Mismo
-        patrón que usan calendario.py/estudiantes.py/horario.py: los combos
-        viven aquí para no apilarlos en la pantalla principal, y la tabla de
-        atrás se sigue actualizando en vivo mientras el diálogo queda abierto.
-        Una tarea sin alcance restringido (curso/sección/área técnica/carrera
-        en "Todos") se sigue mostrando con cualquier filtro elegido, porque
-        significa que aplica a todo el mundo."""
+
         self.dialogo_filtros_tareas= QDialog(self)
         self.dialogo_filtros_tareas.setObjectName("DialogoFiltros")
         self.dialogo_filtros_tareas.setWindowTitle("Filtros del Catálogo de Tareas")
@@ -1198,6 +1248,7 @@ class ModuloBancoTareas(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros_tareas(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros_tareas.parent() is not _fc:
@@ -1207,6 +1258,7 @@ class ModuloBancoTareas(QWidget):
         self.dialogo_filtros_tareas.activateWindow()
 
     def _limpiar_filtros_tareas(self):
+
         for combo in (self.combo_filtro_cat_especialidad, self.combo_filtro_cat_carrera,
                       self.combo_filtro_cat_curso):
             combo.blockSignals(True)
@@ -1219,16 +1271,18 @@ class ModuloBancoTareas(QWidget):
         self.paginacion_tareas.reiniciar()
         self._cargar_tareas()
 
+    #Puebla los 5 combos del diálogo de filtros del Catálogo. Curso y
+    #Materia parten en 'Todos' (filtro 100% opcional, a diferencia del
+    #Alcance del formulario donde Curso restringe la propia tarea).
     def _cargar_filtros_catalogo(self):
-        """Puebla los 5 combos del diálogo de filtros del Catálogo. Curso y
-        Materia parten en 'Todos' (filtro 100% opcional, a diferencia del
-        Alcance del formulario donde Curso restringe la propia tarea)."""
+
         poblar_combo_curso(self.combo_filtro_cat_curso, incluir_todos=True)
         self._cargar_filtro_tecnico_catalogo()
         self._filtrar_secciones_cat_por_curso()
         self._cargar_materia_filtro_catalogo()
 
     def _cargar_filtro_tecnico_catalogo(self):
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_cat_especialidad.setVisible(es_poli)
         self.combo_filtro_cat_especialidad.setVisible(es_poli)
@@ -1266,11 +1320,13 @@ class ModuloBancoTareas(QWidget):
             self.combo_filtro_cat_carrera.blockSignals(False)
 
     def _filtro_tecnico_cat_cambio(self):
+
         self._filtrar_secciones_cat_por_curso()
         self.paginacion_tareas.reiniciar()
         self._cargar_tareas()
 
     def _cargar_materia_filtro_catalogo(self):
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_cat_materia.setText(
             "Materia / Módulo Técnico (opcional):" if es_poli else "Materia (opcional):")
@@ -1295,19 +1351,22 @@ class ModuloBancoTareas(QWidget):
         self.combo_filtro_cat_materia.blockSignals(False)
 
     def _curso_filtro_cat_cambio(self):
+
         self._filtrar_secciones_cat_por_curso()
         self.paginacion_tareas.reiniciar()
         self._cargar_tareas()
 
     def _filtro_cat_cambio(self):
+
         self.paginacion_tareas.reiniciar()
         self._cargar_tareas()
 
+    #Filtro 100% opcional (a diferencia del Alcance del formulario):
+    #se puede filtrar por Sección sin elegir Curso, o al revés. Si además
+    #hay un Área Técnica/Carrera elegidos, la lista de secciones se acota
+    #más -mismo criterio que en calendario.py.
     def _filtrar_secciones_cat_por_curso(self):
-        """Filtro 100% opcional (a diferencia del Alcance del formulario):
-        se puede filtrar por Sección sin elegir Curso, o al revés. Si además
-        hay un Área Técnica/Carrera elegidos, la lista de secciones se acota
-        más -mismo criterio que en calendario.py."""
+
         cascada_seccion_por_curso(self.combo_filtro_cat_curso, self.combo_filtro_cat_seccion, incluir_todas=True)
         especialidad_id= (self.combo_filtro_cat_especialidad.currentData()
                             if self._es_politecnico() else None)
@@ -1340,16 +1399,18 @@ class ModuloBancoTareas(QWidget):
             idx= self.combo_filtro_cat_seccion.findData(actual)
             self.combo_filtro_cat_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
+    #Botón extra del diálogo 'Detalle de la Tarea': la descripción no es
+    #columna de la tabla (se quedaría corta/truncada ahí), así que se
+    #consulta aparte y se muestra completa en su propia ventana.
     def _boton_ver_descripcion_tarea(self, fila):
-        """Botón extra del diálogo 'Detalle de la Tarea': la descripción no es
-        columna de la tabla (se quedaría corta/truncada ahí), así que se
-        consulta aparte y se muestra completa en su propia ventana."""
+
         id_item= self.tabla_tareas.item(fila, 0)
         if id_item is None:
             return []
         id_t= int(id_item.text())
 
         def _abrir_descripcion():
+
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT descripcion FROM tareas WHERE id=?", (id_t,))
@@ -1361,6 +1422,7 @@ class ModuloBancoTareas(QWidget):
         return [("Ver Descripción completa", _abrir_descripcion)]
 
     def _guardar_tarea(self):
+
         if not self.in_titulo.text().strip():
             mostrar_mensaje("advertencia", "Datos incompletos", "El título de la tarea es obligatorio.", self)
             return
@@ -1400,6 +1462,7 @@ class ModuloBancoTareas(QWidget):
             competencias_txt, curso_id_tarea, seccion_id_tarea, especialidad_id_tarea, carrera_id_tarea,
         )
         try:
+
             conn= obtener_conexion()
             c= conn.cursor()
             if self.id_edicion_tarea is None:
@@ -1445,12 +1508,14 @@ class ModuloBancoTareas(QWidget):
         self._cargar_combo_tareas_entrega()
 
     def _elegir_competencias_tarea(self):
+
         dialogo= DialogoCompetencias(self._competencias_tarea_seleccionadas, self)
         if dialogo.exec() == QDialog.DialogCode.Accepted:
             self._competencias_tarea_seleccionadas= dialogo.seleccionadas()
             self._actualizar_boton_competencias()
 
     def _actualizar_boton_competencias(self):
+
         n= len(self._competencias_tarea_seleccionadas)
         if n == 0:
             self.btn_competencias_tarea.setText("Seleccionar competencias")
@@ -1460,6 +1525,7 @@ class ModuloBancoTareas(QWidget):
             self.btn_competencias_tarea.setText(f"🎯 {n} competencias seleccionadas")
 
     def _elegir_ce_tarea(self):
+
         materia_id= self.combo_materia.currentData()
         if materia_id is None:
             mostrar_mensaje("advertencia", "Falta la materia", "Selecciona primero una materia.", self)
@@ -1470,6 +1536,7 @@ class ModuloBancoTareas(QWidget):
             self._actualizar_boton_ce_tarea()
 
     def _actualizar_boton_ce_tarea(self):
+
         n= len(self._ce_tarea_seleccionadas)
         if n == 0:
             self.btn_ce_tarea.setText("Vincular a Competencias Específicas")
@@ -1478,19 +1545,22 @@ class ModuloBancoTareas(QWidget):
         else:
             self.btn_ce_tarea.setText(f"🧩 {n} Competencias Específicas vinculadas")
 
+    #True si la institución es de tipo Politécnico (o Personalizado con el
+    #módulo Politécnico activo). Mismo criterio usado en estudiantes.py.
     def _es_politecnico(self):
-        """True si la institución es de tipo Politécnico (o Personalizado con el
-        módulo Politécnico activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Politécnico" or (tipo == "Personalizado" and "Politécnico" in personalizados)
 
+    #True si la materia usa el modelo técnico (Resultados de Aprendizaje),
+    #el mismo criterio que usa calificaciones_tecnicas.py para decidir qué
+    #materias aparecen ahí en vez de en Calificaciones normal.
     def _materia_es_tecnica(self, materia_id):
-        """True si la materia usa el modelo técnico (Resultados de Aprendizaje),
-        el mismo criterio que usa calificaciones_tecnicas.py para decidir qué
-        materias aparecen ahí en vez de en Calificaciones normal."""
+
         if materia_id is None:
             return False
         conn= obtener_conexion()
@@ -1500,12 +1570,13 @@ class ModuloBancoTareas(QWidget):
         conn.close()
         return bool(f) and f["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA
 
+    #Ajusta labels, tooltips y encabezados que mencionan 'Materia' para que
+    #también reflejen 'Módulo Técnico' cuando la institución es Politécnico —
+    #igual que hace materias.py (p. ej. 'Materia / Módulo Técnico' en Horario).
+    #En una institución que no es Politécnico, todo queda con el texto
+    #original ('Materia' a secas), ya que ahí nunca existen módulos técnicos.
     def _actualizar_textos_politecnico(self):
-        """Ajusta labels, tooltips y encabezados que mencionan 'Materia' para que
-        también reflejen 'Módulo Técnico' cuando la institución es Politécnico —
-        igual que hace materias.py (p. ej. 'Materia / Módulo Técnico' en Horario).
-        En una institución que no es Politécnico, todo queda con el texto
-        original ('Materia' a secas), ya que ahí nunca existen módulos técnicos."""
+
         es_poli= self._es_politecnico()
         texto_materia= "Materia / Módulo Técnico:" if es_poli else "Materia:"
         self.lbl_materia_tarea_form.setText(texto_materia)
@@ -1547,13 +1618,14 @@ class ModuloBancoTareas(QWidget):
                     "de secciones donde además se imparte la materia de la tarea (según Horarios). "
                     "Doble clic en una fila para ver el detalle.")
 
+    #Alterna entre el botón de Competencias Específicas (currículo por
+    #competencias, MINERD) y el de Resultados de Aprendizaje (módulo técnico
+    #de Politécnico) según el modelo de evaluación de la materia elegida en
+    #el formulario. Nunca se muestran los dos a la vez para una misma tarea
+    #(se controla con self.stack_ce_ra_tarea, no con .setVisible() suelto en
+    #cada botón, para que sea imposible que ambos rendericen superpuestos).
     def _actualizar_visibilidad_ce_ra(self):
-        """Alterna entre el botón de Competencias Específicas (currículo por
-        competencias, MINERD) y el de Resultados de Aprendizaje (módulo técnico
-        de Politécnico) según el modelo de evaluación de la materia elegida en
-        el formulario. Nunca se muestran los dos a la vez para una misma tarea
-        (se controla con self.stack_ce_ra_tarea, no con .setVisible() suelto en
-        cada botón, para que sea imposible que ambos rendericen superpuestos)."""
+
         materia_id= self.combo_materia.currentData()
         es_tecnica= self._materia_es_tecnica(materia_id)
         dominicano= es_sistema_dominicano(_sistema_calificacion_actual())
@@ -1569,6 +1641,7 @@ class ModuloBancoTareas(QWidget):
             self._actualizar_boton_ra_tarea()
 
     def _elegir_ra_tarea(self):
+
         materia_id= self.combo_materia.currentData()
         if materia_id is None:
             mostrar_mensaje("advertencia", "Falta la materia", "Selecciona primero una materia.", self)
@@ -1579,6 +1652,7 @@ class ModuloBancoTareas(QWidget):
             self._actualizar_boton_ra_tarea()
 
     def _actualizar_boton_ra_tarea(self):
+
         n= len(self._ra_tarea_seleccionadas)
         if n == 0:
             self.btn_ra_tarea.setText("Vincular a Resultados de Aprendizaje (RA)")
@@ -1588,6 +1662,7 @@ class ModuloBancoTareas(QWidget):
             self.btn_ra_tarea.setText(f"📐 {n} Resultados de Aprendizaje vinculados")
 
     def _limpiar_tarea(self):
+
         self.id_edicion_tarea= None
         self.in_titulo.clear()
         self.in_descripcion.clear()
@@ -1613,6 +1688,7 @@ class ModuloBancoTareas(QWidget):
         desactivar_modo_edicion(self.in_titulo)
 
     def _cargar_tarea_seleccionada(self):
+
         fila= self.tabla_tareas.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una tarea de la tabla.", self)
@@ -1647,6 +1723,7 @@ class ModuloBancoTareas(QWidget):
         self.spin_valor_max.setValue(f["valor_maximo"] or 100)
         self.combo_estado_tarea.setCurrentText(f["estado"] or "Activa")
         try:
+
             competencias_guardadas= f["competencias"] or ""
         except (KeyError, IndexError):
             competencias_guardadas= ""
@@ -1659,6 +1736,7 @@ class ModuloBancoTareas(QWidget):
         #Alcance guardado (puede no existir en bases muy viejas antes de la migración de columnas — de ahí el
         #try/except defensivo).
         try:
+
             curso_guardado= f["curso_id"]
             seccion_guardada= f["seccion_id"]
             especialidad_guardada= f["especialidad_id"]
@@ -1679,10 +1757,12 @@ class ModuloBancoTareas(QWidget):
         activar_modo_edicion(self.in_titulo, f"Editando tarea: {f['titulo'] or ''}")
 
     def _filtro_tareas_cambio(self, texto=""):
+
         self.paginacion_tareas.reiniciar()
         self._cargar_tareas()
 
     def _eliminar_tarea(self):
+
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no puede eliminar tareas.", self)
             return
@@ -1706,9 +1786,11 @@ class ModuloBancoTareas(QWidget):
         self._cargar_combo_tareas_entrega()
 
     def _materias_permitidas_ids(self):
+
         return obtener_materias_permitidas(self.main_window)
 
     def _cargar_combo_materias(self):
+
         self.combo_materia.clear()
         permitidas= self._materias_permitidas_ids()
         conn= obtener_conexion()
@@ -1724,6 +1806,7 @@ class ModuloBancoTareas(QWidget):
         conn.close()
 
     def _cargar_combo_periodos(self):
+
         for combo in (self.combo_periodo,):
             combo.clear()
             combo.addItem("Sin periodo específico", None)
@@ -1734,16 +1817,18 @@ class ModuloBancoTareas(QWidget):
             self.combo_periodo.addItem(f["nombre"], f["id"])
         conn.close()
 
+    #Clasifica una tarea en vencida / por_vencer (≤7 días) / vigente /
+    #archivada. Es la única fuente de verdad para la barra de resumen, la
+    #leyenda, la cinta de alertas y la columna 'Estado' de la tabla.
     @staticmethod
     def _clasificar_tarea(tarea):
-        """Clasifica una tarea en vencida / por_vencer (≤7 días) / vigente /
-        archivada. Es la única fuente de verdad para la barra de resumen, la
-        leyenda, la cinta de alertas y la columna 'Estado' de la tabla."""
+
         if tarea["estado"] != "Activa":
             return "archivada"
         if not tarea["fecha_entrega"]:
             return "vigente"
         try:
+
             fecha= datetime.strptime(tarea["fecha_entrega"], "%Y-%m-%d").date()
         except ValueError:
             return "vigente"
@@ -1755,6 +1840,7 @@ class ModuloBancoTareas(QWidget):
         return "vigente"
 
     def _cargar_tareas(self):
+
         texto= _normalizar_texto(self.in_buscar_tareas.text().strip())
         permitidas= self._materias_permitidas_ids()
         conn= obtener_conexion()
@@ -1811,9 +1897,11 @@ class ModuloBancoTareas(QWidget):
                         if hasattr(self, "combo_filtro_cat_materia") else None)
 
         def _pasa_filtro_alcance(f):
+
             try:
-                curso_id_t, seccion_id_t = f["curso_id"], f["seccion_id"]
-                especialidad_id_t, carrera_id_t = f["especialidad_id"], f["carrera_id"]
+
+                curso_id_t, seccion_id_t= f["curso_id"], f["seccion_id"]
+                especialidad_id_t, carrera_id_t= f["especialidad_id"], f["carrera_id"]
             except (KeyError, IndexError):
                 curso_id_t= seccion_id_t= especialidad_id_t= carrera_id_t= None
             if curso_id_f is not None and curso_id_t is not None and curso_id_t != curso_id_f:
@@ -1833,7 +1921,7 @@ class ModuloBancoTareas(QWidget):
             filtradas= [f for f in filtradas if _pasa_filtro_alcance(f)]
 
         self.paginacion_tareas.establecer_total(len(filtradas))
-        inicio, fin = self.paginacion_tareas.rango_actual()
+        inicio, fin= self.paginacion_tareas.rango_actual()
         pagina= filtradas[inicio:fin]
 
         #setUpdatesEnabled(False) evita repintar la tabla en cada setItem();
@@ -1841,6 +1929,7 @@ class ModuloBancoTareas(QWidget):
         #refrescar una tabla grande).
         self.tabla_tareas.setUpdatesEnabled(False)
         try:
+
             self.tabla_tareas.setRowCount(len(pagina))
             for i, f in enumerate(pagina):
                 self.tabla_tareas.setItem(i, 0, QTableWidgetItem(str(f["id"])))
@@ -1872,14 +1961,16 @@ class ModuloBancoTareas(QWidget):
         finally:
             self.tabla_tareas.setUpdatesEnabled(True)
 
+    #Texto corto para la columna 'Alcance': qué curso/sección/área
+    #técnica/carrera tiene restringidos esta tarea, o 'Todas las
+    #secciones' si no tiene ninguna restricción (comportamiento de
+    #siempre: la fecha de entrega es la misma para toda la materia).
     def _texto_alcance_tarea(self, f):
-        """Texto corto para la columna 'Alcance': qué curso/sección/área
-        técnica/carrera tiene restringidos esta tarea, o 'Todas las
-        secciones' si no tiene ninguna restricción (comportamiento de
-        siempre: la fecha de entrega es la misma para toda la materia)."""
+
         try:
-            curso_id, seccion_id = f["curso_id"], f["seccion_id"]
-            especialidad_id, carrera_id = f["especialidad_id"], f["carrera_id"]
+
+            curso_id, seccion_id= f["curso_id"], f["seccion_id"]
+            especialidad_id, carrera_id= f["especialidad_id"], f["carrera_id"]
         except (KeyError, IndexError):
             return "Todas las secciones"
         partes= []
@@ -1900,6 +1991,7 @@ class ModuloBancoTareas(QWidget):
         return " · ".join(p for p in partes if p) or "Todas las secciones"
 
     def _actualizar_resumen_tareas(self, tareas):
+
         conteo= {"vencida": 0, "por_vencer": 0, "vigente": 0, "archivada": 0}
         for t in tareas:
             conteo[self._clasificar_tarea(t)] += 1
@@ -1922,12 +2014,14 @@ class ModuloBancoTareas(QWidget):
             self.cinta_alerta_tareas.ocultar()
 
     def _al_clic_alerta_tareas(self):
+
         if self._conteo_tareas_actual.get("vencida", 0) > 0:
             self._alternar_filtro_tareas("vencida")
         elif self._conteo_tareas_actual.get("por_vencer", 0) > 0:
             self._alternar_filtro_tareas("por_vencer")
 
     def _alternar_filtro_tareas(self, valor):
+
         self._filtro_tareas= None if self._filtro_tareas == valor else valor
         self.barra_tareas.establecer_filtro_activo({self._filtro_tareas} if self._filtro_tareas else None)
         for clave, lbl in self.etiquetas_leyenda_tareas.items():
@@ -1935,17 +2029,20 @@ class ModuloBancoTareas(QWidget):
         self.paginacion_tareas.reiniciar()
         self._cargar_tareas()
 
+    #Acceso seguro a una columna de sqlite3.Row que puede no existir en bases de datos
+    #antiguas si la migración todavía no corrió (evita KeyError).
     @staticmethod
     def _valor_columna(fila, columna):
-        """Acceso seguro a una columna de sqlite3.Row que puede no existir en bases de datos
-        antiguas si la migración todavía no corrió (evita KeyError)."""
+
         try:
+
             return fila[columna]
         except (KeyError, IndexError):
             return None
 
     #Pestaña: Entregas
     def _tab_entregas(self):
+
         w= QWidget()
         l= QVBoxLayout(w)
         l.setSpacing(12)
@@ -2055,7 +2152,7 @@ class ModuloBancoTareas(QWidget):
         self.lbl_resumen_filtros_entregas.setWordWrap(True)
         l.addWidget(self.lbl_resumen_filtros_entregas)
 
-        marco_busqueda_entregas, self.in_buscar_entregas = self._crear_barra_busqueda(
+        marco_busqueda_entregas, self.in_buscar_entregas= self._crear_barra_busqueda(
             "Buscar por estudiante o estado de entrega…", self._filtro_entregas_cambio)
         fila_busqueda_entregas= QHBoxLayout()
         fila_busqueda_entregas.addWidget(marco_busqueda_entregas, 1)
@@ -2124,16 +2221,17 @@ class ModuloBancoTareas(QWidget):
 
         return w
 
+    #Ventanita (no modal) con TODOS los filtros de la pestaña
+    #"Entregas": Nivel Educativo, Área Técnica/Carrera, Curso/Sección,
+    #Materia, "Solo módulos técnicos" y Estado de Entrega — mismo patrón
+    #que `_construir_dialogo_filtros_tareas` del Catálogo. Nivel/Curso/
+    #Sección/Área Técnica/Carrera/Materia determinan a qué estudiantes se
+    #les genera la entrega (al pulsar "Generar/Actualizar Lista") y
+    #también acotan la tabla ya generada; el combo de Estado de Entrega
+    #queda sincronizado en ambas direcciones con la barra segmentada de
+    #arriba.
     def _construir_dialogo_filtros_entregas(self):
-        """Ventanita (no modal) con TODOS los filtros de la pestaña
-        "Entregas": Nivel Educativo, Área Técnica/Carrera, Curso/Sección,
-        Materia, "Solo módulos técnicos" y Estado de Entrega — mismo patrón
-        que `_construir_dialogo_filtros_tareas` del Catálogo. Nivel/Curso/
-        Sección/Área Técnica/Carrera/Materia determinan a qué estudiantes se
-        les genera la entrega (al pulsar "Generar/Actualizar Lista") y
-        también acotan la tabla ya generada; el combo de Estado de Entrega
-        queda sincronizado en ambas direcciones con la barra segmentada de
-        arriba."""
+
         self.dialogo_filtros_entregas= QDialog(self)
         self.dialogo_filtros_entregas.setObjectName("DialogoFiltros")
         self.dialogo_filtros_entregas.setWindowTitle("Filtros de Entregas")
@@ -2228,6 +2326,7 @@ class ModuloBancoTareas(QWidget):
         lay_dialogo.addLayout(fila_botones)
 
     def _abrir_dialogo_filtros_entregas(self):
+
         from src.interfaz.paginacion import dialogo_pantalla_completa_activo
         _fc= dialogo_pantalla_completa_activo()
         if _fc is not None and self.dialogo_filtros_entregas.parent() is not _fc:
@@ -2236,10 +2335,11 @@ class ModuloBancoTareas(QWidget):
         self.dialogo_filtros_entregas.raise_()
         self.dialogo_filtros_entregas.activateWindow()
 
+    #Como Nivel/Curso/Sección/Área Técnica/Carrera/Materia ahora viven
+    #en la ventana de Filtros (oculta por defecto), esta línea deja a la
+    #vista, sin abrir el diálogo, qué se está mostrando/generando.
     def _actualizar_resumen_filtros_entregas(self):
-        """Como Nivel/Curso/Sección/Área Técnica/Carrera/Materia ahora viven
-        en la ventana de Filtros (oculta por defecto), esta línea deja a la
-        vista, sin abrir el diálogo, qué se está mostrando/generando."""
+
         if not hasattr(self, "lbl_resumen_filtros_entregas"):
             return
         partes= []
@@ -2260,12 +2360,13 @@ class ModuloBancoTareas(QWidget):
         self.lbl_resumen_filtros_entregas.setText(" · ".join(partes) if partes else
             "Sin filtros: elige Curso/Sección en \" Filtros\" para generar la lista.")
 
+    #El combo del diálogo FIJA el estado elegido (a diferencia de
+    #`_alternar_filtro_entregas`, que ALTERNA -clic de nuevo en lo mismo
+    #lo apaga-, porque en un combo no tiene sentido "volver a elegir lo
+    #mismo" para desactivarlo: para eso está la opción 'Todos los
+    #estados').
     def _filtro_estado_entrega_dialogo_cambio(self):
-        """El combo del diálogo FIJA el estado elegido (a diferencia de
-        `_alternar_filtro_entregas`, que ALTERNA -clic de nuevo en lo mismo
-        lo apaga-, porque en un combo no tiene sentido "volver a elegir lo
-        mismo" para desactivarlo: para eso está la opción 'Todos los
-        estados')."""
+
         valor= self.combo_filtro_estado_entrega.currentData()
         if valor == self._filtro_entregas:
             return
@@ -2273,11 +2374,13 @@ class ModuloBancoTareas(QWidget):
         self._alternar_filtro_entregas(valor)
 
     def _al_cambiar_tab(self, index):
+
         if self.tabs.tabText(index).startswith(""):
             self._cargar_combos_curso_seccion_entrega()
             self._cargar_combo_tareas_entrega()
 
     def _curso_tarea_cambio(self):
+
         #etiquetas_cortas_sin_curso=True: en este combo el Curso YA está a
         #la vista justo al lado (es el propio "Alcance" de la tarea), así que repetir el curso dentro de cada ítem de
         #Sección ("5to - A") es redundante -alcanza con el nombre corto ("A") como en el resto de combos de Sección de
@@ -2285,10 +2388,11 @@ class ModuloBancoTareas(QWidget):
         cascada_seccion_por_curso(self.combo_curso_tarea, self.combo_seccion_tarea, incluir_todas=True,
                                    etiquetas_cortas_sin_curso= True)
 
+    #Alcance opcional de la tarea: Curso/Sección con 'Todos' de entrada
+    #(a diferencia de Entregas, aquí SÍ debe poder quedar sin restringir),
+    #y Área Técnica/Carrera igual que en el resto de la app.
     def _cargar_combos_alcance_tarea(self):
-        """Alcance opcional de la tarea: Curso/Sección con 'Todos' de entrada
-        (a diferencia de Entregas, aquí SÍ debe poder quedar sin restringir),
-        y Área Técnica/Carrera igual que en el resto de la app."""
+
         poblar_combo_curso(self.combo_curso_tarea, incluir_todos=True)
         cascada_seccion_por_curso(self.combo_curso_tarea, self.combo_seccion_tarea, incluir_todas=True,
                                    etiquetas_cortas_sin_curso= True)
@@ -2332,6 +2436,7 @@ class ModuloBancoTareas(QWidget):
             self.combo_filtro_carrera_tarea.blockSignals(False)
 
     def _cargar_combos_curso_seccion_entrega(self):
+
         poblar_combo_nivel_educativo(self.combo_filtro_nivel_entrega)
         permitidas= self._secciones_permitidas_con_nivel_entrega()
         poblar_combo_curso(self.combo_curso_entrega, incluir_todos=False, secciones_permitidas=permitidas)
@@ -2340,11 +2445,13 @@ class ModuloBancoTareas(QWidget):
         self._cargar_combo_materia_filtro_entrega()
 
     def _secciones_permitidas_con_nivel_entrega(self):
+
         permitidas= obtener_secciones_permitidas(self.main_window)
         nivel= self.combo_filtro_nivel_entrega.currentData() if hasattr(self, "combo_filtro_nivel_entrega") else None
         return interseccion_opcional(permitidas, secciones_del_nivel_educativo(nivel))
 
     def _nivel_entrega_cambio(self):
+
         permitidas= self._secciones_permitidas_con_nivel_entrega()
         poblar_combo_curso(self.combo_curso_entrega, incluir_todos=False, secciones_permitidas=permitidas)
         _acortar_placeholder_combo(self.combo_curso_entrega, "Selecciona un grado")
@@ -2352,12 +2459,13 @@ class ModuloBancoTareas(QWidget):
         self._actualizar_resumen_filtros_entregas()
         self._cargar_entregas()
 
+    #Materias con tareas activas, para el filtro de la pestaña Entregas.
+    #Las materias con modelo técnico (RA) se marcan con 🛠 para poder
+    #distinguirlas/buscarlas a simple vista entre las materias académicas
+    #normales. Si "🛠 Solo módulos técnicos" está marcado, solo se listan
+    #esas — así se pueden encontrar rápido sus entregas.
     def _cargar_combo_materia_filtro_entrega(self):
-        """Materias con tareas activas, para el filtro de la pestaña Entregas.
- Las materias con modelo técnico (RA) se marcan con 🛠 para poder
- distinguirlas/buscarlas a simple vista entre las materias académicas
- normales. Si "🛠 Solo módulos técnicos" está marcado, solo se listan
- esas — así se pueden encontrar rápido sus entregas."""
+
         sel= self.combo_materia_filtro_entrega.currentData()
         self.combo_materia_filtro_entrega.blockSignals(True)
         self.combo_materia_filtro_entrega.clear()
@@ -2388,20 +2496,24 @@ class ModuloBancoTareas(QWidget):
         self.combo_materia_filtro_entrega.blockSignals(False)
 
     def _filtro_tecnico_entrega_cambio(self):
+
         self._filtrar_secciones_entrega_por_curso()
         self._actualizar_resumen_filtros_entregas()
         self._cargar_entregas()
 
     def _curso_entrega_cambio(self):
+
         self._filtrar_secciones_entrega_por_curso()
         self._actualizar_resumen_filtros_entregas()
         self._cargar_entregas()
 
     def _seccion_entrega_cambio(self):
+
         self._actualizar_resumen_filtros_entregas()
         self._cargar_entregas()
 
     def _filtrar_secciones_entrega_por_curso(self):
+
         permitidas= self._secciones_permitidas_con_nivel_entrega()
         cascada_seccion_por_curso(self.combo_curso_entrega, self.combo_seccion_entrega,
                                    incluir_todas= False, secciones_permitidas=permitidas)
@@ -2411,15 +2523,17 @@ class ModuloBancoTareas(QWidget):
         if self.combo_curso_entrega.currentData() is None:
             _acortar_placeholder_combo(self.combo_seccion_entrega, "Selecciona curso")
 
+    #Al marcar/desmarcar '🛠 Solo módulos técnicos', reconstruye tanto el
+    #filtro de materia como el de tarea, para que la lista de entregas
+    #quede acotada de una sola vez a los módulos técnicos (o vuelva a
+    #incluir todas las materias).
     def _alternar_solo_tecnicos_entrega(self):
-        """Al marcar/desmarcar '🛠 Solo módulos técnicos', reconstruye tanto el
- filtro de materia como el de tarea, para que la lista de entregas
- quede acotada de una sola vez a los módulos técnicos (o vuelva a
- incluir todas las materias)."""
+
         self._cargar_combo_materia_filtro_entrega()
         self._cargar_combo_tareas_entrega()
 
     def _cargar_combo_tareas_entrega(self):
+
         actual= self.combo_tarea_entrega.currentData()
         self.combo_tarea_entrega.blockSignals(True)
         self.combo_tarea_entrega.clear()
@@ -2452,56 +2566,64 @@ class ModuloBancoTareas(QWidget):
         self._actualizar_resumen_filtros_entregas()
         self._cargar_entregas()
 
+    #True si la institución es de tipo Universidad (o Personalizado con el
+    #módulo Universidad activo). Mismo criterio usado en estudiantes.py.
     def _es_universidad(self):
-        """True si la institución es de tipo Universidad (o Personalizado con el
-        módulo Universidad activo). Mismo criterio usado en estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Universidad" or (tipo == "Personalizado" and "Universidad" in personalizados)
 
+    #True si tipo_institucion es exactamente 'Personalizado'. Solo en este
+    #modo una misma institución puede tener a la vez estudiantes con área
+    #técnica, estudiantes con carrera, y estudiantes sin ninguna de las dos
+    #cosas -de ahí que las opciones "No Área Técnica"/"No Carrera" (ver
+    #_agregar_opcion_ninguna) solo tengan sentido aquí: en Politécnico o
+    #Universidad "puros" todo estudiante activo pertenece siempre a una
+    #especialidad/carrera, así que esa opción no aplicaría a nadie.
     def _es_personalizado(self):
-        """True si tipo_institucion es exactamente 'Personalizado'. Solo en este
-        modo una misma institución puede tener a la vez estudiantes con área
-        técnica, estudiantes con carrera, y estudiantes sin ninguna de las dos
-        cosas -de ahí que las opciones "No Área Técnica"/"No Carrera" (ver
-        _agregar_opcion_ninguna) solo tengan sentido aquí: en Politécnico o
-        Universidad "puros" todo estudiante activo pertenece siempre a una
-        especialidad/carrera, así que esa opción no aplicaría a nadie."""
+
         try:
-            tipo, _personalizados = self.main_window._tipo_institucion()
+
+            tipo, _personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Personalizado"
 
+    #True solo cuando la institución es "Personalizado" y tiene
+    #Politécnico Y Universidad activos a la vez -el único caso en el que
+    #Área Técnica y Carrera dejan de ser obligatorias. Si la institución
+    #es puramente Politécnico o puramente Universidad, o si "Personalizado"
+    #solo tiene UNO de los dos módulos activo, esto es False y el campo
+    #correspondiente sigue siendo obligatorio. Mismo criterio que en
+    #estudiantes.py.
     def _ambos_modulos_tecnicos_activos(self):
-        """True solo cuando la institución es "Personalizado" y tiene
-        Politécnico Y Universidad activos a la vez -el único caso en el que
-        Área Técnica y Carrera dejan de ser obligatorias. Si la institución
-        es puramente Politécnico o puramente Universidad, o si "Personalizado"
-        solo tiene UNO de los dos módulos activo, esto es False y el campo
-        correspondiente sigue siendo obligatorio. Mismo criterio que en
-        estudiantes.py."""
+
         try:
-            tipo, personalizados = self.main_window._tipo_institucion()
+
+            tipo, personalizados= self.main_window._tipo_institucion()
         except Exception:
             return False
         return tipo == "Personalizado" and "Politécnico" in personalizados and "Universidad" in personalizados
 
+    #Añade al final del combo la opción "ninguna" (dato=0, distinto de
+    #None= 'Todas/Todos') usada para restringir explícitamente una tarea a
+    #estudiantes SIN área técnica o SIN carrera asignada. Solo se llama en
+    #modo Personalizado -ver _es_personalizado-, porque es el único caso en
+    #que puede haber estudiantes activos sin ese dato.
     def _agregar_opcion_ninguna(self, combo, texto):
-        """Añade al final del combo la opción "ninguna" (dato=0, distinto de
-        None= 'Todas/Todos') usada para restringir explícitamente una tarea a
-        estudiantes SIN área técnica o SIN carrera asignada. Solo se llama en
-        modo Personalizado -ver _es_personalizado-, porque es el único caso en
-        que puede haber estudiantes activos sin ese dato."""
+
         if self._es_personalizado():
             combo.addItem(texto, 0)
 
+    #Igual que en Estudiantes: los combos de Área Técnica y Carrera de
+    #'Entregas' solo se muestran/pueblan si la institución tiene ese
+    #módulo activo.
     def _cargar_especialidad_carrera_filtro_entrega(self):
-        """Igual que en Estudiantes: los combos de Área Técnica y Carrera de
-        'Entregas' solo se muestran/pueblan si la institución tiene ese
-        módulo activo."""
+
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_entrega.setVisible(es_poli)
         self.combo_filtro_especialidad_entrega.setVisible(es_poli)
@@ -2542,6 +2664,7 @@ class ModuloBancoTareas(QWidget):
 
     def _estudiantes_de_la_materia(self, materia_id, seccion_id=None, curso_id=None,
                                     especialidad_id= None, carrera_id=None):
+
         condiciones= ["horarios.materia_id=?", "estudiantes.estado='Activo'"]
         parametros= [materia_id]
         if seccion_id is not None:
@@ -2576,6 +2699,7 @@ class ModuloBancoTareas(QWidget):
         return filas
 
     def _generar_entregas_faltantes(self):
+
         tarea_id= self.combo_tarea_entrega.currentData()
         if tarea_id is None:
             mostrar_mensaje("advertencia", "Sin tarea", "Selecciona una tarea primero.", self)
@@ -2642,6 +2766,7 @@ class ModuloBancoTareas(QWidget):
         self._cargar_entregas()
 
     def _cargar_entregas(self):
+
         tarea_id= self.combo_tarea_entrega.currentData()
         if tarea_id is None:
             self.tabla_entregas.setRowCount(0)
@@ -2739,12 +2864,13 @@ class ModuloBancoTareas(QWidget):
                 self._valor_columna(f, "numero_lista_est") or 0))
 
         self.paginacion_entregas.establecer_total(len(filas))
-        inicio, fin = self.paginacion_entregas.rango_actual()
+        inicio, fin= self.paginacion_entregas.rango_actual()
         pagina= filas[inicio:fin]
 
 
         self.tabla_entregas.setUpdatesEnabled(False)
         try:
+
             self.tabla_entregas.setRowCount(len(pagina))
             for i, f in enumerate(pagina):
                 if mostrar_columna_numero:
@@ -2770,6 +2896,7 @@ class ModuloBancoTareas(QWidget):
         self.estado_vacio_entregas.actualizar(hay_filtro_elegido=True)
 
     def _actualizar_resumen_entregas(self, entregas):
+
         conteo= {"Entregada": 0, "Pendiente": 0, "Atrasada": 0, "No entregada": 0}
         for e in entregas:
             estado= e["estado_entrega"] or "Pendiente"
@@ -2789,6 +2916,7 @@ class ModuloBancoTareas(QWidget):
             self.cinta_alerta_entregas.ocultar()
 
     def _alternar_filtro_entregas(self, valor):
+
         self._filtro_entregas= None if self._filtro_entregas == valor else valor
         if self._filtro_entregas == "atrasadas_no_entregadas":
             self.barra_entregas.establecer_filtro_activo({"Atrasada", "No entregada"})
@@ -2809,17 +2937,19 @@ class ModuloBancoTareas(QWidget):
         self._cargar_entregas()
 
     def _filtro_entregas_cambio(self, texto=""):
+
         self.paginacion_entregas.reiniciar()
         self._cargar_entregas()
 
     def _cambiar_estado_entrega(self):
+
         fila= self.tabla_entregas.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una entrega de la tabla.", self)
             return
         id_entrega= int(self.tabla_entregas.item(fila, 1).text())
         estado_actual= self.tabla_entregas.item(fila, 3).data(Qt.ItemDataRole.UserRole) or ""
-        estado, ok = QInputDialog.getItem(self, "Cambiar Estado de Entrega", "Nuevo estado:",
+        estado, ok= QInputDialog.getItem(self, "Cambiar Estado de Entrega", "Nuevo estado:",
                                           ESTADOS_ENTREGA, ESTADOS_ENTREGA.index(estado_actual)
                                           if estado_actual in ESTADOS_ENTREGA else 0, False)
         if not ok:
@@ -2836,6 +2966,7 @@ class ModuloBancoTareas(QWidget):
         self._cargar_entregas()
 
     def _calificar_entrega(self):
+
         fila= self.tabla_entregas.currentRow()
         if fila < 0:
             mostrar_mensaje("advertencia", "Sin selección", "Selecciona una entrega de la tabla.", self)
@@ -2864,7 +2995,7 @@ class ModuloBancoTareas(QWidget):
                                "Resultado de Aprendizaje (RA). Edítala y usa \" Vincular a Resultados de "
                                "Aprendizaje\" antes de calificar.", self)
                 return
-            valor, ok = QInputDialog.getDouble(
+            valor, ok= QInputDialog.getDouble(
                 self, "Calificar Entrega (RA)", f"Nota (máx. {entrega['valor_maximo']:.0f}):",
                 entrega["valor_maximo"] or 100, 0, entrega["valor_maximo"] or 1000, 2)
             if not ok:
@@ -2892,7 +3023,7 @@ class ModuloBancoTareas(QWidget):
             self._cargar_entregas()
             return
 
-        valor, ok = QInputDialog.getDouble(
+        valor, ok= QInputDialog.getDouble(
             self, "Calificar Entrega", f"Nota (máx. {entrega['valor_maximo']:.0f}):",
             entrega["valor_maximo"] or 100, 0, entrega["valor_maximo"] or 1000, 2)
         if not ok:
@@ -2931,6 +3062,7 @@ class ModuloBancoTareas(QWidget):
 
     #Ciclo de vida / tema
     def refrescar(self):
+
         self._actualizar_textos_politecnico()
         self._cargar_combo_materias()
         self._cargar_combo_periodos()
@@ -2950,13 +3082,15 @@ class ModuloBancoTareas(QWidget):
             self._ce_tarea_seleccionadas= []
         self._actualizar_visibilidad_ce_ra()
 
+    #Se llama automáticamente (ver main.py ▸ aplicar_tema) cada vez que el
+    #usuario cambia el tema/modo oscuro de la aplicación, para que este
+    #módulo se mantenga sincronizado con el resto del sistema.
     def actualizar_tema(self):
-        """Se llama automáticamente (ver main.py ▸ aplicar_tema) cada vez que el
-        usuario cambia el tema/modo oscuro de la aplicación, para que este
-        módulo se mantenga sincronizado con el resto del sistema."""
+
         self._aplicar_tema_visual()
 
     def _aplicar_tema_visual(self):
+
         mw= self.main_window
         paletas= getattr(mw, "theme_palettes", None)
         #Refrescar colores de los encabezados colapsables (PanelDesplegable)
