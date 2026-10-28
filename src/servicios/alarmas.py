@@ -28,7 +28,7 @@ archivo para el detalle exacto):
 
     from alarmas import MotorAlarmas
     ...
-    self.motor_alarmas = MotorAlarmas(self)
+    self.motor_alarmas= MotorAlarmas(self)
     self.motor_alarmas.iniciar()
 """
 import json
@@ -218,7 +218,7 @@ def guardar_recordatorio(main_window, id_edicion, titulo, fecha, hora, repetir, 
                         VALUES (?,?,?,?,?,?,?)""", (titulo, fecha, hora, repetir, tono, tono_ruta, activo))
     else:
         conn.execute("""UPDATE recordatorios SET titulo=?, fecha=?, hora=?, repetir=?, tono=?, tono_ruta=?,
-                        activo=? WHERE id=?""",
+                        activo= ? WHERE id=?""",
                      (titulo, fecha, hora, repetir, tono, tono_ruta, activo, id_edicion))
         #CLAVE: al editar fecha/hora hay que "re-armsarlo". Si este recordatorio ya había sonado hoy, su clave
         #`recordatorio_{id}_{fecha}` sigue en `disparadas` y el motor lo ignoraría aunque la nueva hora acabe de
@@ -998,14 +998,14 @@ class PanelAlarmas(QWidget):
     def _guardar_general(self, *_args):
         guardar_config(
             self.main_window,
-            tono_defecto=self.combo_tono.currentText(),
-            tono_defecto_ruta=getattr(self, "_ruta_personalizada", "") or None,
-            volumen=self.slider_volumen.value(),
-            sonido_en_bucle=1 if self.chk_bucle.isChecked() else 0,
-            efecto_visual=1 if self.chk_efecto.isChecked() else 0,
-            duracion_efecto=self.slider_duracion.value(),
-            avisar_eventos=1 if self.chk_eventos.isChecked() else 0,
-            avisar_clases=1 if self.chk_clases.isChecked() else 0,
+            tono_defecto= self.combo_tono.currentText(),
+            tono_defecto_ruta= getattr(self, "_ruta_personalizada", "") or None,
+            volumen= self.slider_volumen.value(),
+            sonido_en_bucle= 1 if self.chk_bucle.isChecked() else 0,
+            efecto_visual= 1 if self.chk_efecto.isChecked() else 0,
+            duracion_efecto= self.slider_duracion.value(),
+            avisar_eventos= 1 if self.chk_eventos.isChecked() else 0,
+            avisar_clases= 1 if self.chk_clases.isChecked() else 0,
         )
 
     #---------------- pestaña Recordatorios ----------------

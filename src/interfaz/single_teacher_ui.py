@@ -316,7 +316,7 @@ class ModuloEstudiantesST(QWidget):
                          telefono, correo, seccion_id) VALUES (?,?,?,?,?,?,?,?)""", valores)
         else:
             c.execute("""UPDATE estudiantes SET nombre=?, apellidos=?, sexo=?, fecha_nacimiento=?, tutor=?,
-                         telefono=?, correo=?, seccion_id=? WHERE id=?""", (*valores, self._id_edicion))
+                         telefono= ?, correo=?, seccion_id=? WHERE id=?""", (*valores, self._id_edicion))
         conn.commit()
         conn.close()
         mostrar_mensaje("exito", "Guardado", f"Estudiante «{nombre}» guardado correctamente.", self)
@@ -1119,7 +1119,7 @@ class ModuloConfiguracionST(QWidget):
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("""UPDATE configuracion SET nombre_docente=?, nota_minima_primaria=?,
-                     nota_minima_secundaria=? WHERE id=1""",
+                     nota_minima_secundaria= ? WHERE id=1""",
                   (self.in_nombre_docente.text().strip(), self.spin_nota_min_primaria.value(),
                    self.spin_nota_min_secundaria.value()))
         conn.commit()

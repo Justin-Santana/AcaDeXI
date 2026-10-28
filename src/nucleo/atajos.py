@@ -82,8 +82,7 @@ TECLA_ATAJO_POR_DEFECTO= "Alt"
 #pregunta directamente al sistema operativo qué modificadores están abajo (más confiable que llevar la cuenta a
 #mano de KeyPress/KeyRelease para una tecla que, sola, tiene comportamiento especial en Windows — ver docstring
 #del módulo).
-#
-#F1 NO tiene bandera de Qt.KeyboardModifier (no es una tecla modificadora):
+##F1 NO tiene bandera de Qt.KeyboardModifier (no es una tecla modificadora):
 #a propósito no aparece en este diccionario. Para F1, GestorAtajos se apoya solo en KeyPress/KeyRelease (ver
 #_tecla_qt_configurada y eventFilter) y en ApplicationDeactivate/WindowDeactivate para soltar el gesto si la
 #ventana pierde el foco con F1 todavía abajo -sin el sondeo de respaldo, que solo aplica a las teclas de este
@@ -140,7 +139,7 @@ def es_modo_docente(main_window):
 
 #Registro de atajos por widget
 def registrar_atajo(widget, main_window, secuencia, descripcion, callback,
-                     solo_no_docente=False, contexto=Qt.ShortcutContext.WidgetWithChildrenShortcut):
+                     solo_no_docente= False, contexto=Qt.ShortcutContext.WidgetWithChildrenShortcut):
     """Crea un QShortcut real en `widget` que llama a `callback`, y lo deja
     anotado en `widget._atajos_registrados` para que la ventanita de ayuda
     (GestorAtajos) pueda listarlo.
@@ -445,8 +444,7 @@ class GestorAtajos(QObject):
 #deleted". Esto rompía, en concreto, la sombra de "BotonAnimado" (self._sombra en estudiantes.py, personal.py,
 #profesores.py, reportes.py, universidad.py), que es un QGraphicsEffect propio y persistente para su animación
 #de hover.
-#
-#Por eso este módulo NUNCA reemplaza un graphicsEffect ajeno:
+##Por eso este módulo NUNCA reemplaza un graphicsEffect ajeno:
 #- Si el botón NO tiene ningún efecto puesto, se le pone un
 #QGraphicsOpacityEffect propio de esta función (se crea y se destruye aquí mismo, nunca choca con nada de otro
 #módulo).

@@ -752,12 +752,12 @@ class RecuperarPasswordDialog(QDialog):
 
         self.input_admin_user= self._campo(layout, "AUTORIZACIÓN - USUARIO ADMIN", "Usuario administrador")
         self.input_admin_pass= self._campo(layout, "AUTORIZACIÓN - CONTRASEÑA ADMIN", "Contraseña administrador",
-                                             es_password=True)
+                                             es_password= True)
 
         layout.addSpacing(4)
         self.input_nueva= self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
         self.input_confirmar= self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
-                                            es_password=True)
+                                            es_password= True)
         self.input_confirmar.returnPressed.connect(self._restablecer_por_admin)
 
         layout.addSpacing(8)
@@ -809,7 +809,7 @@ class RecuperarPasswordDialog(QDialog):
         self.input_codigo= self._campo(layout, "CÓDIGO RECIBIDO", "Ej. 482913")
         self.input_nueva_correo= self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
         self.input_confirmar_correo= self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
-                                                    es_password=True)
+                                                    es_password= True)
         self.input_confirmar_correo.returnPressed.connect(self._restablecer_por_correo)
 
         layout.addSpacing(8)

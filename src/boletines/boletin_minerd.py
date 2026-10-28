@@ -507,7 +507,7 @@ def _encabezado_institucional(cvs, ancho, y, institucion, titulo, subtitulo, rgb
             iw, ih = img.getSize()
             alto_img= 36
             cvs.drawImage(img, margen, y - 28, width=alto_img * (iw / ih), height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
         except Exception:
             pass
     cvs.setFont("Helvetica-Bold", 13)
@@ -536,7 +536,7 @@ def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der)
             iw, ih = img.getSize()
             alto_img= 26
             cvs.drawImage(img, x_der + ancho_firma / 2 - (alto_img * (iw / ih)) / 2, y_base + 4,
-                          width=alto_img * (iw / ih), height=alto_img, preserveAspectRatio=True, mask='auto')
+                          width= alto_img * (iw / ih), height=alto_img, preserveAspectRatio=True, mask='auto')
         except Exception:
             pass
     cvs.line(x_izq, y_base, x_izq + ancho_firma, y_base)
@@ -663,7 +663,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
         for etiqueta_sub, clave in subcols:
             cvs.rect(x, fila2_y - 14, COL_CASCADA, 14, stroke=1, fill=0)
             _dibujar_texto_ajustado(cvs, etiqueta_sub, x + COL_CASCADA / 2, fila2_y - 10, COL_CASCADA - 2,
-                                    tamano_inicial=5.5)
+                                    tamano_inicial= 5.5)
             clave_local= clave
             columnas.append((x, COL_CASCADA, lambda a, k=clave_local: _fmt(a["desglose"].get(k)), False))
             x += COL_CASCADA
@@ -695,7 +695,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
     for area in areas:
         cvs.rect(x0, y - alto_fila, COL_LABEL, alto_fila, stroke=1, fill=0)
         _dibujar_texto_ajustado(cvs, area["materia_nombre"], x0 + 3, y - alto_fila + 4, COL_LABEL - 6,
-                                centrado=False, tamano_inicial=6.5, negrita=False)
+                                centrado= False, tamano_inicial=6.5, negrita=False)
         for cx, cw, getter, resaltada in columnas:
             if resaltada:
                 cvs.setFillColorRGB(*rgb_resaltado)

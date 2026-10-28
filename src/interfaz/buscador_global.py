@@ -233,8 +233,7 @@ TEXTO_BUSCAR_ROLE= Qt.ItemDataRole.UserRole + 1
 #iconos.py): PNG propio si existe, si no el icono vectorial coherente de iconos_auto.py -nunca un emoji crudo
 #elegido a mano aparte, que antes hacía que, por ejemplo, "Profesores" y "Personal" (dos módulos con icono
 #propio bien distinto en la sidebar) se vieran aquí con el mismo glyph genérico de "dos personas".
-#
-#Con @lru_cache en vez de un diccionario armado de una sola vez a nivel de módulo: icono_qicon_modulo()
+##Con @lru_cache en vez de un diccionario armado de una sola vez a nivel de módulo: icono_qicon_modulo()
 #construye QPixmap/QIcon, que en Qt necesitan una QApplication ya viva -y buscador_global.py se importa en
 #main.py ANTES de crear la QApplication (import de módulos arriba, QApplication() recién
 #dentro de `if __name__ == "__main__"`)-. Resolviendo perezosamente, en el

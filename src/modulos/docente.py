@@ -373,7 +373,7 @@ class ChipClaseHorario(QFrame):
     en un tooltip al pasar el mouse, sin necesidad de abrir nada."""
 
     def __init__(self, materia, seccion, aula, hora_ini, hora_fin, color, parent=None,
-                 clave=None, on_cambiar_color=None, main_window=None):
+                 clave= None, on_cambiar_color=None, main_window=None):
         super().__init__(parent)
         self.setObjectName("ChipClaseHorario")
         self._color= color
@@ -535,8 +535,8 @@ class PanelHorarioSemanal(QWidget):
             color= self._resolver_color(e["materia"]) if self._resolver_color else _color_para_materia(e["materia"])
             chip= ChipClaseHorario(e["materia"], e["seccion"], e["aula"],
                                      e["hora_inicio"], e["hora_fin"], color, self,
-                                     clave=e["materia"], on_cambiar_color=self._on_color_cambiada,
-                                     main_window=self.main_window)
+                                     clave= e["materia"], on_cambiar_color=self._on_color_cambiada,
+                                     main_window= self.main_window)
             chip.show()
             self._pares.append((e, chip))
         self._reflow()
@@ -1028,7 +1028,7 @@ class ModuloCopiasSeguridadDocente(QWidget):
         try:
             cfg= obtener_config_backup()
             ruta= crear_backup(cfg["carpeta"] or None, tipo="Manual (Modo Docente)",
-                               usuario=self.main_window.usuario_actual)
+                               usuario= self.main_window.usuario_actual)
             registrar_auditoria("Seguridad", "Creó backup (Modo Docente)", self.main_window.usuario_actual, ruta)
             mostrar_mensaje("exito", "Backup creado", f"Copia de seguridad guardada en:\n{ruta}", self)
             self.refrescar()

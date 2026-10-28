@@ -144,7 +144,7 @@ def _datos_perfil(usuario_id, modo_trabajo, carpeta_sincronizacion, password_pla
 
 
 def guardar_perfil_archivo(ruta, usuario_id, modo_trabajo="Local", carpeta_sincronizacion="",
-                           password_plana=None, pin=None, ruta_bd_base=None):
+                           password_plana= None, pin=None, ruta_bd_base=None):
     """Genera y guarda el archivo .acdx cifrado. Devuelve el diccionario de datos.
 
     Si se pasa `password_plana`, también debe pasarse `pin`: la contraseña se
@@ -495,8 +495,8 @@ class DialogoGenerarPerfil(QDialog):
         try:
             guardar_perfil_archivo(ruta, self.usuario_id, self.combo_modo.currentText(),
                                    self.in_carpeta.text().strip(), password_plana=password_plana or None,
-                                   pin=pin or None,
-                                   ruta_bd_base=RUTA_BD_BASE if incluir_bd_base else None)
+                                   pin= pin or None,
+                                   ruta_bd_base= RUTA_BD_BASE if incluir_bd_base else None)
         except Exception as e:
             mostrar_mensaje("error", "Error", f"No se pudo generar el perfil:\n{e}", self)
             return
