@@ -158,7 +158,7 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
             iw, ih = img.getSize()
             alto_img= 40
             cvs.drawImage(img, margen, y - 30, width=alto_img * (iw / ih), height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
         except Exception:
             pass
     cvs.setFont("Helvetica-Bold", 13)
@@ -213,7 +213,7 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
         cvs.rect(x0, y - alto_fila, col_izq_ancho, alto_fila, stroke=1, fill=0)
         etiqueta= modulo["materia_nombre"] + (f" ({modulo['codigo']})" if modulo["codigo"] else "")
         _dibujar_texto_ajustado(cvs, etiqueta, x0 + 3, y - alto_fila + 5, col_izq_ancho - 6,
-                                centrado=False, tamano_inicial=7)
+                                centrado= False, tamano_inicial=7)
         for i in range(max_ra):
             cx= x0 + col_izq_ancho + i * col_ra_ancho
             cvs.rect(cx, y - alto_fila, col_ra_ancho, alto_fila, stroke=1, fill=0)
@@ -256,7 +256,7 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
             alto_img= 30
             x_firma= ancho - margen - 150
             cvs.drawImage(img, x_firma, y, width=alto_img * (iw / ih), height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
             cvs.line(x_firma, y - 3, x_firma + 150, y - 3)
             cvs.setFont("Helvetica", 7)
             cvs.drawCentredString(x_firma + 75, y - 13, "Directora/Director del Centro Educativo")

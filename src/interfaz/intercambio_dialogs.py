@@ -169,7 +169,7 @@ class DialogoImportarEstudiantes(_DialogoBase):
         try:
             resultado= intercambio.importar_estudiantes(
                 self.main_window, self.ruta_seleccionada,
-                seccion_id_destino=self.combo_seccion_destino.currentData())
+                seccion_id_destino= self.combo_seccion_destino.currentData())
             mostrar_mensaje("exito", "Importado",
                              f"Creados: {resultado['creados']}\nActualizados: {resultado['actualizados']}", self)
             self.accept()

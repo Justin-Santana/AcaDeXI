@@ -9,12 +9,12 @@ from PySide6.QtGui import QIcon, QPixmap
 from src.nucleo.rutas import obtener_carpeta_iconos
 
 
-# -----------------------------------------
-# bus de eventos de exito
-# un solo objeto vivo durante toda la app. Se emite cada vez que un módulo reporta una operación
-# exitosa con mostrar_mensaje("exito", ...), y lo escucha tutoriales.py para saber que la acción
-# ocurrió de verdad, no que el usuario solo hizo clic en un botón.
-# -----------------------------------------
+#-----------------------------------------
+#bus de eventos de exito
+#un solo objeto vivo durante toda la app. Se emite cada vez que un módulo reporta una operación
+#exitosa con mostrar_mensaje("exito", ...), y lo escucha tutoriales.py para saber que la acción
+#ocurrió de verdad, no que el usuario solo hizo clic en un botón.
+#-----------------------------------------
 class _BusEventosUI(QObject):
     exito_reportado= Signal(object, str, str)   #(parent, titulo, texto)
 
@@ -24,11 +24,11 @@ eventos_ui= _BusEventosUI()
 CARPETA_ICONOS= obtener_carpeta_iconos()
 
 
-# -----------------------------------------
-# carpetas donde puede estar la carpeta "iconos"
-# en desarrollo es una sola; empaquetado con PyInstaller (--onedir) hay que probar también la
-# carpeta _internal que queda junto al .exe, sin importar en qué disco la instaló Inno Setup.
-# -----------------------------------------
+#-----------------------------------------
+#carpetas donde puede estar la carpeta "iconos"
+#en desarrollo es una sola; empaquetado con PyInstaller (--onedir) hay que probar también la
+#carpeta _internal que queda junto al .exe, sin importar en qué disco la instaló Inno Setup.
+#-----------------------------------------
 def _carpetas_candidatas_iconos():
 
     candidatas= [CARPETA_ICONOS]
@@ -58,11 +58,11 @@ def _carpetas_candidatas_iconos():
     return resultado
 
 
-# -----------------------------------------
-# iconos de la barra lateral
-# viven en iconos/sidebar_icons/*.png y se resuelven con las mismas carpetas de arriba, así que
-# si "iconos" ya va empaquetada, la subcarpeta viaja sola sin tocar el instalador.
-# -----------------------------------------
+#-----------------------------------------
+#iconos de la barra lateral
+#viven en iconos/sidebar_icons/*.png y se resuelven con las mismas carpetas de arriba, así que
+#si "iconos" ya va empaquetada, la subcarpeta viaja sola sin tocar el instalador.
+#-----------------------------------------
 def _carpetas_candidatas_sidebar_icons():
 
     candidatas= [os.path.join(carpeta, "sidebar_icons") for carpeta in _carpetas_candidatas_iconos()]
@@ -78,9 +78,9 @@ def _carpetas_candidatas_sidebar_icons():
     return resultado
 
 
-# "Mis Materias.png" y "Calificaciones Técnicas" terminan en "mismaterias" y
-# "calificacionestecnicas": solo letras y números en minúscula, sin acentos, para poder emparejar
-# el nombre del archivo con el nombre del módulo sin depender de espacios ni tildes.
+#"Mis Materias.png" y "Calificaciones Técnicas" terminan en "mismaterias" y
+#"calificacionestecnicas": solo letras y números en minúscula, sin acentos, para poder emparejar
+#el nombre del archivo con el nombre del módulo sin depender de espacios ni tildes.
 def _normalizar_clave(texto):
 
     sin_acentos= unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
@@ -88,8 +88,8 @@ def _normalizar_clave(texto):
     return re.sub(r"[^a-z0-9]", "", sin_acentos.lower())
 
 
-# para cada módulo, los nombres de archivo que se aceptan como su icono, en orden de preferencia.
-# un módulo con lista vacía no tiene icono propio todavía y sigue mostrando su emoji de respaldo.
+#para cada módulo, los nombres de archivo que se aceptan como su icono, en orden de preferencia.
+#un módulo con lista vacía no tiene icono propio todavía y sigue mostrando su emoji de respaldo.
 ALIAS_ICONOS_SIDEBAR= {
     "Dashboard": ["dashboard"],
     "Estudiantes": ["estudiantes"],
@@ -121,8 +121,8 @@ _indice_sidebar_icons= None
 _cache_pixmap_sidebar= {}
 
 
-# escanea TODAS las carpetas candidatas, sin detenerse en la primera que exista, y arma
-# {clave: ruta}. Si un archivo aparece en dos carpetas gana la primera, que es la de más prioridad.
+#escanea TODAS las carpetas candidatas, sin detenerse en la primera que exista, y arma
+#{clave: ruta}. Si un archivo aparece en dos carpetas gana la primera, que es la de más prioridad.
 def _indice_archivos_sidebar_icons():
 
     global _indice_sidebar_icons
@@ -157,7 +157,7 @@ def _indice_archivos_sidebar_icons():
     return indice
 
 
-# ruta del archivo de icono de un módulo, o None si ese módulo todavía no tiene icono propio.
+#ruta del archivo de icono de un módulo, o None si ese módulo todavía no tiene icono propio.
 def ruta_icono_sidebar(nombre_modulo):
 
     claves= ALIAS_ICONOS_SIDEBAR.get(nombre_modulo) or []
@@ -175,12 +175,12 @@ def ruta_icono_sidebar(nombre_modulo):
     return None
 
 
-# -----------------------------------------
-# recortar el aire transparente del png
-# cada icono viene con una cantidad distinta de margen alrededor del dibujo, así que al escalarlos
-# a la misma caja unos se ven grandes y otros diminutos. Recortando primero al contenido real y
-# escalando después, todos ocupan la misma proporción del chip.
-# -----------------------------------------
+#-----------------------------------------
+#recortar el aire transparente del png
+#cada icono viene con una cantidad distinta de margen alrededor del dibujo, así que al escalarlos
+#a la misma caja unos se ven grandes y otros diminutos. Recortando primero al contenido real y
+#escalando después, todos ocupan la misma proporción del chip.
+#-----------------------------------------
 def _recortar_margen_transparente(ruta):
 
     try:
@@ -201,10 +201,10 @@ def _recortar_margen_transparente(ruta):
             return buffer.getvalue()
 
     except Exception:
-        return None                   # sin Pillow o si el recorte falla, se usa el png tal cual
+        return None                   #sin Pillow o si el recorte falla, se usa el png tal cual
 
 
-# pixmap del icono del módulo, ya recortado y escalado, o None si no hay icono disponible.
+#pixmap del icono del módulo, ya recortado y escalado, o None si no hay icono disponible.
 def pixmap_icono_sidebar(nombre_modulo, tamano=26):
 
     ruta= ruta_icono_sidebar(nombre_modulo)
@@ -234,9 +234,9 @@ def pixmap_icono_sidebar(nombre_modulo, tamano=26):
     return pixmap
 
 
-# el mismo icono de la fila del módulo en la barra lateral, pero a tamaño de emoji, para listas
-# como el Buscador Global. Si no hay png, se usa el icono vectorial de iconos_auto.py; si tampoco,
-# un QIcon vacío y quien llama decide qué hacer.
+#el mismo icono de la fila del módulo en la barra lateral, pero a tamaño de emoji, para listas
+#como el Buscador Global. Si no hay png, se usa el icono vectorial de iconos_auto.py; si tampoco,
+#un QIcon vacío y quien llama decide qué hacer.
 def icono_qicon_modulo(nombre_modulo, tamano=18):
 
     pixmap= pixmap_icono_sidebar(nombre_modulo, tamano) if nombre_modulo else None
@@ -255,9 +255,9 @@ def icono_qicon_modulo(nombre_modulo, tamano=18):
     return QIcon()
 
 
-# pone en la etiqueta el icono de la cabecera de un módulo: primero el png de la barra lateral,
-# después el vectorial, y si el módulo es None se limpia lo que hubiera de una llamada anterior
-# (los carruseles de tutoriales reutilizan el mismo QLabel paso a paso).
+#pone en la etiqueta el icono de la cabecera de un módulo: primero el png de la barra lateral,
+#después el vectorial, y si el módulo es None se limpia lo que hubiera de una llamada anterior
+#(los carruseles de tutoriales reutilizan el mismo QLabel paso a paso).
 def aplicar_icono_cabecera(label, nombre_modulo, tamano=30):
 
     pixmap= pixmap_icono_sidebar(nombre_modulo, tamano) if nombre_modulo else None
@@ -280,9 +280,9 @@ def aplicar_icono_cabecera(label, nombre_modulo, tamano=30):
     label.setPixmap(QPixmap())
 
 
-# -----------------------------------------
-# iconos de la app
-# -----------------------------------------
+#-----------------------------------------
+#iconos de la app
+#-----------------------------------------
 ICONO_APP= "schoolsys.ico"
 LOGO_APP_GRANDE= "AcaDeXI_logo.png"       #el escudo grande, no el .ico de la ventana
 
@@ -307,8 +307,8 @@ ICONO_FILTRO= "filtradoico.ico"          #ventanita de filtros
 _cache= {}
 
 
-# busca el archivo del icono en las carpetas candidatas y lo deja en caché. Si no aparece devuelve
-# un QIcon vacío, que Qt dibuja como nada.
+#busca el archivo del icono en las carpetas candidatas y lo deja en caché. Si no aparece devuelve
+#un QIcon vacío, que Qt dibuja como nada.
 def obtener_icono(nombre_archivo):
 
     if nombre_archivo in _cache:
@@ -335,8 +335,8 @@ def icono_app():
 _cache_pixmap_logo_app= {}
 
 
-# el escudo grande, para cuando la institución todavía no cargó su propio logo en el login. No es
-# el icono de la ventana: ese sigue siendo icono_app().
+#el escudo grande, para cuando la institución todavía no cargó su propio logo en el login. No es
+#el icono de la ventana: ese sigue siendo icono_app().
 def pixmap_logo_app(tamano=132):
 
     if tamano in _cache_pixmap_logo_app:
@@ -359,18 +359,18 @@ def pixmap_logo_app(tamano=132):
     return pixmap
 
 
-# pone el icono de la app, o uno más específico si se pasa el nombre del archivo, como icono de la
-# ventana. Sirve para que el tutorial o el buscador tengan su propio icono en la barra de tareas.
+#pone el icono de la app, o uno más específico si se pasa el nombre del archivo, como icono de la
+#ventana. Sirve para que el tutorial o el buscador tengan su propio icono en la barra de tareas.
 def aplicar_icono_ventana(ventana, icono=None):
 
     ventana.setWindowIcon(obtener_icono(icono) if icono else icono_app())
 
 
-# -----------------------------------------
-# centrar ventanas
-# -----------------------------------------
-# centra la ventana sobre su padre, o sobre la pantalla si no hay padre, y la trae al frente. Sin
-# lo de WindowStaysOnTopHint el diálogo podía abrirse detrás de la ventana y había que buscarlo.
+#-----------------------------------------
+#centrar ventanas
+#-----------------------------------------
+#centra la ventana sobre su padre, o sobre la pantalla si no hay padre, y la trae al frente. Sin
+#lo de WindowStaysOnTopHint el diálogo podía abrirse detrás de la ventana y había que buscarlo.
 def _centrar_ventana(ventana, parent=None):
 
     ventana.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
@@ -403,8 +403,8 @@ def _centrar_ventana(ventana, parent=None):
     ventana.activateWindow()
 
 
-# igual que la de arriba, pero para los diálogos propios. No llama a adjustSize() porque esos
-# diálogos ya fijaron su tamaño con resize() y adjustSize() los encogería al mínimo.
+#igual que la de arriba, pero para los diálogos propios. No llama a adjustSize() porque esos
+#diálogos ya fijaron su tamaño con resize() y adjustSize() los encogería al mínimo.
 def centrar_y_al_frente(ventana, parent=None):
 
     ventana.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
@@ -446,13 +446,13 @@ def centrar_y_al_frente(ventana, parent=None):
     ventana.activateWindow()
 
 
-# -----------------------------------------
-# mensajes al usuario
-# -----------------------------------------
-# todos los avisos de la app pasan por acá: "info", "exito", "error", "advertencia" o "pregunta".
-# Toma el tema activo para que el cuadro respete el modo claro u oscuro, y devuelve lo que eligió
-# el usuario. Si hay una tabla en pantalla completa, el aviso cuelga de ese diálogo y no de la
-# ventana principal, que quedaría tapada por el modal.
+#-----------------------------------------
+#mensajes al usuario
+#-----------------------------------------
+#todos los avisos de la app pasan por acá: "info", "exito", "error", "advertencia" o "pregunta".
+#Toma el tema activo para que el cuadro respete el modo claro u oscuro, y devuelve lo que eligió
+#el usuario. Si hay una tabla en pantalla completa, el aviso cuelga de ese diálogo y no de la
+#ventana principal, que quedaría tapada por el modal.
 def mostrar_mensaje(tipo, titulo, texto, parent=None):
 
     mapa_icono= {

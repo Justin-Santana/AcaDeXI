@@ -201,7 +201,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
     for area in areas:
         cvs.rect(x0, y - alto_fila, COL_LABEL, alto_fila, stroke=1, fill=0)
         _dibujar_texto_ajustado(cvs, area["materia_nombre"], x0 + 3, y - alto_fila + 4, COL_LABEL - 6,
-                                centrado=False, tamano_inicial=6.5, negrita=False)
+                                centrado= False, tamano_inicial=6.5, negrita=False)
         for cx, cw, getter in columnas:
             cvs.rect(cx, y - alto_fila, cw, alto_fila, stroke=1, fill=0)
             cvs.setFont("Helvetica", 6.3)
@@ -226,7 +226,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
         cvs.rect(x0 + 40, y - 12, ancho - 2 * margen - 40, 12, stroke=1, fill=0)
         cvs.setFont("Helvetica", 6.5)
         _dibujar_texto_ajustado(cvs, texto or "—", x0 + 44, y - 9, ancho - 2 * margen - 48,
-                                centrado=False, tamano_inicial=6.5, negrita=False)
+                                centrado= False, tamano_inicial=6.5, negrita=False)
         y -= 12
     y -= 14
 

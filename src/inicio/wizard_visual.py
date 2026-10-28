@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (QDialog, QWidget, QFrame, QVBoxLayout, QHBoxLayou
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QPoint, QSize
 from PySide6.QtGui import QPixmap, QColor
 
-from src.nucleo.bd import get_app_data_dir  # noqa: F401  (útil para quien importe este módulo)
+from src.nucleo.bd import get_app_data_dir  #noqa: F401  (útil para quien importe este módulo)
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.configuracion import (WizardStepper, PanelAparienciaWizard, _fundido_entrada,
                            _RealceHover, _hex_a_rgba)
@@ -40,7 +40,7 @@ class WizardEstilizado(QDialog):
     `self.agregar_pagina(titulo, icono)` dentro de `_construir_paginas()`."""
 
     def __init__(self, main_window, titulo_ventana, tamano=(760, 620),
-                 icono_ventana=ICONO_SETUP, parent=None):
+                 icono_ventana= ICONO_SETUP, parent=None):
         super().__init__(parent if parent is not None else main_window)
         self.main_window= main_window
         self.setWindowTitle(titulo_ventana)

@@ -74,11 +74,11 @@ def poblar_combo_curso(combo, incluir_todos=False, seleccion_previa=None, seccio
 
 
 def cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=False, secciones_permitidas=None,
-                               etiqueta_todas="Todas las secciones", etiquetas_cortas_sin_curso=False):
+                               etiqueta_todas= "Todas las secciones", etiquetas_cortas_sin_curso=False):
     """Repuebla `combo_seccion` según el curso elegido en `combo_curso`.
     Ver las reglas 1-3 en el docstring del módulo. `secciones_permitidas`
     es un set opcional de IDs de sección (RBAC de Profesor restringido);
-    None = sin restricción. `etiqueta_todas` permite personalizar el texto
+    None= sin restricción. `etiqueta_todas` permite personalizar el texto
     del ítem "sin sección concreta" cuando incluir_todas=True (por ejemplo,
     "— Ninguna —" en vez de "Todas las secciones" para un campo opcional).
 
@@ -229,7 +229,7 @@ def interseccion_opcional(*sets_opcionales):
 
 
 def preseleccionar_curso_y_seccion(combo_curso, combo_seccion, seccion_id, incluir_todas=False,
-                                    etiqueta_todas="Todas las secciones", etiquetas_cortas_sin_curso=False):
+                                    etiqueta_todas= "Todas las secciones", etiquetas_cortas_sin_curso=False):
     """Para pantallas de edición: dado el `seccion_id` ya guardado de un
     registro, busca su curso, lo selecciona primero en `combo_curso`, y
     luego llama a la cascada para preseleccionar `seccion_id` en
@@ -247,7 +247,7 @@ def preseleccionar_curso_y_seccion(combo_curso, combo_seccion, seccion_id, inclu
     combo_curso.setCurrentIndex(idx_curso if idx_curso >= 0 else 0)
     combo_curso.blockSignals(False)
     cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=incluir_todas, etiqueta_todas=etiqueta_todas,
-                               etiquetas_cortas_sin_curso=etiquetas_cortas_sin_curso)
+                               etiquetas_cortas_sin_curso= etiquetas_cortas_sin_curso)
     if seccion_id is not None:
         combo_seccion.blockSignals(True)
         idx_seccion= combo_seccion.findData(seccion_id)
@@ -277,7 +277,7 @@ def curso_admite_componente_tecnico(grado_id):
 def poblar_combo_curso_opcional(combo, solo_con_componente_tecnico=False, seleccion_previa=None):
     """Combo de Curso/Grado OPCIONAL: primera opción \"— Sin curso específico —\" (data=None),
     que deja la materia/módulo disponible para cualquier curso. Con
-    solo_con_componente_tecnico=True solo se listan los cursos que admiten
+    solo_con_componente_tecnico= True solo se listan los cursos que admiten
     módulos técnicos (Secundaria - Segundo Ciclo)."""
     from src.interfaz.configuracion import puede_tener_componente_tecnico
     if seleccion_previa is None and combo.count():

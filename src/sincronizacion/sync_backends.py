@@ -144,10 +144,10 @@ def _google_drive_servicio():
     if not datos:
         raise RuntimeError("Google Drive no está conectado. Ve a Sincronización y conéctalo primero.")
     cred= Credentials(
-        token=datos.get("token"), refresh_token=datos.get("refresh_token"),
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=datos["client_id"], client_secret=datos["client_secret"],
-        scopes=["https://www.googleapis.com/auth/drive.file"])
+        token= datos.get("token"), refresh_token=datos.get("refresh_token"),
+        token_uri= "https://oauth2.googleapis.com/token",
+        client_id= datos["client_id"], client_secret=datos["client_secret"],
+        scopes= ["https://www.googleapis.com/auth/drive.file"])
     if not cred.valid:
         cred.refresh(Request())
         datos["token"]= cred.token
@@ -157,8 +157,8 @@ def _google_drive_servicio():
 
 def _google_drive_buscar_archivo(servicio):
     resp= servicio.files().list(
-        q=f"name='{NOMBRE_ARCHIVO_SYNC}' and trashed=false",
-        spaces="drive", fields="files(id, modifiedTime)").execute()
+        q= f"name='{NOMBRE_ARCHIVO_SYNC}' and trashed=false",
+        spaces= "drive", fields="files(id, modifiedTime)").execute()
     archivos= resp.get("files", [])
     return archivos[0] if archivos else None
 
@@ -222,8 +222,8 @@ def _dropbox_cliente():
     if not datos:
         raise RuntimeError("Dropbox no está conectado. Ve a Sincronización y conéctalo primero.")
     return dropbox.Dropbox(
-        app_key=datos["app_key"], app_secret=datos["app_secret"],
-        oauth2_refresh_token=datos["refresh_token"])
+        app_key= datos["app_key"], app_secret=datos["app_secret"],
+        oauth2_refresh_token= datos["refresh_token"])
 
 
 def dropbox_subir():
@@ -294,7 +294,7 @@ def onedrive_subir():
         contenido= f.read()
     resp= requests.put(
         f"https://graph.microsoft.com/v1.0/me/drive/root:/{NOMBRE_ARCHIVO_SYNC}:/content",
-        headers={"Authorization": f"Bearer {token}"}, data=contenido, timeout=60)
+        headers= {"Authorization": f"Bearer {token}"}, data=contenido, timeout=60)
     resp.raise_for_status()
     return "OneDrive"
 
@@ -305,7 +305,7 @@ def onedrive_descargar():
     ruta_respaldo= crear_backup(tipo="Pre-sincronización (OneDrive)")
     resp= requests.get(
         f"https://graph.microsoft.com/v1.0/me/drive/root:/{NOMBRE_ARCHIVO_SYNC}:/content",
-        headers={"Authorization": f"Bearer {token}"}, timeout=60)
+        headers= {"Authorization": f"Bearer {token}"}, timeout=60)
     if resp.status_code == 404:
         raise RuntimeError("Todavía no hay ninguna copia en OneDrive.")
     resp.raise_for_status()
@@ -345,7 +345,7 @@ def servidor_subir():
     with open(DB_PATH, "rb") as f:
         resp= requests.post(
             f"{datos['url']}/subir", headers={"Authorization": f"Bearer {datos['token']}"},
-            files={"archivo": (NOMBRE_ARCHIVO_SYNC, f, "application/octet-stream")}, timeout=120)
+            files= {"archivo": (NOMBRE_ARCHIVO_SYNC, f, "application/octet-stream")}, timeout=120)
     resp.raise_for_status()
     return datos["url"]
 
