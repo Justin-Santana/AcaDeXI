@@ -20,11 +20,29 @@ except Exception:
 # ============================================================
 def get_app_data_dir():
     if sys.platform == "win32":
-        base = os.environ.get("APPDATA", str(Path.home()))
+        base = os.environ.get("APPDATA") or os.environ.get("USERPROFILE")
+        if not base:
+            try:
+                base = str(Path.home())
+            except Exception:
+                base = None
+        if not base:
+            import tempfile
+            base = tempfile.gettempdir()
     elif sys.platform == "darwin":
-        base = str(Path.home() / "Library" / "Application Support")
+        try:
+            base = str(Path.home() / "Library" / "Application Support")
+        except Exception:
+            import tempfile
+            base = tempfile.gettempdir()
     else:
-        base = os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
+        base = os.environ.get("XDG_DATA_HOME")
+        if not base:
+            try:
+                base = str(Path.home() / ".local" / "share")
+            except Exception:
+                import tempfile
+                base = tempfile.gettempdir()
     ruta = os.path.join(base, "AcaDeXI")
     os.makedirs(ruta, exist_ok=True)
     os.makedirs(os.path.join(ruta, "logos"), exist_ok=True)

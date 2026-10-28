@@ -138,8 +138,8 @@ SCRIPT= textwrap.dedent("""
 
 
 def _correr(script, tmp_path):
-    env= {"HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "QT_QPA_PLATFORM": "offscreen",
-           "PYTHONDONTWRITEBYTECODE": "1", "PATH": "/usr/bin:/bin:/usr/local/bin"}
+    env= {"HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "APPDATA": str(tmp_path), "USERPROFILE": str(tmp_path), "QT_QPA_PLATFORM": "offscreen",
+           "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "PATH": "/usr/bin:/bin:/usr/local/bin"}
     return subprocess.run([sys.executable, "-c", script], cwd=RAIZ, env=env,
                           capture_output= True, text=True, timeout=180)
 

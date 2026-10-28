@@ -35,7 +35,7 @@ SCRIPT= textwrap.dedent("""
 """)
 
 def test_filtrado_modulos_por_area_y_curso(tmp_path):
-    env= {"HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "QT_QPA_PLATFORM": "offscreen",
-           "PYTHONDONTWRITEBYTECODE": "1", "PATH": "/usr/bin:/bin"}
+    env= {"HOME": str(tmp_path), "XDG_DATA_HOME": str(tmp_path), "APPDATA": str(tmp_path), "USERPROFILE": str(tmp_path), "QT_QPA_PLATFORM": "offscreen",
+           "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "PATH": "/usr/bin:/bin"}
     r= subprocess.run([sys.executable, "-c", SCRIPT], cwd=RAIZ, env=env, capture_output=True, text=True, timeout=180)
     assert r.returncode == 0 and "OK" in r.stdout, r.stderr[-1500:]
