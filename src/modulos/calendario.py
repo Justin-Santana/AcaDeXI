@@ -929,7 +929,7 @@ class ModuloCalendario(QWidget):
         #aquí porque necesita self.paginacion ya construido.
         agregar_boton_pantalla_completa(
             None, [self.tabla, self.paginacion],
-            titulo="Calendario", parent=self)
+            titulo= "Calendario", parent=self)
         fila_botones= QHBoxLayout()
         btn_editar= QPushButton("Cargar Seleccionado")
         btn_editar.setIcon(icono_emoji("✏"))
@@ -950,7 +950,7 @@ class ModuloCalendario(QWidget):
                       lambda: mostrar_texto_largo(self, "Detalle completo", texto_completo))]
 
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla, self, titulo="Detalle del Evento",
-                                             proveedor_extra_botones=_extra_botones_detalle)
+                                             proveedor_extra_botones= _extra_botones_detalle)
         self.tabla.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_botones.addStretch()
         layout.addLayout(fila_botones)
@@ -1381,7 +1381,7 @@ class ModuloCalendario(QWidget):
         un Área Técnica/Carrera elegidos, la lista de secciones se acota más
         -mismo criterio que _filtrar_secciones_evento_por_curso-."""
         cascada_seccion_por_curso(self.combo_filtro_vista_curso, self.combo_filtro_vista_seccion,
-                                   incluir_todas=True)
+                                   incluir_todas= True)
 
         especialidad_id= (self.combo_filtro_vista_especialidad.currentData()
                             if self._es_politecnico() else None)
@@ -1866,7 +1866,7 @@ class ModuloCalendario(QWidget):
             mensaje_toast= "Evento creado correctamente."
         else:
             c.execute("""UPDATE eventos SET titulo=?, descripcion=?, tipo=?, fecha=?, hora=?,
-                         seccion_id=?, materia_id=?, usuario_id=?, visibilidad=? WHERE id=?""",
+                         seccion_id= ?, materia_id=?, usuario_id=?, visibilidad=? WHERE id=?""",
                       datos + (self.id_edicion,))
             accion= "Editó evento en Calendario"
             mensaje_toast= "Evento actualizado correctamente."
@@ -1958,7 +1958,7 @@ class ModuloCalendario(QWidget):
             self.time_hora.setTime(QTime.fromString(f["hora"], "HH:mm"))
         self._cargar_combos()
         preseleccionar_curso_y_seccion(self.combo_curso, self.combo_seccion, f["seccion_id"],
-                                        incluir_todas=False)
+                                        incluir_todas= False)
         idx_m= self.combo_materia.findData(f["materia_id"])
         self.combo_materia.setCurrentIndex(idx_m if idx_m >= 0 else 0)
         self._actualizar_estado_form(True, f["titulo"] or "")

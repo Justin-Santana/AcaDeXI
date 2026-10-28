@@ -52,8 +52,7 @@ def aplicar_estructura_tabla(tabla):
     #la celda -en columnas con `setCellWidget` (p. ej. "Categorías" en observaciones.py) ese item va vacío, así que
     #el resultado del doble clic quedaba corto y el contenido seguía recortado hasta que el usuario estiraba la
     #columna a mano.
-    #
-    #La corrección se difiere con QTimer.singleShot(0, ...) en vez de aplicarse directamente dentro del slot
+    #    #La corrección se difiere con QTimer.singleShot(0, ...) en vez de aplicarse directamente dentro del slot
     #conectado a la señal: el ajuste nativo de Qt no siempre ha terminado de aplicarse en el mismo instante en que
     #se emite `sectionHandleDoubleClicked` (puede resolverse en un paso posterior del bucle de eventos), así que
     #corregir "en línea" podía quedar pisado otra vez por el valor incorrecto de Qt según el orden de conexión. Al
@@ -728,7 +727,7 @@ def mostrar_texto_largo(parent, titulo, texto):
 
 
 def agregar_boton_detalle(layout_botones, tabla, parent, titulo="Detalle del Registro", texto_boton="Ver Detalle",
-                           proveedor_extra_botones=None):
+                           proveedor_extra_botones= None):
     """proveedor_extra_botones (opcional): función que recibe la fila
     seleccionada (índice) y devuelve una lista de (texto, callback) para
     agregarse como botones extra dentro del diálogo de detalle."""
@@ -1054,9 +1053,9 @@ def agregar_boton_pantalla_completa(layout_cabecera, widgets, titulo="Tabla", pa
 
     Uso típico, justo después de armar tarjeta_filtros/tarjeta_tabla/pagina:
         agregar_boton_pantalla_completa(
-            None,  # o una QHBoxLayout donde alojar el botón
+            None,  #o una QHBoxLayout donde alojar el botón
             [self.tarjeta_filtros, self.tarjeta_tabla, self.pagina],
-            titulo="Materiales", parent=self)
+            titulo= "Materiales", parent=self)
     Con layout_cabecera=None el botón ⛶ vive a la derecha del control de
     paginación (o del primer widget si no hay paginación).
     """

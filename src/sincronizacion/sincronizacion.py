@@ -59,11 +59,11 @@ NOMBRE_ARCHIVO_SYNC= "acadexi_sync.db"
 #accesible, pensadas para instituciones con presupuestos muy distintos — desde un colegio sin nada de
 #presupuesto para hosting, hasta uno que sí puede pagar un VPS.
 _SCRIPT_INICIO_SH= """#!/bin/bash
-# Inicia el Servidor Institucional de AcaDeXI.
-# En Linux/Mac: clic derecho > Propiedades > marcar "Permitir ejecutar
-# como programa" (o una vez: chmod +x iniciar_servidor.sh), y luego
-# doble clic. También puedes ejecutarlo desde una terminal:
-#   ./iniciar_servidor.sh
+#Inicia el Servidor Institucional de AcaDeXI.
+#En Linux/Mac: clic derecho > Propiedades > marcar "Permitir ejecutar
+#como programa" (o una vez: chmod +x iniciar_servidor.sh), y luego
+#doble clic. También puedes ejecutarlo desde una terminal:
+#./iniciar_servidor.sh
 cd "$(dirname "$0")"
 echo "Iniciando Servidor Institucional AcaDeXI..."
 echo "(deja esta ventana abierta mientras quieras que siga funcionando)"

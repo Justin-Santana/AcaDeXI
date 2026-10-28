@@ -643,7 +643,7 @@ class ModuloEstudiantes(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla, self.paginacion],
-            titulo="Estudiantes", parent=self)
+            titulo= "Estudiantes", parent=self)
 
         fila_acciones= QHBoxLayout()
         self.btn_editar= BotonAnimado("Cargar Seleccionado")
@@ -854,11 +854,11 @@ class ModuloEstudiantes(QWidget):
 
     def _cargar_grados_combo_filtro(self):
         poblar_combo_curso(self.combo_filtro_grado, incluir_todos=False,
-                            secciones_permitidas=self._secciones_permitidas_ids())
+                            secciones_permitidas= self._secciones_permitidas_ids())
 
     def _grado_filtro_cambio(self):
         cascada_seccion_por_curso(self.combo_filtro_grado, self.combo_filtro_seccion,
-                                   incluir_todas=False, secciones_permitidas=self._secciones_permitidas_ids())
+                                   incluir_todas= False, secciones_permitidas=self._secciones_permitidas_ids())
         self._filtro_cambio()
 
     def _cargar_grados_combo_ficha(self):
@@ -866,7 +866,7 @@ class ModuloEstudiantes(QWidget):
         de la ficha de alta/edición del estudiante (obligatorio, acota
         self.combo_seccion, no la tabla)."""
         poblar_combo_curso(self.combo_grado_ficha, incluir_todos=False,
-                            secciones_permitidas=self._secciones_permitidas_ids())
+                            secciones_permitidas= self._secciones_permitidas_ids())
 
     def _grado_ficha_cambio(self, _indice=None, seccion_id_preseleccionar=None):
         """Repuebla 'Sección' con solo las secciones del curso/grado elegido en
@@ -875,7 +875,7 @@ class ModuloEstudiantes(QWidget):
         por accidente una sección de otro curso (igual que en la pestaña de
         Horarios de Materias)."""
         cascada_seccion_por_curso(self.combo_grado_ficha, self.combo_seccion,
-                                   incluir_todas=False, secciones_permitidas=self._secciones_permitidas_ids())
+                                   incluir_todas= False, secciones_permitidas=self._secciones_permitidas_ids())
         if seccion_id_preseleccionar is not None:
             idx= self.combo_seccion.findData(seccion_id_preseleccionar)
             self.combo_seccion.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1256,8 +1256,8 @@ class ModuloEstudiantes(QWidget):
                 accion= "Registró estudiante"
             else:
                 c.execute("""UPDATE estudiantes SET matricula=?, nombre=?, apellidos=?, sexo=?,
-                             fecha_nacimiento=?, documento=?, direccion=?, telefono=?, correo=?, tutor=?,
-                             tutor2=?, foto=?, seccion_id=?, estado=?, especialidad_id=?, carrera_id=?
+                             fecha_nacimiento= ?, documento=?, direccion=?, telefono=?, correo=?, tutor=?,
+                             tutor2= ?, foto=?, seccion_id=?, estado=?, especialidad_id=?, carrera_id=?
                              WHERE id=?""",
                           datos + (self.id_edicion,))
                 accion= "Editó estudiante"
@@ -1675,7 +1675,7 @@ class ModuloEstudiantes(QWidget):
         self._cargar_niveles_combo_filtro()
         self._cargar_grados_combo_filtro()
         cascada_seccion_por_curso(self.combo_filtro_grado, self.combo_filtro_seccion,
-                                   incluir_todas=False, secciones_permitidas=self._secciones_permitidas_ids())
+                                   incluir_todas= False, secciones_permitidas=self._secciones_permitidas_ids())
         self._cargar_especialidades_combo_filtro()
         self._cargar_especialidad_ficha_combo()
         self._cargar_carreras_combo_filtro()

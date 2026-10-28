@@ -722,7 +722,7 @@ class ModuloPersonal(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla, self.paginacion],
-            titulo="Personal", parent=self)
+            titulo= "Personal", parent=self)
 
         fila_acciones= QHBoxLayout()
         btn_editar= BotonAnimado("Cargar Seleccionado")
@@ -814,7 +814,7 @@ class ModuloPersonal(QWidget):
                 accion= "Registró personal administrativo"
             else:
                 c.execute("""UPDATE personal_administrativo SET nombre=?, apellidos=?, cargo=?, departamento=?,
-                             correo=?, telefono=?, direccion=?, fecha_ingreso=?, estado=?, foto=?, usuario_id=?
+                             correo= ?, telefono=?, direccion=?, fecha_ingreso=?, estado=?, foto=?, usuario_id=?
                              WHERE id=?""", datos + (self.id_edicion,))
                 accion= "Editó personal administrativo"
             conn.commit()

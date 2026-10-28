@@ -108,7 +108,7 @@ def _dibujar_texto_multilinea(cvs, texto, cx, y_centro, ancho_max, alto_max, tam
 
 
 def _dibujar_texto_multilinea_lista(cvs, items, cx, y_centro, ancho_max, alto_max, tamano_inicial=6.5,
-                                    negrita=True, vineta="\u2022 ", espacio_entre_items=0.55):
+                                    negrita= True, vineta="\u2022 ", espacio_entre_items=0.55):
     """Como `_dibujar_texto_multilinea`, pero para una LISTA de nombres (las
     competencias fundamentales que integran un mismo grupo de columnas):
     cada una va en su propia línea con una viñeta "•" delante, en vez de
@@ -225,7 +225,7 @@ def _encabezado_institucional(cvs, ancho, y, institucion, titulo, subtitulo, rgb
             iw, ih = img.getSize()
             alto_img= 36
             cvs.drawImage(img, margen, y - 28, width=alto_img * (iw / ih), height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
         except Exception:
             pass
     y -= _dibujar_logos_adicionales(cvs, ancho, y, institucion, margen)
@@ -284,7 +284,7 @@ def _caja_datos_estudiante(cvs, x0, y, ancho, est, alto_fila=23):
             cvs.drawString(cx + 5, y - 9, etiqueta.upper())
             cvs.setFillColorRGB(0, 0, 0)
             _dibujar_texto_ajustado(cvs, valor, cx + 5, y - alto_fila + 6, col_ancho - 10,
-                                    centrado=False, tamano_inicial=7.8, negrita=False)
+                                    centrado= False, tamano_inicial=7.8, negrita=False)
         y -= alto_fila
 
     if est.get("area_tecnica"):
@@ -294,7 +294,7 @@ def _caja_datos_estudiante(cvs, x0, y, ancho, est, alto_fila=23):
         cvs.drawString(x0 + 5, y - 9, "ÁREA TÉCNICA")
         cvs.setFillColorRGB(0, 0, 0)
         _dibujar_texto_ajustado(cvs, est["area_tecnica"], x0 + 5, y - alto_fila + 6, ancho - 10,
-                                centrado=False, tamano_inicial=7.8, negrita=False)
+                                centrado= False, tamano_inicial=7.8, negrita=False)
         y -= alto_fila
 
     return y - 8
@@ -310,7 +310,7 @@ def _alto_extra_area_tecnica(est, alto_fila=20):
 
 
 def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der, centrar_izq=False,
-            con_sello=False):
+            con_sello= False):
     """`centrar_izq=True` centra la firma de la izquierda (en vez de
     pegarla al margen) -se usa cuando arriba, en la misma columna
     izquierda, ya se dibujó el "Sello" de la sección de Firma de Padres
@@ -358,7 +358,7 @@ def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der,
             iw, ih = img.getSize()
             alto_img= 26
             cvs.drawImage(img, x_der + ancho_firma / 2 - (alto_img * (iw / ih)) / 2, y_base + 4,
-                          width=alto_img * (iw / ih), height=alto_img, preserveAspectRatio=True, mask='auto')
+                          width= alto_img * (iw / ih), height=alto_img, preserveAspectRatio=True, mask='auto')
         except Exception:
             pass
     cvs.setFont("Helvetica", 7.5)
@@ -396,7 +396,7 @@ def _alto_extra_firma_padres(periodos, mostrar_firma_padres=None, mostrar_situac
 
 
 def _dibujar_seccion_firma_padres(cvs, margen, ancho, y_inicio, periodos, rgb_banda, rgb_texto_banda,
-                                   mostrar_firma_padres=True, mostrar_situacion_final=True):
+                                   mostrar_firma_padres= True, mostrar_situacion_final=True):
     """Dibuja el/los bloque(s) opcional(es) -ver `mostrar_firma_padres_boletin`
     y `mostrar_situacion_final_boletin`, ahora preferencias INDEPENDIENTES
     entre sí: tabla de firma de padres/madres por período + franja del Sello (columna
@@ -456,7 +456,7 @@ def _dibujar_seccion_firma_padres(cvs, margen, ancho, y_inicio, periodos, rgb_ba
         for etiqueta in filas:
             cvs.rect(x_izq, y - alto_fila, col_periodo, alto_fila, stroke=1, fill=0)
             _dibujar_texto_ajustado(cvs, etiqueta, x_izq + 4, y - alto_fila + 4, col_periodo - 6, centrado=False,
-                                    tamano_inicial=7)
+                                    tamano_inicial= 7)
             #Alineada con la etiqueta del período (misma altura que su texto, "y - alto_fila + 4"): antes estaba en "y -
             #4", casi pegada al borde SUPERIOR de la fila -a solo 4pt del borde que separa esta fila de la anterior-, así
             #que se veía como si le perteneciera a la fila de arriba en vez de a su propia
@@ -532,8 +532,8 @@ def _ancho_pagina_secundaria(n_grupos, n_periodos, mostrar_situacion_automatica=
 
 
 def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, mostrar_resumen_asistencia=None,
-                                        mostrar_situacion_automatica=None, mostrar_leyenda=None,
-                                        mostrar_firma_padres=None, mostrar_situacion_final=None):
+                                        mostrar_situacion_automatica= None, mostrar_leyenda=None,
+                                        mostrar_firma_padres= None, mostrar_situacion_final=None):
     """`mostrar_resumen_asistencia`/`mostrar_situacion_automatica`/
     `mostrar_leyenda`/`mostrar_firma_padres`/`mostrar_situacion_final`:
     None usa la preferencia guardada en Configuración
@@ -648,7 +648,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
         for etiqueta_sub, clave in subcols:
             cvs.rect(x, fila2_y - 14, SEC_COL_CASCADA, 14, stroke=1, fill=0)
             _dibujar_texto_ajustado(cvs, etiqueta_sub, x + SEC_COL_CASCADA / 2, fila2_y - 10, SEC_COL_CASCADA - 2,
-                                    tamano_inicial=5.5)
+                                    tamano_inicial= 5.5)
             clave_local= clave
             columnas.append((x, SEC_COL_CASCADA, lambda a, k=clave_local: _fmt(a["desglose"].get(k)), False))
             x += SEC_COL_CASCADA
@@ -681,7 +681,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
     for area in areas:
         cvs.rect(x0, y - alto_fila, SEC_COL_LABEL, alto_fila, stroke=1, fill=0)
         _dibujar_texto_ajustado(cvs, area["materia_nombre"], x0 + 3, y - alto_fila + 4, SEC_COL_LABEL - 6,
-                                centrado=False, tamano_inicial=6.5, negrita=False)
+                                centrado= False, tamano_inicial=6.5, negrita=False)
         for cx, cw, getter, resaltada in columnas:
             if resaltada:
                 cvs.setFillColorRGB(*rgb_resaltado)
@@ -808,12 +808,12 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
     if mostrar_firma_padres_final or mostrar_situacion_final_final:
         y_base_inferior= _dibujar_seccion_firma_padres(cvs, margen, ancho, y_base_inferior - 10, periodos,
                                                          rgb_banda, rgb_texto_banda,
-                                                         mostrar_firma_padres=mostrar_firma_padres_final,
-                                                         mostrar_situacion_final=mostrar_situacion_final_final)
+                                                         mostrar_firma_padres= mostrar_firma_padres_final,
+                                                         mostrar_situacion_final= mostrar_situacion_final_final)
     y_firmas= y_base_inferior - 38
     _firmas(cvs, ancho, margen, y_firmas, institucion, "Maestro(a) Encargado(a) del Grado",
             "Director(a) del Centro Educativo", centrar_izq=mostrar_firma_padres_final,
-            con_sello=mostrar_firma_padres_final)
+            con_sello= mostrar_firma_padres_final)
     cvs.setFont("Helvetica", 6.5)
     cvs.drawString(margen, 16, f"Nota mínima aprobatoria: {boletin['nota_minima']:.0f}   |   "
                                f"Fecha de emisión: {datetime.now().strftime('%Y-%m-%d')}")
@@ -821,7 +821,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None, 
 
 
 def _dimensiones_pagina_secundaria(boletin, institucion=None, mostrar_situacion_automatica=None,
-                                    mostrar_firma_padres=None, mostrar_situacion_final=None):
+                                    mostrar_firma_padres= None, mostrar_situacion_final=None):
     """`institucion` es opcional (por compatibilidad con quien todavía
     llame a esta función sin ese argumento): sin ella no se reserva espacio
     extra para logos adicionales envueltos en más de una fila, exactamente
@@ -893,7 +893,7 @@ def _recuperacion_final_area(estudiante_id, materia_id, anio_academico):
 
 
 def _dimensiones_pagina_primaria(boletin, institucion=None, mostrar_firma_padres=None,
-                                  mostrar_situacion_final=None):
+                                  mostrar_situacion_final= None):
     """`institucion` es opcional (compatibilidad con llamadores previos a
     esta característica): sin ella no se reserva espacio extra para logos
     adicionales envueltos en más de una fila -ver
@@ -914,8 +914,8 @@ def _dimensiones_pagina_primaria(boletin, institucion=None, mostrar_firma_padres
 
 
 def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mostrar_leyenda=None,
-                                      mostrar_situacion_automatica=None, mostrar_firma_padres=None,
-                                      mostrar_situacion_final=None):
+                                      mostrar_situacion_automatica= None, mostrar_firma_padres=None,
+                                      mostrar_situacion_final= None):
     """`mostrar_leyenda`: None usa la preferencia guardada en Configuración
     (`mostrar_leyenda_boletin`); True/False la fuerza explícitamente (mismo
     patrón que `mostrar_resumen_asistencia`/`mostrar_situacion_automatica`
@@ -1060,7 +1060,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
     for area in areas:
         cvs.rect(x0, y - alto_fila, PRI_COL_LABEL, alto_fila, stroke=1, fill=0)
         _dibujar_texto_ajustado(cvs, area["materia_nombre"], x0 + 3, y - alto_fila + 4, PRI_COL_LABEL - 6,
-                                centrado=False, tamano_inicial=6.5, negrita=False)
+                                centrado= False, tamano_inicial=6.5, negrita=False)
         for cx, cw, getter in columnas:
             cvs.rect(cx, y - alto_fila, cw, alto_fila, stroke=1, fill=0)
             cvs.setFont("Helvetica", 6.3)
@@ -1084,7 +1084,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
         cvs.rect(x0 + 40, y - 14, ancho - 2 * margen - 40, 14, stroke=1, fill=0)
         cvs.setFont("Helvetica", 6.5)
         _dibujar_texto_ajustado(cvs, texto or "—", x0 + 44, y - 10, ancho - 2 * margen - 48,
-                                centrado=False, tamano_inicial=6.5, negrita=False)
+                                centrado= False, tamano_inicial=6.5, negrita=False)
         y -= 14
     y -= 20
 
@@ -1140,12 +1140,12 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
     if mostrar_firma_padres_final or mostrar_situacion_final_final:
         y_base_inferior= _dibujar_seccion_firma_padres(cvs, margen, ancho, y_base_inferior - 10, periodos,
                                                          rgb_banda, rgb_texto_banda,
-                                                         mostrar_firma_padres=mostrar_firma_padres_final,
-                                                         mostrar_situacion_final=mostrar_situacion_final_final)
+                                                         mostrar_firma_padres= mostrar_firma_padres_final,
+                                                         mostrar_situacion_final= mostrar_situacion_final_final)
     y_firmas= y_base_inferior - 38
     _firmas(cvs, ancho, margen, y_firmas, institucion, "Maestro(a) Encargado(a) del Grado",
             "Director(a) del Centro Educativo", centrar_izq=mostrar_firma_padres_final,
-            con_sello=mostrar_firma_padres_final)
+            con_sello= mostrar_firma_padres_final)
     cvs.setFont("Helvetica", 6.5)
     cvs.drawString(margen, 16, f"Fecha de emisión: {datetime.now().strftime('%Y-%m-%d')}")
     return ancho, alto
@@ -1156,7 +1156,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None, mo
 #PDF — grilla oficial técnica (apaisado): filas = módulos, columnas = RA1%...RAn% (contribución) + C.F., más el
 #bloque de Situación/Condición Final del/de la estudiante.
 def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colores=None,
-                                     mostrar_situacion_automatica=None, mostrar_firma_padres=None):
+                                     mostrar_situacion_automatica= None, mostrar_firma_padres=None):
     """`mostrar_situacion_automatica`: mismo patrón que en boletin_minerd.py
     / boletin_primaria_minerd.py -None usa la preferencia guardada
     (`mostrar_situacion_automatica_boletin`). El bloque "Situación del/de
@@ -1202,7 +1202,7 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
             iw, ih = img.getSize()
             alto_img= 40
             cvs.drawImage(img, margen, y - 30, width=alto_img * (iw / ih), height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
         except Exception:
             pass
     y -= _dibujar_logos_adicionales(cvs, ancho, y, institucion, margen)
@@ -1256,7 +1256,7 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
         cvs.rect(x0, y - alto_fila, col_izq_ancho, alto_fila, stroke=1, fill=0)
         etiqueta= modulo["materia_nombre"] + (f" ({modulo['codigo']})" if modulo["codigo"] else "")
         _dibujar_texto_ajustado(cvs, etiqueta, x0 + 3, y - alto_fila + 5, col_izq_ancho - 6,
-                                centrado=False, tamano_inicial=7)
+                                centrado= False, tamano_inicial=7)
         for i in range(max_ra):
             cx= x0 + col_izq_ancho + i * col_ra_ancho
             cvs.rect(cx, y - alto_fila, col_ra_ancho, alto_fila, stroke=1, fill=0)
@@ -1321,7 +1321,7 @@ def dibujar_boletin_tecnico_oficial(cvs, ancho, alto, institucion, boletin, colo
             alto_img= 30
             x_firma= ancho - margen - 150
             cvs.drawImage(img, x_firma, y, width=alto_img * (iw / ih), height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
             cvs.line(x_firma, y_linea, x_firma + ancho_bloque, y_linea)
             cvs.setFont("Helvetica", 7)
             cvs.drawCentredString(x_firma + ancho_bloque / 2, y_linea - 10,

@@ -292,7 +292,7 @@ class MallaCurricular(QWidget):
         return self.minimumSize()
 
     def poner_colores(self, chip, chip_borde, texto, conector, acento,
-                     electiva=None, electiva_borde=None):
+                     electiva= None, electiva_borde=None):
         self._color_chip= chip
         self._color_chip_borde= chip_borde
         self._color_texto= texto
@@ -856,7 +856,7 @@ class ModuloUniversidad(QWidget):
         layout_tabla.addWidget(self.paginacion_facultades)
         agregar_boton_pantalla_completa(
             None, [self.tabla_facultades, self.paginacion_facultades],
-            titulo="Facultades", parent=self)
+            titulo= "Facultades", parent=self)
         fila_acciones_fac= QHBoxLayout()
         btn_actualizar_fac= BotonAnimado("Actualizar")
         btn_actualizar_fac.setObjectName("BtnAccionNeutro")
@@ -1107,7 +1107,7 @@ class ModuloUniversidad(QWidget):
         layout_tabla.addWidget(self.paginacion_carreras)
         agregar_boton_pantalla_completa(
             None, [self.tabla_carreras, self.paginacion_carreras],
-            titulo="Carreras", parent=self)
+            titulo= "Carreras", parent=self)
         fila_acciones_car= QHBoxLayout()
         btn_actualizar_car= BotonAnimado("Actualizar")
         btn_actualizar_car.setObjectName("BtnAccionNeutro")
@@ -1185,7 +1185,7 @@ class ModuloUniversidad(QWidget):
             mostrar_mensaje("advertencia", "Datos incompletos", "Nombre y facultad son obligatorios.", self)
             return
         if self._nombre_duplicado("carreras", nombre, self.id_edicion_carrera,
-                                   filtro_extra=("facultad_id = ?", [facultad_id])):
+                                   filtro_extra= ("facultad_id = ?", [facultad_id])):
             mostrar_mensaje("advertencia", "Carrera duplicada",
                              f"Ya existe una carrera llamada «{nombre}» en esta facultad.", self)
             self._destello(self.sombra_form_carrera, "#EF4444")
@@ -1361,7 +1361,7 @@ class ModuloUniversidad(QWidget):
         layout_tabla.addWidget(self.paginacion_pensum)
         agregar_boton_pantalla_completa(
             None, [self.tabla_pensum, self.paginacion_pensum],
-            titulo="Pensum", parent=self)
+            titulo= "Pensum", parent=self)
         fila_acciones_pensum= QHBoxLayout()
         btn_actualizar_pensum= BotonAnimado("Actualizar")
         btn_actualizar_pensum.setObjectName("BtnAccionNeutro")
@@ -1572,7 +1572,7 @@ class ModuloUniversidad(QWidget):
                 accion= "Agregó materia al pensum"
             else:
                 c.execute("""UPDATE pensum SET carrera_id=?, materia_id=?, semestre=?, prerrequisito_id=?,
-                             electiva=? WHERE id=?""",
+                             electiva= ? WHERE id=?""",
                           (carrera_id, materia_id, semestre, prerrequisito_id, electiva, id_actual))
                 accion= "Editó materia del pensum"
             conn.commit()

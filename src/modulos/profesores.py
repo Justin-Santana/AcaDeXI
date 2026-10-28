@@ -485,7 +485,7 @@ class ModuloProfesores(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla, self.paginacion],
-            titulo="Profesores", parent=self)
+            titulo= "Profesores", parent=self)
 
         fila_acciones= QHBoxLayout()
         btn_editar= BotonAnimado("Cargar Seleccionado")
@@ -736,8 +736,8 @@ class ModuloProfesores(QWidget):
                 accion= "Registró profesor"
             else:
                 c.execute("""UPDATE profesores SET nombre=?, apellidos=?, especialidad=?, correo=?,
-                             telefono=?, horario_laboral=?, estado=?, foto=?, usuario_id=?, imparte_tecnico=?,
-                             especialidad_tecnica_id=? WHERE id=?""",
+                             telefono= ?, horario_laboral=?, estado=?, foto=?, usuario_id=?, imparte_tecnico=?,
+                             especialidad_tecnica_id= ? WHERE id=?""",
                           datos + (self.id_edicion,))
                 accion= "Editó profesor"
             conn.commit()

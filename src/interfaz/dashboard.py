@@ -175,7 +175,7 @@ class TarjetaIndicador(QFrame):
     """Tarjeta KPI con insignia de color, valor animado, tendencia y elevación al pasar el mouse."""
 
     def __init__(self, icono, titulo, color_acento="#6366F1", sufijo="", decimales=0,
-                 invertir_tendencia=False, on_click=None, parent=None):
+                 invertir_tendencia= False, on_click=None, parent=None):
         super().__init__(parent)
         self.setObjectName("TarjetaIndicadorViva")
         self._icono= icono
@@ -742,13 +742,13 @@ class ModuloDashboard(QWidget):
         grid= QGridLayout()
         grid.setSpacing(16)
         self.tarjeta_estudiantes= TarjetaIndicador("🎓", "Estudiantes Activos", "#6366F1",
-                                                      on_click=lambda: self._ir_a_modulo("Estudiantes"))
+                                                      on_click= lambda: self._ir_a_modulo("Estudiantes"))
         self._on_click_profesores= lambda: self._ir_a_modulo("Profesores")
         self._on_click_horario_docente= lambda: self._ir_a_modulo("Horario")
         self.tarjeta_profesores= TarjetaIndicador(EMOJI_PROFESOR, "Profesores Activos", "#0D9488",
-                                                     on_click=self._on_click_profesores)
+                                                     on_click= self._on_click_profesores)
         self.tarjeta_materias= TarjetaIndicador("📘", "Materias", "#8B5CF6",
-                                                   on_click=lambda: self._ir_a_modulo("Materias"))
+                                                   on_click= lambda: self._ir_a_modulo("Materias"))
         #"Secciones/Grupos" (institucional) va a Materias, que tiene la pestaña "Cursos y Secciones". Para el docente
         #("Mis Secciones") NO reutilizamos ese mismo destino: "Mis Materias" ya muestra su horario semanal completo,
         #así que aterrizar ahí también sería indistinguible de "Mis Clases (semanales)". En su lugar, "Mis Secciones"
@@ -757,13 +757,13 @@ class ModuloDashboard(QWidget):
         self._on_click_secciones= lambda: self._ir_a_modulo("Materias")
         self._on_click_secciones_docente= lambda: self._ir_a_modulo("Mis Estudiantes", pestana="secciones")
         self.tarjeta_secciones= TarjetaIndicador(EMOJI_SECCIONES_GRUPOS, "Secciones/Grupos", "#F59E0B",
-                                                    on_click=self._on_click_secciones)
+                                                    on_click= self._on_click_secciones)
         self.tarjeta_asistencia_hoy= TarjetaIndicador("✅", "Asistencia Hoy", "#10B981",
-                                                         sufijo="%", decimales=1,
-                                                         on_click=lambda: self._ir_a_modulo("Asistencia"))
+                                                         sufijo= "%", decimales=1,
+                                                         on_click= lambda: self._ir_a_modulo("Asistencia"))
         self.tarjeta_riesgo= TarjetaIndicador(EMOJI_ESTUDIANTE_RIESGO, "Estudiantes en Riesgo", "#EF4444",
-                                                invertir_tendencia=True,
-                                                on_click=lambda: self._ir_a_modulo(
+                                                invertir_tendencia= True,
+                                                on_click= lambda: self._ir_a_modulo(
                                                     "Reportes", pestana="riesgo"))
         self._tarjetas= [self.tarjeta_estudiantes, self.tarjeta_profesores, self.tarjeta_materias,
                            self.tarjeta_secciones, self.tarjeta_asistencia_hoy, self.tarjeta_riesgo]

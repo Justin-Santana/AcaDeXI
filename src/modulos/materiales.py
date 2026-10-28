@@ -223,7 +223,7 @@ class ModuloMateriales(QWidget):
         self.kpi_prestamo= TarjetaIndicador("🔁", "Unidades en préstamo", "#F59E0B")
         self.kpi_categorias= TarjetaIndicador(
             "🗂", "Categorías visibles", "#8B5CF6",
-            on_click=self._abrir_gestion_categorias if abre_categorias else None)
+            on_click= self._abrir_gestion_categorias if abre_categorias else None)
         self._tarjetas_kpi= [self.kpi_total, self.kpi_disponibles, self.kpi_prestamo, self.kpi_categorias]
         for tarjeta in self._tarjetas_kpi:
             fila_kpi.addWidget(tarjeta, 1)
@@ -302,7 +302,7 @@ class ModuloMateriales(QWidget):
         #mucho más grande sin salir del módulo.
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla, [self.tarjeta_filtros, self.tarjeta_tabla, self.pagina],
-            titulo="Materiales", parent=self)
+            titulo= "Materiales", parent=self)
         lay_tabla.addLayout(fila_cabecera_tabla)
         self.tabla= QTableWidget()
         self.tabla.setColumnCount(7)
@@ -329,8 +329,8 @@ class ModuloMateriales(QWidget):
         #observaciones.py: dentro de "TarjetaTabla" parecía parte de la tabla misma.
         lay_tabla.addWidget(self.tabla, 1)
         self.estado_vacio= EstadoVacioFiltro(self.tabla, icono="📦",
-                                               texto_filtra_primero="No tienes categorías de materiales asignadas todavía",
-                                               texto_sin_resultados="No hay materiales con los filtros actuales")
+                                               texto_filtra_primero= "No tienes categorías de materiales asignadas todavía",
+                                               texto_sin_resultados= "No hay materiales con los filtros actuales")
         layout.addWidget(self.tarjeta_tabla, stretch=1)
         layout.addWidget(self.pagina)
 
@@ -767,7 +767,7 @@ class ModuloMateriales(QWidget):
             accion= "Creó un material"
         else:
             c.execute("""UPDATE materiales SET categoria_id=?, codigo=?, nombre=?, descripcion=?, cantidad_total=?,
-                         cantidad_disponible=?, ubicacion=?, estado=?, actualizado=? WHERE id=?""",
+                         cantidad_disponible= ?, ubicacion=?, estado=?, actualizado=? WHERE id=?""",
                       (categoria_id, self.in_codigo_form.text().strip(), nombre,
                        self.txt_descripcion_form.toPlainText().strip(), self.spin_total_form.value(),
                        self.spin_disponible_form.value(), self.in_ubicacion_form.text().strip(),
