@@ -40,7 +40,7 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_te
 
 try:
     from src.nucleo.hilo_trabajo import WorkerHilo
-except Exception:  # pragma: no cover
+except Exception:  #pragma: no cover
     WorkerHilo= None
 
 CATEGORIAS= ["Examen", "Práctica", "Tarea", "Participación", "Proyecto", "Examen Final"]
@@ -1150,7 +1150,7 @@ def _dibujar_encabezado(cvs, ancho, alto, institucion, subtitulo):
             alto_img= 50
             ancho_img= alto_img * (iw / ih)
             cvs.drawImage(img, 50, y - 30, width=ancho_img, height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
         except Exception:
             pass
     cvs.setFont("Helvetica-Bold", 16)
@@ -1176,7 +1176,7 @@ def _dibujar_pie_pagina(cvs, ancho, institucion, incluir_firma=True):
             ancho_img= alto_img * (iw / ih)
             x_firma= ancho - 60 - ancho_img
             cvs.drawImage(img, x_firma, y_firma, width=ancho_img, height=alto_img,
-                          preserveAspectRatio=True, mask='auto')
+                          preserveAspectRatio= True, mask='auto')
             cvs.setFont("Helvetica", 8)
             cvs.line(x_firma, y_firma - 4, x_firma + ancho_img, y_firma - 4)
             cvs.drawCentredString(x_firma + ancho_img / 2, y_firma - 14, "Firma Autorizada")
@@ -1754,7 +1754,7 @@ class ModuloCalificaciones(QWidget):
         pestaña de Horarios de Materias, para que no quede seleccionada por accidente
         una sección de un curso distinto al que se ve en 'Curso'."""
         cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=incluir_todas,
-                                   secciones_permitidas=self._permitidas_secciones())
+                                   secciones_permitidas= self._permitidas_secciones())
 
     def _poblar_combo_curso_corto(self, combo):
         """Igual que _poblar_combo_curso, pero con el placeholder acortado a
@@ -1960,7 +1960,7 @@ class ModuloCalificaciones(QWidget):
             combo_carrera.blockSignals(False)
 
     def _filtrar_por_tecnico(self, filas, combo_especialidad, combo_carrera, campo_especialidad="especialidad_id",
-                              campo_carrera="carrera_id"):
+                              campo_carrera= "carrera_id"):
         """Filtra en Python una lista de dicts de estudiantes según los combos
         de Área Técnica/Carrera dados (mismo criterio que _cargar_estudiantes_combo)."""
         especialidad_id= combo_especialidad.currentData() if self._es_politecnico() else None
@@ -2014,7 +2014,7 @@ class ModuloCalificaciones(QWidget):
 
     def _agregar_opcion_ninguna(self, combo, texto):
         """Añade al final del combo la opción "ninguna" (dato=0, distinto de
-        None='Todas/Todos'). Solo se llama en modo Personalizado -ver
+        None= 'Todas/Todos'). Solo se llama en modo Personalizado -ver
         _es_personalizado-, porque es el único caso en que puede haber
         estudiantes activos sin ese dato."""
         if self._es_personalizado():
@@ -2654,7 +2654,7 @@ class ModuloCalificaciones(QWidget):
         agregar_boton_pantalla_completa(
             None,
             [self.in_buscar_registro, self.tabla_registro, self.paginacion_registro],
-            titulo="Calificaciones registradas", parent=self)
+            titulo= "Calificaciones registradas", parent=self)
 
 
         #Botones de acción debajo de la tabla
@@ -2675,8 +2675,8 @@ class ModuloCalificaciones(QWidget):
         fila_acciones.addWidget(btn_eliminar)
 
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla_registro, self, 
-                                             titulo="Detalle de la Calificación",
-                                             proveedor_extra_botones=self._boton_ver_descripcion_calificacion)
+                                             titulo= "Detalle de la Calificación",
+                                             proveedor_extra_botones= self._boton_ver_descripcion_calificacion)
         self.tabla_registro.doubleClicked.connect(lambda *_: btn_detalle.click())
         
         fila_acciones.addStretch()
@@ -2869,7 +2869,7 @@ class ModuloCalificaciones(QWidget):
             c.execute("SELECT * FROM calificaciones WHERE id=?", (calificacion_id,))
             anterior= c.fetchone()
             c.execute("""UPDATE calificaciones SET estudiante_id=?, materia_id=?, periodo_id=?,
-                         categoria=?, descripcion=?, valor=?, peso=?, estado_publicacion=? WHERE id=?""",
+                         categoria= ?, descripcion=?, valor=?, peso=?, estado_publicacion=? WHERE id=?""",
                       valores_nuevos + (calificacion_id,))
             if anterior is not None:
                 usuario= self.main_window.usuario_actual
@@ -2954,8 +2954,8 @@ class ModuloCalificaciones(QWidget):
         c.execute("""INSERT INTO periodo_bloqueo (periodo_id, anio_academico, bloqueado, bloqueado_por, fecha_bloqueo)
                      VALUES (?,?,?,?,?)
                      ON CONFLICT(periodo_id, anio_academico) DO UPDATE SET
-                        bloqueado=excluded.bloqueado, bloqueado_por=excluded.bloqueado_por,
-                        fecha_bloqueo=excluded.fecha_bloqueo""",
+                        bloqueado= excluded.bloqueado, bloqueado_por=excluded.bloqueado_por,
+                        fecha_bloqueo= excluded.fecha_bloqueo""",
                   (periodo_id, anio, nuevo_estado, self.main_window.usuario_actual,
                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
@@ -2996,7 +2996,7 @@ class ModuloCalificaciones(QWidget):
         periodo_id= self.combo_periodo.currentData()
         DialogoExportarCalificaciones(
             self.main_window, materia_id, self.combo_materia.currentText(),
-            periodo_id=periodo_id, periodo_nombre=self.combo_periodo.currentText(), parent=self).exec()
+            periodo_id= periodo_id, periodo_nombre=self.combo_periodo.currentText(), parent=self).exec()
 
     def _abrir_importar_intercambio_calificaciones(self):
         dialogo= DialogoImportarCalificaciones(
@@ -3242,7 +3242,7 @@ class ModuloCalificaciones(QWidget):
         self.tabla_boletin= QTableWidget(0, 4)
         aplicar_estructura_tabla(self.tabla_boletin)
         self.estado_vacio_boletin= EstadoVacioFiltro(self.tabla_boletin,
-                                                        texto_filtra_primero="Elige estudiante y periodo, luego genera el boletín")
+                                                        texto_filtra_primero= "Elige estudiante y periodo, luego genera el boletín")
         self.tabla_boletin.setHorizontalHeaderLabels(["Materia", "Nota Final", "Estado", "RP"])
         header= self.tabla_boletin.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
@@ -3271,7 +3271,7 @@ class ModuloCalificaciones(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla_boletin, self.paginacion_boletin],
-            titulo="Boletín", parent=self)
+            titulo= "Boletín", parent=self)
 
         self.lbl_promedio_general= QLabel("Promedio General: --")
         self.lbl_promedio_general.setObjectName("DescModulo")
@@ -3309,7 +3309,7 @@ class ModuloCalificaciones(QWidget):
         self.btn_rp.setVisible(False)
         fila_acciones_boletin.addWidget(self.btn_rp)
         btn_detalle_bol= agregar_boton_detalle(fila_acciones_boletin, self.tabla_boletin, self,
-                                                 titulo="Detalle de la Nota")
+                                                 titulo= "Detalle de la Nota")
         self.tabla_boletin.doubleClicked.connect(lambda *_: btn_detalle_bol.click())
         fila_acciones_boletin.addStretch()
         l.addLayout(fila_acciones_boletin)
@@ -3531,7 +3531,7 @@ class ModuloCalificaciones(QWidget):
         conn.close()
         return dict(f) if f else None
     def _guardar_rp(self, estudiante_id, materia_id, periodo_id, nota_rp, observacion="",
-                     actividades_realizadas="", docente_responsable="", fecha=None):
+                     actividades_realizadas= "", docente_responsable="", fecha=None):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""INSERT INTO recuperacion_pedagogica
@@ -3539,9 +3539,9 @@ class ModuloCalificaciones(QWidget):
                       actividades_realizadas, docente_responsable)
                      VALUES (?,?,?,?,?,?,?,?)
                      ON CONFLICT(estudiante_id, materia_id, periodo_id) DO UPDATE SET
-                        nota_rp=excluded.nota_rp, fecha=excluded.fecha, observacion=excluded.observacion,
-                        actividades_realizadas=excluded.actividades_realizadas,
-                        docente_responsable=excluded.docente_responsable""",
+                        nota_rp= excluded.nota_rp, fecha=excluded.fecha, observacion=excluded.observacion,
+                        actividades_realizadas= excluded.actividades_realizadas,
+                        docente_responsable= excluded.docente_responsable""",
                   (estudiante_id, materia_id, periodo_id, nota_rp,
                    fecha or datetime.now().strftime("%Y-%m-%d %H:%M:%S"), observacion,
                    actividades_realizadas, docente_responsable))
@@ -3628,7 +3628,7 @@ class ModuloCalificaciones(QWidget):
             en_riesgo= bool(notas) and promedio_general < nota_minima
             color= "#EF4444" if en_riesgo else "#10B981"
             self.tarjeta_promedio_boletin.actualizar(f"{promedio_general:.2f}" if notas else "--",
-                                                      alerta=en_riesgo, color=color)
+                                                      alerta= en_riesgo, color=color)
         if hasattr(self, "dona_boletin"):
             colores_estado= {"Competencia Alcanzada": "#10B981", "Aprobado": "#10B981",
                                "RP Superada": "#3B82F6", "RP Pendiente": "#F59E0B",
@@ -3638,7 +3638,7 @@ class ModuloCalificaciones(QWidget):
                 conteo[f["estado"]]= conteo.get(f["estado"], 0) + 1
             self.dona_boletin.actualizar(
                 [(estado, cant, colores_estado.get(estado, "#94A3B8")) for estado, cant in conteo.items()],
-                total_texto=str(len(filas)), etiqueta="materias")
+                total_texto= str(len(filas)), etiqueta="materias")
             if hasattr(self, "lbl_dona_boletin"):
                 self.lbl_dona_boletin.setText("materias")
         self.estado_vacio_boletin.actualizar(hay_filtro_elegido=True)
@@ -3867,7 +3867,7 @@ class ModuloCalificaciones(QWidget):
                 self._dibujar_boletin_pagina(_cvs, _ancho, _alto, institucion,
                                              estudiante_txt, periodo_txt,
                                              filas, promedio_general, metodo,
-                                             mostrar_rp=dominicano, nota_minima=nota_minima)
+                                             mostrar_rp= dominicano, nota_minima=nota_minima)
                 _dibujar_pie_pagina(_cvs, _ancho, institucion)
                 _cvs.save()
 
@@ -3891,7 +3891,7 @@ class ModuloCalificaciones(QWidget):
             self._dibujar_boletin_pagina(cvs, ancho, alto, institucion,
                                          estudiante_txt, periodo_txt,
                                          filas, promedio_general, metodo, mostrar_rp=dominicano,
-                                         nota_minima=nota_minima)
+                                         nota_minima= nota_minima)
             _dibujar_pie_pagina(cvs, ancho, institucion)
             cvs.save()
             registrar_auditoria("Calificaciones", "Exportó boletín PDF",
@@ -4006,8 +4006,8 @@ class ModuloCalificaciones(QWidget):
                     self._dibujar_boletin_pagina(_cvs, _ancho, _alto, institucion,
                                                  estudiante_txt, periodo_txt,
                                                  filas, promedio_general, metodo,
-                                                 mostrar_rp=dominicano,
-                                                 nota_minima=nota_minima)
+                                                 mostrar_rp= dominicano,
+                                                 nota_minima= nota_minima)
                     _dibujar_pie_pagina(_cvs, _ancho, institucion)
                     _cvs.showPage()
                 _cvs.save()
@@ -4052,7 +4052,7 @@ class ModuloCalificaciones(QWidget):
                 promedio_general= sum(notas) / len(notas) if notas else 0
                 self._dibujar_boletin_pagina(cvs, ancho, alto, institucion, estudiante_txt, periodo_txt,
                                              filas, promedio_general, metodo, mostrar_rp=dominicano,
-                                             nota_minima=nota_minima)
+                                             nota_minima= nota_minima)
                 _dibujar_pie_pagina(cvs, ancho, institucion)
                 cvs.showPage()
             cvs.save()
@@ -4166,7 +4166,7 @@ class ModuloCalificaciones(QWidget):
         agregar_boton_pantalla_completa(
             None,
             [self.in_buscar_historial, self.tabla_historial, self.paginacion_historial],
-            titulo="Historial Académico", parent=self)
+            titulo= "Historial Académico", parent=self)
 
         self.lbl_promedio_acumulado= QLabel("Promedio Acumulado General: --")
         self.lbl_promedio_acumulado.setObjectName("DescModulo")
@@ -4187,7 +4187,7 @@ class ModuloCalificaciones(QWidget):
         btn_pdf.clicked.connect(self._exportar_historial_pdf)
         fila_acciones_hist.addWidget(btn_pdf)
         btn_detalle_hist= agregar_boton_detalle(fila_acciones_hist, self.tabla_historial, self,
-                                                  titulo="Detalle del Historial")
+                                                  titulo= "Detalle del Historial")
         self.tabla_historial.doubleClicked.connect(lambda *_: btn_detalle_hist.click())
         fila_acciones_hist.addStretch()
         l.addLayout(fila_acciones_hist)
@@ -4589,7 +4589,7 @@ class ModuloCalificaciones(QWidget):
                 conteo[nivel]= conteo.get(nivel, 0) + 1
             self.dona_desempeno.actualizar(
                 [(nivel, cant, COLORES_NIVEL_DESEMPENO_RD.get(nivel, "#94A3B8")) for nivel, cant in conteo.items()],
-                total_texto=str(total), etiqueta="competencias")
+                total_texto= str(total), etiqueta="competencias")
             if hasattr(self, "lbl_dona_desempeno"):
                 self.lbl_dona_desempeno.setText("competencias")
         if hasattr(self, "idx_tab_desempeno"):
@@ -4692,7 +4692,7 @@ class ModuloCalificaciones(QWidget):
                          (estudiante_id, periodo_id, competencia, nivel, observacion, actualizado)
                          VALUES (?,?,?,?,?,?)
                          ON CONFLICT(estudiante_id, periodo_id, competencia) DO UPDATE SET
-                            nivel=excluded.nivel, observacion=excluded.observacion, actualizado=excluded.actualizado""",
+                            nivel= excluded.nivel, observacion=excluded.observacion, actualizado=excluded.actualizado""",
                       (estudiante_id, periodo_id, competencia, nivel, observacion, ahora))
         conn.commit()
         conn.close()
@@ -4740,7 +4740,7 @@ class ModuloCalificaciones(QWidget):
              ("Curso:", self.combo_curso_seguimiento),
              ("Sección:", self.combo_seccion_seguimiento),
              ("Ver solo:", self.combo_filtro_estado_seguimiento)],
-            subtitulo="Nivel, Curso y Sección acotan a quién se le da seguimiento. Área Técnica, Carrera "
+            subtitulo= "Nivel, Curso y Sección acotan a quién se le da seguimiento. Área Técnica, Carrera "
                        "y 'Ver solo' son opcionales.")
         self._conectar_resumen_filtros("seguimiento", [
             ("Nivel", self.combo_filtro_nivel_seguimiento),
@@ -4847,7 +4847,7 @@ class ModuloCalificaciones(QWidget):
         agregar_boton_pantalla_completa(
             None,
             [self.in_buscar_seguimiento, self.tabla_seguimiento, self.paginacion_seguimiento],
-            titulo="Seguimiento", parent=self)
+            titulo= "Seguimiento", parent=self)
 
 
         lbl_incompleto= QLabel("Desempeño Individual (Competencias Fundamentales) incompleto en este periodo:")
@@ -4874,7 +4874,7 @@ class ModuloCalificaciones(QWidget):
     def _cargar_secciones_seguimiento(self):
         poblar_combo_nivel_educativo(self.combo_filtro_nivel_seguimiento)
         poblar_combo_curso(self.combo_curso_seguimiento, incluir_todos=False,
-                            secciones_permitidas=self._permitidas_secciones_con_nivel_seguimiento())
+                            secciones_permitidas= self._permitidas_secciones_con_nivel_seguimiento())
         _acortar_placeholder_combo(self.combo_curso_seguimiento, "Selecciona grado")
         self._filtrar_seccion_seguimiento_por_curso()
 
@@ -4885,14 +4885,14 @@ class ModuloCalificaciones(QWidget):
 
     def _nivel_seguimiento_cambio(self):
         poblar_combo_curso(self.combo_curso_seguimiento, incluir_todos=False,
-                            secciones_permitidas=self._permitidas_secciones_con_nivel_seguimiento())
+                            secciones_permitidas= self._permitidas_secciones_con_nivel_seguimiento())
         _acortar_placeholder_combo(self.combo_curso_seguimiento, "Selecciona grado")
         self._filtrar_seccion_seguimiento_por_curso()
 
     def _filtrar_seccion_seguimiento_por_curso(self):
         cascada_seccion_por_curso(self.combo_curso_seguimiento, self.combo_seccion_seguimiento,
-                                   incluir_todas=False,
-                                   secciones_permitidas=self._permitidas_secciones_con_nivel_seguimiento())
+                                   incluir_todas= False,
+                                   secciones_permitidas= self._permitidas_secciones_con_nivel_seguimiento())
         if self.combo_curso_seguimiento.currentData() is None:
             _acortar_placeholder_combo(self.combo_seccion_seguimiento, "Selecciona curso")
         else:
@@ -5208,7 +5208,7 @@ class ModuloCalificaciones(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_finales, self.tabla_finales],
-            titulo="Evaluaciones Finales", parent=self)
+            titulo= "Evaluaciones Finales", parent=self)
 
 
         fila_botones= QHBoxLayout()
@@ -5376,7 +5376,7 @@ class ModuloCalificaciones(QWidget):
         return d
 
     def _guardar_evaluacion_final(self, tabla, columna, estudiante_id, materia_id, anio_academico, nota,
-                                   observacion="", responsable=""):
+                                   observacion= "", responsable=""):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute(f"""INSERT INTO {tabla}
@@ -5384,7 +5384,7 @@ class ModuloCalificaciones(QWidget):
                      VALUES (?,?,?,?,?,?,?)
                      ON CONFLICT(estudiante_id, materia_id, anio_academico) DO UPDATE SET
                         {columna}=excluded.{columna}, fecha=excluded.fecha,
-                        observacion=excluded.observacion, responsable=excluded.responsable""",
+                        observacion= excluded.observacion, responsable=excluded.responsable""",
                   (estudiante_id, materia_id, anio_academico, nota,
                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"), observacion, responsable))
         conn.commit()
@@ -5618,9 +5618,9 @@ class ModuloCalificaciones(QWidget):
                      (estudiante_id, anio_academico, decision, observacion, usuario, fecha, materias_pendientes)
                      VALUES (?,?,?,?,?,?,?)
                      ON CONFLICT(estudiante_id, anio_academico) DO UPDATE SET
-                        decision=excluded.decision, observacion=excluded.observacion,
-                        usuario=excluded.usuario, fecha=excluded.fecha,
-                        materias_pendientes=excluded.materias_pendientes""",
+                        decision= excluded.decision, observacion=excluded.observacion,
+                        usuario= excluded.usuario, fecha=excluded.fecha,
+                        materias_pendientes= excluded.materias_pendientes""",
                   (estudiante_id, anio, decision, observacion, self.main_window.usuario_actual,
                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"), materias_pendientes))
         conn.commit()
@@ -5694,7 +5694,7 @@ class ModuloCalificaciones(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_curriculo, self.tabla_curriculo],
-            titulo="Currículo", parent=self)
+            titulo= "Currículo", parent=self)
 
 
         fila_form= QGridLayout()
@@ -5837,7 +5837,7 @@ class ModuloCalificaciones(QWidget):
                 accion= "Creó Competencia Específica"
             else:
                 c.execute("""UPDATE competencias_especificas SET codigo=?, descripcion=?,
-                             competencia_fundamental=?, orden=? WHERE id=?""",
+                             competencia_fundamental= ?, orden=? WHERE id=?""",
                           (codigo, descripcion, fundamental, orden, self.id_edicion_ce))
                 accion= "Editó Competencia Específica"
             conn.commit()
@@ -6001,7 +6001,7 @@ class ModuloCalificaciones(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_competencias, self.tabla_competencias],
-            titulo="Competencias", parent=self)
+            titulo= "Competencias", parent=self)
 
 
         fila_obs= QHBoxLayout()
@@ -6117,8 +6117,8 @@ class ModuloCalificaciones(QWidget):
                               fecha_evaluacion, actualizado)
                              VALUES (?,?,?,?,'Automática',?,?,?)
                              ON CONFLICT(estudiante_id, competencia_id, periodo_id) DO UPDATE SET
-                                nota=excluded.nota, fecha_evaluacion=excluded.fecha_evaluacion,
-                                actualizado=excluded.actualizado""",
+                                nota= excluded.nota, fecha_evaluacion=excluded.fecha_evaluacion,
+                                actualizado= excluded.actualizado""",
                           (estudiante_id, comp["id"], periodo_id, nota, observacion_guardada,
                            datetime.now().strftime("%Y-%m-%d"), datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()
@@ -6203,7 +6203,7 @@ class ModuloCalificaciones(QWidget):
              (self.lbl_filtro_carrera_compartir, self.combo_filtro_carrera_compartir),
              ("Curso:", self.combo_curso_compartir),
              ("Sección:", self.combo_seccion_compartir)],
-            subtitulo="Curso y Sección acotan qué exportas. Área Técnica y Carrera son opcionales.")
+            subtitulo= "Curso y Sección acotan qué exportas. Área Técnica y Carrera son opcionales.")
         self._conectar_resumen_filtros("compartir", [
             ("Curso", self.combo_curso_compartir), ("Sección", self.combo_seccion_compartir),
             ("Área Técnica", self.combo_filtro_especialidad_compartir),
@@ -6278,7 +6278,7 @@ class ModuloCalificaciones(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_paquetes, self.tabla_paquetes],
-            titulo="Paquetes importados", parent=self)
+            titulo= "Paquetes importados", parent=self)
 
         btn_deshacer= QPushButton("Deshacer Importación Seleccionada")
         btn_deshacer.setIcon(icono_emoji("🗑"))
@@ -6320,7 +6320,7 @@ class ModuloCalificaciones(QWidget):
                   (seccion_id, materia_id, periodo_id))
         filas_calif= self._filtrar_por_tecnico([dict(f) for f in c.fetchall()],
             self.combo_filtro_especialidad_compartir, self.combo_filtro_carrera_compartir,
-            campo_especialidad="_est_especialidad_id", campo_carrera="_est_carrera_id")
+            campo_especialidad= "_est_especialidad_id", campo_carrera="_est_carrera_id")
         if not filas_calif:
             conn.close()
             mostrar_mensaje("advertencia", "Nada que exportar",

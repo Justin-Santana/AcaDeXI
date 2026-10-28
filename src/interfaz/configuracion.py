@@ -1454,10 +1454,10 @@ class WizardConfiguracion(QDialog):
             else:
                 nota_min_general= self.spin_nota_min.value()
             c.execute("""UPDATE configuracion SET
-                nombre_institucion=?, direccion=?, telefono=?, correo=?, sitio_web=?, logo_path=?,
-                tipo_institucion=?, escala_maxima=?, nota_minima=?, nota_minima_primaria=?, nota_minima_secundaria=?,
-                metodo_calculo=?, sistema_calificacion=?,
-                anio_academico=?, division_periodo=?, cantidad_periodos=?, wizard_completado=1
+                nombre_institucion= ?, direccion=?, telefono=?, correo=?, sitio_web=?, logo_path=?,
+                tipo_institucion= ?, escala_maxima=?, nota_minima=?, nota_minima_primaria=?, nota_minima_secundaria=?,
+                metodo_calculo= ?, sistema_calificacion=?,
+                anio_academico= ?, division_periodo=?, cantidad_periodos=?, wizard_completado=1
                 WHERE id=1""",
                 (self.in_nombre.text().strip(), self.in_direccion.text().strip(),
                  self.in_telefono.text().strip(), self.in_correo.text().strip(),
@@ -1843,7 +1843,7 @@ class ModuloConfiguracion(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("""UPDATE configuracion SET nombre_institucion=?, direccion=?, telefono=?,
-                         correo=?, sitio_web=?, pie_pagina=? WHERE id=1""",
+                         correo= ?, sitio_web=?, pie_pagina=? WHERE id=1""",
                       (self.in_nombre.text().strip(), self.in_direccion.text().strip(),
                        self.in_telefono.text().strip(), self.in_correo.text().strip(),
                        self.in_sitio_web.text().strip(), self.in_pie_pagina.text().strip()))
@@ -2219,9 +2219,9 @@ class ModuloConfiguracion(QWidget):
             criterio_lista_anterior= obtener_criterio_numero_lista()
             criterio_lista_nuevo= self.combo_criterio_lista.currentText()
             c.execute("""UPDATE configuracion SET tipo_institucion=?, escala_maxima=?, nota_minima=?,
-                         nota_minima_primaria=?, nota_minima_secundaria=?,
-                         metodo_calculo=?, sistema_calificacion=?, anio_academico=?, division_periodo=?, idioma=?,
-                         modulos_personalizados=?, niveles_educativos_habilitados=?, criterio_numero_lista=?
+                         nota_minima_primaria= ?, nota_minima_secundaria=?,
+                         metodo_calculo= ?, sistema_calificacion=?, anio_academico=?, division_periodo=?, idioma=?,
+                         modulos_personalizados= ?, niveles_educativos_habilitados=?, criterio_numero_lista=?
                          WHERE id=1""",
                       (self.combo_tipo.currentText(), self.spin_escala.value(), nota_min_general,
                        self.spin_nota_min_primaria.value(), self.spin_nota_min_secundaria.value(),
@@ -2238,7 +2238,7 @@ class ModuloConfiguracion(QWidget):
                     c.execute("UPDATE configuracion SET formato_boletin_general=? WHERE id=1",
                               (self.combo_formato_boletin.currentData(),))
                     c.execute("""UPDATE configuracion SET boletin_color_banda_secundaria=?,
-                                 boletin_color_banda_primaria=? WHERE id=1""",
+                                 boletin_color_banda_primaria= ? WHERE id=1""",
                               (self._colores_boletin_elegidos.get("Secundaria", "#1F9E9E"),
                                self._colores_boletin_elegidos.get("Primaria", "#E8863C")))
                 except Exception:
@@ -2543,7 +2543,7 @@ class ModuloConfiguracion(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_usuarios, [self.tabla_usuarios, self.marco_paginacion_usuarios],
-            titulo="Usuarios Registrados", parent=self)
+            titulo= "Usuarios Registrados", parent=self)
 
         #Botones de acción debajo de la tabla
         fila_botones= QHBoxLayout()
@@ -2609,7 +2609,7 @@ class ModuloConfiguracion(QWidget):
         self._tarjetas_usuarios.append(t_tabla)
 
         #------------------------------------------------------------------
-        # MÓDULO DE PSICOLOGÍA PARA ADMINISTRADORES — visible SOLO para el rol "Administrador" (ni Director ni
+        #MÓDULO DE PSICOLOGÍA PARA ADMINISTRADORES — visible SOLO para el rol "Administrador" (ni Director ni
         #Coordinador, aunque ambos tengan acceso gerencial al resto de esta pestaña): es un interruptor personal,
         #pensado para el caso de una institución donde el propio Administrador ejerce también de psicólogo/a y quiere
         #el módulo sin tener que crear un cargo personalizado en Side Stepper (ver permisos.puede_ver_psicologia). Se
@@ -2835,11 +2835,11 @@ class ModuloConfiguracion(QWidget):
             c= conn.cursor()
             if pw:
                 c.execute("""UPDATE usuarios SET username=?, password=?, nombre_completo=?,
-                             rol=?, correo=? WHERE id=?""",
+                             rol= ?, correo=? WHERE id=?""",
                           (user, hash_password(pw), nombre, rol, correo, id_usuario))
             else:
                 c.execute("""UPDATE usuarios SET username=?, nombre_completo=?, rol=?,
-                             correo=? WHERE id=?""",
+                             correo= ? WHERE id=?""",
                           (user, nombre, rol, correo, id_usuario))
             conn.commit()
             conn.close()
@@ -3029,8 +3029,7 @@ class ModuloConfiguracion(QWidget):
         #no una materia técnica (especialidad_id). Solo aplica al rol Profesor -los roles gerenciales siempre ven el
         #módulo cuando la institución es Politécnico, sin este checkbox- y solo tiene efecto si la institución
         #configurada es de tipo Politécnico (si no, el módulo no existe para nadie, esté marcado o no).
-        #
-        #EXCEPCIÓN: si la institución ES Politécnico (o "Personalizado" con el módulo Politécnico activo), se asume que
+        #        #EXCEPCIÓN: si la institución ES Politécnico (o "Personalizado" con el módulo Politécnico activo), se asume que
         #es la norma para todos los docentes, así que se activa sola (ver main.py ▸ mostrar_login) y este checkbox
         #queda fijo/informativo — no tiene sentido pedirle al docente que la "active" cuando ya está encendida para
         #todos.
@@ -3790,7 +3789,7 @@ class ModuloConfiguracion(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("""UPDATE configuracion SET smtp_host=?, smtp_puerto=?, smtp_usuario=?,
-                         smtp_password=?, smtp_remitente=?, smtp_seguridad=? WHERE id=1""",
+                         smtp_password= ?, smtp_remitente=?, smtp_seguridad=? WHERE id=1""",
                       (self.in_smtp_host.text().strip(), self.spin_smtp_puerto.value(),
                        self.in_smtp_usuario.text().strip(), self.in_smtp_password.text(),
                        self.in_smtp_remitente.text().strip(), self.combo_smtp_seguridad.currentText()))
@@ -3890,7 +3889,7 @@ class ModuloConfiguracion(QWidget):
     def _crear_backup(self):
         try:
             ruta= crear_backup(self.in_backup_carpeta.text().strip() or None,
-                                tipo="Manual", usuario=self.main_window.usuario_actual)
+                                tipo= "Manual", usuario=self.main_window.usuario_actual)
             registrar_auditoria("Seguridad", "Creó backup", self.main_window.usuario_actual, ruta)
             mostrar_mensaje("exito", "Backup creado", f"Copia de seguridad guardada en:\n{ruta}", self)
             self._cargar_config_backup()
@@ -4056,7 +4055,7 @@ class ModuloConfiguracion(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_botones_filtro, [self.tabla_auditoria, self.paginacion_auditoria],
-            titulo="Bitácora de Actividad", parent=self)
+            titulo= "Bitácora de Actividad", parent=self)
 
         self.lbl_conteo_auditoria= QLabel("")
         self.lbl_conteo_auditoria.setObjectName("DescModulo")

@@ -2,12 +2,10 @@
 #dentro de una pestaña de reportes.py) que permite ABRIR, PREVISUALIZAR y EDITAR los archivos que el módulo de
 #Reportes exporta: CSV, Excel (.xlsx), Word (.docx) y PDF. También permite imprimir directamente el archivo que
 #se esté viendo.
-#
-#No depende de reportes.py: solo necesita `main_window` (para el registro de auditoría y los mensajes con el
+##No depende de reportes.py: solo necesita `main_window` (para el registro de auditoría y los mensajes con el
 #estilo de la app) y expone `agregar_reciente(ruta)` para que otros módulos puedan avisarle "acabo de generar
 #este archivo" y aparezca en el desplegable de recientes.
-#
-#Dependencias opcionales (se avisa con un mensaje amigable si faltan,
+##Dependencias opcionales (se avisa con un mensaje amigable si faltan,
 #igual que ya hace reportes.py con openpyxl/reportlab):
 #- openpyxl        -> edición/previsualización de Excel
 #- PyMuPDF (fitz)  -> previsualización/edición de PDF (y su impresión)
@@ -53,13 +51,13 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_te
 
 try:
     from src.nucleo.bd import registrar_auditoria
-except Exception:  # pragma: no cover - por si se usa este visor fuera de AcaDeXI
+except Exception:  #pragma: no cover - por si se usa este visor fuera de AcaDeXI
     def registrar_auditoria(*args, **kwargs):
         pass
 
 try:
     from src.nucleo.hilo_trabajo import WorkerHilo
-except Exception:  # pragma: no cover
+except Exception:  #pragma: no cover
     WorkerHilo= None
 
 
@@ -4930,8 +4928,8 @@ class VisorEditorReportes(QWidget):
                         color_texto_brush.color().isValid() and color_texto_brush.color().alpha() > 0):
                     color_fuente= "FF" + color_texto_brush.color().name().lstrip("#").upper()
                 celda.font= Font(name=nombre_fuente, size=tamano_fuente, bold=fuente.bold(),
-                                   italic=fuente.italic(), underline="single" if fuente.underline() else None,
-                                   color=color_fuente)
+                                   italic= fuente.italic(), underline="single" if fuente.underline() else None,
+                                   color= color_fuente)
                 if (fondo_brush.style() != Qt.BrushStyle.NoBrush and
                         fondo_brush.color().isValid() and fondo_brush.color().alpha() > 0):
                     fondo= fondo_brush.color()
@@ -4942,7 +4940,7 @@ class VisorEditorReportes(QWidget):
                     #Excel.
                     hex_fondo= "FF" + fondo.name().lstrip("#").upper()
                     celda.fill= PatternFill(start_color=hex_fondo,
-                                              end_color=hex_fondo, fill_type="solid")
+                                              end_color= hex_fondo, fill_type="solid")
                 else:
                     celda.fill= PatternFill(fill_type=None)
                 enlace= item.data(ROL_HIPERVINCULO)
@@ -5885,8 +5883,7 @@ class VisorEditorReportes(QWidget):
         #divisiones por cero/celdas equivocadas, e incluso "#¡CIRC!"
         #falsos cuando la referencia vieja coincidía con su nueva propia posición. Las referencias ancladas con "$" (p.
         #ej. B$2 o $B$2) NO se mueven, igual que en Excel.
-        #
-        #OPTIMIZACIÓN / CORRECCIÓN DE FONDO: antes el bloqueo de señales
+        #        #OPTIMIZACIÓN / CORRECCIÓN DE FONDO: antes el bloqueo de señales
         #(self._sincronizando = True) se activaba recién DESPUÉS de este
         #primer bucle de etiquetado. Cada item.setData(ROL_FILA_ORIGEN, r)
         #disparaba itemChanged -> _on_celda_editada, que -al no estar
@@ -6438,7 +6435,7 @@ class VisorEditorReportes(QWidget):
         texto, ok = QInputDialog.getText(
             self._padre_dialogo(), "Marca de agua",
             "Texto de la marca de agua (déjalo vacío para quitarla):",
-            text=texto_actual)
+            text= texto_actual)
         if not ok:
             return
         texto= texto.strip()
@@ -7645,7 +7642,7 @@ class VisorEditorReportes(QWidget):
             return
         ya_editada_antes= pagina.xref in self._paginas_pdf_editables
         dialogo= _DialogoEditorPaginaPDF(self._padre_dialogo(), texto_inicial=texto_existente,
-                                           css_editor=self._css_editor_actual or self._css_editor())
+                                           css_editor= self._css_editor_actual or self._css_editor())
         if dialogo.exec() != QDialog.DialogCode.Accepted:
             return
         self._registrar_deshacer_pdf()
@@ -7687,8 +7684,8 @@ class VisorEditorReportes(QWidget):
             pagina= self._doc_pdf[i]
             rect= pagina.rect
             pagina.insert_textbox(rect, opciones["texto"], fontsize=opciones["tamano"],
-                                  color=opciones["color"], fill_opacity=opciones["opacidad"],
-                                  rotate=opciones["rotacion"], align=1, overlay=True)
+                                  color= opciones["color"], fill_opacity=opciones["opacidad"],
+                                  rotate= opciones["rotacion"], align=1, overlay=True)
         self._renderizar_todas_paginas()
         mostrar_mensaje("exito", "Marca de agua insertada",
                        "Recuerda usar «Guardar» o «Guardar como…» para conservar el cambio.", self._padre_dialogo())
