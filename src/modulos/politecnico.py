@@ -3,7 +3,7 @@
 #para que abrir el módulo se sienta instantáneo.
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
 QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-QGridLayout, QTabWidget, QSpinBox, QDoubleSpinBox, QColorDialog, QScrollArea, QFrame,
+QGridLayout, QSpinBox, QDoubleSpinBox, QColorDialog, QScrollArea, QFrame,
 QSizePolicy, QDialog, QMenu)
 from PySide6.QtCore import (Qt, QTimer, QRectF, QSize, QPropertyAnimation, QEasingCurve,
     QVariantAnimation, QParallelAnimationGroup, Signal)
@@ -16,19 +16,17 @@ from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_cabecera
 from src.interfaz.paginacion import (aplicar_estructura_tabla, ajustar_anchos_columnas, ControlPaginacion,
     agregar_boton_detalle, tabla_pausada, agregar_boton_pantalla_completa, mostrar_detalle_fila)
 from src.interfaz.configuracion import (IconoLupa, _normalizar, TarjetaSeccion, _hex_a_rgba, _fundido_entrada,
-    TabWidgetNavegable, secciones_con_componente_tecnico_valido, puede_tener_componente_tecnico,
-    conectar_tooltip_seleccion, estilo_flechas_navegacion_tabs)
+    TabWidgetNavegable, secciones_con_componente_tecnico_valido, conectar_tooltip_seleccion, estilo_flechas_navegacion_tabs)
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from src.modulos.calendario import PanelDesplegable
 from src.nucleo.iconos import aplicar_icono_ventana, ICONO_FILTRO, ICONO_COLOR
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, html_icono_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro,
+from src.nucleo.iconos_emoji import (icono_emoji, html_icono_emoji, icono_boton_filtro, pixmap_boton_filtro,
                           EMOJI_TALLERES_LABORATORIOS, EMOJI_AREAS_TECNICAS,
                           EMOJI_EMPRESA_PASANTIA, EMOJI_CONTROL_PASANTIAS,
-                          EMOJI_PROFESOR, html_icono_emoji)
+                          EMOJI_PROFESOR)
 
 ESTADOS_PASANTIA= ["En curso", "Finalizada", "Suspendida"]
 

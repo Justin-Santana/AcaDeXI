@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
 QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-QGridLayout, QSpinBox, QInputDialog, QScrollArea, QFrame, QDialog, QMenu, QSizePolicy)
+QGridLayout, QSpinBox, QScrollArea, QFrame, QDialog, QMenu, QSizePolicy)
 from PySide6.QtCore import Qt, QRectF, QVariantAnimation, QEasingCurve, QTimer
 from PySide6.QtGui import QColor, QPainter, QLinearGradient, QPainterPath, QBrush
 from src.nucleo.bd import obtener_conexion, registrar_auditoria
@@ -15,15 +15,14 @@ from src.nucleo.formato_hora import formatear_hora
 from src.sincronizacion.sync_docente import exportar_paquete_docente
 from src.interfaz.dashboard import TarjetaIndicador, AnilloProgreso
 from src.interfaz.configuracion import (_fundido_entrada, _hex_a_rgba, TabWidgetNavegable, _normalizar, IconoLupa,
-    NIVELES_EDUCATIVOS, NIVELES_ACADEMICOS, CICLOS_SECUNDARIA, niveles_academicos_habilitados,
+    NIVELES_ACADEMICOS, CICLOS_SECUNDARIA, niveles_academicos_habilitados,
     puede_tener_componente_tecnico, conectar_tooltip_seleccion)
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from src.modulos.calendario import PanelDesplegable
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro, EMOJI_SECCIONES_GRUPOS)
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, icono_boton_filtro, pixmap_boton_filtro, EMOJI_SECCIONES_GRUPOS)
 
 DIAS= ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 TURNOS= ["Mañana", "Tarde", "Noche", "Tanda Extendida"]

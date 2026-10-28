@@ -13,7 +13,6 @@
 #============================================================
 import csv
 import os
-import sys
 import re
 import math
 import shutil
@@ -33,18 +32,16 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushB
     QGraphicsOpacityEffect, QGraphicsDropShadowEffect, QAbstractItemView, QSizePolicy, QTextEdit, QMenu,
     QStyledItemDelegate, QInputDialog, QApplication, QToolTip, QTableWidgetSelectionRange,
     QGraphicsView, QGraphicsScene, QButtonGroup)
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QSizeF, QRectF, QRect, QTimer, QUrl, QEvent, QPoint, QBuffer, Signal
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRectF, QRect, QTimer, QUrl, QEvent, QPoint, QBuffer, Signal
 from PySide6.QtGui import (QPixmap, QImage, QColor, QBrush, QTextCharFormat, QFont, QTextCursor,
-    QTextDocument, QTextBlockFormat, QTextListFormat, QPainter, QTextImageFormat, QImageReader,
-    QCursor, QAction, QKeySequence, QDesktopServices, QIcon)
+    QTextDocument, QTextListFormat, QPainter, QTextImageFormat, QKeySequence, QDesktopServices, QIcon)
 
 from src.nucleo.iconos import (mostrar_mensaje, centrar_y_al_frente, aplicar_icono_ventana,
     ICONO_DOCUMENTO, ICONO_COLOR, ICONO_CARGA)
 from src.nucleo.limite_campos import limitar_campo_texto
 from src.interfaz.paginacion import aplicar_estructura_tabla
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-    EMOJI_ALINEAR_IZQUIERDA, EMOJI_ALINEAR_CENTRO, EMOJI_ALINEAR_DERECHA,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, EMOJI_ALINEAR_IZQUIERDA, EMOJI_ALINEAR_CENTRO, EMOJI_ALINEAR_DERECHA,
     EMOJI_INSERTAR_FILA, EMOJI_ELIMINAR_FILA,
     EMOJI_INSERTAR_COLUMNA, EMOJI_ELIMINAR_COLUMNA,
     EMOJI_CUADRO_TEXTO)
@@ -379,17 +376,6 @@ def _analizar_crudo(crudo):
             continue
 
     return texto, None
-
-
-#Intenta convertir el texto de una celda a su valor tipado (número,
-#booleano o fecha) para que las columnas numéricas de Excel se
-#mantengan usables tras editar en la grilla; si no, se guarda como
-#texto tal cual. (Se conserva esta función -usada en otros puntos del
-#módulo- como envoltorio fino sobre _analizar_crudo.)
-def _convertir_valor(texto):
-
-    valor, _formato= _analizar_crudo(texto)
-    return valor
 
 
 #A partir del `number_format` de openpyxl (p.ej. '"$"#,##0.00',
@@ -1236,10 +1222,6 @@ class _DialogoEditorPaginaPDF(QDialog):
         self.editor.setFont(_f_inicial)
         disposicion.addWidget(self.editor, 1)
 
-        def _formato_actual():
-
-            return self.editor.textCursor().charFormat() if self.editor.textCursor().hasSelection() else self.editor.currentCharFormat()
-
         def _aplicar(formato):
 
             cursor= self.editor.textCursor()
@@ -1494,12 +1476,6 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
             abrir_enlace_externo(enlace_bajo_cursor, self)
         elif accion_insertar_enlace is not None and elegido == accion_insertar_enlace:
             self._visor._pdf_insertar_enlace()
-
-    def limpiar_seleccion(self):
-
-        self._inicio= None
-        self._fin= None
-        self.update()
 
     def paintEvent(self, evento):
 
@@ -7708,7 +7684,6 @@ class VisorEditorReportes(QWidget):
         if self._doc_pdf is None or len(self._doc_pdf) == 0:
             self._render_en_progreso= False
             return
-        import fitz
         self._indice_pagina_pdf= max(0, min(self._indice_pagina_pdf, len(self._doc_pdf) - 1))
         sx= self._zoom_pdf
         for i in range(len(self._doc_pdf)):

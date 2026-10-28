@@ -56,7 +56,6 @@
 #especiales para no ir encogiéndolo más con clics repetidos).
 
 
-import time
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGraphicsOpacityEffect,
     QApplication, QAbstractButton)

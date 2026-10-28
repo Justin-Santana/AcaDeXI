@@ -28,14 +28,13 @@
 #"Saltar tutoriales por ahora" visible desde el primer instante, y ambos
 #pueden relanzarse manualmente desde Configuración ▸ Mi Cuenta.
 import os
-import json
 import shutil
 import time
 import math
 import random
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QWidget, QLabel,
-    QPushButton, QFrame, QGraphicsOpacityEffect, QSizePolicy, QScrollArea, QTabWidget,
+    QPushButton, QFrame, QGraphicsOpacityEffect, QTabWidget,
     QProgressBar)
 from PySide6.QtCore import Qt, QRect, QRectF, QPoint, QPointF, QPropertyAnimation, QEasingCurve, QTimer, Signal, QEvent
 from PySide6.QtGui import (QPainter, QColor, QPainterPath, QPen, QShortcut, QKeySequence,
@@ -46,7 +45,7 @@ from src.nucleo.bd import obtener_conexion, obtener_carpeta_datos
 from src.nucleo.iconos import aplicar_icono_ventana, mostrar_mensaje, eventos_ui, ICONO_TUTORIAL, aplicar_icono_cabecera
 from src.nucleo.permisos import modulo_visible, ROLES_GERENCIALES
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
+from src.nucleo.iconos_emoji import icono_emoji
 
 #Ruta real de la base institucional, capturada UNA sola vez al importar este módulo (mucho antes de que exista
 #ninguna sesión de tutorial). Es el valor al que siempre se restaura bd.RUTA_BD al salir del sandbox -ver la

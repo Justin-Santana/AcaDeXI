@@ -281,8 +281,6 @@ def _dimensiones_pagina_tecnico(boletin):
 
 
 def exportar_boletin_tecnico_oficial_pdf(estudiante_id, ruta_pdf, institucion, anio_academico=None):
-
-    from reportlab.lib.pagesizes import letter, landscape
     from reportlab.pdfgen import canvas
     from src.boletines.boletin_minerd import colores_boletin
 

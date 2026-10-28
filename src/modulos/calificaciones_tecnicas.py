@@ -52,8 +52,7 @@ from PySide6.QtGui import (QColor, QPainter, QPen, QBrush, QFont, QLinearGradien
 from src.nucleo.bd import obtener_conexion, registrar_auditoria, mostrar_columna_numero_lista
 from src.interfaz.filtros_curso_seccion import poblar_combo_curso, cascada_seccion_por_curso
 from src.nucleo.iconos import mostrar_mensaje, centrar_y_al_frente, aplicar_icono_cabecera, aplicar_icono_ventana, ICONO_FILTRO
-from src.nucleo.permisos import (puede_editar, tiene_acceso_gerencial, es_profesor_restringido,
-    obtener_materias_permitidas, obtener_secciones_permitidas)
+from src.nucleo.permisos import (puede_editar, obtener_materias_permitidas, obtener_secciones_permitidas)
 from src.interfaz.paginacion import (aplicar_estructura_tabla, tabla_pausada, ControlPaginacion, agregar_boton_detalle,
     mostrar_detalle_campos, agregar_boton_pantalla_completa)
 from src.interfaz.configuracion import _hex_a_rgba, _fundido_entrada, _normalizar, TabWidgetNavegable,\
@@ -64,8 +63,7 @@ from src.modulos.materias import MODELO_EVALUACION_TECNICA
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, icono_boton_filtro, pixmap_boton_filtro,
                           EMOJI_MODULOS_RA, EMOJI_REGISTRO_NOTAS_TECNICAS, EMOJI_BOLETIN_TECNICO)
 
 #CONSTANTES Deliberadamente NO usa nota_minima_primaria/nota_minima_secundaria: la Educación
@@ -463,17 +461,6 @@ class ChipEstadoCompetencia(QWidget):
     def _al_animar(self, v):
 
         self._escala= v
-        self.update()
-
-    def poner_estado(self, estado):
-
-        if estado == self._estado:
-            return
-        self._estado= estado
-        self._anim.stop()
-        self._anim.setStartValue(0.55)
-        self._anim.setEndValue(1.0)
-        self._anim.start()
         self.update()
 
     def estado(self):
@@ -3125,40 +3112,6 @@ class ModuloCalificacionesTecnicas(QWidget):
         self._actualizar_resumen_filtros_boletin()
         self._actualizar_kpis()
         self._tabs_cargados= {0, 1, 2}
-
-    #Abre la pestaña "Registro de Notas" con un módulo, curso/sección
-    #de un estudiante y el buscador ya filtrados por su nombre. Ya no lo
-    #usa el flujo de Observaciones (ver DialogoAjusteRA más arriba, que
-    #ahora hace el ajuste sin salir de ahí), pero se conserva como
-    #utilidad reusable por si algún otro punto de entrada la necesita.
-    def preseleccionar_desde_observacion(self, estudiante_id, materia_id):
-
-        conn= obtener_conexion()
-        c= conn.cursor()
-        c.execute("""SELECT estudiantes.nombre, estudiantes.apellidos, estudiantes.seccion_id,
-                            secciones.grado_id as grado_id
-                     FROM estudiantes LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
-                     WHERE estudiantes.id=?""", (estudiante_id,))
-        est= c.fetchone()
-        conn.close()
-        if est is None:
-            return
-        self.tabs.setCurrentIndex(1)
-        if materia_id is not None:
-            idx_m= self.combo_materia_registro.findData(materia_id)
-            if idx_m >= 0:
-                self.combo_materia_registro.setCurrentIndex(idx_m)
-        if est["grado_id"] is not None:
-            idx_g= self.combo_grado_registro.findData(est["grado_id"])
-            if idx_g >= 0:
-                self.combo_grado_registro.setCurrentIndex(idx_g)
-        if est["seccion_id"] is not None:
-            idx_s= self.combo_seccion_registro.findData(est["seccion_id"])
-            if idx_s >= 0:
-                self.combo_seccion_registro.setCurrentIndex(idx_s)
-        self._cargar_grid_notas()
-        if hasattr(self, "in_buscar_notas"):
-            self.in_buscar_notas.setText(f"{est['nombre']} {est['apellidos'] or ''}".strip())
 
 
     def actualizar_tema(self):

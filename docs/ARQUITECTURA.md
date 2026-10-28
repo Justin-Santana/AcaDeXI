@@ -26,8 +26,6 @@ Los `.iss` consumen el **resultado compilado** (`AcaDeXI.exe` + `_internal\`): c
 
 ## Problemas conocidos de las fuentes (no de la estructura)
 Marcados `xfail` en los tests:
-- `boletines/boletin_clasico.py` importa `mostrar_resumen_asistencia_boletin` (no existe en `boletin_minerd.py`).
-- `inicio/wizard_visual.py` importa `PanelAparienciaWizard` (no existe en `configuracion.py`).
 - `interfaz/deshacer_rehacer_ui.py` necesita `nucleo/deshacer_rehacer.py` y `nucleo/feedback.py` (faltan sus `.py`).
 
 ## Materias y módulos técnicos por curso (opcional)

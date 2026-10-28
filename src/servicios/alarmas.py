@@ -30,7 +30,6 @@
 #...
 #self.motor_alarmas= MotorAlarmas(self)
 #self.motor_alarmas.iniciar()
-import json
 import math
 import os
 import sqlite3
@@ -41,7 +40,7 @@ from datetime import datetime, timedelta
 from PySide6.QtCore import (Qt, QTimer, QObject, Signal, QPropertyAnimation, QSequentialAnimationGroup,
                              QEasingCurve, QPoint, QRect, QUrl, QAbstractAnimation)
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QSoundEffect
+from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtWidgets import (QWidget, QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel,
                                 QComboBox, QPushButton, QSlider, QCheckBox, QFileDialog, QTableWidget,
                                 QTableWidgetItem, QHeaderView, QLineEdit, QDateEdit, QTimeEdit, QMessageBox,
@@ -51,7 +50,7 @@ from src.nucleo.bd import obtener_carpeta_datos, obtener_conexion
 from src.nucleo.limite_campos import limitar_campo_texto
 from src.nucleo.formato_hora import aplicar_formato_widget_hora, aplicar_formato_widget_fecha, formatear_hora, formatear_fecha
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
+from src.nucleo.iconos_emoji import icono_emoji
 
 try:
 
@@ -364,17 +363,6 @@ class MotorAlarmas(QObject):
         self.overlay.reposicionar()
         self.boton_detener.reposicionar()
 
-    #Ventana emergente opcional con la configuración de alarmas. El
-    #lugar recomendado para que el usuario la edite es Configuración ▸
-    #Mi Cuenta ▸ Preferencias (ver PanelAlarmas más abajo), pero este
-    #método queda disponible por si algún módulo necesita abrirla aparte.
-    def abrir_configuracion(self):
-
-        if self._dialogo_config is None:
-            self._dialogo_config= ConfigurarAlarmasDialog(self.main_window)
-        self._dialogo_config.panel.cargar()
-        self._dialogo_config.exec()
-
     #---------------- revisión de disparos ----------------
     def _revisar(self):
 
@@ -424,7 +412,6 @@ class MotorAlarmas(QObject):
 
         salida= []
         hoy_iso= ahora.strftime("%Y-%m-%d")
-        dia_semana= ahora.strftime("%A")
         for r in conn.execute("SELECT * FROM recordatorios WHERE activo=1").fetchall():
             r= dict(r)
             aplica_hoy= False

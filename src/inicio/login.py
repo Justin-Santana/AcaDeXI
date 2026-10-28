@@ -13,7 +13,7 @@ from src.nucleo.iconos import (obtener_icono, icono_app, aplicar_icono_ventana, 
     ICONO_ERROR, ICONO_LOGIN, pixmap_logo_app)
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
+from src.nucleo.iconos_emoji import icono_emoji
 
 
 def _hex_a_rgba(hex_color, alpha):

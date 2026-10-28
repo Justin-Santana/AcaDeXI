@@ -13,7 +13,7 @@ from datetime import datetime
 from src.nucleo.formato_hora import formatear_hora, formatear_fecha_hora
 
 from PySide6.QtWidgets import (QToolTip, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QHeaderView, QComboBox, QFileDialog, QTabWidget, QGridLayout,
+    QTableWidget, QTableWidgetItem, QHeaderView, QComboBox, QFileDialog, QGridLayout,
     QScrollArea, QFrame, QLineEdit, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QSizePolicy,
     QApplication, QDialog)
 from PySide6.QtCore import (Qt, QTimer, QRectF, QPointF, QPropertyAnimation, QEasingCurve,
@@ -35,8 +35,7 @@ from src.nucleo.permisos import obtener_profesor_id
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, icono_boton_filtro, pixmap_boton_filtro,
                           EMOJI_PROFESOR, EMOJI_VISTA_EDICION, EMOJI_SECCIONES_GRUPOS,
                           html_icono_emoji)
 
@@ -986,7 +985,6 @@ class ModuloReportes(QWidget):
         if panel.get("combo_curso") is not None:
             def _en_cambio_curso():
 
-                grado_id= panel["combo_curso"].currentData()
                 if panel.get("combo_seccion") is not None:
                     self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"], panel.get("combo_nivel"))
                 panel["paginacion"].reiniciar()

@@ -40,27 +40,6 @@ def estudiantes_de_seccion(seccion_id):
     return ids
 
 
-#Lista de secciones a ofrecer en el selector de "Boletín completo":
-#todas si no se filtra, o solo las de un grado (para Secretaría que
-#quiere imprimir "todo 4to de Secundaria", por ejemplo).
-def secciones_de_grado_o_todas(grado_id=None, anio_academico=None):
-
-    conn= obtener_conexion()
-    c= conn.cursor()
-    condiciones, parametros= [], []
-    if grado_id is not None:
-        condiciones.append("grado_id=?")
-        parametros.append(grado_id)
-    if anio_academico is not None:
-        condiciones.append("anio_academico=?")
-        parametros.append(anio_academico)
-    where= f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
-    c.execute(f"SELECT id, nombre, grado_id FROM secciones {where} ORDER BY grado_id, nombre", parametros)
-    filas= [dict(fila) for fila in c.fetchall()]
-    conn.close()
-    return filas
-
-
 #`cvs_ref` es una lista de un elemento (truco para poder reasignar el
 #canvas desde dentro de esta función: el primer estudiante determina con
 #qué tamaño se ABRE el archivo; los siguientes solo cambian el tamaño de

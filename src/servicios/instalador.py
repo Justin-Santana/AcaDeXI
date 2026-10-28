@@ -29,10 +29,8 @@ import tempfile
 from datetime import datetime
 
 from src.nucleo.rutas import obtener_carpeta_raiz
-from src.nucleo.bd import obtener_carpeta_datos, RUTA_BD, obtener_conexion, existe_bd_base, RUTA_BD_BASE
+from src.nucleo.bd import RUTA_BD, obtener_conexion, existe_bd_base, RUTA_BD_BASE
 from src.interfaz.ventana_principal import CONFIG_PATH
-from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
 
 
 #Se lanza cuando se pide empaquetar 'la BD Base' y todavía no se ha
@@ -304,11 +302,6 @@ def ruta_instalador_docentes():
     return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_DOCENTES)
 
 
-def existe_instalador_docentes():
-
-    return os.path.exists(ruta_instalador_docentes())
-
-
 #Copia AcaDeXI_Docentes_Setup.exe (ya compilado) a `ruta_destino`, listo
 #para distribuir. Es el MISMO instalador para todos los Docentes/Personal;
 #lo que cambia por persona es únicamente su archivo .acdx (ver
@@ -419,24 +412,6 @@ def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
 NOMBRE_SETUP_SINGLE_TEACHER= "AcaDeXI_SingleTeacher_Setup.exe"
 
 
-def ruta_instalador_single_teacher():
-
-    return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_SINGLE_TEACHER)
-
-
-def existe_instalador_single_teacher():
-
-    return os.path.exists(ruta_instalador_single_teacher())
-
-
-#Copia AcaDeXI_SingleTeacher_Setup.exe a `ruta_destino`. A diferencia
-#de Docentes, Single Teacher no depende de ningún .acdx -arranca desde
-#cero con su propio wizard (ver main.py, edicion_actual()).
-def exportar_instalador_single_teacher(ruta_destino):
-
-    return _copiar_instalador_generico(ruta_instalador_single_teacher(), NOMBRE_SETUP_SINGLE_TEACHER, ruta_destino)
-
-
 #Instalador para Side Stepper (AcaDeXI_SideStepper_Setup.exe)
 NOMBRE_SETUP_SIDE_STEPPER= "AcaDeXI_SideStepper_Setup.exe"
 NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER= "permisos_side_stepper.json"
@@ -445,11 +420,6 @@ NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER= "permisos_side_stepper.json"
 def ruta_instalador_side_stepper():
 
     return os.path.join(obtener_carpeta_raiz(), NOMBRE_SETUP_SIDE_STEPPER)
-
-
-def existe_instalador_side_stepper():
-
-    return os.path.exists(ruta_instalador_side_stepper())
 
 
 #Copia AcaDeXI_SideStepper_Setup.exe a `ruta_destino`. Mismo .exe para

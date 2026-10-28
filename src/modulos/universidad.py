@@ -15,8 +15,7 @@ from src.interfaz.configuracion import IconoLupa, _normalizar, _fundido_entrada,
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                           EMOJI_TAB_FACULTADES, EMOJI_TAB_CARRERAS, EMOJI_TAB_PENSUM,
+from src.nucleo.iconos_emoji import (icono_emoji, EMOJI_TAB_FACULTADES, EMOJI_TAB_CARRERAS, EMOJI_TAB_PENSUM,
                            html_icono_emoji)
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
 
@@ -244,11 +243,6 @@ class BarraSegmentada(QWidget):
     def _al_animar(self, v):
 
         self._progreso= float(v)
-        self.update()
-
-    def poner_color_pista(self, color):
-
-        self._color_pista= color
         self.update()
 
     def establecer_datos(self, segmentos):

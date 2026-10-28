@@ -19,7 +19,7 @@
 from datetime import datetime
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QDateEdit, QDoubleSpinBox,
+    QComboBox, QTableWidget, QTableWidgetItem, QMessageBox, QDateEdit, QDoubleSpinBox,
     QTextEdit, QCheckBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QFrame, QFileDialog)
 from PySide6.QtCore import Qt, QDate, QSize
 
@@ -27,7 +27,7 @@ from src.nucleo import bd_single_teacher as db
 from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_ventana, centrar_y_al_frente
 from src.nucleo.iconos_emoji import icono_emoji
 from src.nucleo.formato_hora import aplicar_formato_widget_fecha, formatear_fecha
-from src.interfaz.paginacion import aplicar_estructura_tabla, ajustar_anchos_columnas
+from src.interfaz.paginacion import aplicar_estructura_tabla
 from src.nucleo.limite_campos import limitar_campo_texto
 from src.interfaz.filtro_vacio import EstadoVacioFiltro
 

@@ -3,8 +3,6 @@ import sys
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
-from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
 
 try:
 
@@ -126,82 +124,6 @@ def obtener_conexion():
         conn.execute("PRAGMA journal_mode = WAL")
         _ruta_wal_configurada= RUTA_BD
     return conn
-
-
-# -----------------------------------------
-# nivel educativo del grado (Primaria/Secundaria)
-# -----------------------------------------
-#ver columna grados.nivel_educativo y resolver_nota_minima() en configuracion.py.
-#'Primaria' | 'Secundaria' | None (no clasificado, o grado_id=None).
-def obtener_nivel_educativo_grado(grado_id):
-
-    if grado_id is None:
-        return None
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("SELECT nivel_educativo FROM grados WHERE id=?", (grado_id,))
-    fila= c.fetchone()
-    conn.close()
-    return fila["nivel_educativo"] if fila else None
-
-
-#Nivel educativo del grado/curso al que pertenece `seccion_id`.
-def obtener_nivel_educativo_de_seccion(seccion_id):
-
-    if seccion_id is None:
-        return None
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("""SELECT grados.nivel_educativo as nivel FROM secciones
-                 LEFT JOIN grados ON secciones.grado_id = grados.id WHERE secciones.id=?""", (seccion_id,))
-    fila= c.fetchone()
-    conn.close()
-    return fila["nivel"] if fila else None
-
-
-#Nivel educativo del grado/curso del estudiante (vía su sección).
-def obtener_nivel_educativo_de_estudiante(estudiante_id):
-
-    if estudiante_id is None:
-        return None
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("""SELECT grados.nivel_educativo as nivel FROM estudiantes
-                 LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
-                 LEFT JOIN grados ON secciones.grado_id = grados.id WHERE estudiantes.id=?""", (estudiante_id,))
-    fila= c.fetchone()
-    conn.close()
-    return fila["nivel"] if fila else None
-
-
-# -----------------------------------------
-# nivel académico transversal
-# -----------------------------------------
-#punto único para preguntar "¿qué nivel es este estudiante/grado?" en cualquier módulo (Estudiantes, Materias,
-#Asistencia, Calificaciones, Politécnico, Universidad, Reportes, Buscador
-#global, etc.). Ver el comentario en la migración (arriba) y
-#NIVELES_ACADEMICOS/niveles_academicos_habilitados() en configuracion.py.
-#
-#Un estudiante NO guarda su nivel directamente: se deriva de la relación
-#que YA tenía (Sección->Grado para K-12, Carrera para Universidad) para
-#que nunca pueda desincronizarse -mover un estudiante de sección ya lo
-#mueve de nivel automáticamente, sin ningún paso adicional que alguien
-#pueda olvidar hacer.
-#(nivel, ciclo) de un Grado/Curso. `ciclo` solo es significativo
-#cuando nivel == 'Secundaria' ('Primer Ciclo' / 'Segundo Ciclo' / None
-#si el grado de secundaria aún no fue clasificado por ciclo).
-def resolver_nivel_academico_grado(grado_id):
-
-    if grado_id is None:
-        return None, None
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("SELECT nivel_educativo, ciclo_secundaria FROM grados WHERE id=?", (grado_id,))
-    fila= c.fetchone()
-    conn.close()
-    if not fila:
-        return None, None
-    return fila["nivel_educativo"], fila["ciclo_secundaria"]
 
 
 #(nivel, ciclo) del Grado/Curso al que pertenece `seccion_id`.
@@ -329,23 +251,6 @@ def obtener_criterio_numero_lista():
     conn.close()
     criterio= fila["criterio_numero_lista"] if fila else None
     return criterio if criterio in CRITERIOS_NUMERO_LISTA else CRITERIO_APELLIDOS_NOMBRE
-
-
-#Guarda el criterio elegido y, salvo que se pida lo contrario,
-#recalcula de una vez el número de lista de TODAS las secciones con ese
-#nuevo criterio (si el criterio es Manual, no se toca ningún número
-#existente: simplemente deja de recalcularse solo).
-def establecer_criterio_numero_lista(criterio, recalcular=True):
-
-    if criterio not in CRITERIOS_NUMERO_LISTA:
-        raise ValueError(f"Criterio de número de lista no reconocido: {criterio!r}")
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("UPDATE configuracion SET criterio_numero_lista=? WHERE id=1", (criterio,))
-    conn.commit()
-    conn.close()
-    if recalcular and criterio != CRITERIO_MANUAL:
-        recalcular_numeros_lista_todas_secciones(criterio)
 
 
 #Fragmento ORDER BY (sin la palabra ORDER BY) para el criterio dado.

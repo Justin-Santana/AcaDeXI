@@ -38,7 +38,7 @@
 from datetime import datetime
 
 from src.nucleo.bd import obtener_conexion, _agregar_columna_si_falta
-from src.interfaz.configuracion import (COMPETENCIAS_FUNDAMENTALES_RD, es_sistema_dominicano,
+from src.interfaz.configuracion import (es_sistema_dominicano,
                             resolver_nota_minima)
 
 GRUPOS_DISPLAY_SECUNDARIA= [
@@ -118,17 +118,6 @@ def formato_boletin_general():
     return (fila["formato_boletin_general"] if fila and fila["formato_boletin_general"] else "simple")
 
 
-def guardar_formato_boletin_general(formato):
-
-    if formato not in ("simple", "oficial_rd"):
-        raise ValueError("formato debe ser 'simple' u 'oficial_rd'")
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("UPDATE configuracion SET formato_boletin_general=? WHERE id=1", (formato,))
-    conn.commit()
-    conn.close()
-
-
 def colores_boletin(nivel_educativo=None):
 
     conn= obtener_conexion()
@@ -143,19 +132,6 @@ def colores_boletin(nivel_educativo=None):
                 "texto_banda": (fila["boletin_color_texto_banda_primaria"] if fila else None) or "#FFFFFF"}
     return {"banda": (fila["boletin_color_banda_secundaria"] if fila else None) or "#1F9E9E",
             "texto_banda": (fila["boletin_color_texto_banda_secundaria"] if fila else None) or "#FFFFFF"}
-
-
-def guardar_colores_boletin(nivel_educativo, color_banda, color_texto_banda):
-
-    campo_banda= "boletin_color_banda_primaria" if es_nivel_primaria(nivel_educativo) else "boletin_color_banda_secundaria"
-    campo_texto= ("boletin_color_texto_banda_primaria" if es_nivel_primaria(nivel_educativo)
-                   else "boletin_color_texto_banda_secundaria")
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute(f"UPDATE configuracion SET {campo_banda}=?, {campo_texto}=? WHERE id=1",
-              (color_banda, color_texto_banda))
-    conn.commit()
-    conn.close()
 
 
 def datos_estudiante_boletin(estudiante_id):

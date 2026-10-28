@@ -12,7 +12,7 @@ from src.interfaz.filtro_vacio import EstadoVacioFiltro
 from src.interfaz.filtros_curso_seccion import (poblar_combo_curso, cascada_seccion_por_curso,
     poblar_combo_nivel_educativo, secciones_del_nivel_educativo, interseccion_opcional)
 from src.nucleo.iconos import mostrar_mensaje, centrar_y_al_frente, aplicar_icono_cabecera
-from src.nucleo.permisos import (puede_editar, es_profesor_restringido, obtener_profesor_id,
+from src.nucleo.permisos import (puede_editar, obtener_profesor_id,
 obtener_materias_permitidas, obtener_secciones_permitidas)
 from src.interfaz.paginacion import (aplicar_estructura_tabla, ajustar_anchos_columnas, ControlPaginacion,
                          agregar_boton_detalle, mostrar_texto_largo,
@@ -28,8 +28,7 @@ from src.modulos.calendario import PanelDesplegable
 from src.nucleo.iconos import aplicar_icono_ventana, ICONO_FILTRO
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro,
+from src.nucleo.iconos_emoji import (icono_emoji, icono_boton_filtro, pixmap_boton_filtro,
                           EMOJI_TAB_ENTREGAS, html_icono_emoji)
 
 CATEGORIAS_TAREA= ["Tarea", "Examen", "Práctica", "Participación", "Proyecto", "Examen Final"]

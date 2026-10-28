@@ -13,8 +13,7 @@ from PySide6.QtCore import Qt
 from src.nucleo.iconos import obtener_icono, mostrar_mensaje
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          EMOJI_PAG_PRIMERA, EMOJI_PAG_ANTERIOR,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, EMOJI_PAG_PRIMERA, EMOJI_PAG_ANTERIOR,
                           EMOJI_PAG_SIGUIENTE, EMOJI_PAG_ULTIMA)
 
 

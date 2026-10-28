@@ -23,13 +23,13 @@ from src.inicio.login import LoginWindow
 from src.inicio.bienvenida import mostrar_bienvenida_animada, _pixmap_logo_base
 from src.inicio.tutoriales import ofrecer_tutoriales_tras_login
 from src.nucleo.iconos import icono_app, aplicar_icono_ventana, mostrar_mensaje, pixmap_icono_sidebar
-from src.nucleo.permisos import modulo_visible, tiene_acceso_gerencial, ROLES_GERENCIALES, obtener_preferencia_calif_tecnicas
+from src.nucleo.permisos import modulo_visible, ROLES_GERENCIALES, obtener_preferencia_calif_tecnicas
 from src.interfaz.buscador_global import DialogoBusquedaGlobal
 from src.nucleo.atajos import GestorAtajos, registrar_atajo, TECLAS_ATAJO_DISPONIBLES, TECLA_ATAJO_POR_DEFECTO,\
     GestorRetroalimentacionClics
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto, establecer_modo_oscuro
+from src.nucleo.iconos_emoji import icono_emoji, establecer_modo_oscuro
 
 CONFIG_PATH= os.path.join(obtener_carpeta_datos(), "config.json")
 
@@ -1022,7 +1022,6 @@ class MainWindow(QMainWindow):
         txt_prim= paleta["text_primary"][idx]
         txt_sec= paleta["text_secondary"][idx]
         bg_btn= paleta["btn_num_bg"][idx]
-        hv_btn= paleta["btn_num_hover"][idx]
         accent= paleta["btn_op_bg"][idx]
         borde= _hex_a_rgba(bg_btn, 0.65)
 

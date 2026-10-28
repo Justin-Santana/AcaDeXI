@@ -42,9 +42,3 @@ def edicion_actual():
     if _edicion_guardada is None:
         _edicion_guardada= _leer_edicion_del_registro()
     return _edicion_guardada
-
-
-#Atajo que ya usa el resto del código: True solo en la edición de Docentes/Personal.
-def instalado_con_setup_docentes():
-
-    return edicion_actual() == "docentes"

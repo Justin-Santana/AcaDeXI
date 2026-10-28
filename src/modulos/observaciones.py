@@ -45,7 +45,7 @@ from src.interfaz.paginacion import (aplicar_estructura_tabla, ajustar_anchos_co
                          agregar_boton_pantalla_completa)
 from src.interfaz.configuracion import es_sistema_dominicano, resolver_nota_minima, conectar_tooltip_seleccion
 from src.modulos.calificaciones import (competencias_de_materia_grado, grado_de_estudiante,
-                             calcular_nota_final, _nivel_desde_nota, _sistema_calificacion_actual)
+                             calcular_nota_final, _sistema_calificacion_actual)
 from src.modulos.calificaciones_tecnicas import DialogoAjusteRA, guardar_ajuste_ra
 from src.modulos.banco_tareas import DialogoAjusteEntrega, guardar_ajuste_entrega, _hay_tareas_activas_en_materia
 from src.modulos.materias import MODELO_EVALUACION_TECNICA
@@ -53,9 +53,8 @@ from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro)
-from src.nucleo.iconos_categorias import icono_categoria, pixmap_categoria, pixmap_categoria_color, icono_categoria_color
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, icono_boton_filtro, pixmap_boton_filtro)
+from src.nucleo.iconos_categorias import pixmap_categoria, pixmap_categoria_color, icono_categoria_color
 
 
 #Catálogo: naturaleza + CATEGORÍAS (clave, color) -el icono real de cada naturaleza es un icono vectorial

@@ -18,7 +18,7 @@ from src.nucleo.formato_hora import aplicar_formato_widget_fecha
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto, html_icono_emoji,
+from src.nucleo.iconos_emoji import (icono_emoji, html_icono_emoji,
                           icono_boton_filtro, pixmap_boton_filtro, EMOJI_FOTO_RECORTAR)
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
 

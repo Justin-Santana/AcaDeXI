@@ -13,7 +13,7 @@ from PySide6.QtGui import QPixmap, QImage
 
 from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_ventana, centrar_y_al_frente, ICONO_RECORTE
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
+from src.nucleo.iconos_emoji import icono_emoji
 
 
 #Ventana emergente que muestra una fotografía ampliada.

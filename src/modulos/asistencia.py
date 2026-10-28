@@ -2,7 +2,7 @@ import csv, json, reportlab, unicodedata
 from datetime import datetime
 from src.nucleo.formato_hora import aplicar_formato_widget_fecha, formatear_fecha_hora
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit, QMessageBox, QProgressBar,
+QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QDateEdit, QProgressBar,
 QDoubleSpinBox, QFileDialog, QScrollArea, QFrame, QGraphicsOpacityEffect,
 QGraphicsDropShadowEffect, QSizePolicy, QLineEdit, QDialog, QGridLayout)
 from PySide6.QtCore import Qt, QDate, QPropertyAnimation, QEasingCurve, Property, QTimer, QRectF, QPointF
@@ -14,13 +14,12 @@ from src.interfaz.filtro_vacio import EstadoVacioFiltro
 from src.interfaz.filtros_curso_seccion import (poblar_combo_curso, cascada_seccion_por_curso,
     poblar_combo_nivel_educativo, secciones_del_nivel_educativo, interseccion_opcional)
 from src.interfaz.paginacion import (aplicar_estructura_tabla, ajustar_anchos_columnas, ControlPaginacion,
-                         agregar_boton_detalle, agregar_boton_pantalla_completa)
+                         agregar_boton_pantalla_completa)
 from src.interfaz.configuracion import TabWidgetNavegable, conectar_tooltip_seleccion
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, icono_boton_filtro, pixmap_boton_filtro,
                           EMOJI_EXCUSADO, EMOJI_LICENCIA_MEDICA, EMOJI_PERMISO,
                           EMOJI_SECCIONES_GRUPOS)
 
@@ -2189,7 +2188,6 @@ class ModuloAsistencia(QWidget):
         accent= colores["accent"]
         accent_hv= colores["accent_hv"]
         accent_suave= _hex_a_rgba(accent, 0.16)
-        borde_suave= _hex_a_rgba(bg_btn, 0.7)
 
         #--- Pestañas --- QTabWidget::pane sin borde: con setDocumentMode(True) el "pane" ya no necesita marco propio,
         #y ese borde dibujaba una línea recta que cortaba justo debajo de las pestañas-píldora, rompiendo el diseño.

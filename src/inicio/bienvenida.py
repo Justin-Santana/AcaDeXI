@@ -15,8 +15,6 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame
 from PySide6.QtCore import (Qt, QRect, QRectF, QTimer, QEventLoop,
     QPropertyAnimation, QVariantAnimation, QEasingCurve, Property)
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QPixmap
-from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
 from src.nucleo.rutas import obtener_carpeta_raiz, obtener_carpeta_iconos
 
 

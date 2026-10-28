@@ -14,7 +14,7 @@ from src.nucleo.datos_locales_docente import (obtener_colores_materias_local, gu
                                     eliminar_color_materia_local)
 from src.nucleo.atajos import registrar_atajo
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto, html_icono_emoji
+from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, html_icono_emoji
 
 DIAS_SEMANA= ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"]
 _PALETA_MATERIA= ["#6366F1", "#0D9488", "#8B5CF6", "#F59E0B", "#10B981",
@@ -1140,25 +1140,3 @@ class ModuloCopiasSeguridadDocente(QWidget):
                 background: transparent;
             }}
         """)
-#Placeholder "en construcción"
-def crear_modulo_en_construccion(main_window, icono, nombre, descripcion):
-
-    page= QWidget()
-    disposicion= QVBoxLayout(page)
-    disposicion.setContentsMargins(30, 25, 30, 25)
-    lbl_titulo= QLabel(f"{html_icono_emoji(icono, 20) if icono else ''} {nombre}")
-    lbl_titulo.setObjectName("TituloModulo")
-    disposicion.addWidget(lbl_titulo)
-    marco= QFrame()
-    marco.setObjectName("PreviewLogo")
-    marco_layout= QVBoxLayout(marco)
-    #Icono real (imagen incrustada vía html_icono_emoji) en vez del emoji 🚧 suelto en el texto -antes dependía de
-    #la fuente de emoji del sistema operativo y se veía distinto entre equipos.
-    lbl= QLabel(f"{html_icono_emoji('🚧', 20)}<br><br>Módulo en construcción<br><br>{descripcion}")
-    lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    lbl.setWordWrap(True)
-    marco_layout.addWidget(lbl)
-    disposicion.addWidget(marco, 1)
-    page.actualizar_tema= lambda: None
-    page.refrescar= lambda: None
-    return page

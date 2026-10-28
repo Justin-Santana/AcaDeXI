@@ -249,20 +249,6 @@ def techo_para_rol_side_stepper(rol):
     return PERMISOS_TECHO.get(rol, MODULOS_EXISTENTES)
 
 
-def importar_paquete_permisos_side_stepper(ruta_archivo):
-
-    with open(ruta_archivo, "r", encoding="utf-8") as archivo:
-        datos= json.load(archivo)
-
-    roles_importados= []
-
-    for info_rol in datos.get("roles", []):
-        guardados= guardar_permisos_side_stepper(info_rol["rol"], info_rol.get("modulos", []))
-        roles_importados.append({"rol": info_rol["rol"], "modulos": guardados})
-
-    return roles_importados
-
-
 # -----------------------------------------
 # psicología
 # -----------------------------------------

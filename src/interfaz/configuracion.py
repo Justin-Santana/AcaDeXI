@@ -34,8 +34,7 @@ from src.nucleo.limite_campos import limitar_campo_texto
 from src.servicios.alarmas import PanelAlarmas
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                           EMOJI_COPIA_SEGURIDAD, EMOJI_AUDITORIA, EMOJI_TUTORIAL,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, EMOJI_COPIA_SEGURIDAD, EMOJI_AUDITORIA, EMOJI_TUTORIAL,
                            EMOJI_TAB_ACADEMICO, EMOJI_TAB_USUARIOS_ROLES, EMOJI_TAB_AUDITORIA,
                            EMOJI_FOTO_RECORTAR)
 from src.nucleo.rutas import obtener_carpeta_raiz
@@ -1337,7 +1336,6 @@ class WizardConfiguracion(QDialog):
         l.addWidget(self._titulo_paso("Periodo Académico"))
         form= QFormLayout()
         form.setSpacing(12)
-        anio_actual= datetime.now().year
         self.in_anio= QLineEdit(anio_academico_actual())
         limitar_campo_texto(self.in_anio, 300)
         self.in_anio.setToolTip("Se ajusta automáticamente según la fecha del sistema; puedes editarlo si lo necesitas.")
@@ -4586,7 +4584,6 @@ class ModuloConfiguracion(QWidget):
             tarjeta.aplicar_paleta(bg_panel, borde, txt_prim, txt_sec, accent, modo_oscuro)
 
         accent_suave= _hex_a_rgba(accent, 0.16 if modo_oscuro else 0.10)
-        borde_suave= _hex_a_rgba(borde, 0.7)
         separador_col= _hex_a_rgba(borde, 0.55 if not modo_oscuro else 0.8)
         accent_hover_cab= paleta["btn_op_hover"][idx] if "btn_op_hover" in paleta else accent
 

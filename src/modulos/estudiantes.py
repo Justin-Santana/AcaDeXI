@@ -1,11 +1,10 @@
 import os
-import shutil
 import unicodedata
 from datetime import datetime
 from src.nucleo.formato_hora import aplicar_formato_widget_fecha
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
     QPushButton, QComboBox, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox,
-    QFileDialog, QDateEdit, QFormLayout, QGridLayout, QScrollArea, QFrame,
+    QFileDialog, QDateEdit, QGridLayout, QScrollArea, QFrame,
     QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QSizePolicy, QAbstractScrollArea, QDialog)
 from PySide6.QtCore import (Qt, QDate, QTimer, QRectF, QPointF, QPropertyAnimation, QEasingCurve,
     QVariantAnimation, QParallelAnimationGroup)
@@ -27,7 +26,7 @@ from src.interfaz.configuracion import (NIVELES_ACADEMICOS, niveles_academicos_h
 from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto, html_icono_emoji,
+from src.nucleo.iconos_emoji import (icono_emoji, html_icono_emoji,
                           icono_boton_filtro, pixmap_boton_filtro, EMOJI_IMPORTAR, EMOJI_EXPORTAR, EMOJI_FOTO_RECORTAR)
 from src.interfaz.intercambio_dialogs import DialogoExportarEstudiantes, DialogoImportarEstudiantes
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
@@ -1582,7 +1581,6 @@ class ModuloEstudiantes(QWidget):
         overrides= listar_overrides_estudiantes(self.main_window) if restringido else {}
         conn= obtener_conexion()
         c= conn.cursor()
-        mapa_secciones= {}
         mapa_secciones_solas= {}
         mapa_grados= {}
         if restringido:
@@ -1590,7 +1588,6 @@ class ModuloEstudiantes(QWidget):
                          (grados.nombre || ' - ' || secciones.nombre) as etiqueta
                          FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id""")
             filas_sec= c.fetchall()
-            mapa_secciones= {fs["id"]: fs["etiqueta"] for fs in filas_sec}
             mapa_secciones_solas= {fs["id"]: fs["seccion_sola"] for fs in filas_sec}
             mapa_grados= {fs["id"]: fs["grado_sola"] for fs in filas_sec}
         c.execute("""SELECT estudiantes.*, secciones.nombre as seccion_nombre_sola,

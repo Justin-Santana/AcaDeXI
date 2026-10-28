@@ -8,8 +8,6 @@ PAQ= RAIZ / "src"
 MODULOS= sorted(p for p in PAQ.rglob("*.py") if p.name != "__init__.py")
 #Fallos conocidos de las fuentes (no de la estructura): ver docs/ARQUITECTURA.md
 CONOCIDOS= {
-    "src.boletines.boletin_clasico": "importa mostrar_resumen_asistencia_boletin, que boletin_minerd no define",
-    "src.inicio.wizard_visual": "importa PanelAparienciaWizard, que configuracion no define",
     "src.interfaz.deshacer_rehacer_ui": "faltan los .py de nucleo.deshacer_rehacer / nucleo.feedback",
 }
 def nombre(p):

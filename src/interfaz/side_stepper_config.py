@@ -23,7 +23,7 @@
 #guardar_permisos_side_stepper).
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox,
     QLineEdit, QListWidget, QListWidgetItem, QCheckBox, QScrollArea, QFrame, QMessageBox, QDialog,
-    QDialogButtonBox, QInputDialog, QFormLayout)
+    QDialogButtonBox, QFormLayout)
 from PySide6.QtCore import Qt, QSize
 
 from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_ventana, centrar_y_al_frente

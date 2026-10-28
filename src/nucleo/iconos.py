@@ -409,9 +409,11 @@ def _centrar_ventana(ventana, parent=None):
 
 #igual que la de arriba, pero para los diálogos propios. No llama a adjustSize() porque esos
 #diálogos ya fijaron su tamaño con resize() y adjustSize() los encogería al mínimo.
-def centrar_y_al_frente(ventana, parent=None):
+#siempre_encima=False lo usan los asistentes de varios pasos: se centran pero no quedan fijos encima de todo.
+def centrar_y_al_frente(ventana, parent=None, siempre_encima=True):
 
-    ventana.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
+    if siempre_encima:
+        ventana.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
 
     centro= None
 

@@ -356,15 +356,6 @@ def _servidor_datos():
     return datos
 
 
-def servidor_estado_remoto():
-
-    import requests
-    datos= _servidor_datos()
-    resp= requests.get(f"{datos['url']}/estado", headers={"Authorization": f"Bearer {datos['token']}"}, timeout=15)
-    resp.raise_for_status()
-    return resp.json()
-
-
 def servidor_subir():
 
     import requests

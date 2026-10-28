@@ -3,24 +3,24 @@ import json
 import math
 import unicodedata
 from datetime import datetime
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
 QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QDoubleSpinBox, QLineEdit,
-QMessageBox, QGridLayout, QFileDialog, QTabWidget, QScrollArea, QFrame,
-QGraphicsOpacityEffect, QSizePolicy, QDialog, QCheckBox, QTextEdit, QDateEdit, QListWidget,
-QListWidgetItem, QAbstractItemView, QDialogButtonBox, QSpinBox, QApplication)
+QMessageBox, QGridLayout, QFileDialog, QScrollArea, QFrame,
+QGraphicsOpacityEffect, QSizePolicy, QDialog, QTextEdit, QDateEdit, QListWidget,
+QListWidgetItem, QAbstractItemView, QDialogButtonBox, QSpinBox)
 from PySide6.QtCore import (Qt, QPropertyAnimation, QEasingCurve, QSequentialAnimationGroup,
     QRect, QRectF, QPointF, Property, Signal, QTimer, QDate)
 from PySide6.QtGui import (QColor, QPainter, QPen, QBrush, QFont, QPainterPath, QIcon, QPixmap,
-    QLinearGradient, QConicalGradient, QRadialGradient)
-from src.nucleo.bd import obtener_conexion, registrar_auditoria, obtener_carpeta_datos, mostrar_columna_numero_lista
+    QLinearGradient, QConicalGradient)
+from src.nucleo.bd import obtener_conexion, registrar_auditoria, mostrar_columna_numero_lista
 from src.interfaz.filtros_curso_seccion import (poblar_combo_curso, cascada_seccion_por_curso,
     poblar_combo_nivel_educativo, secciones_del_nivel_educativo, interseccion_opcional)
 from src.nucleo.iconos import mostrar_mensaje, centrar_y_al_frente, aplicar_icono_cabecera
 from src.nucleo.permisos import (puede_editar, obtener_secciones_permitidas, obtener_materias_permitidas,
-es_profesor_restringido, tiene_acceso_gerencial)
+tiene_acceso_gerencial)
 from src.interfaz.paginacion import (ControlPaginacion, agregar_boton_detalle, tabla_pausada, mostrar_texto_largo,
     aplicar_estructura_tabla, agregar_boton_pantalla_completa)
-from src.interfaz.configuracion import (SISTEMA_DOMINICANO, COMPETENCIAS_FUNDAMENTALES_RD, NIVELES_DESEMPENO_RD,
+from src.interfaz.configuracion import (COMPETENCIAS_FUNDAMENTALES_RD, NIVELES_DESEMPENO_RD,
     NIVEL_SIN_EVALUAR_RD, COLORES_NIVEL_DESEMPENO_RD, BANDAS_DESEMPENO_RD, es_sistema_dominicano,
     resolver_nota_minima, IconoLupa, TabWidgetNavegable, ajustar_combo_ancho_seguro, conectar_tooltip_seleccion,
     estilo_flechas_navegacion_tabs)
@@ -31,8 +31,7 @@ from src.nucleo.atajos import registrar_atajo
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.edicion_feedback import activar_modo_edicion, desactivar_modo_edicion
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                          icono_boton_filtro, pixmap_boton_filtro, _pluma,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, icono_boton_filtro, pixmap_boton_filtro, _pluma,
                           EMOJI_VINCULAR, EMOJI_BOLETIN_PROMEDIOS, EMOJI_SEGUIMIENTO_RP,
                           EMOJI_EVALUACIONES_FINALES, EMOJI_CURRICULO_CE, EMOJI_NOTAS_COMPETENCIA,
                           EMOJI_COMPARTIR_CALIFICACIONES, EMOJI_DESEMPENO_INDIVIDUAL,
@@ -1823,17 +1822,6 @@ class ModuloCalificaciones(QWidget):
         self._cache_estudiantes_todos= None
         self._cache_permitidas_secciones= _SIN_CARGAR
         self._cache_permitidas_materias= _SIN_CARGAR
-
-    #(id, nombre) de todos los Cursos/Grados, en orden curricular.
-    def _grados_lista(self):
-
-        if self._cache_grados is None:
-            conn= obtener_conexion()
-            c= conn.cursor()
-            c.execute("SELECT id, nombre FROM grados ORDER BY orden, nombre")
-            self._cache_grados= [(fila["id"], fila["nombre"]) for fila in c.fetchall()]
-            conn.close()
-        return self._cache_grados
 
     #Como _secciones_etiquetadas pero incluye grado_id — necesario para poder
     #filtrar 'qué secciones pertenecen a este curso' en los combos en cascada.
@@ -4076,7 +4064,6 @@ class ModuloCalificaciones(QWidget):
         estudiante_txt= self.combo_estudiante_boletin.currentText()
         periodo_txt= self.combo_periodo_boletin.currentText()
         if WorkerHilo is not None:
-            from PySide6.QtWidgets import QApplication
             QApplication.setOverrideCursor(Qt.WaitCursor)
 
             def _tarea_boletin():
@@ -4209,7 +4196,6 @@ class ModuloCalificaciones(QWidget):
         #tardar decenas de segundos con cursos grandes. Todo ello es I/O puro o cómputo sin tocar Qt, así que es seguro
         #moverlo a un WorkerHilo.
         if WorkerHilo is not None:
-            from PySide6.QtWidgets import QApplication
             QApplication.setOverrideCursor(Qt.WaitCursor)
             btn= getattr(self, "btn_exportar_masivo", None)
             if btn:

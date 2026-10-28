@@ -13,19 +13,18 @@
 #`self.agregar_pagina(...)` por cada paso, en orden) y opcionalmente
 #`validar_paso(idx)` y `finalizar()`. El header, el stepper, los botones, el
 #tema y las animaciones salen de aquí.
-import os
-import sys
 
 from PySide6.QtWidgets import (QDialog, QWidget, QFrame, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QStackedWidget, QGraphicsDropShadowEffect,
     QGraphicsOpacityEffect)
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QPoint, QSize
-from PySide6.QtGui import QPixmap, QColor
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QPoint
+from PySide6.QtGui import QColor
 
 from src.nucleo.bd import obtener_carpeta_datos  #noqa: F401  (útil para quien importe este módulo)
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.interfaz.configuracion import (WizardStepper, PanelAparienciaWizard, _fundido_entrada,
-                           _RealceHover, _hex_a_rgba)
+from src.nucleo.iconos import ICONO_SETUP, aplicar_icono_ventana, centrar_y_al_frente
+from src.nucleo.iconos_emoji import pixmap_emoji, icono_emoji
+from src.interfaz.configuracion import WizardStepper, _fundido_entrada, _RealceHover, _hex_a_rgba
 
 try:
 

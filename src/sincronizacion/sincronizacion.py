@@ -45,8 +45,7 @@ from src.nucleo.atajos import registrar_atajo
 from src.sincronizacion import sync_backends as avanzado
 from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto,
-                           EMOJI_SYNC_SUBIR, EMOJI_SYNC_DESCARGAR,
+from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, EMOJI_SYNC_SUBIR, EMOJI_SYNC_DESCARGAR,
                            EMOJI_SYNC_SUBIR_DIRECTO, EMOJI_SYNC_DESCARGAR_DIRECTO)
 from src.nucleo.rutas import buscar_dato
 

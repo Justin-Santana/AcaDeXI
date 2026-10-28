@@ -9,13 +9,12 @@ from datetime import datetime, timedelta
 import os
 import sqlite3
 from src.nucleo.bd import obtener_conexion, inicializar_bd
-from src.nucleo.formato_hora import formatear_fecha, formatear_fecha_hora, obtener_formato_hora
+from src.nucleo.formato_hora import formatear_fecha_hora, obtener_formato_hora
 from src.nucleo.permisos import es_profesor_restringido, obtener_profesor_id, modulo_visible
 from src.interfaz.configuracion import SISTEMA_DOMINICANO
 from src.nucleo.atajos import registrar_atajo
 from src.interfaz.paginacion import aplicar_estructura_tabla, ajustar_anchos_columnas
-from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, quitar_emojis_texto, html_icono_emoji,
+from src.nucleo.iconos_emoji import (pixmap_emoji, html_icono_emoji,
                            EMOJI_PROFESOR, EMOJI_SECCIONES_GRUPOS, EMOJI_ESTUDIANTE_RIESGO,
                            EMOJI_SALUDO_DIA, EMOJI_SALUDO_NOCHE)
 from src.nucleo.iconos import aplicar_icono_cabecera
@@ -86,55 +85,6 @@ def _color_para_modulo(nombre):
         return _COLORES_MODULO[nombre]
     idx= sum(ord(ch) for ch in (nombre or "?")) % len(_PALETA_MODULO_RESPALDO)
     return _PALETA_MODULO_RESPALDO[idx]
-
-
-def _icono_para_accion(accion):
-
-    texto= (accion or "").lower()
-    if any(p in texto for p in ("elimin", "borr")):
-        return "🗑"
-    if any(p in texto for p in ("cre", "agreg", "regist", "añad", "nuevo")):
-        return "➕"
-    if any(p in texto for p in ("actualiz", "edit", "modific", "cambi")):
-        return "✏"
-    if any(p in texto for p in ("sesión", "sesion", "acceso", "login", "ingres")):
-        return "🔑"
-    if any(p in texto for p in ("backup", "respaldo")):
-        return "🛡"
-    if any(p in texto for p in ("import", "export", "sincroniz")):
-        return "🔄"
-    return "📝"
-
-
-def _tiempo_relativo(fecha_str):
-
-    if not fecha_str:
-        return "—"
-    dt= None
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
-        try:
-
-            dt= datetime.strptime(fecha_str, fmt)
-            break
-        except ValueError:
-            continue
-    if dt is None:
-        return fecha_str
-    segundos= (datetime.now() - dt).total_seconds()
-    if segundos < 60:
-        return "hace instantes"
-    minutos= int(segundos // 60)
-    if minutos < 60:
-        return f"hace {minutos} min"
-    horas= int(minutos // 60)
-    if horas < 24:
-        return f"hace {horas} h"
-    dias= int(horas // 24)
-    if dias == 1:
-        return "ayer"
-    if dias < 7:
-        return f"hace {dias} días"
-    return dt.strftime("%d/%m/%Y")
 
 
 #Widgets visuales personalizados

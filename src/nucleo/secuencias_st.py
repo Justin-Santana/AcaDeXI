@@ -5,8 +5,7 @@
 #trabaja sobre bd_single_teacher: no hay grados, ni profesores, ni catálogo de competencias. Las
 #competencias específicas y los indicadores de logro se escriben como texto, una por línea.
 from src.nucleo import bd_single_teacher
-from src.nucleo.secuencias import (ESTADOS_SECUENCIA, escribir_docx, fecha_y_hora_actual,
-                                   guardar_sesiones, guardar_tareas_de_secuencia, insertar_secuencia,
+from src.nucleo.secuencias import (ESTADOS_SECUENCIA, escribir_docx, guardar_sesiones, guardar_tareas_de_secuencia, insertar_secuencia,
                                    actualizar_secuencia, leer_sesiones,
                                    separar_competencias_fundamentales)
 

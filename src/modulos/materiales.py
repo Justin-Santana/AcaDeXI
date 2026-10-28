@@ -38,9 +38,8 @@ from datetime import datetime, date
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox,
     QTextEdit, QFrame, QSpinBox, QTableWidget, QTableWidgetItem, QDialog,
-    QDialogButtonBox, QMessageBox, QCheckBox, QScrollArea, QGridLayout, QToolButton,
-    QHeaderView,
-)
+    QDialogButtonBox, QMessageBox, QScrollArea, QGridLayout, QToolButton,
+    QHeaderView)
 from PySide6.QtCore import Qt, QTimer, QSize as _QSize_emoji
 
 from src.nucleo.bd import obtener_conexion, registrar_auditoria

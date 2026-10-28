@@ -29,7 +29,7 @@
 import math
 import weakref
 
-from PySide6.QtCore import Qt, QRectF, QPointF, QSize
+from PySide6.QtCore import Qt, QRectF, QPointF
 from PySide6.QtGui import (QIcon, QPixmap, QPainter, QPainterPath, QColor,
                             QLinearGradient, QPen, QBrush, QPolygonF)
 
@@ -55,15 +55,6 @@ _cache_html= {}
 _modo_oscuro_activo= False
 _widgets_filtro_boton= weakref.WeakSet()
 _widgets_filtro_pixmap= weakref.WeakKeyDictionary()  #widget -> tamaño pedido
-
-
-#Blanco para acciones estructurales sobre controles de acento.
-#
-#Los iconos de filtro se usan sobre botones y cabeceras de color; un
-#trazo blanco conserva el mismo contraste en todos los temas.
-def _color_neutro_estructural():
-
-    return "#FFFFFF"
 
 
 #Llamar tras cambiar el tema (y una vez al iniciar la app). Si el
@@ -2539,7 +2530,6 @@ _REGISTRO.setdefault(EMOJI_CUADRO_TEXTO, lambda pintor, tamano: _cuadro_texto_ho
 #más profundidad que el `_sol` genérico usado suelto en frases.
 def _saludo_dia(pintor, size):
 
-    centro= _r(size, 0.5, 0.5, 0.5, 0.5)
     halo= _r(size, 0.10, 0.10, 0.90, 0.90)
     pintor.setPen(_sin_pluma())
     pintor.setBrush(_degradado(halo, "#FDE68A", "#FBBF2400"))
@@ -2710,15 +2700,3 @@ def html_icono_emoji(caracter, size=14):
            f'style="vertical-align:middle;">')
     _cache_html[clave]= tag
     return tag
-
-
-#QLabel listo para insertar junto a un texto, con el pixmap del
-#emoji correspondiente -útil cuando el emoji viene en medio de una
-#frase larga y no conviene usarlo como QIcon de un botón.
-def etiqueta_emoji(caracter, size=16, parent=None):
-
-    from PySide6.QtWidgets import QLabel
-    lbl= QLabel(parent)
-    lbl.setPixmap(pixmap_emoji(caracter, size))
-    lbl.setFixedSize(QSize(size, size))
-    return lbl

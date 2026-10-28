@@ -11,16 +11,6 @@ from src.nucleo.iconos_emoji import icono_emoji
 from src.nucleo import intercambio_datos as intercambio
 
 
-def _edicion_legible(codigo):
-
-    return {
-        "full": "AcaDeXI (Admin/Director)",
-        "docentes": "AcaDeXI Docentes",
-        "single_teacher": "AcaDeXI Single Teacher",
-        "side_stepper": "AcaDeXI Side Stepper",
-    }.get(codigo, codigo)
-
-
 #Secciones/cursos disponibles como destino de importación en ESTA
 #instalación, sin importar la edición: consulta bd.py (full/docentes) o
 #bd_single_teacher.py (single_teacher) según corresponda, y devuelve

@@ -34,8 +34,3 @@ class WorkerHilo(QThread):
         except Exception as error:
             import traceback
             self.error.emit(f"{error}\n\n{traceback.format_exc()}")
-
-    #Para que la tarea pueda avisar el avance sin tener que conocer el worker entero.
-    def emitir_progreso(self, actual, total):
-
-        self.progreso.emit(actual, total)

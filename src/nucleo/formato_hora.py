@@ -85,12 +85,6 @@ def formatear_hora(texto_hora, main_window=None):
     return f"{hora.hour:02d}:{hora.minute:02d}"
 
 
-#Para los horarios de clase: "08:00 - 09:30".
-def formatear_rango_horas(hora_inicio, hora_fin, main_window=None, separador=" - "):
-
-    return f"{formatear_hora(hora_inicio, main_window)}{separador}{formatear_hora(hora_fin, main_window)}"
-
-
 #Pasa una fecha guardada en ISO ("YYYY-MM-DD", con o sin hora pegada) al formato elegido. Si el texto
 #no es una fecha, se devuelve tal cual.
 def formatear_fecha(texto_fecha, main_window=None):
