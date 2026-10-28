@@ -711,9 +711,9 @@ class DialogoBusquedaGlobal(QDialog):
         self.setMinimumSize(480, 420)
         self.resize(760, 560)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(10)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(18, 18, 18, 18)
+        disposicion.setSpacing(10)
 
         fila= QHBoxLayout()
         self.in_texto= QLineEdit()
@@ -727,19 +727,19 @@ class DialogoBusquedaGlobal(QDialog):
         btn_buscar.setObjectName("BtnAccionAgregar")
         btn_buscar.clicked.connect(self._buscar)
         fila.addWidget(btn_buscar)
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
 
         self.lbl_info= QLabel("Escribe al menos 1 carácter y presiona Enter.")
         self.lbl_info.setObjectName("DescModulo")
-        layout.addWidget(self.lbl_info)
+        disposicion.addWidget(self.lbl_info)
 
         self.lista= QListWidget()
         self.lista.itemDoubleClicked.connect(self._ir_a_resultado)
-        layout.addWidget(self.lista, 1)
+        disposicion.addWidget(self.lista, 1)
 
-        ayuda= QLabel("Doble clic sobre un resultado para ir directamente a ese módulo.")
-        ayuda.setObjectName("DescModulo")
-        layout.addWidget(ayuda)
+        lbl_ayuda= QLabel("Doble clic sobre un resultado para ir directamente a ese módulo.")
+        lbl_ayuda.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_ayuda)
 
         if texto_inicial:
             self._buscar()

@@ -152,9 +152,9 @@ class TarjetaKPITecnica(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(650)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._valor_mostrado= v
         self.update()
@@ -187,7 +187,7 @@ class TarjetaKPITecnica(QWidget):
         path.closeSubpath()
         return path
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -255,9 +255,9 @@ class AnilloCF(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(750)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, valor):
+    def _al_animar(self, valor):
 
         self._valor_mostrado= valor
         self.update()
@@ -272,7 +272,7 @@ class AnilloCF(QWidget):
         self._anim.setEndValue(self._valor_objetivo)
         self._anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -358,9 +358,9 @@ class BarraPesosRA(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(650)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._progreso= v
         self.update()
@@ -378,7 +378,7 @@ class BarraPesosRA(QWidget):
 
         return sum(p for _c, p in self._segmentos)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -458,9 +458,9 @@ class ChipEstadoCompetencia(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(320)
         self._anim.setEasingCurve(QEasingCurve.Type.OutBack)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._escala= v
         self.update()
@@ -480,7 +480,7 @@ class ChipEstadoCompetencia(QWidget):
 
         return self._estado
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -557,9 +557,9 @@ class MedallonBoletin(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(950)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._valor_mostrado= v
         self.update()
@@ -574,7 +574,7 @@ class MedallonBoletin(QWidget):
         self._anim.setEndValue(self._valor_objetivo)
         self._anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -648,9 +648,9 @@ class DonutResumenGrupo(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(750)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._progreso= v
         self.update()
@@ -663,7 +663,7 @@ class DonutResumenGrupo(QWidget):
         self._anim.setEndValue(1.0)
         self._anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -730,7 +730,7 @@ class IconoLupaCT(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -752,16 +752,16 @@ class DialogoRA(QDialog):
         self.setWindowTitle(f"{'Editar' if datos_actuales else 'Nuevo'} {titulo_tipo}")
         self.setMinimumWidth(460)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(22, 20, 22, 20)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(22, 20, 22, 20)
+        disposicion.setSpacing(12)
 
-        encabezado= QLabel(f"{'' if datos_actuales else ''} {titulo_tipo}")
-        fuente= encabezado.font()
+        lbl_encabezado= QLabel(f"{'' if datos_actuales else ''} {titulo_tipo}")
+        fuente= lbl_encabezado.font()
         fuente.setBold(True)
         fuente.setPointSize(13)
-        encabezado.setFont(fuente)
-        layout.addWidget(encabezado)
+        lbl_encabezado.setFont(fuente)
+        disposicion.addWidget(lbl_encabezado)
 
         grid= QGridLayout()
         grid.setHorizontalSpacing(10)
@@ -796,14 +796,14 @@ class DialogoRA(QDialog):
                 "muestra con una barra de colores).")
             grid.addWidget(self.spin_peso, 2, 1)
         else:
-            nota_info= QLabel(
+            lbl_nota_info= QLabel(
                 "ℹ En el modo simplificado cada unidad se evalúa como Competente / Aún No Competente,"
                 "sin porcentajes que configurar: no hace falta asignar un peso.")
-            nota_info.setWordWrap(True)
-            nota_info.setStyleSheet("color: #6B7280; font-size: 11px;")
-            grid.addWidget(nota_info, 2, 0, 1, 2)
+            lbl_nota_info.setWordWrap(True)
+            lbl_nota_info.setStyleSheet("color: #6B7280; font-size: 11px;")
+            grid.addWidget(lbl_nota_info, 2, 0, 1, 2)
 
-        layout.addLayout(grid)
+        disposicion.addLayout(grid)
 
         if datos_actuales:
             self.in_codigo.setText(datos_actuales.get("codigo", ""))
@@ -825,7 +825,7 @@ class DialogoRA(QDialog):
         botones.addStretch()
         botones.addWidget(btn_cancelar)
         botones.addWidget(btn_guardar)
-        layout.addLayout(botones)
+        disposicion.addLayout(botones)
 
         centrar_y_al_frente(self, parent)
 
@@ -866,17 +866,17 @@ class DialogoAjusteRA(QDialog):
         self.setWindowTitle("Ajustar Resultado de Aprendizaje por Observación")
         self.setMinimumWidth(460)
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Esto guarda (o actualiza) la nota de este estudiante en el Resultado de Aprendizaje "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Esto guarda (o actualiza) la nota de este estudiante en el Resultado de Aprendizaje "
                        "que elijas, dentro del Registro de Notas técnico normal — no reemplaza la evaluación "
                        "del módulo, solo la complementa.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
-        cita= QLabel(f"“{texto_observacion[:140]}{'…' if len(texto_observacion) > 140 else ''}”")
-        cita.setWordWrap(True)
-        cita.setStyleSheet("font-style: italic; color: #6B7280;")
-        layout.addWidget(cita)
+        lbl_cita= QLabel(f"“{texto_observacion[:140]}{'…' if len(texto_observacion) > 140 else ''}”")
+        lbl_cita.setWordWrap(True)
+        lbl_cita.setStyleSheet("font-style: italic; color: #6B7280;")
+        disposicion.addWidget(lbl_cita)
 
         form= QGridLayout()
         self.combo_materia= QComboBox()
@@ -917,19 +917,19 @@ class DialogoAjusteRA(QDialog):
             form.addWidget(QLabel("Dominio:"), 3, 0)
             form.addWidget(self.combo_domina, 3, 1)
             self.spin_ajuste= None
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self._cargar_materias_tecnicas(materia_id_sugerida)
         self.aviso= QLabel("No hay módulos técnicos disponibles para tu usuario"
                              "(Materias ▸ Modelo: Módulo Técnico RA).")
         self.aviso.setWordWrap(True)
         self.aviso.setVisible(self.combo_materia.count() == 0)
-        layout.addWidget(self.aviso)
+        disposicion.addWidget(self.aviso)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         self._cargar_ra()
         centrar_y_al_frente(self, parent)
 
@@ -1035,7 +1035,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self._tarjetas_modulo_boletin= []
         self._ultimo_boletin= None
         self._tabs_cargados= set()
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         self.actualizar_tema()
         self._registrar_atajos_teclado()
@@ -1049,7 +1049,7 @@ class ModuloCalificacionesTecnicas(QWidget):
                          self._exportar_pdf_boletin)
 
     #Construcción de interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -1061,9 +1061,9 @@ class ModuloCalificacionesTecnicas(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(14)
 
         self.frame_cabecera= QFrame()
         self.frame_cabecera.setObjectName("TarjetaCabeceraCT")
@@ -1087,7 +1087,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         bloque_titulo.addWidget(lbl_titulo)
         bloque_titulo.addWidget(self.lbl_subtitulo_cabecera)
         cab.addLayout(bloque_titulo, 1)
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         fila_kpi= QHBoxLayout()
         fila_kpi.setSpacing(12)
@@ -1097,19 +1097,19 @@ class ModuloCalificacionesTecnicas(QWidget):
         self.kpi_notas= TarjetaKPITecnica("\uE035", "Notas registradas (año actual)", "#10B981")
         for kpi in (self.kpi_modulos, self.kpi_ra, self.kpi_pesos, self.kpi_notas):
             fila_kpi.addWidget(kpi)
-        layout.addLayout(fila_kpi)
+        disposicion.addLayout(fila_kpi)
 
         self.tabs= TabWidgetNavegable()
         self.tabs.setDocumentMode(True)
         self.tabs.tabBar().setDrawBase(False)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tabs.addTab(self._tab_ra(), "Módulos y RA")
         self.tabs.addTab(self._tab_registro(), "Registro de Notas")
         self.tabs.addTab(self._tab_boletin(), "Boletín Técnico")
         self.tabs.setTabIcon(0, icono_emoji(EMOJI_MODULOS_RA))
         self.tabs.setTabIcon(1, icono_emoji(EMOJI_REGISTRO_NOTAS_TECNICAS))
         self.tabs.setTabIcon(2, icono_emoji(EMOJI_BOLETIN_TECNICO))
-        self.tabs.currentChanged.connect(self._on_tab_changed)
+        self.tabs.currentChanged.connect(self._al_cambiar_pestana)
 
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
@@ -1117,7 +1117,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         for boton in self.findChildren(QPushButton):
             boton.setCursor(Qt.CursorShape.PointingHandCursor)
 
-    def _on_tab_changed(self, idx):
+    def _al_cambiar_pestana(self, idx):
 
         _fundido_entrada(self.tabs.widget(idx), 200)
         if idx in self._tabs_cargados:
@@ -1636,21 +1636,21 @@ class ModuloCalificacionesTecnicas(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltrosCT")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltrosCT")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosCT")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosCT")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Curso/Grado y Sección son obligatorios para poder ver la tabla de estudiantes. "
+        lbl_subtitulo= QLabel("Curso/Grado y Sección son obligatorios para poder ver la tabla de estudiantes. "
                             "Área Técnica y Carrera son opcionales.")
-        subtitulo.setObjectName("SubtituloFiltrosCT")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo.setObjectName("SubtituloFiltrosCT")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
@@ -1904,18 +1904,18 @@ class ModuloCalificacionesTecnicas(QWidget):
                 for col, ra in enumerate(self._ra_actual_registro):
                     valor_cache= self._notas_cache.get((est["id"], ra["id"]), -1 if self._dominicano else "")
                     if self._dominicano:
-                        spin= QDoubleSpinBox()
-                        spin.setRange(-1, 100)
-                        spin.setDecimals(2)
-                        spin.setSingleStep(0.5)
-                        spin.setSpecialValueText("—")
-                        spin.setValue(valor_cache if valor_cache is not None else -1)
-                        spin.setEnabled(puede)
-                        spin.valueChanged.connect(
-                            lambda _v, r=row, eid=est["id"], raid=ra["id"], w=spin:
-                            self._on_nota_cambiada(r, eid, raid, w))
-                        self.tabla_notas.setCellWidget(row, 3 + col, spin)
-                        self._widgets_notas[(row, ra["id"])]= spin
+                        in_spin= QDoubleSpinBox()
+                        in_spin.setRange(-1, 100)
+                        in_spin.setDecimals(2)
+                        in_spin.setSingleStep(0.5)
+                        in_spin.setSpecialValueText("—")
+                        in_spin.setValue(valor_cache if valor_cache is not None else -1)
+                        in_spin.setEnabled(puede)
+                        in_spin.valueChanged.connect(
+                            lambda _v, r=row, eid=est["id"], raid=ra["id"], w=in_spin:
+                            self._al_nota_cambiada(r, eid, raid, w))
+                        self.tabla_notas.setCellWidget(row, 3 + col, in_spin)
+                        self._widgets_notas[(row, ra["id"])]= in_spin
                     else:
                         combo= QComboBox()
                         for etiqueta, valor in RESULTADOS_COMPETENCIA_OPCIONES:
@@ -1926,7 +1926,7 @@ class ModuloCalificacionesTecnicas(QWidget):
                         conectar_tooltip_seleccion(combo, f"Resultado de {est['nombre']} en {ra['codigo']}")
                         combo.currentIndexChanged.connect(
                             lambda _i, r=row, eid=est["id"], raid=ra["id"], w=combo:
-                            self._on_nota_cambiada(r, eid, raid, w))
+                            self._al_nota_cambiada(r, eid, raid, w))
                         self.tabla_notas.setCellWidget(row, 3 + col, combo)
                         self._widgets_notas[(row, ra["id"])]= combo
                 lbl_cf= QLabel("—")
@@ -1948,7 +1948,7 @@ class ModuloCalificacionesTecnicas(QWidget):
             self.paginacion_notas.reiniciar()
         self._render_pagina_notas()
 
-    def _on_nota_cambiada(self, row, estudiante_id, ra_id, widget):
+    def _al_nota_cambiada(self, row, estudiante_id, ra_id, widget):
 
         if self._cargando_grid:
             return
@@ -2286,11 +2286,11 @@ class ModuloCalificacionesTecnicas(QWidget):
     def _construir_panel_situacion_politecnico(self):
 
         frame, lay= self._tarjeta_resultados()
-        titulo= QLabel("Situación del Estudiante (Politécnico, República Dominicana)")
-        fuente= titulo.font()
+        lbl_titulo= QLabel("Situación del Estudiante (Politécnico, República Dominicana)")
+        fuente= lbl_titulo.font()
         fuente.setBold(True)
-        titulo.setFont(fuente)
-        lay.addWidget(titulo)
+        lbl_titulo.setFont(fuente)
+        lay.addWidget(lbl_titulo)
 
         self.lbl_decision_actual= QLabel("Decisión final: —")
         self.lbl_decision_actual.setWordWrap(True)
@@ -2470,21 +2470,21 @@ class ModuloCalificacionesTecnicas(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltrosCT")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltrosCT")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosCT")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosCT")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Curso/Grado y Sección son obligatorios para poder ver la tabla de estudiantes. "
+        lbl_subtitulo= QLabel("Curso/Grado y Sección son obligatorios para poder ver la tabla de estudiantes. "
                             "Área Técnica y Carrera son opcionales.")
-        subtitulo.setObjectName("SubtituloFiltrosCT")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo.setObjectName("SubtituloFiltrosCT")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
@@ -2742,16 +2742,16 @@ class ModuloCalificacionesTecnicas(QWidget):
     def _construir_tarjeta_modulo_boletin(self, modulo, ra_lista, notas):
 
         frame, lay= self._tarjeta_resultados()
-        titulo= QLabel(f"🛠 {modulo['nombre']}" + (f"  ({modulo['codigo']})" if modulo.get("codigo") else ""))
-        fuente= titulo.font()
+        lbl_titulo= QLabel(f"🛠 {modulo['nombre']}" + (f"  ({modulo['codigo']})" if modulo.get("codigo") else ""))
+        fuente= lbl_titulo.font()
         fuente.setBold(True)
         fuente.setPointSize(12)
-        titulo.setFont(fuente)
-        lay.addWidget(titulo)
-        sub= QLabel(f"{len(ra_lista)} " +
+        lbl_titulo.setFont(fuente)
+        lay.addWidget(lbl_titulo)
+        lbl_sub= QLabel(f"{len(ra_lista)} " +
                      ("Resultados de Aprendizaje (RA)" if self._dominicano else "Unidades de Competencia"))
-        sub.setStyleSheet("color: #6B7280; font-size: 11px;")
-        lay.addWidget(sub)
+        lbl_sub.setStyleSheet("color: #6B7280; font-size: 11px;")
+        lay.addWidget(lbl_sub)
 
         if not ra_lista:
             lbl_vacio= QLabel("Este módulo todavía no tiene RA/unidades definidos.")

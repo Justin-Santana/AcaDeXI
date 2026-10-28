@@ -172,7 +172,7 @@ class PuntoPulso(QWidget):
         self._color= QColor(color)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -185,7 +185,7 @@ class PuntoPulso(QWidget):
 class TarjetaIndicador(QFrame):
 
     def __init__(self, icono, titulo, color_acento="#6366F1", sufijo="", decimales=0,
-                 invertir_tendencia= False, on_click=None, parent=None):
+                 invertir_tendencia= False, al_click=None, parent=None):
 
         super().__init__(parent)
         self.setObjectName("TarjetaIndicadorViva")
@@ -197,8 +197,8 @@ class TarjetaIndicador(QFrame):
         self._valor_actual= 0.0
         self._inicializada= False
         self._paleta= None
-        self._on_click= on_click
-        if on_click:
+        self._al_click= al_click
+        if al_click:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.setMinimumHeight(122)
@@ -240,7 +240,7 @@ class TarjetaIndicador(QFrame):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(700)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim_tick)
+        self._anim.valueChanged.connect(self._al_animar_tic)
 
     def _formatear(self, valor):
 
@@ -248,7 +248,7 @@ class TarjetaIndicador(QFrame):
             return f"{valor:.{self._decimales}f}{self._sufijo}"
         return f"{int(round(valor))}{self._sufijo}"
 
-    def _on_anim_tick(self, valor):
+    def _al_animar_tic(self, valor):
 
         self._valor_actual= valor
         self.lbl_valor.setText(self._formatear(valor))
@@ -343,29 +343,29 @@ class TarjetaIndicador(QFrame):
             f"background-color: {badge_bg}; border-radius: 20px; color: {self._color_acento};")
         self.lbl_valor.setStyleSheet(f"color: {self._color_acento}; background: transparent;")
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
-        if self._on_click:
+        if self._al_click:
             self._pintar_hover()
             self._animar_sombra(34, offset_y=9, alpha=110)
         else:
             self._animar_sombra(20)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
-        if self._on_click:
+        if self._al_click:
             self._pintar_normal()
             self._animar_sombra(16, offset_y=5, alpha=55)
         else:
             self._animar_sombra(16)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if self._on_click and event.button() == Qt.MouseButton.LeftButton:
-            self._on_click()
-        super().mousePressEvent(event)
+        if self._al_click and evento.button() == Qt.MouseButton.LeftButton:
+            self._al_click()
+        super().mousePressEvent(evento)
 
     def _animar_sombra(self, destino_blur, offset_y=None, alpha=None):
 
@@ -402,9 +402,9 @@ class AnilloProgreso(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(900)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_tick)
+        self._anim.valueChanged.connect(self._al_tic)
 
-    def _on_tick(self, valor):
+    def _al_tic(self, valor):
 
         self._valor= valor
         self.update()
@@ -424,7 +424,7 @@ class AnilloProgreso(QWidget):
         self._texto_color= QColor(color_texto)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -473,9 +473,9 @@ class GraficoBarrasSemanal(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(750)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_tick)
+        self._anim.valueChanged.connect(self._al_tic)
 
-    def _on_tick(self, valor):
+    def _al_tic(self, valor):
 
         self._progreso= valor
         self.update()
@@ -494,7 +494,7 @@ class GraficoBarrasSemanal(QWidget):
         self._color_texto_prim= QColor(color_texto_prim)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -695,7 +695,7 @@ class ModuloDashboard(QWidget):
         self.main_window= main_window
         self._colores_actuales= None
         self._tarjetas= []
-        self._build_ui()
+        self._construir_ui()
         self.actualizar_tema()
         self._actualizar_reloj()
         self.refrescar()
@@ -735,7 +735,7 @@ class ModuloDashboard(QWidget):
             self._autorefrescar()
 
     #Construcción de interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -747,9 +747,9 @@ class ModuloDashboard(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(20)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(20)
 
         #--- Encabezado: título + saludo/reloj en vivo ---
         fila_header= QHBoxLayout()
@@ -786,34 +786,34 @@ class ModuloDashboard(QWidget):
         bloque_reloj.addWidget(self.lbl_reloj)
         fila_header.addLayout(bloque_reloj)
 
-        layout.addLayout(fila_header)
+        disposicion.addLayout(fila_header)
 
         #--- Tarjetas KPI (clicables: llevan al módulo correspondiente) ---
         grid= QGridLayout()
         grid.setSpacing(16)
         self.tarjeta_estudiantes= TarjetaIndicador("🎓", "Estudiantes Activos", "#6366F1",
-                                                      on_click= lambda: self._ir_a_modulo("Estudiantes"))
-        self._on_click_profesores= lambda: self._ir_a_modulo("Profesores")
-        self._on_click_horario_docente= lambda: self._ir_a_modulo("Horario")
+                                                      al_click= lambda: self._ir_a_modulo("Estudiantes"))
+        self._al_click_profesores= lambda: self._ir_a_modulo("Profesores")
+        self._al_click_horario_docente= lambda: self._ir_a_modulo("Horario")
         self.tarjeta_profesores= TarjetaIndicador(EMOJI_PROFESOR, "Profesores Activos", "#0D9488",
-                                                     on_click= self._on_click_profesores)
+                                                     al_click= self._al_click_profesores)
         self.tarjeta_materias= TarjetaIndicador("📘", "Materias", "#8B5CF6",
-                                                   on_click= lambda: self._ir_a_modulo("Materias"))
+                                                   al_click= lambda: self._ir_a_modulo("Materias"))
         #"Secciones/Grupos" (institucional) va a Materias, que tiene la pestaña "Cursos y Secciones". Para el docente
         #("Mis Secciones") NO reutilizamos ese mismo destino: "Mis Materias" ya muestra su horario semanal completo,
         #así que aterrizar ahí también sería indistinguible de "Mis Clases (semanales)". En su lugar, "Mis Secciones"
         #lleva a "Mis Estudiantes" con el filtro de Curso/Sección abierto de una vez: para un docente, "ver sus
         #secciones" es, en la práctica, ver quién está en cada una.
-        self._on_click_secciones= lambda: self._ir_a_modulo("Materias")
-        self._on_click_secciones_docente= lambda: self._ir_a_modulo("Mis Estudiantes", pestana="secciones")
+        self._al_click_secciones= lambda: self._ir_a_modulo("Materias")
+        self._al_click_secciones_docente= lambda: self._ir_a_modulo("Mis Estudiantes", pestana="secciones")
         self.tarjeta_secciones= TarjetaIndicador(EMOJI_SECCIONES_GRUPOS, "Secciones/Grupos", "#F59E0B",
-                                                    on_click= self._on_click_secciones)
+                                                    al_click= self._al_click_secciones)
         self.tarjeta_asistencia_hoy= TarjetaIndicador("✅", "Asistencia Hoy", "#10B981",
                                                          sufijo= "%", decimales=1,
-                                                         on_click= lambda: self._ir_a_modulo("Asistencia"))
+                                                         al_click= lambda: self._ir_a_modulo("Asistencia"))
         self.tarjeta_riesgo= TarjetaIndicador(EMOJI_ESTUDIANTE_RIESGO, "Estudiantes en Riesgo", "#EF4444",
                                                 invertir_tendencia= True,
-                                                on_click= lambda: self._ir_a_modulo(
+                                                al_click= lambda: self._ir_a_modulo(
                                                     "Reportes", pestana="riesgo"))
         self._tarjetas= [self.tarjeta_estudiantes, self.tarjeta_profesores, self.tarjeta_materias,
                            self.tarjeta_secciones, self.tarjeta_asistencia_hoy, self.tarjeta_riesgo]
@@ -824,7 +824,7 @@ class ModuloDashboard(QWidget):
         grid.addWidget(self.tarjeta_secciones, 1, 0)
         grid.addWidget(self.tarjeta_asistencia_hoy, 1, 1)
         grid.addWidget(self.tarjeta_riesgo, 1, 2)
-        layout.addLayout(grid)
+        disposicion.addLayout(grid)
 
         #--- Panel resumen: anillo de asistencia + tendencia semanal ---
         self.panel_resumen= QFrame()
@@ -860,7 +860,7 @@ class ModuloDashboard(QWidget):
         bloque_semana.addWidget(self.lbl_promedio_semanal)
         fila_resumen.addLayout(bloque_semana, 1)
 
-        layout.addWidget(self.panel_resumen)
+        disposicion.addWidget(self.panel_resumen)
 
         #--- Panel: asistencia detallada por curso/sección (esta semana) ---
         self.panel_detalle= QFrame()
@@ -877,7 +877,7 @@ class ModuloDashboard(QWidget):
         self.lbl_detalle_vacio.setObjectName("DescModulo")
         self.lbl_detalle_vacio.setVisible(False)
         layout_detalle.addWidget(self.lbl_detalle_vacio)
-        layout.addWidget(self.panel_detalle)
+        disposicion.addWidget(self.panel_detalle)
 
         #--- Panel: últimas acciones del sistema (auditoría, máx. 10) ---
         self.panel_actividad= QFrame()
@@ -901,9 +901,9 @@ class ModuloDashboard(QWidget):
         self.tabla_actividad.setMinimumHeight(320)
         self.tabla_actividad.verticalHeader().setVisible(False)
         layout_actividad.addWidget(self.tabla_actividad, 1)
-        layout.addWidget(self.panel_actividad)
+        disposicion.addWidget(self.panel_actividad)
 
-        layout.addStretch()
+        disposicion.addStretch()
 
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
@@ -984,30 +984,30 @@ class ModuloDashboard(QWidget):
         dialogo.setMinimumWidth(440)
         dialogo.setStyleSheet(f"QDialog {{ background: {bg_panel}; }}")
 
-        layout= QVBoxLayout(dialogo)
-        layout.setContentsMargins(26, 24, 26, 24)
-        layout.setSpacing(18)
+        disposicion= QVBoxLayout(dialogo)
+        disposicion.setContentsMargins(26, 24, 26, 24)
+        disposicion.setSpacing(18)
 
         titulo= QLabel("¿A dónde querés ir?")
         titulo.setStyleSheet(
             f"color: {txt_prim}; font-size: 16px; font-weight: 700; background: transparent;")
-        subtitulo= QLabel(
+        lbl_subtitulo= QLabel(
             "Esta institución tiene currículo académico y formación técnica por separado.")
-        subtitulo.setWordWrap(True)
-        subtitulo.setStyleSheet(f"color: {txt_sec}; font-size: 11.5px; background: transparent;")
-        layout.addWidget(titulo)
-        layout.addWidget(subtitulo)
+        lbl_subtitulo.setWordWrap(True)
+        lbl_subtitulo.setStyleSheet(f"color: {txt_sec}; font-size: 11.5px; background: transparent;")
+        disposicion.addWidget(titulo)
+        disposicion.addWidget(lbl_subtitulo)
 
         fila_opciones= QHBoxLayout()
         fila_opciones.setSpacing(14)
-        layout.addLayout(fila_opciones)
+        disposicion.addLayout(fila_opciones)
 
         def _crear_opcion(nombre_icono, titulo_op, subtitulo_op, color):
 
-            boton= QPushButton()
-            boton.setCursor(Qt.CursorShape.PointingHandCursor)
-            boton.setMinimumHeight(148)
-            boton.setStyleSheet(f"""
+            btn_boton= QPushButton()
+            btn_boton.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_boton.setMinimumHeight(148)
+            btn_boton.setStyleSheet(f"""
                 QPushButton {{
                     background: {_hex_a_rgba(color, 0.16 if modo_oscuro else 0.10)};
                     color: {txt_prim};
@@ -1026,7 +1026,7 @@ class ModuloDashboard(QWidget):
             #recortaba con "…" y el emoji dependía de la fuente del sistema. Ahora es un layout real con el MISMO icono
             #vectorial (QPainter) que la cabecera del módulo en el menú lateral, más título y descripción en QLabels
             #propios (con wordWrap) para que SIEMPRE se vea el texto entero.
-            contenido= QVBoxLayout(boton)
+            contenido= QVBoxLayout(btn_boton)
             contenido.setContentsMargins(18, 16, 18, 16)
             contenido.setSpacing(7)
             lbl_icono= QLabel()
@@ -1046,7 +1046,7 @@ class ModuloDashboard(QWidget):
             lbl_sub.setStyleSheet(
                 f"color: {txt_sec}; font-size: 11.5px; background: transparent;")
             contenido.addWidget(lbl_sub)
-            return boton
+            return btn_boton
 
         btn_materias= _crear_opcion("Materias", "Materias", "Currículo académico regular", "#8B5CF6")
         btn_modulos= _crear_opcion("Politécnico", "Módulos Técnicos", "Formación técnica (RA)", "#0D9488")
@@ -1143,18 +1143,18 @@ class ModuloDashboard(QWidget):
 
         if restringido:
             #"Mis Clases (semanales)" ahora lleva al docente directo a su Horario.
-            self.tarjeta_profesores._on_click= self._on_click_horario_docente
+            self.tarjeta_profesores._al_click= self._al_click_horario_docente
             self.tarjeta_profesores.setCursor(Qt.CursorShape.PointingHandCursor)
             #"Mis Secciones" lleva a Mis Estudiantes con el filtro de Curso/Sección
             #abierto (ver comentario en __init__): antes apuntaba al mismo lugar
             #que "Mis Materias" (que ya trae el horario semanal incluido), así que dos tarjetas distintas terminaban en la
             #misma pantalla.
-            self.tarjeta_secciones._on_click= self._on_click_secciones_docente
+            self.tarjeta_secciones._al_click= self._al_click_secciones_docente
             self.tarjeta_secciones.setCursor(Qt.CursorShape.PointingHandCursor)
         else:
-            self.tarjeta_profesores._on_click= self._on_click_profesores
+            self.tarjeta_profesores._al_click= self._al_click_profesores
             self.tarjeta_profesores.setCursor(Qt.CursorShape.PointingHandCursor)
-            self.tarjeta_secciones._on_click= self._on_click_secciones
+            self.tarjeta_secciones._al_click= self._al_click_secciones
             self.tarjeta_secciones.setCursor(Qt.CursorShape.PointingHandCursor)
 
         #La tarjeta de Materias es la única cuyo rótulo y destino dependen de algo más que el modo
@@ -1164,11 +1164,11 @@ class ModuloDashboard(QWidget):
         #refresco (es una consulta barata: _tipo_institucion ya cachea con try/except) y no solo cuando cambia el modo
         #docente/institucional.
         if restringido:
-            self.tarjeta_materias._on_click= lambda: self._ir_a_modulo("Materias")
+            self.tarjeta_materias._al_click= lambda: self._ir_a_modulo("Materias")
         elif self._es_politecnico_activo() and self._puede_elegir_modulos_tecnicos():
-            self.tarjeta_materias._on_click= self._mostrar_selector_materias_modulos
+            self.tarjeta_materias._al_click= self._mostrar_selector_materias_modulos
         else:
-            self.tarjeta_materias._on_click= lambda: self._ir_a_modulo("Materias")
+            self.tarjeta_materias._al_click= lambda: self._ir_a_modulo("Materias")
         self.tarjeta_materias.setCursor(Qt.CursorShape.PointingHandCursor)
 
         #Solo re-etiquetamos las tarjetas cuando el modo realmente cambia (la instancia del Dashboard persiste entre

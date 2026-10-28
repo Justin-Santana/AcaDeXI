@@ -153,7 +153,7 @@ class _IndicadorRadio(QWidget):
         self._anim.setEndValue(destino)
         self._anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -190,9 +190,9 @@ class _TarjetaMetodo(QFrame):
         self._sombra= _crear_sombra(color=color, blur=0, y=2, alpha=90)
         self.setGraphicsEffect(self._sombra)
 
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.setSpacing(14)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(16, 12, 16, 12)
+        disposicion.setSpacing(14)
 
         lbl_icono= QLabel()
         from src.nucleo.iconos_emoji import pixmap_emoji
@@ -200,7 +200,7 @@ class _TarjetaMetodo(QFrame):
         lbl_icono.setFixedSize(38, 38)
         lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_icono.setObjectName("IconoTarjetaMetodo")
-        layout.addWidget(lbl_icono)
+        disposicion.addWidget(lbl_icono)
 
         columna= QVBoxLayout()
         columna.setSpacing(1)
@@ -211,10 +211,10 @@ class _TarjetaMetodo(QFrame):
         lbl_subtitulo.setObjectName("SubtituloTarjetaMetodo")
         lbl_subtitulo.setWordWrap(True)
         columna.addWidget(lbl_subtitulo)
-        layout.addLayout(columna, 1)
+        disposicion.addLayout(columna, 1)
 
         self.indicador= _IndicadorRadio(color=color)
-        layout.addWidget(self.indicador, 0, Qt.AlignmentFlag.AlignVCenter)
+        disposicion.addWidget(self.indicador, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self._aplicar_estilo()
 
@@ -258,21 +258,21 @@ class _TarjetaMetodo(QFrame):
         self.indicador.poner_marcado(marcada, animar=animar)
         self._animar_sombra(26 if marcada else 0)
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
-        super().enterEvent(event)
+        super().enterEvent(evento)
         if not self._marcada:
             self._animar_sombra(14)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
         if not self._marcada:
             self._animar_sombra(0)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
         _animar_click(self)
         self.clicked.emit()
 
@@ -298,9 +298,9 @@ class PaginaIntro(QWizardPage):
         self.setSubTitle("Elige qué método quieres configurar en este equipo.")
         paleta= _paleta(main_window)
 
-        layout= QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.addWidget(_etiqueta_explicativa(
+        disposicion= QVBoxLayout(self)
+        disposicion.setSpacing(12)
+        disposicion.addWidget(_etiqueta_explicativa(
             "Esta es una alternativa avanzada a la carpeta compartida simple. Cada método "
             "requiere que tú (o tu institución) crees credenciales propias; AcaDeXI no "
             "incluye credenciales genéricas por seguridad. Puedes volver a ejecutar este "
@@ -311,10 +311,10 @@ class PaginaIntro(QWizardPage):
         for clave, icono, titulo, subtitulo, color in self.METODOS_INFO:
             tarjeta= _TarjetaMetodo(icono, titulo, subtitulo, color, paleta)
             tarjeta.clicked.connect(lambda cl=clave: self._seleccionar(cl))
-            layout.addWidget(tarjeta)
+            disposicion.addWidget(tarjeta)
             self._tarjetas.append((clave, tarjeta))
         self._tarjetas[0][1].poner_marcada(True, animar=False)
-        layout.addStretch()
+        disposicion.addStretch()
 
     def _seleccionar(self, clave):
 
@@ -373,7 +373,7 @@ class _IconoEstadoPintado(QWidget):
         self._escala= 0.0
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         if not self._tipo or self._escala <= 0.001:
             return
@@ -408,16 +408,16 @@ class _ChipEstado(QWidget):
     def __init__(self, color_acento="#6366F1", parent=None):
 
         super().__init__(parent)
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(0, 4, 0, 4)
-        layout.setSpacing(8)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(0, 4, 0, 4)
+        disposicion.setSpacing(8)
         self._spinner= SpinnerCircular(diametro=18, color=color_acento)
-        layout.addWidget(self._spinner)
+        disposicion.addWidget(self._spinner)
         self._icono= _IconoEstadoPintado()
-        layout.addWidget(self._icono)
+        disposicion.addWidget(self._icono)
         self._lbl= QLabel("")
         self._lbl.setWordWrap(True)
-        layout.addWidget(self._lbl, 1)
+        disposicion.addWidget(self._lbl, 1)
         self.hide()
 
     def ocioso(self):
@@ -511,8 +511,8 @@ class PaginaGoogle(_PaginaConectable):
         self.setTitle("Google Drive")
         self.setSubTitle("Crea una app OAuth propia y conéctala aquí.")
 
-        layout= QVBoxLayout(self)
-        layout.addWidget(_etiqueta_explicativa(
+        disposicion= QVBoxLayout(self)
+        disposicion.addWidget(_etiqueta_explicativa(
             "<b>Pasos previos (una sola vez, los hace un administrador):</b><br>"
             "1. Entra a <a href='https://console.cloud.google.com/'>console.cloud.google.com</a> "
             "y crea un proyecto (o usa uno existente).<br>"
@@ -524,15 +524,15 @@ class PaginaGoogle(_PaginaConectable):
             "de OAuth</i>. Tipo de aplicación: <b>\"Aplicación de escritorio\"</b>.<br>"
             "5. Copia el <b>Client ID</b> y <b>Client Secret</b> generados y pégalos abajo."))
 
-        layout.addWidget(QLabel("Client ID:"))
+        disposicion.addWidget(QLabel("Client ID:"))
         self.in_client_id= QLineEdit()
         limitar_campo_texto(self.in_client_id, 300)
-        layout.addWidget(self.in_client_id)
-        layout.addWidget(QLabel("Client Secret:"))
+        disposicion.addWidget(self.in_client_id)
+        disposicion.addWidget(QLabel("Client Secret:"))
         self.in_client_secret= QLineEdit()
         limitar_campo_texto(self.in_client_secret, 128)
         self.in_client_secret.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addWidget(self.in_client_secret)
+        disposicion.addWidget(self.in_client_secret)
 
         fila= QHBoxLayout()
         self.btn_conectar= QPushButton("Conectar con Google Drive")
@@ -543,11 +543,11 @@ class PaginaGoogle(_PaginaConectable):
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
         fila.addStretch()
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
         self._registrar_boton(self.btn_conectar)
 
-        layout.addWidget(self.chip)
-        layout.addStretch()
+        disposicion.addWidget(self.chip)
+        disposicion.addStretch()
 
         self.registerField("google_client_id", self.in_client_id)
         self.registerField("google_client_secret", self.in_client_secret)
@@ -585,8 +585,8 @@ class PaginaDropbox(_PaginaConectable):
         self.setTitle("Dropbox")
         self.setSubTitle("Registra una app en Dropbox y conéctala aquí.")
 
-        layout= QVBoxLayout(self)
-        layout.addWidget(_etiqueta_explicativa(
+        disposicion= QVBoxLayout(self)
+        disposicion.addWidget(_etiqueta_explicativa(
             "<b>Pasos previos (una sola vez):</b><br>"
             "1. Entra a <a href='https://www.dropbox.com/developers/apps'>"
             "dropbox.com/developers/apps</a> y pulsa \"Create app\".<br>"
@@ -598,15 +598,15 @@ class PaginaDropbox(_PaginaConectable):
             "5. Pégalos abajo y pulsa Conectar: se abrirá una página de Dropbox con un código "
             "que debes copiar y pegar de vuelta aquí."))
 
-        layout.addWidget(QLabel("App Key:"))
+        disposicion.addWidget(QLabel("App Key:"))
         self.in_key= QLineEdit()
         limitar_campo_texto(self.in_key, 128)
-        layout.addWidget(self.in_key)
-        layout.addWidget(QLabel("App Secret:"))
+        disposicion.addWidget(self.in_key)
+        disposicion.addWidget(QLabel("App Secret:"))
         self.in_secret= QLineEdit()
         limitar_campo_texto(self.in_secret, 128)
         self.in_secret.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addWidget(self.in_secret)
+        disposicion.addWidget(self.in_secret)
 
         fila= QHBoxLayout()
         self.btn_conectar= QPushButton("Conectar con Dropbox")
@@ -617,11 +617,11 @@ class PaginaDropbox(_PaginaConectable):
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
         fila.addStretch()
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
         self._registrar_boton(self.btn_conectar)
 
-        layout.addWidget(self.chip)
-        layout.addStretch()
+        disposicion.addWidget(self.chip)
+        disposicion.addStretch()
 
         self.registerField("dropbox_key", self.in_key)
         self.registerField("dropbox_secret", self.in_secret)
@@ -670,8 +670,8 @@ class PaginaOneDrive(_PaginaConectable):
         self.setTitle("OneDrive / Microsoft 365")
         self.setSubTitle("Registra una app en Microsoft Entra ID y conéctala aquí.")
 
-        layout= QVBoxLayout(self)
-        layout.addWidget(_etiqueta_explicativa(
+        disposicion= QVBoxLayout(self)
+        disposicion.addWidget(_etiqueta_explicativa(
             "<b>Pasos previos (una sola vez):</b><br>"
             "1. Entra a <a href='https://entra.microsoft.com/'>entra.microsoft.com</a> "
             "▸ <i>Identidad ▸ Aplicaciones ▸ Registros de aplicaciones ▸ Nuevo registro</i>.<br>"
@@ -685,10 +685,10 @@ class PaginaOneDrive(_PaginaConectable):
             "5. Copia el <b>ID de aplicación (cliente)</b> de la pantalla \"Información general\" "
             "y pégalo abajo. No necesitas un secreto de cliente para este flujo."))
 
-        layout.addWidget(QLabel("Client ID:"))
+        disposicion.addWidget(QLabel("Client ID:"))
         self.in_client_id= QLineEdit()
         limitar_campo_texto(self.in_client_id, 300)
-        layout.addWidget(self.in_client_id)
+        disposicion.addWidget(self.in_client_id)
 
         fila= QHBoxLayout()
         self.btn_conectar= QPushButton("Conectar con OneDrive")
@@ -699,11 +699,11 @@ class PaginaOneDrive(_PaginaConectable):
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
         fila.addStretch()
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
         self._registrar_boton(self.btn_conectar)
 
-        layout.addWidget(self.chip)
-        layout.addStretch()
+        disposicion.addWidget(self.chip)
+        disposicion.addStretch()
 
         self.registerField("onedrive_client_id", self.in_client_id)
 
@@ -752,8 +752,8 @@ class PaginaServidor(_PaginaConectable):
         self.setTitle("Servidor Institucional Propio")
         self.setSubTitle("La forma más simple: sin variables de entorno, sin TI dedicado.")
 
-        layout= QVBoxLayout(self)
-        layout.addWidget(_etiqueta_explicativa(
+        disposicion= QVBoxLayout(self)
+        disposicion.addWidget(_etiqueta_explicativa(
             "<b>1.</b> Pulsa \"Exportar Servidor Institucional\" abajo: descarga un ZIP con "
             "el código, sus dependencias y scripts para iniciarlo con un doble clic (sin "
             "necesitar terminal).<br>"
@@ -775,18 +775,18 @@ class PaginaServidor(_PaginaConectable):
         self.btn_exportar.clicked.connect(self._exportar)
         fila_exportar.addWidget(self.btn_exportar)
         fila_exportar.addStretch()
-        layout.addLayout(fila_exportar)
+        disposicion.addLayout(fila_exportar)
 
-        layout.addWidget(QLabel("URL del servidor:"))
+        disposicion.addWidget(QLabel("URL del servidor:"))
         self.in_url= QLineEdit()
         limitar_campo_texto(self.in_url, 200)
         self.in_url.setPlaceholderText("http://192.168.1.50:8420")
-        layout.addWidget(self.in_url)
-        layout.addWidget(QLabel("Token de acceso:"))
+        disposicion.addWidget(self.in_url)
+        disposicion.addWidget(QLabel("Token de acceso:"))
         self.in_token= QLineEdit()
         limitar_campo_texto(self.in_token, 128)
         self.in_token.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addWidget(self.in_token)
+        disposicion.addWidget(self.in_token)
 
         fila= QHBoxLayout()
         self.btn_conectar= QPushButton("Conectar con Servidor")
@@ -797,11 +797,11 @@ class PaginaServidor(_PaginaConectable):
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
         fila.addStretch()
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
         self._registrar_boton(self.btn_conectar)
 
-        layout.addWidget(self.chip)
-        layout.addStretch()
+        disposicion.addWidget(self.chip)
+        disposicion.addStretch()
 
         self.registerField("servidor_url", self.in_url)
         self.registerField("servidor_token", self.in_token)
@@ -839,15 +839,15 @@ class PaginaFinal(QWizardPage):
         super().__init__()
         self.setTitle("Listo")
         self.setSubTitle("La conexión quedó guardada en este equipo.")
-        layout= QVBoxLayout(self)
-        layout.addWidget(_etiqueta_explicativa(
+        disposicion= QVBoxLayout(self)
+        disposicion.addWidget(_etiqueta_explicativa(
             "El método quedó conectado. Vuelve a la pantalla de <b>Sincronización</b>, "
             "selecciónalo en \"Método\" y usa los botones <b>Subir (directo)</b> / "
             "<b>Descargar (directo)</b> para sincronizar cuando lo necesites.<br><br>"
             "Recuerda: cada equipo que use este método directo necesita conectarse "
             "también (este asistente lo hace por equipo, no una sola vez para toda "
             "la institución)."))
-        layout.addStretch()
+        disposicion.addStretch()
 
     def nextId(self):
 

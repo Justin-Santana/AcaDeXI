@@ -55,18 +55,18 @@ class ModuloDashboardST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(16)
 
-        titulo= QLabel("📊 Tu vistazo rápido")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("📊 Tu vistazo rápido")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         self.lbl_resumen= QLabel()
         self.lbl_resumen.setWordWrap(True)
-        layout.addWidget(self.lbl_resumen)
-        layout.addStretch()
+        disposicion.addWidget(self.lbl_resumen)
+        disposicion.addStretch()
         self._cargar()
 
     def _cargar(self):
@@ -102,7 +102,7 @@ class DialogoGestionarCursos(QDialog):
         self.setWindowTitle("Gestionar mis cursos")
         aplicar_icono_ventana(self)
         self.setMinimumWidth(420)
-        layout= QVBoxLayout(self)
+        disposicion= QVBoxLayout(self)
 
         form= QHBoxLayout()
         self.in_nombre= QLineEdit()
@@ -118,14 +118,14 @@ class DialogoGestionarCursos(QDialog):
         btn_agregar.setObjectName("BtnAccionAgregar")
         btn_agregar.clicked.connect(self._agregar)
         form.addWidget(btn_agregar)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self.tabla= QTableWidget(0, 2)
 
         aplicar_estructura_tabla(self.tabla)
         self.tabla.setHorizontalHeaderLabels(["Curso", "Nivel"])
         _tabla_solo_lectura(self.tabla)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         btn_eliminar= QPushButton("Eliminar curso seleccionado")
 
@@ -133,12 +133,12 @@ class DialogoGestionarCursos(QDialog):
 
         btn_eliminar.setIconSize(QSize(16, 16))
         btn_eliminar.clicked.connect(self._eliminar)
-        layout.addWidget(btn_eliminar)
+        disposicion.addWidget(btn_eliminar)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         botones.rejected.connect(self.accept)
         botones.accepted.connect(self.accept)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
 
         self._cargar_tabla()
         centrar_y_al_frente(self, parent)
@@ -205,21 +205,21 @@ class ModuloEstudiantesST(QWidget):
         super().__init__()
         self.main_window= main_window
         self._id_edicion= None
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
         fila_titulo= QHBoxLayout()
-        titulo= QLabel("🎓 Estudiantes")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        fila_titulo.addWidget(titulo)
+        lbl_titulo= QLabel("🎓 Estudiantes")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        fila_titulo.addWidget(lbl_titulo)
         fila_titulo.addStretch()
         btn_cursos= QPushButton("Gestionar mis cursos")
         btn_cursos.setIcon(icono_emoji("🏫"))
         btn_cursos.setIconSize(QSize(16, 16))
         btn_cursos.clicked.connect(self._abrir_cursos)
         fila_titulo.addWidget(btn_cursos)
-        layout.addLayout(fila_titulo)
+        disposicion.addLayout(fila_titulo)
 
         form= QGridLayout()
         self.in_nombre= QLineEdit()
@@ -255,7 +255,7 @@ class ModuloEstudiantesST(QWidget):
         form.addWidget(self.in_telefono, 3, 1)
         form.addWidget(QLabel("Correo:"), 3, 2)
         form.addWidget(self.in_correo, 3, 3)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         fila_botones= QHBoxLayout()
         self.btn_guardar= QPushButton("Guardar")
@@ -270,7 +270,7 @@ class ModuloEstudiantesST(QWidget):
         btn_limpiar.clicked.connect(self._limpiar)
         fila_botones.addWidget(btn_limpiar)
         fila_botones.addStretch()
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
         self.tabla= QTableWidget(0, 4)
 
@@ -278,7 +278,7 @@ class ModuloEstudiantesST(QWidget):
         self.tabla.setHorizontalHeaderLabels(["Nombre", "Apellidos", "Curso", "Tutor"])
         _tabla_solo_lectura(self.tabla)
         self.tabla.cellDoubleClicked.connect(self._editar_seleccionado)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         btn_eliminar= QPushButton("Eliminar seleccionado")
 
@@ -286,7 +286,7 @@ class ModuloEstudiantesST(QWidget):
 
         btn_eliminar.setIconSize(QSize(16, 16))
         btn_eliminar.clicked.connect(self._eliminar)
-        layout.addWidget(btn_eliminar)
+        disposicion.addWidget(btn_eliminar)
 
         self._recargar_todo()
 
@@ -403,13 +403,13 @@ class ModuloMateriasST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        titulo= QLabel("📘 Materias")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("📘 Materias")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         form= QHBoxLayout()
         self.in_nombre= QLineEdit()
@@ -424,14 +424,14 @@ class ModuloMateriasST(QWidget):
         self.btn_guardar.setObjectName("BtnAccionAgregar")
         self.btn_guardar.clicked.connect(self._guardar)
         form.addWidget(self.btn_guardar)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self.tabla= QTableWidget(0, 2)
 
         aplicar_estructura_tabla(self.tabla)
         self.tabla.setHorizontalHeaderLabels(["Materia", "Técnica"])
         _tabla_solo_lectura(self.tabla)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         btn_eliminar= QPushButton("Eliminar materia seleccionada")
 
@@ -439,7 +439,7 @@ class ModuloMateriasST(QWidget):
 
         btn_eliminar.setIconSize(QSize(16, 16))
         btn_eliminar.clicked.connect(self._eliminar)
-        layout.addWidget(btn_eliminar)
+        disposicion.addWidget(btn_eliminar)
 
         self._cargar_tabla()
 
@@ -525,13 +525,13 @@ class ModuloAsistenciaST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        titulo= QLabel("✅ Asistencia")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("✅ Asistencia")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         fila_filtro= QHBoxLayout()
         fila_filtro.addWidget(QLabel("Curso:"))
@@ -545,7 +545,7 @@ class ModuloAsistenciaST(QWidget):
         aplicar_formato_widget_fecha(self.in_fecha, main_window)
         self.in_fecha.dateChanged.connect(self._cargar_tabla)
         fila_filtro.addWidget(self.in_fecha)
-        layout.addLayout(fila_filtro)
+        disposicion.addLayout(fila_filtro)
 
         self.tabla= QTableWidget(0, 2)
 
@@ -554,7 +554,7 @@ class ModuloAsistenciaST(QWidget):
         self.tabla.setHorizontalHeaderLabels(["Estudiante", "Estado"])
         self.tabla.horizontalHeader().setStretchLastSection(True)
         self.tabla.verticalHeader().setVisible(False)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         self.btn_guardar= QPushButton("Guardar")
 
@@ -563,7 +563,7 @@ class ModuloAsistenciaST(QWidget):
         self.btn_guardar.setIconSize(QSize(16, 16))
         self.btn_guardar.setObjectName("BtnAccionAgregar")
         self.btn_guardar.clicked.connect(self._guardar)
-        layout.addWidget(self.btn_guardar)
+        disposicion.addWidget(self.btn_guardar)
 
         _recargar_combo_cursos(main_window, self.combo_curso)
 
@@ -622,13 +622,13 @@ class ModuloCalificacionesST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        titulo= QLabel("📝 Calificaciones")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("📝 Calificaciones")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         form= QGridLayout()
         self.combo_curso= QComboBox()
@@ -659,7 +659,7 @@ class ModuloCalificacionesST(QWidget):
         form.addWidget(self.spin_valor, 3, 1)
         form.addWidget(QLabel("Peso:"), 3, 2)
         form.addWidget(self.spin_peso, 3, 3)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self.btn_guardar= QPushButton("Registrar Calificación")
 
@@ -668,14 +668,14 @@ class ModuloCalificacionesST(QWidget):
         self.btn_guardar.setIconSize(QSize(16, 16))
         self.btn_guardar.setObjectName("BtnAccionAgregar")
         self.btn_guardar.clicked.connect(self._guardar)
-        layout.addWidget(self.btn_guardar)
+        disposicion.addWidget(self.btn_guardar)
 
         self.tabla= QTableWidget(0, 4)
 
         aplicar_estructura_tabla(self.tabla)
         self.tabla.setHorizontalHeaderLabels(["Estudiante", "Materia", "Descripción", "Valor"])
         _tabla_solo_lectura(self.tabla)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         _recargar_combo_cursos(main_window, self.combo_curso)
         _recargar_combo_materias(main_window, self.combo_materia)
@@ -750,13 +750,13 @@ class ModuloBancoTareasST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        titulo= QLabel("🗒️ Banco de Tareas")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("🗒️ Banco de Tareas")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         form= QGridLayout()
         self.combo_curso= QComboBox()
@@ -781,7 +781,7 @@ class ModuloBancoTareasST(QWidget):
         form.addWidget(self.in_descripcion, 2, 1, 1, 3)
         form.addWidget(QLabel("Fecha de entrega:"), 3, 0)
         form.addWidget(self.in_fecha_entrega, 3, 1)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self.btn_guardar= QPushButton("Guardar Tarea")
 
@@ -790,14 +790,14 @@ class ModuloBancoTareasST(QWidget):
         self.btn_guardar.setIconSize(QSize(16, 16))
         self.btn_guardar.setObjectName("BtnAccionAgregar")
         self.btn_guardar.clicked.connect(self._guardar)
-        layout.addWidget(self.btn_guardar)
+        disposicion.addWidget(self.btn_guardar)
 
         self.tabla= QTableWidget(0, 3)
 
         aplicar_estructura_tabla(self.tabla)
         self.tabla.setHorizontalHeaderLabels(["Título", "Curso", "Entrega"])
         _tabla_solo_lectura(self.tabla)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         _recargar_combo_cursos(main_window, self.combo_curso)
         _recargar_combo_materias(main_window, self.combo_materia)
@@ -847,13 +847,13 @@ class ModuloHorarioST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        titulo= QLabel("📅 Horario")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("📅 Horario")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         form= QGridLayout()
         self.combo_curso= QComboBox()
@@ -881,7 +881,7 @@ class ModuloHorarioST(QWidget):
         form.addWidget(self.in_hora_fin, 2, 1)
         form.addWidget(QLabel("Aula:"), 2, 2)
         form.addWidget(self.in_aula, 2, 3)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self.btn_guardar= QPushButton("Guardar Horario")
 
@@ -890,14 +890,14 @@ class ModuloHorarioST(QWidget):
         self.btn_guardar.setIconSize(QSize(16, 16))
         self.btn_guardar.setObjectName("BtnAccionAgregar")
         self.btn_guardar.clicked.connect(self._guardar)
-        layout.addWidget(self.btn_guardar)
+        disposicion.addWidget(self.btn_guardar)
 
         self.tabla= QTableWidget(0, 4)
 
         aplicar_estructura_tabla(self.tabla)
         self.tabla.setHorizontalHeaderLabels(["Día", "Hora", "Materia", "Curso"])
         _tabla_solo_lectura(self.tabla)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         _recargar_combo_cursos(main_window, self.combo_curso)
         _recargar_combo_materias(main_window, self.combo_materia)
@@ -949,13 +949,13 @@ class ModuloObservacionesST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        titulo= QLabel("📔 Observaciones")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("📔 Observaciones")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         form= QGridLayout()
         self.combo_curso= QComboBox()
@@ -974,7 +974,7 @@ class ModuloObservacionesST(QWidget):
         form.addWidget(self.combo_tipo, 1, 1)
         form.addWidget(QLabel("Descripción:"), 2, 0)
         form.addWidget(self.in_descripcion, 2, 1, 1, 3)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self.btn_guardar= QPushButton("Guardar Observación")
 
@@ -983,14 +983,14 @@ class ModuloObservacionesST(QWidget):
         self.btn_guardar.setIconSize(QSize(16, 16))
         self.btn_guardar.setObjectName("BtnAccionAgregar")
         self.btn_guardar.clicked.connect(self._guardar)
-        layout.addWidget(self.btn_guardar)
+        disposicion.addWidget(self.btn_guardar)
 
         self.tabla= QTableWidget(0, 3)
 
         aplicar_estructura_tabla(self.tabla)
         self.tabla.setHorizontalHeaderLabels(["Estudiante", "Tipo", "Fecha"])
         _tabla_solo_lectura(self.tabla)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         _recargar_combo_cursos(main_window, self.combo_curso)
         self._cargar_tabla()
@@ -1057,18 +1057,18 @@ class ModuloReportesST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        titulo= QLabel("📈 Reportes")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("📈 Reportes")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
-        info= QLabel("Exporta tus datos a Excel, o intercambia estudiantes/calificaciones con otra "
+        lbl_info= QLabel("Exporta tus datos a Excel, o intercambia estudiantes/calificaciones con otra "
                        "instalación de AcaDeXI (misma edición u otra).")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         btn_excel_estudiantes= QPushButton("Exportar Estudiantes a Excel")
 
@@ -1077,7 +1077,7 @@ class ModuloReportesST(QWidget):
         btn_excel_estudiantes.setIconSize(QSize(16, 16))
         btn_excel_estudiantes.setObjectName("BtnAccionAgregar")
         btn_excel_estudiantes.clicked.connect(self._exportar_estudiantes_excel)
-        layout.addWidget(btn_excel_estudiantes)
+        disposicion.addWidget(btn_excel_estudiantes)
 
         btn_excel_calificaciones= QPushButton("Exportar Calificaciones a Excel")
 
@@ -1085,11 +1085,11 @@ class ModuloReportesST(QWidget):
 
         btn_excel_calificaciones.setIconSize(QSize(16, 16))
         btn_excel_calificaciones.clicked.connect(self._exportar_calificaciones_excel)
-        layout.addWidget(btn_excel_calificaciones)
+        disposicion.addWidget(btn_excel_calificaciones)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
-        layout.addWidget(separador)
+        disposicion.addWidget(separador)
 
         btn_exportar_intercambio= QPushButton("Exportar Estudiantes a otra edición")
 
@@ -1097,7 +1097,7 @@ class ModuloReportesST(QWidget):
 
         btn_exportar_intercambio.setIconSize(QSize(16, 16))
         btn_exportar_intercambio.clicked.connect(self._exportar_intercambio)
-        layout.addWidget(btn_exportar_intercambio)
+        disposicion.addWidget(btn_exportar_intercambio)
 
         btn_importar_intercambio= QPushButton("Importar Estudiantes de otra edición")
 
@@ -1105,9 +1105,9 @@ class ModuloReportesST(QWidget):
 
         btn_importar_intercambio.setIconSize(QSize(16, 16))
         btn_importar_intercambio.clicked.connect(self._importar_intercambio)
-        layout.addWidget(btn_importar_intercambio)
+        disposicion.addWidget(btn_importar_intercambio)
 
-        layout.addStretch()
+        disposicion.addStretch()
 
     def _exportar_estudiantes_excel(self):
 
@@ -1170,13 +1170,13 @@ class ModuloConfiguracionST(QWidget):
 
         super().__init__()
         self.main_window= main_window
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(16)
 
-        titulo= QLabel("⚙️ Configuración")
-        titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("⚙️ Configuración")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
+        disposicion.addWidget(lbl_titulo)
 
         form= QFormLayout()
         self.in_nombre_docente= QLineEdit()
@@ -1188,7 +1188,7 @@ class ModuloConfiguracionST(QWidget):
         self.spin_nota_min_secundaria= QDoubleSpinBox()
         self.spin_nota_min_secundaria.setRange(0, 1000)
         form.addRow("Nota mínima aprobatoria (Secundaria):", self.spin_nota_min_secundaria)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         btn_guardar= QPushButton("Guardar")
 
@@ -1197,11 +1197,11 @@ class ModuloConfiguracionST(QWidget):
         btn_guardar.setIconSize(QSize(16, 16))
         btn_guardar.setObjectName("BtnAccionAgregar")
         btn_guardar.clicked.connect(self._guardar)
-        layout.addWidget(btn_guardar)
+        disposicion.addWidget(btn_guardar)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
-        layout.addWidget(separador)
+        disposicion.addWidget(separador)
 
         btn_tutorial= QPushButton("Ver tutorial de nuevo")
 
@@ -1209,9 +1209,9 @@ class ModuloConfiguracionST(QWidget):
 
         btn_tutorial.setIconSize(QSize(16, 16))
         btn_tutorial.clicked.connect(self._ver_tutorial_de_nuevo)
-        layout.addWidget(btn_tutorial)
+        disposicion.addWidget(btn_tutorial)
 
-        layout.addStretch()
+        disposicion.addStretch()
         self._cargar()
 
     def _cargar(self):
@@ -1259,15 +1259,15 @@ class WizardSingleTeacher(QDialog):
         aplicar_icono_ventana(self)
         self.setMinimumWidth(480)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
-        intro= QLabel(
+        lbl_intro= QLabel(
             "Eres dueño directo de tus datos: no hay ninguna institución detrás. Cuéntanos un poco "
             "de ti para empezar (puedes cambiar esto luego en Configuración).")
-        intro.setWordWrap(True)
-        layout.addWidget(intro)
+        lbl_intro.setWordWrap(True)
+        disposicion.addWidget(lbl_intro)
 
         form= QFormLayout()
         self.in_nombre= QLineEdit()
@@ -1280,12 +1280,12 @@ class WizardSingleTeacher(QDialog):
         self.combo_nivel= QComboBox()
         self.combo_nivel.addItems(["Primaria", "Secundaria", "Preparatoria", "Universidad"])
         form.addRow("Nivel educativo:", self.combo_nivel)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
         botones.button(QDialogButtonBox.StandardButton.Ok).setText("Empezar")
         botones.accepted.connect(self._finalizar)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
 
         centrar_y_al_frente(self, parent)
 

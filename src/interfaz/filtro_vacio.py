@@ -36,27 +36,27 @@ class EstadoVacioFiltro(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
 
-        layout= QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setSpacing(10)
+        disposicion= QVBoxLayout(self)
+        disposicion.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        disposicion.setSpacing(10)
 
         self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji(icono, 40))
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.lbl_icono)
+        disposicion.addWidget(self.lbl_icono)
 
         self.lbl_texto= QLabel(self.texto_filtra_primero)
         self.lbl_texto.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_texto.setWordWrap(True)
         self.lbl_texto.setStyleSheet("color: rgba(128,128,128,0.85); font-size: 13px; font-weight: 500;")
-        layout.addWidget(self.lbl_texto)
+        disposicion.addWidget(self.lbl_texto)
 
         self.hide()
         tabla.installEventFilter(self)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        if obj is self.tabla and event.type() in (event.Type.Resize, event.Type.Show):
+        if objeto is self.tabla and evento.type() in (evento.Type.Resize, evento.Type.Show):
             self._reubicar()
 
         return False

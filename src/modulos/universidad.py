@@ -111,16 +111,16 @@ class BotonAnimado(QPushButton):
         self._anim.setEndValue(hasta)
         self._anim.start()
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         if self.isEnabled():
             self._animar_sombra(16)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(0)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Anillo (donut) animado que reemplaza a la típica 'tarjeta KPI': muestra
@@ -144,9 +144,9 @@ class AnilloFacultades(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.setStartValue(0.0)
         self._anim.setEndValue(1.0)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._progreso= float(v)
         self.update()
@@ -170,7 +170,7 @@ class AnilloFacultades(QWidget):
 
         return QSize(170, 170)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -239,9 +239,9 @@ class BarraSegmentada(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.setStartValue(0.0)
         self._anim.setEndValue(1.0)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._progreso= float(v)
         self.update()
@@ -258,7 +258,7 @@ class BarraSegmentada(QWidget):
         self._progreso= 0.0
         self._anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -378,9 +378,9 @@ class MallaCurricular(QWidget):
                 self._nodos[mid]["rect"]= QRectF(pos_x, pos_y, self.ANCHO_COLUMNA - 24, self.ALTO_FICHA)
         self.updateGeometry()
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, evento):
 
-        punto= event.position()
+        punto= evento.position()
         nuevo_hover= None
         for mid, nodo in self._nodos.items():
             r= nodo["rect"]
@@ -395,12 +395,12 @@ class MallaCurricular(QWidget):
                 self.setToolTip(f"{nodo['nombre']}{extra} · Semestre {nodo['semestre']}")
             self.update()
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         if self._hover_id is not None:
             self._hover_id= None
             self.update()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
     def _relacionado_con_hover(self, mid):
 
@@ -415,7 +415,7 @@ class MallaCurricular(QWidget):
             return True
         return False
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -534,7 +534,7 @@ class ModuloUniversidad(QWidget):
         self._valor_chip_facultades= 0
         self._valor_chip_carreras= 0
         self._color_sombra_normal= QColor(0, 0, 0, 45)
-        self._build_ui()
+        self._construir_ui()
         #Cargamos los datos en el siguiente ciclo del bucle de eventos: así la pantalla se pinta de inmediato al
         #presionar el módulo en la barra lateral y los datos aparecen un instante después, sin bloquear el clic.
         QTimer.singleShot(0, self.refrescar)
@@ -553,7 +553,7 @@ class ModuloUniversidad(QWidget):
         registrar_atajo(self, self.main_window, "F5", "Actualizar", self._cargar_facultades)
 
     #Construcción de la interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -565,18 +565,18 @@ class ModuloUniversidad(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(16)
 
-        layout.addWidget(self._construir_cabecera())
+        disposicion.addWidget(self._construir_cabecera())
 
         self.tabs= TabWidgetNavegable()
         self.tabs.setDocumentMode(True)
         #Ver nota en configuracion.py: quita la línea base nativa que Qt dibuja bajo la barra de pestañas y que el
         #stylesheet no puede eliminar.
         self.tabs.tabBar().setDrawBase(False)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tabs.addTab(self._tab_facultades(), "Facultades")
         self.tabs.addTab(self._tab_carreras(), "Carreras")
         self.tabs.addTab(self._tab_pensum(), "Malla Curricular")
@@ -611,13 +611,13 @@ class ModuloUniversidad(QWidget):
 
         bloque= QVBoxLayout()
         bloque.setSpacing(2)
-        titulo= QLabel("Módulo Superior · Universidad")
-        titulo.setObjectName("TituloCabeceraUniversidad")
-        subtitulo= QLabel("Facultades, carreras, mallas curriculares y asignación docente en un solo lugar")
-        subtitulo.setObjectName("SubtituloCabeceraUniversidad")
-        subtitulo.setWordWrap(True)
-        bloque.addWidget(titulo)
-        bloque.addWidget(subtitulo)
+        lbl_titulo= QLabel("Módulo Superior · Universidad")
+        lbl_titulo.setObjectName("TituloCabeceraUniversidad")
+        lbl_subtitulo= QLabel("Facultades, carreras, mallas curriculares y asignación docente en un solo lugar")
+        lbl_subtitulo.setObjectName("SubtituloCabeceraUniversidad")
+        lbl_subtitulo.setWordWrap(True)
+        bloque.addWidget(lbl_titulo)
+        bloque.addWidget(lbl_subtitulo)
         cab.addLayout(bloque, 1)
 
         self.chip_facultades= QLabel("0 facultades")
@@ -637,15 +637,15 @@ class ModuloUniversidad(QWidget):
 
         frame= QFrame()
         frame.setObjectName("PanelUniversidad")
-        layout= QVBoxLayout(frame)
-        layout.setContentsMargins(18, 16, 18, 16)
-        layout.setSpacing(10)
+        disposicion= QVBoxLayout(frame)
+        disposicion.setContentsMargins(18, 16, 18, 16)
+        disposicion.setSpacing(10)
         sombra= QGraphicsDropShadowEffect(frame)
         sombra.setColor(self._color_sombra_normal)
         sombra.setOffset(0, 3)
         sombra.setBlurRadius(20)
         frame.setGraphicsEffect(sombra)
-        return frame, layout, sombra
+        return frame, disposicion, sombra
 
     #Barra de búsqueda con lupa dibujada a mano e insensible a mayúsculas/
     #acentos — mismo diseño y comportamiento que en Configuración, para que
@@ -660,21 +660,21 @@ class ModuloUniversidad(QWidget):
         lay.setSpacing(6)
         icono= IconoLupa()
         lay.addWidget(icono)
-        campo= QLineEdit()
-        limitar_campo_texto(campo, 300)
-        campo.setPlaceholderText(placeholder)
-        campo.setStyleSheet("QLineEdit { border: none; background: transparent; padding: 8px 0; }")
-        lay.addWidget(campo, 1)
+        in_campo= QLineEdit()
+        limitar_campo_texto(in_campo, 300)
+        in_campo.setPlaceholderText(placeholder)
+        in_campo.setStyleSheet("QLineEdit { border: none; background: transparent; padding: 8px 0; }")
+        lay.addWidget(in_campo, 1)
 
         temporizador= QTimer(self)
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(callback_filtro)
-        campo.textChanged.connect(lambda _t: temporizador.start())
+        in_campo.textChanged.connect(lambda _t: temporizador.start())
 
         self._iconos_busqueda= getattr(self, "_iconos_busqueda", [])
         self._iconos_busqueda.append(icono)
-        return marco, campo
+        return marco, in_campo
 
     #Validación y robustez — helpers reutilizables por las distintas pestañas para evitar duplicados y para que un
     #error de BD (integridad, bloqueo, etc.) se muestre como aviso en vez de romper la ventana.
@@ -814,16 +814,16 @@ class ModuloUniversidad(QWidget):
         return icono
 
     #Carga perezosa por pestaña
-    def _cambio_pestana(self, index):
+    def _cambio_pestana(self, indice):
 
-        if index in self._pestanas_cargadas:
+        if indice in self._pestanas_cargadas:
             return
-        self._pestanas_cargadas.add(index)
-        if index == 0:
+        self._pestanas_cargadas.add(indice)
+        if indice == 0:
             self._cargar_facultades()
-        elif index == 1:
+        elif indice == 1:
             self._cargar_carreras()
-        elif index == 2:
+        elif indice == 2:
             self._cargar_pensum()
             self._reconstruir_malla()
 
@@ -835,9 +835,9 @@ class ModuloUniversidad(QWidget):
         disposicion.setSpacing(14)
 
         tarjeta_dist, layout_dist, _= self._crear_tarjeta()
-        titulo_dist= QLabel("Distribución de carreras por facultad")
-        titulo_dist.setObjectName("TituloTarjetaUniversidad")
-        layout_dist.addWidget(titulo_dist)
+        lbl_titulo_dist= QLabel("Distribución de carreras por facultad")
+        lbl_titulo_dist.setObjectName("TituloTarjetaUniversidad")
+        layout_dist.addWidget(lbl_titulo_dist)
         fila_dist= QHBoxLayout()
         fila_dist.setSpacing(22)
         self.anillo_facultades= AnilloFacultades()
@@ -851,9 +851,9 @@ class ModuloUniversidad(QWidget):
         disposicion.addWidget(tarjeta_dist)
 
         self.tarjeta_form_facultad, layout_form, self.sombra_form_facultad= self._crear_tarjeta()
-        titulo_form= QLabel("Nueva facultad")
-        titulo_form.setObjectName("TituloTarjetaUniversidad")
-        layout_form.addWidget(titulo_form)
+        lbl_titulo_form= QLabel("Nueva facultad")
+        lbl_titulo_form.setObjectName("TituloTarjetaUniversidad")
+        layout_form.addWidget(lbl_titulo_form)
         fila= QHBoxLayout()
         self.f_nombre= QLineEdit()
         self.f_nombre.setPlaceholderText("Nombre de la Facultad")
@@ -1100,13 +1100,13 @@ class ModuloUniversidad(QWidget):
         for seg in segmentos:
             fila= QHBoxLayout()
             fila.setSpacing(8)
-            punto= QLabel()
-            punto.setFixedSize(10, 10)
-            punto.setStyleSheet(f"background-color:{seg['color']}; border-radius:5px;")
-            fila.addWidget(punto)
-            texto= QLabel(f"{seg['etiqueta']}  ·  {seg['valor']}")
-            texto.setObjectName("LeyendaTextoUniversidad")
-            fila.addWidget(texto, 1)
+            lbl_punto= QLabel()
+            lbl_punto.setFixedSize(10, 10)
+            lbl_punto.setStyleSheet(f"background-color:{seg['color']}; border-radius:5px;")
+            fila.addWidget(lbl_punto)
+            lbl_texto= QLabel(f"{seg['etiqueta']}  ·  {seg['valor']}")
+            lbl_texto.setObjectName("LeyendaTextoUniversidad")
+            fila.addWidget(lbl_texto, 1)
             contenedor= QWidget()
             contenedor.setLayout(fila)
             self.layout_leyenda_donut.addWidget(contenedor)
@@ -1120,9 +1120,9 @@ class ModuloUniversidad(QWidget):
         disposicion.setSpacing(14)
 
         self.tarjeta_form_carrera, layout_form, self.sombra_form_carrera= self._crear_tarjeta()
-        titulo_form= QLabel("Nueva carrera")
-        titulo_form.setObjectName("TituloTarjetaUniversidad")
-        layout_form.addWidget(titulo_form)
+        lbl_titulo_form= QLabel("Nueva carrera")
+        lbl_titulo_form.setObjectName("TituloTarjetaUniversidad")
+        layout_form.addWidget(lbl_titulo_form)
         form= QGridLayout()
         self.car_nombre= QLineEdit()
         self.car_nombre.setPlaceholderText("Nombre de la Carrera")
@@ -1342,9 +1342,9 @@ class ModuloUniversidad(QWidget):
 
         self.tarjeta_malla, layout_malla, _= self._crear_tarjeta()
         fila_malla_titulo= QHBoxLayout()
-        titulo_malla= QLabel("Mapa curricular")
-        titulo_malla.setObjectName("TituloTarjetaUniversidad")
-        fila_malla_titulo.addWidget(titulo_malla)
+        lbl_titulo_malla= QLabel("Mapa curricular")
+        lbl_titulo_malla.setObjectName("TituloTarjetaUniversidad")
+        fila_malla_titulo.addWidget(lbl_titulo_malla)
         fila_malla_titulo.addStretch()
         fila_malla_titulo.addWidget(QLabel("Carrera:"))
         self.malla_filtro_carrera= QComboBox()
@@ -1355,11 +1355,11 @@ class ModuloUniversidad(QWidget):
         fila_malla_titulo.addWidget(self.malla_filtro_carrera)
         layout_malla.addLayout(fila_malla_titulo)
 
-        ayuda_malla= QLabel("Cada ficha es una materia; las flechas apuntan de su prerrequisito hacia ella. "
+        lbl_ayuda_malla= QLabel("Cada ficha es una materia; las flechas apuntan de su prerrequisito hacia ella. "
                               "Pasa el mouse sobre una materia para resaltar su cadena. Borde punteado = electiva.")
-        ayuda_malla.setObjectName("DescModulo")
-        ayuda_malla.setWordWrap(True)
-        layout_malla.addWidget(ayuda_malla)
+        lbl_ayuda_malla.setObjectName("DescModulo")
+        lbl_ayuda_malla.setWordWrap(True)
+        layout_malla.addWidget(lbl_ayuda_malla)
 
         self.malla= MallaCurricular()
         self.estado_vacio_malla= EstadoVacioFiltro(
@@ -1373,9 +1373,9 @@ class ModuloUniversidad(QWidget):
         disposicion.addWidget(self.tarjeta_malla)
 
         self.tarjeta_form_pensum, layout_form, self.sombra_form_pensum= self._crear_tarjeta()
-        titulo_form= QLabel("Agregar materia al pensum")
-        titulo_form.setObjectName("TituloTarjetaUniversidad")
-        layout_form.addWidget(titulo_form)
+        lbl_titulo_form= QLabel("Agregar materia al pensum")
+        lbl_titulo_form.setObjectName("TituloTarjetaUniversidad")
+        layout_form.addWidget(lbl_titulo_form)
         form= QGridLayout()
         self.pen_carrera= QComboBox()
         conectar_tooltip_seleccion(self.pen_carrera, "Carrera a la que se agrega esta materia en el pensum")

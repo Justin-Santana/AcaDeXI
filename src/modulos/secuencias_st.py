@@ -50,7 +50,7 @@ class EditorSecuenciaST(QDialog):
         self.setWindowTitle("Editar secuencia didáctica" if secuencia_id else "Nueva secuencia didáctica")
         self.resize(1040, 680)
 
-        self._build_ui()
+        self._construir_ui()
 
         _recargar_combo_materias(main_window, self.combo_materia)
         _recargar_combo_cursos(main_window, self.combo_curso)
@@ -67,23 +67,23 @@ class EditorSecuenciaST(QDialog):
         self._recargar_tareas()
 
     #construcción
-    def _build_ui(self):
+    def _construir_ui(self):
 
-        layout= QVBoxLayout(self)
+        disposicion= QVBoxLayout(self)
 
         pestanas= QTabWidget()
         pestanas.addTab(self._crear_pestana_general(), "General")
         pestanas.addTab(self._crear_pestana_pedagogica(), "Pedagógico")
         pestanas.addTab(self._crear_pestana_sesiones(), "Sesiones")
         pestanas.addTab(self._crear_pestana_tareas(), "Tareas")
-        layout.addWidget(pestanas, 1)
+        disposicion.addWidget(pestanas, 1)
 
         botones= QDialogButtonBox()
         botones.addButton("Guardar", QDialogButtonBox.ButtonRole.AcceptRole)
         botones.addButton("Cancelar", QDialogButtonBox.ButtonRole.RejectRole)
         botones.accepted.connect(self._guardar)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
 
     def _crear_pestana_general(self):
 
@@ -164,7 +164,7 @@ class EditorSecuenciaST(QDialog):
     def _crear_pestana_sesiones(self):
 
         pestana= QWidget()
-        layout= QVBoxLayout(pestana)
+        disposicion= QVBoxLayout(pestana)
 
         self.tabla_sesiones= TablaSesiones()
 
@@ -192,20 +192,20 @@ class EditorSecuenciaST(QDialog):
 
         barra.addStretch(1)
 
-        layout.addLayout(barra)
-        layout.addWidget(self.tabla_sesiones, 1)
+        disposicion.addLayout(barra)
+        disposicion.addWidget(self.tabla_sesiones, 1)
 
         return pestana
 
     def _crear_pestana_tareas(self):
 
         pestana= QWidget()
-        layout= QVBoxLayout(pestana)
+        disposicion= QVBoxLayout(pestana)
 
-        layout.addWidget(QLabel("Tareas del Banco de Tareas que forman parte de esta secuencia"))
+        disposicion.addWidget(QLabel("Tareas del Banco de Tareas que forman parte de esta secuencia"))
 
         self.lista_tareas= QListWidget()
-        layout.addWidget(self.lista_tareas, 1)
+        disposicion.addWidget(self.lista_tareas, 1)
 
         return pestana
 
@@ -347,19 +347,19 @@ class ModuloSecuenciasST(QWidget):
         super().__init__()
         self.main_window= main_window
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 24, 24, 24)
+        disposicion.setSpacing(14)
 
         lbl_titulo= QLabel("📝 Secuencias Didácticas")
         lbl_titulo.setStyleSheet("font-size: 20px; font-weight: bold;")
-        layout.addWidget(lbl_titulo)
+        disposicion.addWidget(lbl_titulo)
 
-        layout.addWidget(QLabel("Planifica tus unidades con el esquema del MINERD y expórtalas a Word."))
+        disposicion.addWidget(QLabel("Planifica tus unidades con el esquema del MINERD y expórtalas a Word."))
 
-        layout.addLayout(self._crear_filtros())
-        layout.addWidget(self._crear_tabla(), 1)
-        layout.addLayout(self._crear_botones())
+        disposicion.addLayout(self._crear_filtros())
+        disposicion.addWidget(self._crear_tabla(), 1)
+        disposicion.addLayout(self._crear_botones())
 
         self.refrescar()
 

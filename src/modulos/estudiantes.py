@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineE
 from PySide6.QtCore import (Qt, QDate, QTimer, QRectF, QPointF, QPropertyAnimation, QEasingCurve,
     QVariantAnimation, QParallelAnimationGroup)
 from PySide6.QtGui import QPixmap, QPainter, QPainterPath, QColor, QPen
-from src.nucleo.bd import (obtener_conexion, registrar_auditoria, get_app_data_dir,
+from src.nucleo.bd import (obtener_conexion, registrar_auditoria, obtener_carpeta_datos,
                 resolver_nivel_academico_de_seccion, recalcular_numeros_lista, mostrar_columna_numero_lista)
 from src.interfaz.filtros_curso_seccion import (poblar_combo_curso, cascada_seccion_por_curso,
     preseleccionar_curso_y_seccion)
@@ -115,7 +115,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -153,16 +153,16 @@ class BotonAnimado(QPushButton):
         self._anim.setEndValue(hasta)
         self._anim.start()
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         if self.isEnabled():
             self._animar_sombra(18)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(0)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 class ModuloEstudiantes(QWidget):
@@ -175,7 +175,7 @@ class ModuloEstudiantes(QWidget):
         self.foto_path= ""
         self._especialidad_disponible= False
         self._carrera_disponible= False
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         self._registrar_atajos_teclado()
 
@@ -201,16 +201,16 @@ class ModuloEstudiantes(QWidget):
     #Navegación desde otros módulos (p. ej. la tarjeta "Mis Secciones" del Dashboard de Docente: en vez de llevar a
     #una pantalla aparte, aterriza aquí mismo con el filtro de Curso/Sección ya abierto y listo para elegir, porque
     #para un docente "ver sus secciones" es, en la práctica, ver quién está en cada una).
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
-        super().showEvent(event)
+        super().showEvent(evento)
         pendiente= getattr(self.main_window, "_pestana_pendiente_dashboard", None)
         if pendiente == "secciones":
             self.main_window._pestana_pendiente_dashboard= None
             self._abrir_dialogo_filtros()
             QTimer.singleShot(0, self.combo_filtro_grado.showPopup)
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -222,9 +222,9 @@ class ModuloEstudiantes(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(18)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(18)
 
         restringido_ui= es_profesor_restringido(self.main_window)
 
@@ -285,7 +285,7 @@ class ModuloEstudiantes(QWidget):
             """)
             self.btn_info_docente.clicked.connect(self._mostrar_info_docente)
             cabecera_layout.addWidget(self.btn_info_docente)
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #--- Panel de creación/edición (oculto por completo para Profesor) ---
         self.panel_edicion= QFrame()
@@ -408,7 +408,7 @@ class ModuloEstudiantes(QWidget):
         #foto en grande está el botón "Ver Ampliada" — no se usa doble clic aquí porque el diálogo de selección, al ser
         #modal, se comería el segundo clic.
         self.lbl_foto.setToolTip("Clic para elegir foto")
-        self.lbl_foto.mousePressEvent= lambda event: self._elegir_foto()
+        self.lbl_foto.mousePressEvent= lambda evento: self._elegir_foto()
         fila_foto.addWidget(self.lbl_foto)
 
         btn_foto= BotonAnimado("Elegir y Recortar Foto")
@@ -485,7 +485,7 @@ class ModuloEstudiantes(QWidget):
 
         panel_layout.addLayout(fila_intercambio)
 
-        layout.addWidget(self.panel_edicion)
+        disposicion.addWidget(self.panel_edicion)
         #El panel es visible también para el Profesor: puede retocar localmente TODOS los datos de SUS estudiantes (ver
         #_guardar_override_local). Solo se ocultan las herramientas que son inherentemente institucionales: generar una
         #matrícula oficial nueva y la importación masiva desde Excel/CSV.
@@ -533,7 +533,7 @@ class ModuloEstudiantes(QWidget):
         self.btn_filtros.setToolTip("Abrir panel de filtros (grado, sección, área técnica, carrera, sexo, estado)")
         self.btn_filtros.clicked.connect(self._abrir_dialogo_filtros)
         fila_busqueda.addWidget(self.btn_filtros)
-        layout.addWidget(self.frame_filtros)
+        disposicion.addWidget(self.frame_filtros)
 
         #Combos de filtro: se crean aquí (siguen siendo atributos normales del módulo, igual que antes) pero se colocan
         #dentro del diálogo, no en fila_busqueda. self._especialidad_disponible/self._carrera_disponible (ver
@@ -689,7 +689,7 @@ class ModuloEstudiantes(QWidget):
             #estudiantes de SUS secciones (ver validación en _eliminar). Cuenta con "Deshacer" por si se equivoca.
             self.btn_editar.setVisible(True)
 
-        layout.addWidget(self.frame_tabla, 1)
+        disposicion.addWidget(self.frame_tabla, 1)
 
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
@@ -728,7 +728,7 @@ class ModuloEstudiantes(QWidget):
                            "le vas a poner una foto.", self)
             return
         carpeta= "fotos_docente_local" if es_profesor_restringido(self.main_window) else "fotos"
-        destino_dir= os.path.join(get_app_data_dir(), carpeta)
+        destino_dir= os.path.join(obtener_carpeta_datos(), carpeta)
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="est")
         if not destino:
             return
@@ -773,20 +773,20 @@ class ModuloEstudiantes(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Combina los filtros que necesites; la tabla se actualiza al instante.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Combina los filtros que necesites; la tabla se actualiza al instante.")
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         self.linea_separadora_filtros= QFrame()
         self.linea_separadora_filtros.setFrameShape(QFrame.Shape.HLine)

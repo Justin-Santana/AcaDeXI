@@ -94,9 +94,9 @@ class GraficoOcupacionSemanal(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(700)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_tick)
+        self._anim.valueChanged.connect(self._al_tic)
 
-    def _on_tick(self, valor):
+    def _al_tic(self, valor):
 
         self._progreso= valor
         self.update()
@@ -118,7 +118,7 @@ class GraficoOcupacionSemanal(QWidget):
         self._color_texto_prim= QColor(color_texto_prim)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -184,7 +184,7 @@ class ModuloMaterias(QWidget):
         self.id_edicion_seccion= None
         self.id_edicion_aula= None
         self.id_edicion_horario= None
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         self.actualizar_tema()  #por si el módulo se cargó de forma perezosa, ya con el tema definido
         self._registrar_atajos_teclado()
@@ -224,7 +224,7 @@ class ModuloMaterias(QWidget):
                 return True
         return False
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -236,9 +236,9 @@ class ModuloMaterias(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(14)
 
         #--- Cabecera tipo "hero": icono + título + descripción ---
         self.frame_cabecera= QFrame()
@@ -267,16 +267,16 @@ class ModuloMaterias(QWidget):
         bloque_titulo_cabecera.addWidget(self.lbl_subtitulo_cabecera)
         cabecera_layout.addLayout(bloque_titulo_cabecera, 1)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
-        layout.addWidget(self._construir_resumen())
+        disposicion.addWidget(self._construir_resumen())
 
         self.tabs= TabWidgetNavegable()
         self.tabs.setDocumentMode(True)
         #Ver nota en configuracion.py: quita la línea base nativa que Qt dibuja bajo la barra de pestañas y que el
         #stylesheet no puede eliminar.
         self.tabs.tabBar().setDrawBase(False)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tabs.addTab(self._tab_materias(), "Materias")
         self.tabs.addTab(self._tab_secciones(), icono_emoji(EMOJI_SECCIONES_GRUPOS), "Cursos y Secciones")
         self.tabs.addTab(self._tab_aulas(), "Aulas y Laboratorios")
@@ -390,19 +390,19 @@ class ModuloMaterias(QWidget):
         lay.setContentsMargins(12, 0, 10, 0)
         lay.setSpacing(6)
         lay.addWidget(IconoLupa())
-        campo= QLineEdit()
-        limitar_campo_texto(campo, 300)
-        campo.setPlaceholderText(placeholder)
-        campo.setStyleSheet("QLineEdit { border: none; background: transparent; padding: 8px 0; }")
-        lay.addWidget(campo, 1)
+        in_campo= QLineEdit()
+        limitar_campo_texto(in_campo, 300)
+        in_campo.setPlaceholderText(placeholder)
+        in_campo.setStyleSheet("QLineEdit { border: none; background: transparent; padding: 8px 0; }")
+        lay.addWidget(in_campo, 1)
         fila.addWidget(marco, 1)
 
         temporizador= QTimer(self)
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(al_cambiar)
-        campo.textChanged.connect(lambda _t: temporizador.start())
-        return frame, campo
+        in_campo.textChanged.connect(lambda _t: temporizador.start())
+        return frame, in_campo
 
     #Agrega el botón '☰ Filtros' a la derecha de una barra de búsqueda ya
     #creada con `_barra_busqueda` (mismo diseño/ubicación que en Estudiantes,
@@ -440,20 +440,20 @@ class ModuloMaterias(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Combina los filtros que necesites; la tabla se actualiza al instante.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Combina los filtros que necesites; la tabla se actualiza al instante.")
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
@@ -2245,15 +2245,15 @@ class ModuloMaterias(QWidget):
         disposicion= QVBoxLayout(contenedor)
         disposicion.setContentsMargins(4, 12, 4, 4)
         disposicion.setSpacing(14)
-        desc= QLabel("Asigna co-docentes a una materia académica (además del profesor titular definido en "
+        lbl_desc= QLabel("Asigna co-docentes a una materia académica (además del profesor titular definido en "
                        "la pestaña 'Materias'): auxiliares, suplentes, etc. Estos profesores también verán la "
                        "materia, sus estudiantes y su horario en su Modo Docente, y pueden recibir su propio "
                        "paquete individual exportado desde Configuración ▸ Seguridad. Para asignar varios "
                        "profesores a un Módulo Técnico, usa la pestaña 'Profesores por Módulo' del módulo"
                        "Politécnico.")
-        desc.setObjectName("DescModulo")
-        desc.setWordWrap(True)
-        disposicion.addWidget(desc)
+        lbl_desc.setObjectName("DescModulo")
+        lbl_desc.setWordWrap(True)
+        disposicion.addWidget(lbl_desc)
         frame_form, form= self._tarjeta_formulario("Nueva Asignación")
         self.ap_materia= QComboBox()
         conectar_tooltip_seleccion(self.ap_materia, "Materia académica a la que se asigna este co-docente")

@@ -59,17 +59,17 @@ class GestorDeshacer(QObject):
         lay= QHBoxLayout(cont)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(6)
-        bd_= QPushButton("Deshacer", cont)
-        bd_.setObjectName("BtnAccionDeshacer")
-        bd_.setCursor(Qt.CursorShape.PointingHandCursor)
-        bd_.clicked.connect(self.deshacer)
+        btn_bd_= QPushButton("Deshacer", cont)
+        btn_bd_.setObjectName("BtnAccionDeshacer")
+        btn_bd_.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_bd_.clicked.connect(self.deshacer)
         br= QPushButton("Rehacer", cont)
         br.setObjectName("BtnAccionRehacer")
         br.setCursor(Qt.CursorShape.PointingHandCursor)
         br.clicked.connect(self.rehacer)
-        lay.addWidget(bd_)
+        lay.addWidget(btn_bd_)
         lay.addWidget(br)
-        self._grupos.append((cont, bd_, br))
+        self._grupos.append((cont, btn_bd_, br))
         self._actualizar_botones()
         return cont
 
@@ -235,9 +235,9 @@ class GestorDeshacer(QObject):
                       accion= self.deshacer, texto_accion="Deshacer")
 
 
-def _traducir_error(msg):
+def _traducir_error(mensaje):
 
-    m= str(msg)
+    m= str(mensaje)
     if "UNIQUE" in m.upper():
         return "ya existe otro registro con los mismos datos únicos"
     if "FOREIGN KEY" in m.upper():

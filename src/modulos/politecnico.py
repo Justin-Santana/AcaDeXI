@@ -104,9 +104,9 @@ class MuestraColor(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutBack)
         self._anim.setKeyValueAt(0.0, 0.55)
         self._anim.setKeyValueAt(1.0, 1.0)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._escala= float(v)
         self.update()
@@ -118,7 +118,7 @@ class MuestraColor(QWidget):
         self._anim.start()
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -152,9 +152,9 @@ class AnilloDonut(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.setStartValue(0.0)
         self._anim.setEndValue(1.0)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._progreso= float(v)
         self.update()
@@ -178,7 +178,7 @@ class AnilloDonut(QWidget):
 
         return QSize(165, 165)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -305,9 +305,9 @@ class BarraSegmentadaPill(QWidget):
             acumulado += frac
         return None
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, evento):
 
-        clave= self._segmento_en_x(event.position().x())
+        clave= self._segmento_en_x(evento.position().x())
         if clave != self._segmento_hover:
             self._segmento_hover= clave
             seg= next((segmento for segmento in self._segmentos if segmento["clave"] == clave), None)
@@ -317,23 +317,23 @@ class BarraSegmentadaPill(QWidget):
             else:
                 self.setToolTip("")
             self.update()
-        super().mouseMoveEvent(event)
+        super().mouseMoveEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._segmento_hover= None
         self.update()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if self._interactiva and event.button() == Qt.MouseButton.LeftButton:
-            clave= self._segmento_en_x(event.position().x())
+        if self._interactiva and evento.button() == Qt.MouseButton.LeftButton:
+            clave= self._segmento_en_x(evento.position().x())
             if clave:
                 self.segmento_clicado.emit(clave)
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -413,11 +413,11 @@ class ContadorClicable(QLabel):
             }}
         """)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if self._interactiva and event.button() == Qt.MouseButton.LeftButton:
+        if self._interactiva and evento.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
 
 #MÓDULO
@@ -438,7 +438,7 @@ class ModuloPolitecnico(QWidget):
         self._valor_chip_especialidades= 0
         self._valor_chip_empresas= 0
         self._valor_chip_pasantias= 0
-        self._build_ui()
+        self._construir_ui()
         #Cargamos los datos en el siguiente ciclo del bucle de eventos: así la pantalla se pinta de inmediato al
         #presionar el módulo en la barra lateral y los datos aparecen un instante después, sin bloquear el clic (mismo
         #patrón que universidad.py).
@@ -484,7 +484,7 @@ class ModuloPolitecnico(QWidget):
         return False
 
     #---------------- ESTRUCTURA GENERAL ----------------
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -496,16 +496,16 @@ class ModuloPolitecnico(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(16)
 
-        layout.addWidget(self._construir_cabecera())
+        disposicion.addWidget(self._construir_cabecera())
 
         self.tabs= TabWidgetNavegable()
         self.tabs.setDocumentMode(True)
         self.tabs.tabBar().setDrawBase(False)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tabs.addTab(self._tab_especialidades(), "Áreas Técnicas")
         self.tabs.addTab(self._tab_modulos_tecnicos(), "Módulos Técnicos")
         self.tabs.addTab(self._tab_asignaciones_tecnicas(), "Profesores por Módulo")
@@ -532,22 +532,22 @@ class ModuloPolitecnico(QWidget):
         cab.setContentsMargins(22, 18, 22, 18)
         cab.setSpacing(14)
 
-        icono= QLabel("")
-        icono.setObjectName("IconoCabeceraPolitecnico")
-        icono.setFixedSize(46, 46)
-        icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        aplicar_icono_cabecera(icono, "Politécnico")
-        cab.addWidget(icono)
+        lbl_icono= QLabel("")
+        lbl_icono.setObjectName("IconoCabeceraPolitecnico")
+        lbl_icono.setFixedSize(46, 46)
+        lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        aplicar_icono_cabecera(lbl_icono, "Politécnico")
+        cab.addWidget(lbl_icono)
 
         bloque= QVBoxLayout()
         bloque.setSpacing(2)
-        titulo= QLabel("Módulo Técnico · Politécnico")
-        titulo.setObjectName("TituloCabeceraPolitecnico")
-        subtitulo= QLabel("Áreas técnicas, talleres, empresas aliadas y pasantías en un solo lugar")
-        subtitulo.setObjectName("SubtituloCabeceraPolitecnico")
-        subtitulo.setWordWrap(True)
-        bloque.addWidget(titulo)
-        bloque.addWidget(subtitulo)
+        lbl_titulo= QLabel("Módulo Técnico · Politécnico")
+        lbl_titulo.setObjectName("TituloCabeceraPolitecnico")
+        lbl_subtitulo= QLabel("Áreas técnicas, talleres, empresas aliadas y pasantías en un solo lugar")
+        lbl_subtitulo.setObjectName("SubtituloCabeceraPolitecnico")
+        lbl_subtitulo.setWordWrap(True)
+        bloque.addWidget(lbl_titulo)
+        bloque.addWidget(lbl_subtitulo)
         cab.addLayout(bloque, 1)
 
         self.chip_especialidades= QLabel("0 áreas técnicas")
@@ -576,21 +576,21 @@ class ModuloPolitecnico(QWidget):
         lay.setSpacing(6)
         icono= IconoLupa()
         lay.addWidget(icono)
-        campo= QLineEdit()
-        limitar_campo_texto(campo, 300)
-        campo.setPlaceholderText(placeholder)
-        campo.setObjectName("CampoBusquedaPolitecnico")
-        lay.addWidget(campo, 1)
+        in_campo= QLineEdit()
+        limitar_campo_texto(in_campo, 300)
+        in_campo.setPlaceholderText(placeholder)
+        in_campo.setObjectName("CampoBusquedaPolitecnico")
+        lay.addWidget(in_campo, 1)
 
         temporizador= QTimer(self)
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(callback_filtro)
-        campo.textChanged.connect(lambda _t: temporizador.start())
+        in_campo.textChanged.connect(lambda _t: temporizador.start())
 
         self._iconos_busqueda= getattr(self, "_iconos_busqueda", [])
         self._iconos_busqueda.append(icono)
-        return marco, campo
+        return marco, in_campo
 
     #Ventanita (no modal) de "☰ Filtros", mismo patrón que usan
     #calendario.py/banco_tareas.py/calificaciones_tecnicas.py: devuelve
@@ -611,13 +611,13 @@ class ModuloPolitecnico(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltrosPoli")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltrosPoli")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosPoli")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosPoli")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
@@ -706,9 +706,9 @@ class ModuloPolitecnico(QWidget):
         anim.start()
         setattr(self, f"_anim_{atributo}", anim)
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
-        super().showEvent(event)
+        super().showEvent(evento)
         #Si el Dashboard pidió saltar directo a una pestaña (el selector
         #"Materias / Módulos" pone _pestana_pendiente_politecnico = 1 para
         #caer en "Módulos Técnicos" en vez de "Áreas Técnicas"), se consume aquí al mostrarse el módulo. Mismo patrón
@@ -720,28 +720,28 @@ class ModuloPolitecnico(QWidget):
                     and self.tabs.isTabVisible(pendiente):
                 self.tabs.setCurrentIndex(pendiente)
 
-    def _cambio_pestana(self, index):
+    def _cambio_pestana(self, indice):
 
-        widget_actual= self.tabs.widget(index)
+        widget_actual= self.tabs.widget(indice)
         if widget_actual is not None:
             _fundido_entrada(widget_actual, 240)
-        if index in self._pestanas_cargadas:
+        if indice in self._pestanas_cargadas:
             return
-        self._pestanas_cargadas.add(index)
-        if index == 0:
+        self._pestanas_cargadas.add(indice)
+        if indice == 0:
             self._cargar_especialidades()
             self._cargar_donut_especialidades()
-        elif index == 1:
+        elif indice == 1:
             self._cargar_modulos_tecnicos()
-        elif index == 2:
+        elif indice == 2:
             self._cargar_asignaciones_tecnicas()
-        elif index == 3:
+        elif indice == 3:
             self._cargar_talleres()
             self._cargar_barra_talleres()
-        elif index == 4:
+        elif indice == 4:
             self._cargar_empresas()
             self._cargar_barra_empresas()
-        elif index == 5:
+        elif indice == 5:
             self._cargar_pasantias()
             self._cargar_barra_pasantias()
 
@@ -1116,13 +1116,13 @@ class ModuloPolitecnico(QWidget):
             fila= QHBoxLayout(contenedor)
             fila.setContentsMargins(0, 0, 0, 0)
             fila.setSpacing(8)
-            punto= QLabel()
-            punto.setFixedSize(10, 10)
-            punto.setStyleSheet(f"background-color:{seg['color']}; border-radius:5px;")
-            fila.addWidget(punto)
-            texto= QLabel(f"{seg['etiqueta']}  ·  {seg['valor']}")
-            texto.setObjectName("DescModulo")
-            fila.addWidget(texto, 1)
+            lbl_punto= QLabel()
+            lbl_punto.setFixedSize(10, 10)
+            lbl_punto.setStyleSheet(f"background-color:{seg['color']}; border-radius:5px;")
+            fila.addWidget(lbl_punto)
+            lbl_texto= QLabel(f"{seg['etiqueta']}  ·  {seg['valor']}")
+            lbl_texto.setObjectName("DescModulo")
+            fila.addWidget(lbl_texto, 1)
             self.layout_leyenda_esp.addWidget(contenedor)
         self.layout_leyenda_esp.addStretch()
 
@@ -1984,11 +1984,11 @@ class ModuloPolitecnico(QWidget):
 
         disposicion.setSpacing(14)
 
-        info= QLabel("Vincula cada Taller/Laboratorio (definido en Materias Aulas y Laboratorios) "
+        lbl_info= QLabel("Vincula cada Taller/Laboratorio (definido en Materias Aulas y Laboratorios) "
                       "con el área técnica a la que pertenece.")
-        info.setObjectName("DescModulo")
-        info.setWordWrap(True)
-        disposicion.addWidget(info)
+        lbl_info.setObjectName("DescModulo")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         fila_resumen= QHBoxLayout()
         fila_resumen.setSpacing(18)
@@ -2238,10 +2238,10 @@ class ModuloPolitecnico(QWidget):
         disposicion= QVBoxLayout(contenedor)
         disposicion.setSpacing(14)
 
-        info= QLabel("Catálogo de empresas aliadas para pasantías: rubro, ubicación, contacto y cupos disponibles.")
-        info.setObjectName("DescModulo")
-        info.setWordWrap(True)
-        disposicion.addWidget(info)
+        lbl_info= QLabel("Catálogo de empresas aliadas para pasantías: rubro, ubicación, contacto y cupos disponibles.")
+        lbl_info.setObjectName("DescModulo")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         self.tarjeta_barra_empresas= TarjetaSeccion(EMOJI_EMPRESA_PASANTIA, "Empresas aliadas por rubro")
         self.barra_empresas= BarraSegmentadaPill(interactiva=False)
@@ -2516,13 +2516,13 @@ class ModuloPolitecnico(QWidget):
             fila= QHBoxLayout(contenedor)
             fila.setContentsMargins(0, 0, 0, 0)
             fila.setSpacing(6)
-            punto= QLabel()
-            punto.setFixedSize(9, 9)
-            punto.setStyleSheet(f"background-color:{seg['color']}; border-radius:4px;")
-            fila.addWidget(punto)
-            texto= QLabel(f"{seg['etiqueta']} · {seg['valor']}")
-            texto.setObjectName("DescModulo")
-            fila.addWidget(texto)
+            lbl_punto= QLabel()
+            lbl_punto.setFixedSize(9, 9)
+            lbl_punto.setStyleSheet(f"background-color:{seg['color']}; border-radius:4px;")
+            fila.addWidget(lbl_punto)
+            lbl_texto= QLabel(f"{seg['etiqueta']} · {seg['valor']}")
+            lbl_texto.setObjectName("DescModulo")
+            fila.addWidget(lbl_texto)
             self.layout_leyenda_empresas.addWidget(contenedor)
         self.layout_leyenda_empresas.addStretch()
 

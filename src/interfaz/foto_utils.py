@@ -26,8 +26,8 @@ class VisorFotoDialog(QDialog):
         aplicar_icono_ventana(self, ICONO_RECORTE)
         self.setMinimumSize(360, 360)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(16, 16, 16, 16)
 
         lbl_imagen= QLabel()
         lbl_imagen.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -38,13 +38,13 @@ class VisorFotoDialog(QDialog):
             lbl_imagen.setPixmap(pixmap)
         else:
             lbl_imagen.setText("No se pudo cargar la imagen.")
-        layout.addWidget(lbl_imagen)
+        disposicion.addWidget(lbl_imagen)
 
         btn_cerrar= QPushButton("Cerrar")
         btn_cerrar.setIcon(icono_emoji("✖"))
         btn_cerrar.setIconSize(_QSize_emoji(16, 16))
         btn_cerrar.clicked.connect(self.accept)
-        layout.addWidget(btn_cerrar)
+        disposicion.addWidget(btn_cerrar)
 
         centrar_y_al_frente(self, parent)
 
@@ -66,13 +66,13 @@ class DialogoRecorteFoto(QDialog):
         self.rubber_band= None
         self._rect_seleccion= QRect()
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(16, 16, 16, 16)
 
-        info= QLabel("Arrastra sobre la imagen para seleccionar el área a recortar. "
+        lbl_info= QLabel("Arrastra sobre la imagen para seleccionar el área a recortar. "
                       "Si no seleccionas nada, se usará la imagen completa.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         self.lbl_imagen= QLabel()
         self.lbl_imagen.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -88,7 +88,7 @@ class DialogoRecorteFoto(QDialog):
         fila_centrada.addStretch()
         fila_centrada.addWidget(self.lbl_imagen)
         fila_centrada.addStretch()
-        layout.addLayout(fila_centrada)
+        disposicion.addLayout(fila_centrada)
 
         self.lbl_imagen.installEventFilter(self)
         self.rubber_band= QRubberBand(QRubberBand.Shape.Rectangle, self.lbl_imagen)
@@ -110,7 +110,7 @@ class DialogoRecorteFoto(QDialog):
         btn_aceptar.setIconSize(_QSize_emoji(16, 16))
         btn_aceptar.clicked.connect(self._confirmar)
         fila_botones.addWidget(btn_aceptar)
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
         centrar_y_al_frente(self, parent)
 
@@ -119,22 +119,22 @@ class DialogoRecorteFoto(QDialog):
         self._rect_seleccion= QRect()
         self.rubber_band.hide()
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        if obj is self.lbl_imagen:
-            if event.type() == event.Type.MouseButtonPress:
-                self.origen_seleccion= event.position().toPoint() if hasattr(event, "position") else event.pos()
+        if objeto is self.lbl_imagen:
+            if evento.type() == evento.Type.MouseButtonPress:
+                self.origen_seleccion= evento.position().toPoint() if hasattr(evento, "position") else evento.pos()
                 self.rubber_band.setGeometry(QRect(self.origen_seleccion, QSize()))
                 self.rubber_band.show()
                 return True
-            elif event.type() == event.Type.MouseMove and self.rubber_band.isVisible():
-                pos_actual= event.position().toPoint() if hasattr(event, "position") else event.pos()
+            elif evento.type() == evento.Type.MouseMove and self.rubber_band.isVisible():
+                pos_actual= evento.position().toPoint() if hasattr(evento, "position") else evento.pos()
                 self.rubber_band.setGeometry(QRect(self.origen_seleccion, pos_actual).normalized())
                 return True
-            elif event.type() == event.Type.MouseButtonRelease and self.rubber_band.isVisible():
+            elif evento.type() == evento.Type.MouseButtonRelease and self.rubber_band.isVisible():
                 self._rect_seleccion= self.rubber_band.geometry()
                 return True
-        return super().eventFilter(obj, event)
+        return super().eventFilter(objeto, evento)
 
     def _confirmar(self):
 

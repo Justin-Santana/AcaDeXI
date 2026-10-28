@@ -95,7 +95,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -191,7 +191,7 @@ class _PuntoPulso(QWidget):
         self._color= QColor(color)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -218,15 +218,15 @@ class PanelFlotante(QFrame):
         self._sombra.setColor(QColor(0, 0, 0, 45))
         self.setGraphicsEffect(self._sombra)
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         self._animar_sombra(self._blur_hover)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(self._blur_normal)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
     def _animar_sombra(self, destino):
 
@@ -317,20 +317,20 @@ class ChipDia(QFrame):
         mostrar= tipos[:max_dots]
         extra= total - max_dots
         for tipo in mostrar:
-            punto= QLabel()
-            punto.setFixedSize(6, 6)
+            lbl_punto= QLabel()
+            lbl_punto.setFixedSize(6, 6)
             color= TIPO_COLORES.get(tipo, "#94A3B8")
-            punto.setStyleSheet(f"background-color: {color}; border-radius: 3px;")
-            self._lay_dots.addWidget(punto)
+            lbl_punto.setStyleSheet(f"background-color: {color}; border-radius: 3px;")
+            self._lay_dots.addWidget(lbl_punto)
         if extra > 0:
-            extra_lbl= QLabel(f"+{extra}")
-            extra_lbl.setStyleSheet("font-size: 9px; font-weight: 700; background: transparent;")
-            self._lay_dots.addWidget(extra_lbl)
+            lbl_extra_lbl= QLabel(f"+{extra}")
+            lbl_extra_lbl.setStyleSheet("font-size: 9px; font-weight: 700; background: transparent;")
+            self._lay_dots.addWidget(lbl_extra_lbl)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
         self.clicked.emit(self.fecha_iso)
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
     def aplicar_estilo(self, bg, borde, txt_prim, txt_sec, accent, es_hoy):
 
@@ -370,9 +370,9 @@ class _ToastFlotante(QFrame):
         super().__init__(parent)
         self.setObjectName("ToastCalendario")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(16, 10, 16, 10)
-        layout.setSpacing(10)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(16, 10, 16, 10)
+        disposicion.setSpacing(10)
         self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji("📅", 20))
         self.lbl_icono.setStyleSheet("font-size: 15px; background: transparent; color: white;")
@@ -381,8 +381,8 @@ class _ToastFlotante(QFrame):
             "font-size: 13px; font-weight: 600; background: transparent; color: white;")
         self.lbl_texto.setWordWrap(True)
         self.lbl_texto.setMaximumWidth(280)
-        layout.addWidget(self.lbl_icono)
-        layout.addWidget(self.lbl_texto, 1)
+        disposicion.addWidget(self.lbl_icono)
+        disposicion.addWidget(self.lbl_texto, 1)
         self.hide()
 
         self._efecto= QGraphicsOpacityEffect(self)
@@ -490,13 +490,13 @@ class PanelDesplegable(QWidget):
         super().__init__(parent)
         self._titulo= titulo
         self._expandido= False
-        layout= QVBoxLayout(self)
+        disposicion= QVBoxLayout(self)
         #6px arriba/abajo: aire propio y "correcto" respecto a lo que va antes y después en la pestaña (antes solo
         #tenía márgenes 0, y sin el hueco vacío que dejaba el bug de altura, el encabezado quedaba pegado directamente
         #a la barra segmentada/buscador de al lado). No se toca el spacing lateral (0) porque el ancho ya lo resuelve
         #el propio layout de la pestaña.
-        layout.setContentsMargins(0, 6, 0, 6)
-        layout.setSpacing(0)
+        disposicion.setContentsMargins(0, 6, 0, 6)
+        disposicion.setSpacing(0)
 
         self.btn_cabecera= QPushButton(f" {titulo}")
         self.btn_cabecera.setIcon(QIcon(_pixmap_circulo_mas_menos(False)))
@@ -504,7 +504,7 @@ class PanelDesplegable(QWidget):
         self.btn_cabecera.setCursor(Qt.CursorShape.PointingHandCursor)
         self._aplicar_color_tema()
         self.btn_cabecera.clicked.connect(self._alternar)
-        layout.addWidget(self.btn_cabecera)
+        disposicion.addWidget(self.btn_cabecera)
 
         self.contenedor= QWidget()
         self.contenedor.setMaximumHeight(0)
@@ -518,7 +518,7 @@ class PanelDesplegable(QWidget):
         self.contenedor.setVisible(False)
         self.contenedor_layout= QVBoxLayout(self.contenedor)
         self.contenedor_layout.setContentsMargins(4, 12, 4, 4)
-        layout.addWidget(self.contenedor)
+        disposicion.addWidget(self.contenedor)
 
         self._anim= QPropertyAnimation(self.contenedor, b"maximumHeight")
         self._anim.setDuration(260)
@@ -553,7 +553,7 @@ class PanelDesplegable(QWidget):
 
         self._aplicar_color_tema()
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
         #Al mostrarse la ventana ya está enganchada al main window, así que aquí el modo claro/oscuro se conoce con
         #certeza (en __init__ puede no estarlo todavía si el panel se crea antes de asignar el padre).
@@ -562,7 +562,7 @@ class PanelDesplegable(QWidget):
             self._aplicar_color_tema()
         except RuntimeError:
             pass
-        super().showEvent(event)
+        super().showEvent(evento)
 
     def _al_terminar_animacion(self):
 
@@ -609,7 +609,7 @@ class ModuloCalendario(QWidget):
         self.filtro_tipo_actual= None
         self.filtro_fecha_actual= None
         self._eventos_todos= []
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         self.actualizar_tema()
         self._registrar_atajos_teclado()
@@ -624,7 +624,7 @@ class ModuloCalendario(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+Del", "Eliminar evento", self._eliminar)
 
     #Construcción de la interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -636,9 +636,9 @@ class ModuloCalendario(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(16)
 
         #--- Cabecera tipo "hero": icono + título + descripción + fecha/contador ---
         self.frame_cabecera= QFrame()
@@ -675,7 +675,7 @@ class ModuloCalendario(QWidget):
         self.lbl_hoy.setObjectName("ChipContador")
         cabecera_layout.addWidget(self.lbl_hoy, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #--- Panel: próximo evento ---
         self.panel_proximo= PanelFlotante()
@@ -698,7 +698,7 @@ class ModuloCalendario(QWidget):
         self.lbl_proximo_cuenta= QLabel("")
         self.lbl_proximo_cuenta.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lay_proximo.addWidget(self.lbl_proximo_cuenta, 0, Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(self.panel_proximo)
+        disposicion.addWidget(self.panel_proximo)
 
         #--- Panel: franja de la semana ---
         self.panel_semana= PanelFlotante()
@@ -717,12 +717,12 @@ class ModuloCalendario(QWidget):
         lunes= hoy - timedelta(days=hoy.weekday())
         for i in range(7):
             chip= ChipDia(lunes + timedelta(days=i))
-            chip.clicked.connect(self._on_click_dia)
+            chip.clicked.connect(self._al_click_dia)
             self.chips_semana.append(chip)
             fila_dias.addWidget(chip)
         fila_dias.addStretch()
         lay_semana.addLayout(fila_dias)
-        layout.addWidget(self.panel_semana)
+        disposicion.addWidget(self.panel_semana)
 
         #--- Panel: formulario de registro (colapsado por defecto — ver PanelDesplegable arriba: la app se ve menos
         #cargada al abrir el módulo y quien solo quiere revisar los eventos ya cargados no tiene que lidiar con el
@@ -835,7 +835,7 @@ class ModuloCalendario(QWidget):
         fila_botones_form.addWidget(self.btn_limpiar)
         fila_botones_form.addStretch()
         lay_form_outer.addLayout(fila_botones_form)
-        layout.addWidget(self.panel_registro)
+        disposicion.addWidget(self.panel_registro)
 
         #--- Búsqueda (mismo diseño y criterio que configuracion.py) + botón de filtros de la LISTA de eventos (Curso,
         #Sección, Área Técnica, Carrera, Materia/Módulo — todos opcionales). Esto es aparte del Área Técnica/Carrera
@@ -867,7 +867,7 @@ class ModuloCalendario(QWidget):
             "Filtrar los eventos listados por curso, sección, área técnica/carrera y materia/módulo")
         self.btn_filtros_vista.clicked.connect(self._abrir_dialogo_filtros_vista)
         fila_busqueda.addWidget(self.btn_filtros_vista)
-        layout.addLayout(fila_busqueda)
+        disposicion.addLayout(fila_busqueda)
 
         #Combos del diálogo de filtros de la lista: se crean aquí como atributos normales del módulo, pero se colocan
         #dentro del diálogo (ver _construir_dialogo_filtros_vista), no en esta pantalla.
@@ -914,7 +914,7 @@ class ModuloCalendario(QWidget):
             fila_chips.addWidget(chip)
             self.chips_filtro.append((chip, color, t))
         fila_chips.addStretch()
-        layout.addLayout(fila_chips)
+        disposicion.addLayout(fila_chips)
         self._restilizar_chips_filtro()
 
         #--- Indicador de filtro por día (aparece/desaparece con la franja semanal) ---
@@ -933,7 +933,7 @@ class ModuloCalendario(QWidget):
         lay_ff.addWidget(self.btn_limpiar_filtro_fecha)
         lay_ff.addStretch()
         self.fila_filtro_fecha.setVisible(False)
-        layout.addWidget(self.fila_filtro_fecha)
+        disposicion.addWidget(self.fila_filtro_fecha)
 
         #Tabla estilo Omega POS Columnas: ID(oculta), Fecha, Hora, Título, Curso, Sección, Materia/Módulo, Tipo,
         #Detalle — Curso/Sección/Materia se muestran igual que en el módulo de
@@ -964,7 +964,7 @@ class ModuloCalendario(QWidget):
         self.tabla.setColumnWidth(5, 100)
         self.tabla.setColumnWidth(6, 150)
         self.tabla.setColumnWidth(7, 155)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
         self.paginacion= ControlPaginacion()
         #Calendario lista eventos (títulos cortos), así que 10 por página se lee más cómodo que el valor por defecto
         #usado en otros módulos con filas más densas. Se intenta de forma defensiva por si el nombre del atributo
@@ -974,7 +974,7 @@ class ModuloCalendario(QWidget):
                 setattr(self.paginacion, _atributo, 10)
                 break
         self.paginacion.cambio.connect(self._aplicar_filtros_y_tabla)
-        layout.addWidget(self.paginacion)
+        disposicion.addWidget(self.paginacion)
 
         #Botón ⛶ que abre la tabla + paginación (los mismos widgets, no una copia) dentro de un diálogo maximizado
         #-mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-. Se agrega recién
@@ -1006,7 +1006,7 @@ class ModuloCalendario(QWidget):
                                              proveedor_extra_botones= _extra_botones_detalle)
         self.tabla.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_botones.addStretch()
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
@@ -1016,9 +1016,9 @@ class ModuloCalendario(QWidget):
 
         self.lbl_hoy.setText(self._formatear_fecha_larga(date.today()).capitalize())
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         if hasattr(self, "toast"):
             self.toast._reposicionar()
 
@@ -1041,10 +1041,10 @@ class ModuloCalendario(QWidget):
         btn.setCheckable(True)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setChecked(dato == self.filtro_tipo_actual)
-        btn.clicked.connect(lambda _=False, d=dato: self._on_filtro_tipo(d))
+        btn.clicked.connect(lambda _=False, d=dato: self._al_filtro_tipo(d))
         return btn
 
-    def _on_filtro_tipo(self, dato):
+    def _al_filtro_tipo(self, dato):
 
         self.filtro_tipo_actual= dato
         for chip, color, d in self.chips_filtro:
@@ -1272,20 +1272,20 @@ class ModuloCalendario(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Todos son opcionales: combina los que necesites, la lista se actualiza al instante.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Todos son opcionales: combina los que necesites, la lista se actualiza al instante.")
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         self.linea_separadora_filtros_vista= QFrame()
         self.linea_separadora_filtros_vista.setFrameShape(QFrame.Shape.HLine)
@@ -1625,8 +1625,8 @@ class ModuloCalendario(QWidget):
         lay= QHBoxLayout(cont)
         lay.setContentsMargins(6, 4, 6, 4)
         lay.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        pill= QLabel(tipo)
-        pill.setStyleSheet(f"""
+        lbl_pill= QLabel(tipo)
+        lbl_pill.setStyleSheet(f"""
             background-color: {_hex_a_rgba(color, 0.16)};
             color: {color};
             border-radius: 9px;
@@ -1634,7 +1634,7 @@ class ModuloCalendario(QWidget):
             font-weight: 700;
             font-size: 12px;
         """)
-        lay.addWidget(pill)
+        lay.addWidget(lbl_pill)
         return cont
 
     #Resumen dinámico: próximo evento + franja de la semana
@@ -1708,7 +1708,7 @@ class ModuloCalendario(QWidget):
             chip.aplicar_estilo(c["bg_panel"], c["bg_btn"], c["txt_prim"], c["txt_sec"],
                                  c["accent"], chip.fecha == hoy)
 
-    def _on_click_dia(self, fecha_iso):
+    def _al_click_dia(self, fecha_iso):
 
         self.filtro_fecha_actual= None if self.filtro_fecha_actual == fecha_iso else fecha_iso
         for chip in self.chips_semana:

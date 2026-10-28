@@ -40,16 +40,16 @@ class PanelPermisosSideStepper(QWidget):
     def __init__(self, parent=None):
 
         super().__init__(parent)
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
+        disposicion.setSpacing(12)
 
-        info= QLabel(
+        lbl_info= QLabel(
             "Elige un rol de la lista (o escribe uno nuevo si ninguno describe bien el cargo) "
             "y marca los módulos que tendrá disponibles. El techo de módulos posibles cambia "
             "automáticamente según si es uno de los 5 roles institucionales o uno personalizado.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         fila_rol= QHBoxLayout()
         fila_rol.addWidget(QLabel("Rol:"))
@@ -59,11 +59,11 @@ class PanelPermisosSideStepper(QWidget):
         self._cargar_roles_ya_configurados()
         self.combo_rol.currentTextChanged.connect(self._refrescar_checkboxes)
         fila_rol.addWidget(self.combo_rol, 1)
-        layout.addLayout(fila_rol)
+        disposicion.addLayout(fila_rol)
 
         self.lbl_tipo_rol= QLabel()
         self.lbl_tipo_rol.setWordWrap(True)
-        layout.addWidget(self.lbl_tipo_rol)
+        disposicion.addWidget(self.lbl_tipo_rol)
 
         self.scroll_modulos= QScrollArea()
         self.scroll_modulos.setWidgetResizable(True)
@@ -71,7 +71,7 @@ class PanelPermisosSideStepper(QWidget):
         self.layout_checks= QVBoxLayout(self.contenedor_checks)
         self.layout_checks.setSpacing(4)
         self.scroll_modulos.setWidget(self.contenedor_checks)
-        layout.addWidget(self.scroll_modulos, 1)
+        disposicion.addWidget(self.scroll_modulos, 1)
         self._checks= {}
 
         fila_acciones= QHBoxLayout()
@@ -88,12 +88,12 @@ class PanelPermisosSideStepper(QWidget):
         btn_guardar_rol.setObjectName("BtnAccionAgregar")
         btn_guardar_rol.clicked.connect(self._guardar_rol_actual)
         fila_acciones.addWidget(btn_guardar_rol)
-        layout.addLayout(fila_acciones)
+        disposicion.addLayout(fila_acciones)
 
-        layout.addWidget(QLabel("Roles ya configurados en esta copia:"))
+        disposicion.addWidget(QLabel("Roles ya configurados en esta copia:"))
         self.lista_roles_configurados= QListWidget()
         self.lista_roles_configurados.setMaximumHeight(120)
-        layout.addWidget(self.lista_roles_configurados)
+        disposicion.addWidget(self.lista_roles_configurados)
 
         fila_lista= QHBoxLayout()
         fila_lista.addStretch()
@@ -102,7 +102,7 @@ class PanelPermisosSideStepper(QWidget):
         btn_eliminar_rol.setIconSize(QSize(16, 16))
         btn_eliminar_rol.clicked.connect(self._eliminar_rol_seleccionado)
         fila_lista.addWidget(btn_eliminar_rol)
-        layout.addLayout(fila_lista)
+        disposicion.addLayout(fila_lista)
 
         self._refrescar_lista_configurados()
         self._refrescar_checkboxes(self.combo_rol.currentText())
@@ -135,10 +135,10 @@ class PanelPermisosSideStepper(QWidget):
 
         otorgados_actuales= set(permisos.obtener_permisos_side_stepper(rol_texto))
         for modulo in techo:
-            check= QCheckBox(modulo)
-            check.setChecked(modulo in otorgados_actuales)
-            self.layout_checks.addWidget(check)
-            self._checks[modulo]= check
+            chk_check= QCheckBox(modulo)
+            chk_check.setChecked(modulo in otorgados_actuales)
+            self.layout_checks.addWidget(chk_check)
+            self._checks[modulo]= chk_check
         self.layout_checks.addStretch()
 
     def _marcar_todos(self, estado):
@@ -211,21 +211,21 @@ class DialogoExportarSideStepper(QDialog):
         aplicar_icono_ventana(self)
         self.setMinimumSize(560, 620)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(18, 18, 18, 18)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(18, 18, 18, 18)
 
-        titulo= QLabel("Configura los roles y módulos de la copia de Side Stepper que vas a exportar")
-        titulo.setWordWrap(True)
-        titulo.setStyleSheet("font-weight: bold; font-size: 14px;")
-        layout.addWidget(titulo)
+        lbl_titulo= QLabel("Configura los roles y módulos de la copia de Side Stepper que vas a exportar")
+        lbl_titulo.setWordWrap(True)
+        lbl_titulo.setStyleSheet("font-weight: bold; font-size: 14px;")
+        disposicion.addWidget(lbl_titulo)
 
         self.panel= PanelPermisosSideStepper(self)
-        layout.addWidget(self.panel, 1)
+        disposicion.addWidget(self.panel, 1)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         botones.rejected.connect(self.reject)
         botones.accepted.connect(self.accept)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
 
         centrar_y_al_frente(self, parent)
 
@@ -256,25 +256,25 @@ class WizardSideStepper(QDialog):
         aplicar_icono_ventana(self)
         self.setMinimumSize(560, 640)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(20, 20, 20, 20)
+        disposicion.setSpacing(14)
 
-        intro= QLabel(
+        lbl_intro= QLabel(
             "Primero elige tu rol y los módulos que vas a usar; luego crea tu cuenta de acceso. "
             "Si tu Director/Administrador ya te entregó un paquete de configuración, cancela este "
             "asistente e impórtalo desde la pantalla de inicio de sesión en su lugar.")
-        intro.setWordWrap(True)
-        layout.addWidget(intro)
+        lbl_intro.setWordWrap(True)
+        disposicion.addWidget(lbl_intro)
 
         self.panel= PanelPermisosSideStepper(self)
-        layout.addWidget(self.panel, 1)
+        disposicion.addWidget(self.panel, 1)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
-        layout.addWidget(separador)
+        disposicion.addWidget(separador)
 
-        layout.addWidget(QLabel("Crea tu cuenta de acceso con el rol de arriba:"))
+        disposicion.addWidget(QLabel("Crea tu cuenta de acceso con el rol de arriba:"))
         form_cuenta= QFormLayout()
         self.in_nombre= QLineEdit()
         limitar_campo_texto(self.in_nombre)
@@ -286,13 +286,13 @@ class WizardSideStepper(QDialog):
         limitar_campo_texto(self.in_password)
         self.in_password.setEchoMode(QLineEdit.EchoMode.Password)
         form_cuenta.addRow("Contraseña:", self.in_password)
-        layout.addLayout(form_cuenta)
+        disposicion.addLayout(form_cuenta)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.button(QDialogButtonBox.StandardButton.Ok).setText("Finalizar")
         botones.accepted.connect(self._finalizar)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
 
         centrar_y_al_frente(self, parent)
 

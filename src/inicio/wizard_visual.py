@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (QDialog, QWidget, QFrame, QVBoxLayout, QHBoxLayou
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QPoint, QSize
 from PySide6.QtGui import QPixmap, QColor
 
-from src.nucleo.bd import get_app_data_dir  #noqa: F401  (útil para quien importe este módulo)
+from src.nucleo.bd import obtener_carpeta_datos  #noqa: F401  (útil para quien importe este módulo)
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.interfaz.configuracion import (WizardStepper, PanelAparienciaWizard, _fundido_entrada,
                            _RealceHover, _hex_a_rgba)
@@ -52,18 +52,18 @@ class WizardEstilizado(QDialog):
         self.setMinimumSize(*tamano)
         self._titulos_pasos= []
         self._iconos_pasos= []
-        self._build_ui()
-        self._apply_theme()
+        self._construir_ui()
+        self._aplicar_tema()
         #Wizard SOLAMENTE centrado (sin WindowStaysOnTopHint): ver centrar_y_al_frente y _FiltroCentradoDialogos en
         #main.py.
         centrar_y_al_frente(self, main_window, siempre_encima=False)
 
     #Construcción del esqueleto (header / stack / pie)
-    def _build_ui(self):
+    def _construir_ui(self):
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
+        disposicion.setSpacing(0)
 
         header= QFrame()
         header.setObjectName("WizardHeader")
@@ -109,7 +109,7 @@ class WizardEstilizado(QDialog):
         #subclase (mismo comportamiento que WizardStepper(9) del wizard
         #institucional, pero calculado solo).
         self.stepper= None
-        layout.addWidget(header)
+        disposicion.addWidget(header)
 
         #Contenedor con margen alrededor del stack: dentro se ve la tarjeta elevada de cada paso (ver agregar_pagina)
         #"flotando" sobre el fondo del diálogo, en vez de pegada borde a borde.
@@ -119,7 +119,7 @@ class WizardEstilizado(QDialog):
         contenedor_stack_layout.setContentsMargins(26, 20, 26, 10)
         self.stack= QStackedWidget()
         contenedor_stack_layout.addWidget(self.stack)
-        layout.addWidget(contenedor_stack, 1)
+        disposicion.addWidget(contenedor_stack, 1)
 
         #Las páginas las crea la subclase (hook).
         self._construir_paginas()
@@ -144,7 +144,7 @@ class WizardEstilizado(QDialog):
         self.btn_siguiente.setIconSize(_QSize_emoji(16, 16))
         self.btn_siguiente.clicked.connect(self._siguiente)
         pie_layout.addWidget(self.btn_siguiente)
-        layout.addWidget(pie)
+        disposicion.addWidget(pie)
 
         self.stack.currentChanged.connect(self._actualizar_encabezado)
         self._actualizar_encabezado(0)
@@ -227,19 +227,19 @@ class WizardEstilizado(QDialog):
         return lbl_hero, t, d
 
     #Navegación
-    def _actualizar_encabezado(self, index):
+    def _actualizar_encabezado(self, indice):
 
-        self.lbl_paso.setText(self._titulos_pasos[index])
-        icono= self._iconos_pasos[index] if index < len(self._iconos_pasos) else "🧭"
+        self.lbl_paso.setText(self._titulos_pasos[indice])
+        icono= self._iconos_pasos[indice] if indice < len(self._iconos_pasos) else "🧭"
         self.lbl_badge_paso.setPixmap(pixmap_emoji(icono, 20))
-        self.lbl_contador.setText(f"Paso {index + 1} de {len(self._titulos_pasos)}")
-        self.btn_atras.setEnabled(index > 0)
-        ultimo= index == len(self._titulos_pasos) - 1
+        self.lbl_contador.setText(f"Paso {indice + 1} de {len(self._titulos_pasos)}")
+        self.btn_atras.setEnabled(indice > 0)
+        ultimo= indice == len(self._titulos_pasos) - 1
         self.btn_siguiente.setText("Finalizar " if ultimo else "Siguiente ")
         self.btn_siguiente.setIcon(icono_emoji("🏁" if ultimo else "➡"))
         self.btn_siguiente.setIconSize(_QSize_emoji(16, 16))
         if self.stepper is not None:
-            self.stepper.ir_a(index)
+            self.stepper.ir_a(indice)
 
     #Cambia de página con una transición corta de deslizamiento +
     #fundido (~220ms), en el sentido del avance —la misma mecánica del
@@ -294,8 +294,8 @@ class WizardEstilizado(QDialog):
 
 
 
-    #Tema (mismo QSS que WizardConfiguracion._apply_theme)
-    def _apply_theme(self):
+    #Tema (mismo QSS que WizardConfiguracion._aplicar_tema)
+    def _aplicar_tema(self):
 
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])

@@ -19,7 +19,7 @@ except Exception:
 # -----------------------------------------
 # rutas de la aplicación
 # -----------------------------------------
-def get_app_data_dir():
+def obtener_carpeta_datos():
 
     if sys.platform == "win32":
         base= os.environ.get("APPDATA") or os.environ.get("USERPROFILE")
@@ -56,13 +56,13 @@ def get_app_data_dir():
     return ruta
 
 
-DB_PATH= os.path.join(get_app_data_dir(), "acadexi.db")
+RUTA_BD= os.path.join(obtener_carpeta_datos(), "acadexi.db")
 _ruta_wal_configurada= None
 
 # -----------------------------------------
 # sandbox del tutorial detallado (ver tutoriales.py)
 # -----------------------------------------
-#mientras está activo, DB_PATH apunta temporalmente a una copia desechable del archivo
+#mientras está activo, RUTA_BD apunta temporalmente a una copia desechable del archivo
 #real (para que los pasos "haz esto de verdad" del tutorial no toquen la
 #base institucional). Esta bandera existe solo para que operaciones que
 #el usuario podría disparar manualmente en paralelo (backup, subir/bajar
@@ -75,7 +75,7 @@ SANDBOX_TUTORIAL_ACTIVO= False
 # -----------------------------------------
 #copia curada por el Director, SIN sus datos personales, usada como punto de partida para Docentes/Personal (se
 #distribuye embebida en el perfil .acdx de cada usuario, ver perfil.py).
-RUTA_BD_BASE= os.path.join(get_app_data_dir(), "acadexi_base.db")
+RUTA_BD_BASE= os.path.join(obtener_carpeta_datos(), "acadexi_base.db")
 
 
 def existe_bd_base():
@@ -89,7 +89,7 @@ def existe_bd_base():
 def guardar_bd_base_desde_actual():
 
     import shutil
-    shutil.copy2(DB_PATH, RUTA_BD_BASE)
+    shutil.copy2(RUTA_BD, RUTA_BD_BASE)
     return RUTA_BD_BASE
 
 
@@ -113,7 +113,7 @@ def info_bd_base():
 def obtener_conexion():
 
     global _ruta_wal_configurada
-    conn= sqlite3.connect(DB_PATH)
+    conn= sqlite3.connect(RUTA_BD)
     conn.row_factory= sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA cache_size = 10000")
@@ -122,9 +122,9 @@ def obtener_conexion():
     #negociación WAL en cada conexión fuerza E/S y puede esperar bloqueos;
     #basta una vez por cada ruta de BD usada (la ruta puede cambiar en el
     #sandbox del tutorial).
-    if _ruta_wal_configurada != DB_PATH:
+    if _ruta_wal_configurada != RUTA_BD:
         conn.execute("PRAGMA journal_mode = WAL")
-        _ruta_wal_configurada= DB_PATH
+        _ruta_wal_configurada= RUTA_BD
     return conn
 
 
@@ -1971,10 +1971,10 @@ def enviar_correo(destinatario, asunto, cuerpo):
     import smtplib
     from email.mime.text import MIMEText
 
-    msg= MIMEText(cuerpo, "plain", "utf-8")
-    msg["Subject"]= asunto
-    msg["From"]= cfg["remitente"] or cfg["usuario"]
-    msg["To"]= destinatario
+    mensaje= MIMEText(cuerpo, "plain", "utf-8")
+    mensaje["Subject"]= asunto
+    mensaje["From"]= cfg["remitente"] or cfg["usuario"]
+    mensaje["To"]= destinatario
 
     #sendmail() no lanza excepción si el servidor ACEPTÓ el mensaje pero
     #rechazó a este destinatario en particular (buzón inexistente, dominio
@@ -1984,13 +1984,13 @@ def enviar_correo(destinatario, asunto, cuerpo):
     if cfg["seguridad"] == "SSL":
         with smtplib.SMTP_SSL(cfg["host"], int(cfg["puerto"]), timeout=15) as server:
             server.login(cfg["usuario"], cfg["password"])
-            rechazados= server.sendmail(msg["From"], [destinatario], msg.as_string())
+            rechazados= server.sendmail(mensaje["From"], [destinatario], mensaje.as_string())
     else:
         with smtplib.SMTP(cfg["host"], int(cfg["puerto"]), timeout=15) as server:
             if cfg["seguridad"] == "TLS":
                 server.starttls()
             server.login(cfg["usuario"], cfg["password"])
-            rechazados= server.sendmail(msg["From"], [destinatario], msg.as_string())
+            rechazados= server.sendmail(mensaje["From"], [destinatario], mensaje.as_string())
 
     if destinatario in rechazados:
         codigo, motivo= rechazados[destinatario]
@@ -2113,15 +2113,15 @@ def crear_backup(carpeta_extra=None, tipo="Manual", usuario="Sistema"):
         #confunda con un respaldo real en el historial) y NUNCA se copia a
         #la carpeta externa configurada por la institución (Google Drive,
         #servidor propio, etc.) -eso sí sería grave, ya que saldría del
-        #control de AcaDeXI. DB_PATH ya apunta al archivo sandbox, así que
+        #control de AcaDeXI. RUTA_BD ya apunta al archivo sandbox, así que
         #lo único que se respalda es la copia de práctica, no datos reales.
         tipo= f"🧪 Práctica (Tutorial) - {tipo}"
         carpeta_extra= None
     import shutil
     prefijo_archivo= "PRACTICA_TUTORIAL_" if SANDBOX_TUTORIAL_ACTIVO else ""
     nombre= f"{prefijo_archivo}acadexi_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-    destino= os.path.join(get_app_data_dir(), "backups", nombre)
-    shutil.copy2(DB_PATH, destino)
+    destino= os.path.join(obtener_carpeta_datos(), "backups", nombre)
+    shutil.copy2(RUTA_BD, destino)
     _registrar_historial_backup(tipo, destino, usuario)
 
     if carpeta_extra:
@@ -2129,7 +2129,7 @@ def crear_backup(carpeta_extra=None, tipo="Manual", usuario="Sistema"):
 
             os.makedirs(carpeta_extra, exist_ok=True)
             destino_extra= os.path.join(carpeta_extra, nombre)
-            shutil.copy2(DB_PATH, destino_extra)
+            shutil.copy2(RUTA_BD, destino_extra)
             _registrar_historial_backup(f"{tipo} (Carpeta Personalizada)", destino_extra, usuario)
         except Exception as error:
             print(f"No se pudo copiar el backup a la carpeta configurada: {error}")
@@ -2179,4 +2179,4 @@ def ejecutar_backup_al_cerrar():
 def restaurar_backup(ruta_backup):
 
     import shutil
-    shutil.copy2(ruta_backup, DB_PATH)
+    shutil.copy2(ruta_backup, RUTA_BD)

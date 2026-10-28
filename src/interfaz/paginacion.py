@@ -302,10 +302,10 @@ def pixmap_placeholder_foto_tabla(tamano=TAMANO_FOTO_TABLA):
 #delegando el dibujo real al estilo activo (`style().drawControl`).
 class _DelegadoFotoCentrada(QStyledItemDelegate):
 
-    def paint(self, painter, option, index):
+    def paint(self, painter, option, indice):
 
         opcion= QStyleOptionViewItem(option)
-        self.initStyleOption(opcion, index)
+        self.initStyleOption(opcion, indice)
         opcion.decorationAlignment= Qt.AlignmentFlag.AlignCenter
         opcion.displayAlignment= Qt.AlignmentFlag.AlignCenter
         widget= opcion.widget
@@ -323,7 +323,7 @@ class _DelegadoFotoCentrada(QStyledItemDelegate):
 #
 #Llamar UNA VEZ al construir la tabla (después de crear las columnas),
 #ANTES de la primera llamada a `ajustar_anchos_columnas` -normalmente
-#junto con `aplicar_estructura_tabla`, en `_build_ui`-. Fija además un
+#junto con `aplicar_estructura_tabla`, en `_construir_ui`-. Fija además un
 #ancho de columna ajustado al tamaño real de la miniatura -en vez de
 #dejar que la columna "Foto" se ensanche/angoste con el resto- para que
 #el círculo quede centrado en una columna a su medida y no perdido en
@@ -405,13 +405,13 @@ class ControlPaginacion(QWidget):
         self.total_registros= 0
         self._tamanos= tamanos or TAMANOS_DEFECTO
 
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(0, 4, 0, 4)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(0, 4, 0, 4)
 
         self.lbl_total= QLabel("0 registro(s)")
         self.lbl_total.setObjectName("DescModulo")
-        layout.addWidget(self.lbl_total)
-        layout.addStretch()
+        disposicion.addWidget(self.lbl_total)
+        disposicion.addStretch()
 
         #Iconos vectoriales propios (EMOJI_PAG_*): chevrons dibujados con QPainter en vez de los emojis ⏮/◀/▶/⏭, que
         #cambiaban de apariencia según la fuente del sistema. "Primera"/"Última" quedan como botones de solo-icono (con
@@ -424,7 +424,7 @@ class ControlPaginacion(QWidget):
         self.btn_primera.setIcon(icono_emoji(EMOJI_PAG_PRIMERA, 18))
         self.btn_primera.setIconSize(_QSize_emoji(18, 18))
         self.btn_primera.clicked.connect(self._ir_primera)
-        layout.addWidget(self.btn_primera)
+        disposicion.addWidget(self.btn_primera)
 
         self.btn_anterior= QPushButton("Anterior")
         self.btn_anterior.setObjectName("BtnAccionNeutro")
@@ -432,11 +432,11 @@ class ControlPaginacion(QWidget):
         self.btn_anterior.setIcon(icono_emoji(EMOJI_PAG_ANTERIOR, 16))
         self.btn_anterior.setIconSize(_QSize_emoji(16, 16))
         self.btn_anterior.clicked.connect(self._ir_anterior)
-        layout.addWidget(self.btn_anterior)
+        disposicion.addWidget(self.btn_anterior)
 
         self.lbl_info= QLabel("Página 1 de 1")
         self.lbl_info.setObjectName("DescModulo")
-        layout.addWidget(self.lbl_info)
+        disposicion.addWidget(self.lbl_info)
 
         self.btn_siguiente= QPushButton("Siguiente")
         self.btn_siguiente.setObjectName("BtnAccionNeutro")
@@ -444,7 +444,7 @@ class ControlPaginacion(QWidget):
         self.btn_siguiente.setIcon(icono_emoji(EMOJI_PAG_SIGUIENTE, 16))
         self.btn_siguiente.setIconSize(_QSize_emoji(16, 16))
         self.btn_siguiente.clicked.connect(self._ir_siguiente)
-        layout.addWidget(self.btn_siguiente)
+        disposicion.addWidget(self.btn_siguiente)
 
         self.btn_ultima= QPushButton("")
         self.btn_ultima.setObjectName("BtnAccionNeutro")
@@ -454,10 +454,10 @@ class ControlPaginacion(QWidget):
         self.btn_ultima.setIcon(icono_emoji(EMOJI_PAG_ULTIMA, 18))
         self.btn_ultima.setIconSize(_QSize_emoji(18, 18))
         self.btn_ultima.clicked.connect(self._ir_ultima)
-        layout.addWidget(self.btn_ultima)
+        disposicion.addWidget(self.btn_ultima)
 
-        layout.addSpacing(12)
-        layout.addWidget(QLabel("Mostrar:"))
+        disposicion.addSpacing(12)
+        disposicion.addWidget(QLabel("Mostrar:"))
         self.combo_tamano= QComboBox()
         for etiqueta, valor in self._tamanos:
             self.combo_tamano.addItem(etiqueta, valor)
@@ -468,7 +468,7 @@ class ControlPaginacion(QWidget):
         #configuracion.py ya importa de este módulo (paginacion.py).
         from src.interfaz.configuracion import conectar_tooltip_seleccion
         conectar_tooltip_seleccion(self.combo_tamano, "Cantidad de resultados por página")
-        layout.addWidget(self.combo_tamano)
+        disposicion.addWidget(self.combo_tamano)
 
         self._actualizar_etiqueta()
 
@@ -566,16 +566,16 @@ class BusquedaConDebounce(QWidget):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._emitir_busqueda)
         
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
         
         self.line_edit= QLineEdit()
         limitar_campo_texto(self.line_edit, 300)
         self.line_edit.setPlaceholderText("Buscar...")
-        self.line_edit.textChanged.connect(self._on_texto_cambiado)
-        layout.addWidget(self.line_edit)
+        self.line_edit.textChanged.connect(self._al_texto_cambiado)
+        disposicion.addWidget(self.line_edit)
     
-    def _on_texto_cambiado(self, texto):
+    def _al_texto_cambiado(self, texto):
 
         self._timer.stop()
         self._timer.start(self._delay_ms)
@@ -613,9 +613,9 @@ class DialogoDetalleRegistro(QDialog):
         self.setWindowIcon(obtener_icono(ICONO_TABLA))
         self.setMinimumWidth(440)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(22, 20, 22, 20)
-        layout.setSpacing(10)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(22, 20, 22, 20)
+        disposicion.setSpacing(10)
 
         #--- Foto (si el registro tiene una) PRIMERO, bien destacada, y el resto de los datos debajo -en vez de
         #mezclarla como un campo más de texto vacío entre los demás. ---
@@ -632,17 +632,17 @@ class DialogoDetalleRegistro(QDialog):
             fila_foto.addWidget(lbl_foto_grande)
             fila_foto.addStretch()
             bloque_foto.addLayout(fila_foto)
-            layout.addLayout(bloque_foto)
-            layout.addSpacing(2)
+            disposicion.addLayout(bloque_foto)
+            disposicion.addSpacing(2)
             separador= QFrame()
             separador.setFrameShape(QFrame.Shape.HLine)
             separador.setFrameShadow(QFrame.Shadow.Sunken)
-            layout.addWidget(separador)
-            layout.addSpacing(4)
+            disposicion.addWidget(separador)
+            disposicion.addSpacing(4)
 
-        encabezado= QLabel(titulo)
-        encabezado.setStyleSheet("font-size: 15px; font-weight: bold;")
-        layout.addWidget(encabezado)
+        lbl_encabezado= QLabel(titulo)
+        lbl_encabezado.setStyleSheet("font-size: 15px; font-weight: bold;")
+        disposicion.addWidget(lbl_encabezado)
 
         for etiqueta, valor in campos:
             fila= QHBoxLayout()
@@ -655,9 +655,9 @@ class DialogoDetalleRegistro(QDialog):
             lbl_valor= QLabel(texto_valor)
             lbl_valor.setWordWrap(True)
             fila.addWidget(lbl_valor, 1)
-            layout.addLayout(fila)
+            disposicion.addLayout(fila)
 
-        layout.addStretch()
+        disposicion.addStretch()
 
         #Botones adicionales (ej. "Ver Descripción completa") que un módulo puede pasar para abrir contenido que no
         #cabe/no se muestra en las filas de arriba (campos largos que la tabla ni siquiera guarda como columna). Van
@@ -667,14 +667,14 @@ class DialogoDetalleRegistro(QDialog):
                 btn_extra= QPushButton(texto)
                 btn_extra.setObjectName("BtnAccionNeutro")
                 btn_extra.clicked.connect(callback)
-                layout.addWidget(btn_extra)
+                disposicion.addWidget(btn_extra)
 
         btn_cerrar= QPushButton("Cerrar")
         btn_cerrar.setIcon(icono_emoji("✖"))
         btn_cerrar.setIconSize(_QSize_emoji(16, 16))
         btn_cerrar.setObjectName("BtnAccionNeutro")
         btn_cerrar.clicked.connect(self.accept)
-        layout.addWidget(btn_cerrar)
+        disposicion.addWidget(btn_cerrar)
 
 
 def mostrar_detalle_fila(parent, tabla, fila, titulo="Detalle del Registro", extra_botones=None):
@@ -739,23 +739,23 @@ def mostrar_texto_largo(parent, titulo, texto):
     dialogo.setWindowTitle(titulo)
     dialogo.setWindowIcon(obtener_icono(ICONO_TABLA))
     dialogo.setMinimumSize(440, 320)
-    layout= QVBoxLayout(dialogo)
-    layout.setContentsMargins(22, 20, 22, 20)
-    layout.setSpacing(10)
-    encabezado= QLabel(titulo)
-    encabezado.setStyleSheet("font-size: 15px; font-weight: bold;")
-    layout.addWidget(encabezado)
-    caja_texto= QTextEdit()
-    limitar_campo_texto(caja_texto, 5000)
-    caja_texto.setReadOnly(True)
-    caja_texto.setPlainText(texto.strip() if texto else "— Sin descripción —")
-    layout.addWidget(caja_texto, 1)
+    disposicion= QVBoxLayout(dialogo)
+    disposicion.setContentsMargins(22, 20, 22, 20)
+    disposicion.setSpacing(10)
+    lbl_encabezado= QLabel(titulo)
+    lbl_encabezado.setStyleSheet("font-size: 15px; font-weight: bold;")
+    disposicion.addWidget(lbl_encabezado)
+    in_caja_texto= QTextEdit()
+    limitar_campo_texto(in_caja_texto, 5000)
+    in_caja_texto.setReadOnly(True)
+    in_caja_texto.setPlainText(texto.strip() if texto else "— Sin descripción —")
+    disposicion.addWidget(in_caja_texto, 1)
     btn_cerrar= QPushButton("Cerrar")
     btn_cerrar.setIcon(icono_emoji("✖"))
     btn_cerrar.setIconSize(_QSize_emoji(16, 16))
     btn_cerrar.setObjectName("BtnAccionNeutro")
     btn_cerrar.clicked.connect(dialogo.accept)
-    layout.addWidget(btn_cerrar)
+    disposicion.addWidget(btn_cerrar)
     dialogo.exec()
 
 
@@ -828,14 +828,14 @@ def padre_de_dialogo(parent):
 #
 #Devuelve el sub-layout directo, o None si no se encuentra (p. ej. el
 #widget está suelto sin layout todavía).
-def _buscar_layout_directo(layout, widget):
+def _buscar_layout_directo(disposicion, widget):
 
-    if layout is None:
+    if disposicion is None:
         return None
-    if layout.indexOf(widget) >= 0:
-        return layout
-    for i in range(layout.count()):
-        item= layout.itemAt(i)
+    if disposicion.indexOf(widget) >= 0:
+        return disposicion
+    for i in range(disposicion.count()):
+        item= disposicion.itemAt(i)
         sub= item.layout()
         if sub is not None:
             encontrado= _buscar_layout_directo(sub, widget)
@@ -883,9 +883,9 @@ class _DialogoTablaCompleta(QDialog):
         self._fuentes_originales= []
         self._alto_fila_original= []
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(24, 18, 24, 20)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(24, 18, 24, 20)
+        disposicion.setSpacing(12)
 
         #---------- Contenido dentro de un QScrollArea ---------- Si al expandir algo (p. ej. el panel de "Más filtros"
         #de observaciones) el contenido excede la altura de la ventana, el scroll vertical aparece en vez de dejar los
@@ -901,7 +901,7 @@ class _DialogoTablaCompleta(QDialog):
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setWidget(self._contenido_scroll)
-        layout.addWidget(scroll, 1)
+        disposicion.addWidget(scroll, 1)
 
         #---------- Encabezado: icono + título a la izquierda, atajo y botón de salida a la derecha ----------
         fila_cabecera= QHBoxLayout()
@@ -930,12 +930,12 @@ class _DialogoTablaCompleta(QDialog):
         self.btn_salir.setToolTip("Cerrar la pantalla completa y volver a la vista normal (Esc)")
         self.btn_salir.clicked.connect(self.accept)
         fila_cabecera.addWidget(self.btn_salir)
-        layout.addLayout(fila_cabecera)
+        disposicion.addLayout(fila_cabecera)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
         separador.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(separador)
+        disposicion.addWidget(separador)
 
         for widget in widgets:
             padre= widget.parentWidget()
@@ -1069,12 +1069,12 @@ class _DialogoTablaCompleta(QDialog):
         #ventana vacía y app bloqueada hasta forzar el cierre.
         super().reject()
 
-    def closeEvent(self, event):
+    def closeEvent(self, evento):
 
         #La X de la barra de título: se trata EXACTAMENTE como un rechazo. NO basta con aceptar el evento: QDialog
         #cierra vía reject() y, si _cerrando ya estaba puesto, el override anterior se comía la llamada a
         #super().reject() dejando el exec() colgado para siempre.
-        event.accept()
+        evento.accept()
         if not self._cerrando:
             self.reject()
 

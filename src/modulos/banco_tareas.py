@@ -115,9 +115,9 @@ def _crear_chip(texto, color_hex):
     contenedor.setStyleSheet("background: transparent;")
     lay= QHBoxLayout(contenedor)
     lay.setContentsMargins(0, 0, 0, 0)
-    chip= QLabel(texto or "—")
-    chip.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    chip.setStyleSheet(f"""
+    lbl_chip= QLabel(texto or "—")
+    lbl_chip.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    lbl_chip.setStyleSheet(f"""
         background-color: {_rgba(color_hex, 0.16)};
         color: {color_hex};
         border: 1px solid {_rgba(color_hex, 0.45)};
@@ -126,7 +126,7 @@ def _crear_chip(texto, color_hex):
         font-weight: 700;
         font-size: 11px;
     """)
-    lay.addWidget(chip, 0, Qt.AlignmentFlag.AlignCenter)
+    lay.addWidget(lbl_chip, 0, Qt.AlignmentFlag.AlignCenter)
     return contenedor
 
 
@@ -220,31 +220,31 @@ class BarraSegmentada(QWidget):
             acumulado += frac
         return None
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, evento):
 
-        clave= self._segmento_en_x(event.position().x())
+        clave= self._segmento_en_x(evento.position().x())
         if clave != self._segmento_hover:
             self._segmento_hover= clave
             etiqueta= next((et for cl, et, _ in self._segmentos if cl == clave), None)
             self.setToolTip(f"{etiqueta}: {self._valores.get(clave, 0)} — clic para filtrar" if etiqueta else "")
             self.update()
-        super().mouseMoveEvent(event)
+        super().mouseMoveEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._segmento_hover= None
         self.update()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
-            clave= self._segmento_en_x(event.position().x())
+        if evento.button() == Qt.MouseButton.LeftButton:
+            clave= self._segmento_en_x(evento.position().x())
             if clave:
                 self.segmento_clicado.emit(clave)
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -325,11 +325,11 @@ class EtiquetaContadorClicable(QLabel):
             QLabel:hover {{ border: 1px solid {self._color}; }}
         """)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
 
 #Franja de alerta compacta: solo aparece cuando hay algo que atender
@@ -389,11 +389,11 @@ class CintaAlerta(QFrame):
             self._anim.setEndValue(0)
             self._anim.start()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
 
 def _sistema_calificacion_actual():
@@ -414,22 +414,22 @@ class DialogoCompetencias(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Competencias Fundamentales de la tarea")
         self.setMinimumWidth(430)
-        layout= QVBoxLayout(self)
-        layout.setSpacing(8)
-        info= QLabel("Marca las competencias fundamentales que esta tarea ayuda a desarrollar "
+        disposicion= QVBoxLayout(self)
+        disposicion.setSpacing(8)
+        lbl_info= QLabel("Marca las competencias fundamentales que esta tarea ayuda a desarrollar "
                       "(currículo por competencias, MINERD). Puedes marcar varias.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
         self._checks= []
         for competencia in COMPETENCIAS_FUNDAMENTALES_RD:
             chk= QCheckBox(competencia)
             chk.setChecked(competencia in seleccionadas)
-            layout.addWidget(chk)
+            disposicion.addWidget(chk)
             self._checks.append(chk)
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -454,12 +454,12 @@ class DialogoCompetenciasEspecificasTarea(QDialog):
         seleccionadas_ids= set(seleccionadas_ids or [])
         self._checks= []
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Marca las Competencias Específicas del currículo que esta tarea evalúa. Al "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Marca las Competencias Específicas del currículo que esta tarea evalúa. Al "
                        "calificar una entrega, la evidencia quedará vinculada automáticamente a estas "
                        "mismas CE, para que aparezca en Notas por Competencia sin trabajo extra.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         area= QScrollArea()
         area.setWidgetResizable(True)
@@ -492,12 +492,12 @@ class DialogoCompetenciasEspecificasTarea(QDialog):
                                         "en ningún grado. Defínelas en Calificaciones ▸ Currículo (CE)."))
         contenido.addStretch()
         area.setWidget(contenedor)
-        layout.addWidget(area, 1)
+        disposicion.addWidget(area, 1)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -524,12 +524,12 @@ class DialogoResultadosAprendizajeTarea(QDialog):
         seleccionadas_ids= set(seleccionadas_ids or [])
         self._checks= []
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Marca los Resultados de Aprendizaje (RA) del módulo técnico que esta tarea evalúa. "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Marca los Resultados de Aprendizaje (RA) del módulo técnico que esta tarea evalúa. "
                        "Al calificar una entrega, la nota se copiará automáticamente a esos RA en "
                        "Calificaciones Técnicas, sin que tengas que registrarla dos veces.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         area= QScrollArea()
         area.setWidgetResizable(True)
@@ -552,12 +552,12 @@ class DialogoResultadosAprendizajeTarea(QDialog):
                                         "Defínelos en Calificaciones Técnicas ▸ Resultados de Aprendizaje."))
         contenido.addStretch()
         area.setWidget(contenedor)
-        layout.addWidget(area, 1)
+        disposicion.addWidget(area, 1)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -581,17 +581,17 @@ class DialogoAjusteEntrega(QDialog):
         self.setWindowTitle("Marcar Entrega por Observación")
         self.setMinimumWidth(460)
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Esto marca el estado de entrega de este estudiante en la tarea que elijas, "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Esto marca el estado de entrega de este estudiante en la tarea que elijas, "
                        "dentro de la pestaña Entregas normal — no crea una tarea nueva, solo actualiza "
                        "(o crea, si todavía no existía) su fila de entrega.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
-        cita= QLabel(f"“{texto_observacion[:140]}{'…' if len(texto_observacion) > 140 else ''}”")
-        cita.setWordWrap(True)
-        cita.setStyleSheet("font-style: italic; color: #6B7280;")
-        layout.addWidget(cita)
+        lbl_cita= QLabel(f"“{texto_observacion[:140]}{'…' if len(texto_observacion) > 140 else ''}”")
+        lbl_cita.setWordWrap(True)
+        lbl_cita.setStyleSheet("font-style: italic; color: #6B7280;")
+        disposicion.addWidget(lbl_cita)
 
         form= QGridLayout()
         self.combo_tarea= QComboBox()
@@ -609,17 +609,17 @@ class DialogoAjusteEntrega(QDialog):
                 self.combo_estado.setCurrentIndex(idx)
         form.addWidget(QLabel("Estado:"), 1, 0)
         form.addWidget(self.combo_estado, 1, 1)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         self.aviso= QLabel("Esta materia todavía no tiene tareas activas en el Banco de Tareas.")
         self.aviso.setWordWrap(True)
         self.aviso.setVisible(self.combo_tarea.count() == 0)
-        layout.addWidget(self.aviso)
+        disposicion.addWidget(self.aviso)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
     def _cargar_tareas(self, materia_id):
@@ -689,7 +689,7 @@ class ModuloBancoTareas(QWidget):
         self._conteo_entregas_actual= {}
         self._tareas_todas_cache= []
         self._entregas_todas_cache= []
-        self._build_ui()
+        self._construir_ui()
         self._aplicar_tema_visual()
         self.refrescar()
         self._registrar_atajos_teclado()
@@ -706,7 +706,7 @@ class ModuloBancoTareas(QWidget):
                          self._calificar_entrega)
 
     #Construcción de la interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -724,9 +724,9 @@ class ModuloBancoTareas(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(12)
 
         #--- Cabecera tipo "hero": icono + título + descripción + contador ---
         self.frame_cabecera= QFrame()
@@ -763,14 +763,14 @@ class ModuloBancoTareas(QWidget):
         self.chip_entregas.setObjectName("ChipContador")
         cabecera_layout.addWidget(self.chip_entregas, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         self.tabs= TabWidgetNavegable()
         self.tabs.setDocumentMode(True)
         #Ver nota en configuracion.py: quita la línea base nativa que Qt dibuja bajo la barra de pestañas y que el
         #stylesheet no puede eliminar.
         self.tabs.tabBar().setDrawBase(False)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tabs.addTab(self._tab_tareas(), "Catálogo de Tareas")
         self.tabs.addTab(self._tab_entregas(), "Entregas")
         #Iconos explícitos de pestaña: "Catálogo de Tareas" NO se toca porque el iconizador automático ya le pone 📋
@@ -815,21 +815,21 @@ class ModuloBancoTareas(QWidget):
         lay.setSpacing(6)
         icono= IconoLupa()
         lay.addWidget(icono)
-        campo= QLineEdit()
-        limitar_campo_texto(campo, 300)
-        campo.setPlaceholderText(placeholder)
-        campo.setStyleSheet("QLineEdit { border: none; background: transparent; padding: 8px 0; }")
-        lay.addWidget(campo, 1)
+        in_campo= QLineEdit()
+        limitar_campo_texto(in_campo, 300)
+        in_campo.setPlaceholderText(placeholder)
+        in_campo.setStyleSheet("QLineEdit { border: none; background: transparent; padding: 8px 0; }")
+        lay.addWidget(in_campo, 1)
 
         temporizador= QTimer(self)
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(callback_filtro)
-        campo.textChanged.connect(lambda _t: temporizador.start())
+        in_campo.textChanged.connect(lambda _t: temporizador.start())
 
         self._iconos_busqueda= getattr(self, "_iconos_busqueda", [])
         self._iconos_busqueda.append(icono)
-        return marco, campo
+        return marco, in_campo
 
     #Pestaña: Catálogo de Tareas
     def _tab_tareas(self):
@@ -1099,7 +1099,7 @@ class ModuloBancoTareas(QWidget):
         self.tabla_tareas.setShowGrid(False)
         self.tabla_tareas.setMinimumHeight(360)
         #Preferred (no Expanding) en vertical: dentro del QScrollArea con
-        #widgetResizable=True de _build_ui, un widget Expanding se estira
+        #widgetResizable=True de _construir_ui, un widget Expanding se estira
         #para llenar TODO el espacio libre del viewport cuando el contenido de la pestaña es más corto que la ventana
         #-exactamente lo que pasaba al colapsar "Nueva tarea": la tabla se inflaba para ocupar el hueco que dejaba el
         #formulario cerrado-. Con Preferred, la tabla conserva una altura estable y ese espacio sobrante lo absorbe el
@@ -1187,21 +1187,21 @@ class ModuloBancoTareas(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Todos son opcionales: combina los que necesites, la lista se actualiza al instante. "
+        lbl_subtitulo= QLabel("Todos son opcionales: combina los que necesites, la lista se actualiza al instante. "
                             "Una tarea sin alcance restringido siempre aparece, sin importar el filtro elegido.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
@@ -2247,22 +2247,22 @@ class ModuloBancoTareas(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Curso/Grado y Sección acotan de dónde salen los estudiantes al generar la lista "
+        lbl_subtitulo= QLabel("Curso/Grado y Sección acotan de dónde salen los estudiantes al generar la lista "
                             "(con \"Generar/Actualizar Lista\", en la tarjeta de arriba); todos estos filtros "
                             "también acotan la tabla de entregas ya generada.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
@@ -2373,9 +2373,9 @@ class ModuloBancoTareas(QWidget):
         self._filtro_entregas= None  #para que el toggle de abajo lo deje justo en `valor`
         self._alternar_filtro_entregas(valor)
 
-    def _al_cambiar_tab(self, index):
+    def _al_cambiar_tab(self, indice):
 
-        if self.tabs.tabText(index).startswith(""):
+        if self.tabs.tabText(indice).startswith(""):
             self._cargar_combos_curso_seccion_entrega()
             self._cargar_combo_tareas_entrega()
 

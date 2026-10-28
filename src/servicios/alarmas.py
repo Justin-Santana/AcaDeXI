@@ -47,7 +47,7 @@ from PySide6.QtWidgets import (QWidget, QDialog, QVBoxLayout, QHBoxLayout, QForm
                                 QTableWidgetItem, QHeaderView, QLineEdit, QDateEdit, QTimeEdit, QMessageBox,
                                 QTabWidget, QAbstractItemView, QAbstractSpinBox, QApplication)
 
-from src.nucleo.bd import get_app_data_dir, obtener_conexion
+from src.nucleo.bd import obtener_carpeta_datos, obtener_conexion
 from src.nucleo.limite_campos import limitar_campo_texto
 from src.nucleo.formato_hora import aplicar_formato_widget_hora, aplicar_formato_widget_fecha, formatear_hora, formatear_fecha
 from PySide6.QtCore import QSize as _QSize_emoji
@@ -76,7 +76,7 @@ INTERVALO_REVISION_MS= 10_000      #cada cuánto se revisa si toca alguna alarma
 
 def _carpeta_tonos():
 
-    ruta= os.path.join(get_app_data_dir(), "alarmas_tonos")
+    ruta= os.path.join(obtener_carpeta_datos(), "alarmas_tonos")
     os.makedirs(ruta, exist_ok=True)
     return ruta
 
@@ -153,7 +153,7 @@ def _clave_usuario(main_window):
 
 def _ruta_bd_local(main_window):
 
-    carpeta= os.path.join(get_app_data_dir(), "alarmas_local")
+    carpeta= os.path.join(obtener_carpeta_datos(), "alarmas_local")
     os.makedirs(carpeta, exist_ok=True)
     return os.path.join(carpeta, f"{_clave_usuario(main_window)}.db")
 
@@ -260,7 +260,7 @@ def rearmar_alarmas_evento(id_evento):
 
     try:
 
-        carpeta= os.path.join(get_app_data_dir(), "alarmas_local")
+        carpeta= os.path.join(obtener_carpeta_datos(), "alarmas_local")
         patron= f"evento_{id_evento}_%"
         if not os.path.isdir(carpeta):
             return
@@ -335,17 +335,17 @@ class MotorAlarmas(QObject):
         #escritura normal (espacios en textos, activar botones, etc.) cuando no hay alarma activa.
         QApplication.instance().installEventFilter(self)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        if self._sonando and event.type() == event.Type.KeyPress and\
-                event.key() == Qt.Key.Key_Space:
+        if self._sonando and evento.type() == evento.Type.KeyPress and\
+                evento.key() == Qt.Key.Key_Space:
             try:
 
                 self.detener_alarma_activa()
             except Exception:
                 pass
             return True  #consumimos la tecla
-        return super().eventFilter(obj, event)
+        return super().eventFilter(objeto, evento)
 
     #---------------- ciclo de vida ----------------
     def iniciar(self):
@@ -742,7 +742,7 @@ class OverlayEfectoAlarma(QWidget):
         self._timer_vibracion.stop()
         self._apagar_pulso()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         if not self._activo and self._intensidad <= 0:
             return
@@ -846,9 +846,9 @@ class BotonDetenerAlarma(QWidget):
         if self._ocultando:
             self.hide()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
 
     def _color_acento(self):
@@ -862,7 +862,7 @@ class BotonDetenerAlarma(QWidget):
         except Exception:
             return QColor("#4F8EF7")
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         if self._opacidad <= 0.01:
             return
@@ -940,10 +940,10 @@ class PanelAlarmas(QWidget):
         self._salida_prueba= None
         self._id_edicion= None
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
         tabs= QTabWidget()
-        layout.addWidget(tabs)
+        disposicion.addWidget(tabs)
 
         tabs.addTab(self._tab_general(), "General")
         tabs.addTab(self._tab_recordatorios(), "Recordatorios")
@@ -1092,7 +1092,7 @@ class PanelAlarmas(QWidget):
     def _tab_recordatorios(self):
 
         contenedor= QWidget()
-        layout= QVBoxLayout(contenedor)
+        disposicion= QVBoxLayout(contenedor)
 
         form= QFormLayout()
         self.in_titulo_rec= QLineEdit()
@@ -1120,7 +1120,7 @@ class PanelAlarmas(QWidget):
         self.combo_repetir.setToolTip("Con qué frecuencia se repite este recordatorio.")
         form.addRow("Repetir:", self.combo_repetir)
 
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         fila_botones_rec= QHBoxLayout()
         self.btn_guardar_rec= QPushButton("Agregar recordatorio")
@@ -1134,14 +1134,14 @@ class PanelAlarmas(QWidget):
         fila_botones_rec.addWidget(self.btn_guardar_rec)
         fila_botones_rec.addWidget(self.btn_cancelar_edicion)
         fila_botones_rec.addStretch()
-        layout.addLayout(fila_botones_rec)
+        disposicion.addLayout(fila_botones_rec)
 
         self.tabla_rec= QTableWidget(0, 5)
         self.tabla_rec.setHorizontalHeaderLabels(["Título", "Fecha", "Hora", "Repetir", ""])
         self.tabla_rec.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.tabla_rec.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tabla_rec.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        layout.addWidget(self.tabla_rec, 1)
+        disposicion.addWidget(self.tabla_rec, 1)
         return contenedor
 
     def _guardar_recordatorio(self):
@@ -1263,9 +1263,9 @@ class ConfigurarAlarmasDialog(QDialog):
         self.main_window= main_window
         self.setWindowTitle("Alarmas y recordatorios")
         self.setMinimumWidth(560)
-        layout= QVBoxLayout(self)
+        disposicion= QVBoxLayout(self)
         self.panel= PanelAlarmas(main_window, self)
-        layout.addWidget(self.panel)
+        disposicion.addWidget(self.panel)
         fila_botones= QHBoxLayout()
         fila_botones.addStretch()
         btn_cerrar= QPushButton("Cerrar")
@@ -1273,7 +1273,7 @@ class ConfigurarAlarmasDialog(QDialog):
         btn_cerrar.setIconSize(_QSize_emoji(16, 16))
         btn_cerrar.clicked.connect(self.accept)
         fila_botones.addWidget(btn_cerrar)
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
 
 #INTEGRACIÓN (referencia rápida — ver también los cambios ya aplicados en main.py y configuracion.py):  1)

@@ -143,7 +143,7 @@ class _LogoAnimado(QWidget):
 
     progresoAnillo= Property(float, _leer_anillo, _poner_anillo)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -217,7 +217,7 @@ class SplashBienvenida(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
 
         self._loop= QEventLoop()
-        self._build_ui(nombre, rol)
+        self._construir_ui(nombre, rol)
         self._posicionar()
 
         self._efecto= QGraphicsOpacityEffect(self)
@@ -244,7 +244,7 @@ class SplashBienvenida(QWidget):
             return {"bg_panel": "#1E293B", "txt_prim": "#F8FAFC",
                     "txt_sec": "#94A3B8", "accent": "#6366F1"}
 
-    def _build_ui(self, nombre, rol):
+    def _construir_ui(self, nombre, rol):
 
         colores= self._colores_tema()
 

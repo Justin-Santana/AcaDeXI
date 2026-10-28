@@ -275,10 +275,10 @@ class _VentanaAyudaAtajos(QWidget):
             if sub is not None:
                 self._vaciar_layout(sub)
 
-    def _vaciar_layout(self, layout):
+    def _vaciar_layout(self, disposicion):
 
-        while layout.count():
-            item= layout.takeAt(0)
+        while disposicion.count():
+            item= disposicion.takeAt(0)
             w= item.widget()
             if w is not None:
                 w.deleteLater()
@@ -374,11 +374,11 @@ class GestorAtajos(QObject):
         self._timer_sondeo.timeout.connect(self._sondear_estado_real)
         self._timer_sondeo.start()
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        tipo= event.type()
+        tipo= evento.type()
         if tipo in (QEvent.Type.KeyPress, QEvent.Type.KeyRelease):
-            if event.key() == _tecla_qt_configurada(self.main_window) and not event.isAutoRepeat():
+            if evento.key() == _tecla_qt_configurada(self.main_window) and not evento.isAutoRepeat():
                 #Consumimos SOLO la tecla pelada (sin otros modificadores combinados en el momento del evento) para apagar el
                 #efecto nativo de mnemónicos de Windows sin tocar combinaciones reales que usen esta tecla junto con otra.
                 if tipo == QEvent.Type.KeyPress:
@@ -550,22 +550,22 @@ def _terminar_presion(boton):
 #después, sin tocar módulo por módulo.
 class GestorRetroalimentacionClics(QObject):
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        if isinstance(obj, QAbstractButton):
-            tipo= event.type()
-            if tipo == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton \
-                    and obj.isEnabled() and obj.isVisible():
-                _iniciar_presion(obj)
+        if isinstance(objeto, QAbstractButton):
+            tipo= evento.type()
+            if tipo == QEvent.Type.MouseButtonPress and evento.button() == Qt.MouseButton.LeftButton \
+                    and objeto.isEnabled() and objeto.isVisible():
+                _iniciar_presion(objeto)
             elif tipo == QEvent.Type.MouseButtonRelease:
-                _terminar_presion(obj)
+                _terminar_presion(objeto)
             elif tipo == QEvent.Type.Leave:
                 #El cursor salió del botón sin soltar el clic (lo arrastró afuera): Qt cancela el clic pero no siempre llega un
                 #Release al propio botón en ese caso, así que también se restaura aquí para no dejarlo atenuado/oscurecido
                 #indefinidamente.
-                _terminar_presion(obj)
-            elif tipo == QEvent.Type.Resize and getattr(obj, "_overlay_presion", None) is not None:
+                _terminar_presion(objeto)
+            elif tipo == QEvent.Type.Resize and getattr(objeto, "_overlay_presion", None) is not None:
                 #Poco común (redimensionar mientras se sostiene el clic), pero si pasa, el overlay debe seguir cubriendo el
                 #botón.
-                obj._overlay_presion.setGeometry(obj.rect())
-        return super().eventFilter(obj, event)
+                objeto._overlay_presion.setGeometry(objeto.rect())
+        return super().eventFilter(objeto, evento)

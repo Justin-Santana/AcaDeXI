@@ -75,7 +75,7 @@ class EditorSecuencia(QDialog):
         #mientras se carga, los cambios de materia y grado no deben recargar las listas
         self._cargando= True
 
-        self._build_ui()
+        self._construir_ui()
         self._cargar_catalogos()
 
         if secuencia_id:
@@ -87,23 +87,23 @@ class EditorSecuencia(QDialog):
         self._al_cambiar_materia()
 
     #construcción
-    def _build_ui(self):
+    def _construir_ui(self):
 
-        layout= QVBoxLayout(self)
+        disposicion= QVBoxLayout(self)
 
         pestanas= QTabWidget()
         pestanas.addTab(self._crear_pestana_general(), "General")
         pestanas.addTab(self._crear_pestana_pedagogica(), "Pedagógico")
         pestanas.addTab(self._crear_pestana_sesiones(), "Sesiones")
         pestanas.addTab(self._crear_pestana_vinculos(), "Competencias y tareas")
-        layout.addWidget(pestanas, 1)
+        disposicion.addWidget(pestanas, 1)
 
         botones= QDialogButtonBox()
         self.btn_guardar= botones.addButton("Guardar", QDialogButtonBox.ButtonRole.AcceptRole)
         botones.addButton("Cancelar", QDialogButtonBox.ButtonRole.RejectRole)
         botones.accepted.connect(self._guardar)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
 
     def _crear_pestana_general(self):
 
@@ -182,7 +182,7 @@ class EditorSecuencia(QDialog):
     def _crear_pestana_sesiones(self):
 
         pestana= QWidget()
-        layout= QVBoxLayout(pestana)
+        disposicion= QVBoxLayout(pestana)
 
         self.tabla_sesiones= TablaSesiones()
 
@@ -210,26 +210,26 @@ class EditorSecuencia(QDialog):
 
         barra.addStretch(1)
 
-        layout.addLayout(barra)
-        layout.addWidget(self.tabla_sesiones, 1)
+        disposicion.addLayout(barra)
+        disposicion.addWidget(self.tabla_sesiones, 1)
 
         return pestana
 
     def _crear_pestana_vinculos(self):
 
         pestana= QWidget()
-        layout= QHBoxLayout(pestana)
+        disposicion= QHBoxLayout(pestana)
 
-        self.lista_competencias= self._crear_columna_de_lista(layout, "Competencias específicas")
+        self.lista_competencias= self._crear_columna_de_lista(disposicion, "Competencias específicas")
         self.lista_competencias.itemChanged.connect(self._al_cambiar_competencias)
 
-        self.lista_indicadores= self._crear_columna_de_lista(layout, "Indicadores de logro")
-        self.lista_tareas= self._crear_columna_de_lista(layout, "Tareas del Banco de Tareas")
+        self.lista_indicadores= self._crear_columna_de_lista(disposicion, "Indicadores de logro")
+        self.lista_tareas= self._crear_columna_de_lista(disposicion, "Tareas del Banco de Tareas")
 
         return pestana
 
     #Una columna con un título arriba y una lista debajo. Devuelve la lista.
-    def _crear_columna_de_lista(self, layout, titulo):
+    def _crear_columna_de_lista(self, disposicion, titulo):
 
         columna= QVBoxLayout()
         columna.addWidget(QLabel(titulo))
@@ -238,7 +238,7 @@ class EditorSecuencia(QDialog):
         lista.setWordWrap(True)
         columna.addWidget(lista, 1)
 
-        layout.addLayout(columna, 1)
+        disposicion.addLayout(columna, 1)
 
         return lista
 
@@ -542,36 +542,36 @@ class ModuloSecuenciasDidacticas(QWidget):
         super().__init__(main_window)
         self.main_window= main_window
 
-        self._build_ui()
+        self._construir_ui()
         self.actualizar_tema()
         self.refrescar()
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(12)
 
-        layout.addWidget(self._crear_cabecera())
-        layout.addLayout(self._crear_filtros())
-        layout.addWidget(self._crear_tabla(), 1)
-        layout.addLayout(self._crear_botones())
+        disposicion.addWidget(self._crear_cabecera())
+        disposicion.addLayout(self._crear_filtros())
+        disposicion.addWidget(self._crear_tabla(), 1)
+        disposicion.addLayout(self._crear_botones())
 
     def _crear_cabecera(self):
 
         self.frame_cabecera= QFrame()
         self.frame_cabecera.setObjectName("TarjetaCabecera")
 
-        layout= QHBoxLayout(self.frame_cabecera)
-        layout.setContentsMargins(22, 18, 22, 18)
-        layout.setSpacing(14)
+        disposicion= QHBoxLayout(self.frame_cabecera)
+        disposicion.setContentsMargins(22, 18, 22, 18)
+        disposicion.setSpacing(14)
 
         self.lbl_icono= QLabel("")
         self.lbl_icono.setObjectName("IconoCabeceraModulo")
         self.lbl_icono.setFixedSize(46, 46)
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         aplicar_icono_cabecera(self.lbl_icono, "Secuencias Didácticas")
-        layout.addWidget(self.lbl_icono)
+        disposicion.addWidget(self.lbl_icono)
 
         textos= QVBoxLayout()
         textos.setSpacing(2)
@@ -586,11 +586,11 @@ class ModuloSecuenciasDidacticas(QWidget):
         lbl_subtitulo.setObjectName("SubtituloCabeceraModulo")
         textos.addWidget(lbl_subtitulo)
 
-        layout.addLayout(textos, 1)
+        disposicion.addLayout(textos, 1)
 
         self.lbl_contador= QLabel("0 secuencias")
         self.lbl_contador.setObjectName("ChipContador")
-        layout.addWidget(self.lbl_contador)
+        disposicion.addWidget(self.lbl_contador)
 
         return self.frame_cabecera
 

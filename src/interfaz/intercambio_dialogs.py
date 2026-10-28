@@ -74,12 +74,12 @@ class DialogoExportarEstudiantes(_DialogoBase):
         self.main_window= main_window
         self.seccion_id_actual= seccion_id_actual
 
-        info= QLabel(
+        lbl_info= QLabel(
             "Genera un archivo .acdxpkg con los estudiantes que puedes importar "
             "después en cualquier otra instalación de AcaDeXI (misma edición u otra: "
             "Full Institutional, Docentes, Single Teacher o Side Stepper).")
-        info.setWordWrap(True)
-        self.layout_principal.addWidget(info)
+        lbl_info.setWordWrap(True)
+        self.layout_principal.addWidget(lbl_info)
 
         self.lbl_alcance= QLabel(
             "Se exportará la sección actualmente filtrada." if seccion_id_actual is not None
@@ -127,12 +127,12 @@ class DialogoImportarEstudiantes(_DialogoBase):
         self.main_window= main_window
         self.ruta_seleccionada= None
 
-        info= QLabel(
+        lbl_info= QLabel(
             "Importa un archivo .acdxpkg de estudiantes generado por cualquier edición de "
             "AcaDeXI. Un estudiante que ya exista aquí (mismo nombre, apellidos y fecha de "
             "nacimiento) se ACTUALIZA; si no existe, se crea nuevo en la sección que elijas abajo.")
-        info.setWordWrap(True)
-        self.layout_principal.addWidget(info)
+        lbl_info.setWordWrap(True)
+        self.layout_principal.addWidget(lbl_info)
 
         btn_elegir= QPushButton("Elegir archivo .acdxpkg…")
 
@@ -201,16 +201,16 @@ class DialogoExportarCalificaciones(_DialogoBase):
         self.periodo_id= periodo_id
 
         if materia_id is None:
-            info= QLabel("Elige primero una Materia (y opcionalmente un Periodo) arriba antes de exportar.")
-            info.setWordWrap(True)
-            self.layout_principal.addWidget(info)
+            lbl_info= QLabel("Elige primero una Materia (y opcionalmente un Periodo) arriba antes de exportar.")
+            lbl_info.setWordWrap(True)
+            self.layout_principal.addWidget(lbl_info)
             self._exportable= False
         else:
             texto= f"Se exportarán las calificaciones de «{materia_nombre}»"
             texto += f", periodo «{periodo_nombre}»." if periodo_id else " (todos los periodos)."
-            info= QLabel(texto)
-            info.setWordWrap(True)
-            self.layout_principal.addWidget(info)
+            lbl_info= QLabel(texto)
+            lbl_info.setWordWrap(True)
+            self.layout_principal.addWidget(lbl_info)
             self._exportable= True
 
         fila_botones= QHBoxLayout()
@@ -259,12 +259,12 @@ class DialogoImportarCalificaciones(_DialogoBase):
         self.main_window= main_window
         self.ruta_seleccionada= None
 
-        info= QLabel(
+        lbl_info= QLabel(
             "Importa un archivo .acdxpkg de calificaciones. Solo se importa la nota de un "
             "estudiante si YA EXISTE aquí (mismo nombre, apellidos y fecha de nacimiento); "
             "importa primero sus estudiantes si hace falta.")
-        info.setWordWrap(True)
-        self.layout_principal.addWidget(info)
+        lbl_info.setWordWrap(True)
+        self.layout_principal.addWidget(lbl_info)
 
         btn_elegir= QPushButton("Elegir archivo .acdxpkg…")
 

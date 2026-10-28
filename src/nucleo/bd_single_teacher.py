@@ -16,22 +16,22 @@
 import os
 import sqlite3
 
-from src.nucleo.bd import get_app_data_dir
+from src.nucleo.bd import obtener_carpeta_datos
 
 
 def _ruta_bd():
 
     #La carpeta va aparte para no chocar con acadexi.db si las dos ediciones conviven en un equipo
     #de pruebas. No se separa por usuario: quien instaló esta copia es el único dueño del equipo.
-    carpeta= os.path.join(get_app_data_dir(), "single_teacher")
+    carpeta= os.path.join(obtener_carpeta_datos(), "single_teacher")
     os.makedirs(carpeta, exist_ok=True)
 
     return os.path.join(carpeta, "acadexi_single_teacher.db")
 
 
-DB_PATH= _ruta_bd()
+RUTA_BD= _ruta_bd()
 
-#Igual que SANDBOX_TUTORIAL_ACTIVO de bd.py (ver tutoriales.py): mientras esté en True, DB_PATH apunta a
+#Igual que SANDBOX_TUTORIAL_ACTIVO de bd.py (ver tutoriales.py): mientras esté en True, RUTA_BD apunta a
 #una copia de práctica y no al archivo real del docente.
 SANDBOX_TUTORIAL_ACTIVO= False
 
@@ -39,7 +39,7 @@ SANDBOX_TUTORIAL_ACTIVO= False
 #main_window no se usa acá, pero se recibe porque así la llama todo el resto del código.
 def obtener_conexion(main_window=None):
 
-    conn= sqlite3.connect(DB_PATH)
+    conn= sqlite3.connect(RUTA_BD)
     conn.row_factory= sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     _inicializar(conn)

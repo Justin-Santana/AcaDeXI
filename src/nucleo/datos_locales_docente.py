@@ -11,7 +11,7 @@ import os
 import sqlite3
 from datetime import datetime
 
-from src.nucleo.bd import get_app_data_dir
+from src.nucleo.bd import obtener_carpeta_datos
 
 #Campos de la ficha del estudiante que el docente puede retocar.
 CAMPOS_OVERRIDE_ESTUDIANTE= ["matricula", "nombre", "apellidos", "sexo", "fecha_nacimiento", "documento",
@@ -29,7 +29,7 @@ def _ahora():
 # -----------------------------------------
 def _carpeta_local():
 
-    ruta= os.path.join(get_app_data_dir(), "modo_docente_local")
+    ruta= os.path.join(obtener_carpeta_datos(), "modo_docente_local")
     os.makedirs(ruta, exist_ok=True)
 
     return ruta

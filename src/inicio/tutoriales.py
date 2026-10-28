@@ -42,16 +42,16 @@ from PySide6.QtGui import (QPainter, QColor, QPainterPath, QPen, QShortcut, QKey
     QBitmap, QRegion)
 
 from src.nucleo import bd
-from src.nucleo.bd import obtener_conexion, get_app_data_dir
+from src.nucleo.bd import obtener_conexion, obtener_carpeta_datos
 from src.nucleo.iconos import aplicar_icono_ventana, mostrar_mensaje, eventos_ui, ICONO_TUTORIAL, aplicar_icono_cabecera
 from src.nucleo.permisos import modulo_visible, ROLES_GERENCIALES
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
 
 #Ruta real de la base institucional, capturada UNA sola vez al importar este módulo (mucho antes de que exista
-#ninguna sesión de tutorial). Es el valor al que siempre se restaura bd.DB_PATH al salir del sandbox -ver la
+#ninguna sesión de tutorial). Es el valor al que siempre se restaura bd.RUTA_BD al salir del sandbox -ver la
 #sección SANDBOX DEL TUTORIAL DETALLADO más abajo.
-_DB_PATH_REAL= bd.DB_PATH
+_DB_PATH_REAL= bd.RUTA_BD
 
 
 #Motor de base de datos según `tipo` de tutorial: "single_teacher"
@@ -65,10 +65,10 @@ def _motor_para_tipo(tipo):
     return bd
 
 
-def _db_path_real_para_tipo(tipo):
+def _ruta_bd_real_para_tipo(tipo):
 
     if tipo == "single_teacher":
-        return _motor_para_tipo(tipo).DB_PATH
+        return _motor_para_tipo(tipo).RUTA_BD
     return _DB_PATH_REAL
 
 
@@ -151,17 +151,17 @@ marcar_tutorial_side_stepper_visto= marcar_tutorial_general_visto
 #Sandbox del tutorial detallado  El Modo Detallado pide acciones REALES ("agrega un estudiante de prueba",
 #"registra una nota"...) para que el desafío sea de verdad, no una simulación. Pero eso no debe significar
 #ensuciar la base de datos de la institución con estudiantes/profesores/notas falsas. La solución: mientras
-#dura el tour, bd.DB_PATH apunta a una COPIA desechable del archivo real -exactamente los mismos módulos, los
+#dura el tour, bd.RUTA_BD apunta a una COPIA desechable del archivo real -exactamente los mismos módulos, los
 #mismos widgets, el mismo flujo, pero escribiendo en un archivo aparte que se descarta al terminar. Esto es
 #posible sin tocar estudiantes.py/materias.py/etc. porque obtener_conexion() en bd.py abre y cierra una conexión
-#nueva en cada llamada leyendo el DB_PATH global -no hay una conexión persistente ni un singleton que hackear.
+#nueva en cada llamada leyendo el RUTA_BD global -no hay una conexión persistente ni un singleton que hackear.
 #El progreso (qué paso se alcanzó) NUNCA se guarda: si el usuario sale del Tutorial Detallado a medias, la
 #próxima vez arranca desde el paso 0 -ver _leer_progreso_sandbox/_guardar_progreso_sandbox más abajo, que son
 #un no-op a propósito. (La BD sandbox en sí, con el estudiante de prueba etc., sí puede seguir existiendo hasta
 #completar el tour o reiniciarlo, pero eso es independiente de recordar en qué paso iba.)
 def _carpeta_sandbox():
 
-    ruta= os.path.join(get_app_data_dir(), "tutorial_sandbox")
+    ruta= os.path.join(obtener_carpeta_datos(), "tutorial_sandbox")
     os.makedirs(ruta, exist_ok=True)
     return ruta
 
@@ -206,14 +206,14 @@ def _guardar_progreso_sandbox(main_window, tipo, indice):
 
 
 #Clona la BD real en una copia de práctica (o reutiliza la que ya
-#hubiera de una sesión pausada anterior) y redirige DB_PATH ahí -en el
+#hubiera de una sesión pausada anterior) y redirige RUTA_BD ahí -en el
 #módulo que corresponda según `tipo` (ver _motor_para_tipo). Devuelve
 #True si el sandbox quedó activo; False si algo falló y hay que seguir
 #el tour sin sandbox (mejor eso que bloquear el tutorial).
 def _activar_sandbox(main_window, tipo):
 
     motor= _motor_para_tipo(tipo)
-    ruta_real= _db_path_real_para_tipo(tipo)
+    ruta_real= _ruta_bd_real_para_tipo(tipo)
     ruta_sandbox= _ruta_sandbox_db(main_window, tipo)
     try:
 
@@ -222,24 +222,24 @@ def _activar_sandbox(main_window, tipo):
             conn.execute("PRAGMA wal_checkpoint(FULL)")
             conn.close()
             shutil.copy2(ruta_real, ruta_sandbox)
-        motor.DB_PATH= ruta_sandbox
+        motor.RUTA_BD= ruta_sandbox
         motor.SANDBOX_TUTORIAL_ACTIVO= True
         return True
     except Exception as error:
         print(f"⚠ No se pudo activar el sandbox del tutorial, se continúa sobre la BD real: {error}")
-        motor.DB_PATH= ruta_real
+        motor.RUTA_BD= ruta_real
         motor.SANDBOX_TUTORIAL_ACTIVO= False
         return False
 
 
 #SIEMPRE debe llamarse al cerrar el asistente (completado o no):
-#devuelve DB_PATH del módulo correspondiente a la base real. Si `tipo`
+#devuelve RUTA_BD del módulo correspondiente a la base real. Si `tipo`
 #es None (limpieza genérica sin tour en curso), restaura siempre bd.py
 #por compatibilidad.
 def _restaurar_bd_real(borrar_sandbox, main_window=None, tipo=None):
 
     motor= _motor_para_tipo(tipo) if tipo else bd
-    motor.DB_PATH= _db_path_real_para_tipo(tipo) if tipo else _DB_PATH_REAL
+    motor.RUTA_BD= _ruta_bd_real_para_tipo(tipo) if tipo else _DB_PATH_REAL
     motor.SANDBOX_TUTORIAL_ACTIVO= False
     if borrar_sandbox and main_window is not None and tipo is not None:
         for ruta in (_ruta_sandbox_db(main_window, tipo), _ruta_sandbox_progreso(main_window, tipo)):
@@ -751,11 +751,11 @@ class _TarjetaModo(QFrame):
         lay.addWidget(lbl_desc)
         lay.addStretch()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.elegida.emit()
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
 
 #Extrae (bg, texto, accent, accent_hv) de la paleta activa, con
@@ -883,7 +883,7 @@ class _IconoInterfazGeneral(QWidget):
         self.color= QColor(color_hex)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         if not self.tipo:
             return
@@ -1144,16 +1144,16 @@ class TutorialRapidoDialog(QDialog):
             self.indice -= 1
             self._mostrar_paso()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, evento):
 
         #Navegación cómoda sin soltar el teclado: flechas para moverse, Enter/Espacio para avanzar (o terminar en el
         #último paso). Escape ya cierra el diálogo por comportamiento estándar de QDialog.
-        if event.key() in (Qt.Key.Key_Right, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space):
+        if evento.key() in (Qt.Key.Key_Right, Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space):
             self._siguiente()
-        elif event.key() == Qt.Key.Key_Left:
+        elif evento.key() == Qt.Key.Key_Left:
             self._atras()
         else:
-            super().keyPressEvent(event)
+            super().keyPressEvent(evento)
 
 
 #Modo detallado — recorrido guiado real con spotlight
@@ -1239,12 +1239,12 @@ class _OverlaySpotlight(QWidget):
         self._actualizar_mascara()
         self.update()
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
         #El bitmap de la máscara se construye del tamaño actual del overlay:
         #si la ventana cambia de tamaño, hay que reconstruirlo con el nuevo.
         self._actualizar_mascara()
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
 
     #Reconstruye la máscara de forma/clic del overlay a partir de
     #`rect_agujero`. Sin agujero real que abrir (no bloqueante, o
@@ -1270,7 +1270,7 @@ class _OverlaySpotlight(QWidget):
         self.tiene_agujero_real= True
         self.mascara_actualizada.emit()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         if not self.bloqueante:
             return  #sin oscurecer: el usuario ve la app normal, con el panel flotando encima
@@ -1293,12 +1293,12 @@ class _OverlaySpotlight(QWidget):
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRoundedRect(QRectF(self.rect_resaltado.adjusted(-6, -6, 6, 6)), 10, 10)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
         #Con la máscara activa, este método solo llega a dispararse para clics en la zona oscurecida (bloqueante): al
         #agujero, Qt ya lo entrega directamente al widget real de abajo, sin pasar por aquí. Basta con aceptar el
         #evento para que no se propague más allá.
-        event.accept()
+        evento.accept()
 
 
 #Franja fija en la parte superior de la ventana, visible durante TODO
@@ -1429,23 +1429,23 @@ class _PanelInstruccion(QFrame):
         fila_accion.addWidget(self.btn_siguiente)
         lay.addLayout(fila_accion)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
         #Arrastre manual: solo desde la manija (ver __init__), nunca desde el resto del panel -así un clic sobre el
         #texto o cerca de un botón nunca se confunde con "empezar a arrastrar".
-        if obj is self._manija:
-            tipo= event.type()
-            if tipo == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
-                self._offset_arrastre= event.globalPosition().toPoint() - self.pos()
+        if objeto is self._manija:
+            tipo= evento.type()
+            if tipo == QEvent.Type.MouseButtonPress and evento.button() == Qt.MouseButton.LeftButton:
+                self._offset_arrastre= evento.globalPosition().toPoint() - self.pos()
                 return True
             if tipo == QEvent.Type.MouseMove and self._offset_arrastre is not None:
-                self.move(event.globalPosition().toPoint() - self._offset_arrastre)
+                self.move(evento.globalPosition().toPoint() - self._offset_arrastre)
                 self.arrastrado.emit()
                 return True
             if tipo == QEvent.Type.MouseButtonRelease and self._offset_arrastre is not None:
                 self._offset_arrastre= None
                 return True
-        return super().eventFilter(obj, event)
+        return super().eventFilter(objeto, evento)
 
     def mostrar_ayuda(self, texto):
 
@@ -1546,7 +1546,7 @@ class _ConfettiOverlay(QWidget):
             self.hide()
             self.deleteLater()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -1632,14 +1632,14 @@ class AsistenteSpotlight(QWidget):
         #"Continuar" (solo disponible en pasos informativos, sin acción real que verificar) SÍ cuenta como "terminar
         #esa parte correctamente" -el usuario llegó al final del paso y decidió avanzar-, así que celebra igual que un
         #paso con acción real
-        #validada (ver _celebrar_paso_completado / _on_exito_reportado).
+        #validada (ver _celebrar_paso_completado / _al_exito_reportado).
         #"Saltar este paso" es justo lo contrario -una renuncia explícita a completarlo- y por eso NO celebra ni fuerza
         #mostrar el panel.
         self.panel.siguiente.connect(self._avanzar_por_paso_completado)
         self.panel.saltar_paso.connect(self._avanzar_manual)
         self.panel.salir.connect(self._salir)
         self.panel.tamano_cambiado.connect(self._actualizar_mascara_propia)
-        self.panel.arrastrado.connect(self._on_panel_arrastrado)
+        self.panel.arrastrado.connect(self._al_panel_arrastrado)
         #True en cuanto el usuario arrastra el panel a mano DURANTE el paso actual: mientras dure, _posicionar_panel
         #deja de recolocarlo
         #automáticamente (si no, cada reintento de _enganchar_boton -uno
@@ -1700,7 +1700,7 @@ class AsistenteSpotlight(QWidget):
             m= self._margenes_originales
             self._layout_central.setContentsMargins(m.left(), m.top() + _BannerSandbox.ALTURA, m.right(), m.bottom())
 
-        eventos_ui.exito_reportado.connect(self._on_exito_reportado)
+        eventos_ui.exito_reportado.connect(self._al_exito_reportado)
 
         main_window.installEventFilter(self)
         self._listo= True
@@ -1780,17 +1780,17 @@ class AsistenteSpotlight(QWidget):
         pintor.end()
         self.setMask(QRegion(bitmap))
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        if self._listo and event.type() in (event.Type.Resize, event.Type.Move):
+        if self._listo and evento.type() in (evento.Type.Resize, evento.Type.Move):
             self._reposicionar()
         return False
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
         if self._listo:
             self._reposicionar()
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
 
     def _reposicionar(self):
 
@@ -1847,7 +1847,7 @@ class AsistenteSpotlight(QWidget):
 
         #La regla de oro: "Continuar" SOLO existe cuando no hay nada que verificar. Si el paso pide una acción real, el
         #único botón visible además de "Salir" es "Saltar este paso" -avanzar de verdad requiere completar la acción de
-        #verdad (ver _on_exito_reportado).
+        #verdad (ver _al_exito_reportado).
         self.panel.btn_siguiente.setVisible(not self._accion_real_pendiente)
         es_ultimo_paso= self.indice == len(self.pasos) - 1
         self.panel.btn_siguiente.setText("Finalizar " if es_ultimo_paso else "Continuar ")
@@ -1956,7 +1956,7 @@ class AsistenteSpotlight(QWidget):
     #vacíos, matrícula duplicada...); la única confirmación válida de
     #que la acción se completó de verdad es el aviso de éxito real que
     #el propio módulo ya muestra tras guardar en la base de datos (ver
-    #_on_exito_reportado / iconos.eventos_ui).
+    #_al_exito_reportado / iconos.eventos_ui).
     def _enganchar_boton(self, texto_boton_objetivo):
 
         if not texto_boton_objetivo:
@@ -2005,7 +2005,7 @@ class AsistenteSpotlight(QWidget):
     #de la página que el tutorial tiene resaltada ahora mismo (así un
     #guardado exitoso en otra pantalla, si el usuario se saliera del
     #recorrido, no hace avanzar un paso que no tiene nada que ver).
-    def _on_exito_reportado(self, parent, titulo, texto):
+    def _al_exito_reportado(self, parent, titulo, texto):
 
         if not getattr(self, "_accion_real_pendiente", False):
             return
@@ -2228,7 +2228,7 @@ class AsistenteSpotlight(QWidget):
 
     #Se dispara cada vez que una parte del Tutorial Detallado se
     #completa CORRECTAMENTE -acción real validada por
-    #`_on_exito_reportado`, o paso informativo confirmado con
+    #`_al_exito_reportado`, o paso informativo confirmado con
     #"Continuar" (ver _avanzar_por_paso_completado)-, nunca al usar
     #"Saltar este paso". Dos cosas:
     #
@@ -2264,7 +2264,7 @@ class AsistenteSpotlight(QWidget):
     #solo (ver _posicionar_panel) y su nueva posición debe seguir
     #siendo visible/clicable de inmediato -por eso se refresca la
     #máscara en cada tick del arrastre, no solo al soltar.
-    def _on_panel_arrastrado(self):
+    def _al_panel_arrastrado(self):
 
         self._panel_movido_manualmente= True
         self.panel.raise_()
@@ -2299,7 +2299,7 @@ class AsistenteSpotlight(QWidget):
         self._paneles_expandidos_tutorial= None
         try:
 
-            eventos_ui.exito_reportado.disconnect(self._on_exito_reportado)
+            eventos_ui.exito_reportado.disconnect(self._al_exito_reportado)
         except (TypeError, RuntimeError):
             pass
         try:
@@ -2418,7 +2418,7 @@ def _lanzar(main_window, tipo, titulo_carrusel, contenido_rapido, pasos_detallad
                 "de nuevo más tarde desde Configuración ▸ Mi Cuenta, o usar el Modo Rápido mientras tanto.",
                 main_window)
             return
-        #A partir de aquí bd.DB_PATH ya apunta al sandbox: el asistente solo tiene que navegar y validar, no le
+        #A partir de aquí bd.RUTA_BD ya apunta al sandbox: el asistente solo tiene que navegar y validar, no le
         #concierne dónde escribe
         #obtener_conexion().
         asistente= AsistenteSpotlight(main_window, pasos_detallado, tipo)

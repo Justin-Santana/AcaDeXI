@@ -1105,17 +1105,17 @@ class _DelegadoHojaCalculo(QStyledItemDelegate):
         self._tabla= tabla
         self._editor= editor
 
-    def setEditorData(self, editor, index):
+    def setEditorData(self, editor, indice):
 
         if self._editor is not None:
             self._editor._registrar_deshacer_hoja()
-        item= self._tabla.itemFromIndex(index)
+        item= self._tabla.itemFromIndex(indice)
         crudo= item.data(ROL_CRUDO) if item is not None else None
         texto= _texto_crudo_como_str(crudo) if crudo is not None else (item.text() if item else "")
         if hasattr(editor, "setText"):
             editor.setText(texto)
         else:
-            super().setEditorData(editor, index)
+            super().setEditorData(editor, indice)
 
 
 #Editor de texto con formato -negrita/cursiva/fuente/tamaño/color/
@@ -1145,7 +1145,7 @@ class _DialogoEditorPaginaPDF(QDialog):
         #_pdf_editar_pagina_actual, que lo pasa), quedan idénticos.
         if css_editor:
             self.setStyleSheet(css_editor)
-        layout= QVBoxLayout(self)
+        disposicion= QVBoxLayout(self)
 
         barra= QHBoxLayout()
         self.combo_fuente= QComboBox()
@@ -1222,7 +1222,7 @@ class _DialogoEditorPaginaPDF(QDialog):
         barra.addWidget(btn_centro)
         barra.addWidget(btn_der)
         barra.addStretch()
-        layout.addLayout(barra)
+        disposicion.addLayout(barra)
 
         self.editor= QTextEdit()
         limitar_campo_texto(self.editor, 5000)
@@ -1234,7 +1234,7 @@ class _DialogoEditorPaginaPDF(QDialog):
         except ValueError:
             pass
         self.editor.setFont(_f_inicial)
-        layout.addWidget(self.editor, 1)
+        disposicion.addWidget(self.editor, 1)
 
         def _formato_actual():
 
@@ -1334,7 +1334,7 @@ class _DialogoEditorPaginaPDF(QDialog):
         btn_aplicar.clicked.connect(_guardar_preferencias)
         botones.addWidget(btn_cancelar)
         botones.addWidget(btn_aplicar)
-        layout.addLayout(botones)
+        disposicion.addLayout(botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -1571,16 +1571,16 @@ class _DialogoMarcaDeAgua(QDialog):
         self.setWindowTitle("Insertar marca de agua")
         aplicar_icono_ventana(self, ICONO_COLOR)
         self.setMinimumWidth(360)
-        layout= QFormLayout(self)
+        disposicion= QFormLayout(self)
 
         self.in_texto= QLineEdit("CONFIDENCIAL")
         limitar_campo_texto(self.in_texto, 300)
-        layout.addRow("Texto:", self.in_texto)
+        disposicion.addRow("Texto:", self.in_texto)
 
         self.spin_tamano= QSpinBox()
         self.spin_tamano.setRange(8, 160)
         self.spin_tamano.setValue(48)
-        layout.addRow("Tamaño de fuente:", self.spin_tamano)
+        disposicion.addRow("Tamaño de fuente:", self.spin_tamano)
 
         self.slider_opacidad= QSlider(Qt.Orientation.Horizontal)
         self.slider_opacidad.setRange(5, 100)
@@ -1590,7 +1590,7 @@ class _DialogoMarcaDeAgua(QDialog):
         fila_opacidad= QHBoxLayout()
         fila_opacidad.addWidget(self.slider_opacidad, 1)
         fila_opacidad.addWidget(self.lbl_opacidad)
-        layout.addRow("Opacidad:", fila_opacidad)
+        disposicion.addRow("Opacidad:", fila_opacidad)
 
         self.combo_rotacion= QComboBox()
         self.combo_rotacion.addItem("Horizontal (0°)", 0)
@@ -1598,17 +1598,17 @@ class _DialogoMarcaDeAgua(QDialog):
         self.combo_rotacion.addItem("Invertida (180°)", 180)
         self.combo_rotacion.addItem("Diagonal descendente (270°)", 270)
         conectar_tooltip_seleccion(self.combo_rotacion, "Orientación de la marca de agua")
-        layout.addRow("Orientación:", self.combo_rotacion)
+        disposicion.addRow("Orientación:", self.combo_rotacion)
 
         self._color= QColor("#94A3B8")
         self.btn_color= QPushButton()
         self._pintar_boton_color()
         self.btn_color.clicked.connect(self._elegir_color)
-        layout.addRow("Color:", self.btn_color)
+        disposicion.addRow("Color:", self.btn_color)
 
         self.chk_todas= QCheckBox("Aplicar a todas las páginas")
         self.chk_todas.setChecked(True)
-        layout.addRow("", self.chk_todas)
+        disposicion.addRow("", self.chk_todas)
 
         fila_botones= QHBoxLayout()
         btn_cancelar= QPushButton("Cancelar")
@@ -1621,7 +1621,7 @@ class _DialogoMarcaDeAgua(QDialog):
         fila_botones.addStretch()
         fila_botones.addWidget(btn_cancelar)
         fila_botones.addWidget(btn_aceptar)
-        layout.addRow(fila_botones)
+        disposicion.addRow(fila_botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -1662,21 +1662,21 @@ class _DialogoRedimensionarImagen(QDialog):
         self._proporcion= (alto_natural / ancho_natural) if ancho_natural else 1
         self._ancho_natural= ancho_natural or ancho_actual or 1
         self._actualizando= False
-        layout= QFormLayout(self)
+        disposicion= QFormLayout(self)
 
         self.spin_ancho= QSpinBox()
         self.spin_ancho.setRange(10, 4000)
         self.spin_ancho.setValue(max(10, int(ancho_actual)))
-        layout.addRow("Ancho (px):", self.spin_ancho)
+        disposicion.addRow("Ancho (px):", self.spin_ancho)
 
         self.spin_alto= QSpinBox()
         self.spin_alto.setRange(10, 4000)
         self.spin_alto.setValue(max(10, int(alto_actual)))
-        layout.addRow("Alto (px):", self.spin_alto)
+        disposicion.addRow("Alto (px):", self.spin_alto)
 
         self.chk_proporcion= QCheckBox("Mantener proporción")
         self.chk_proporcion.setChecked(True)
-        layout.addRow("", self.chk_proporcion)
+        disposicion.addRow("", self.chk_proporcion)
 
         fila_slider= QHBoxLayout()
         fila_slider.addWidget(QLabel("Escala rápida:"))
@@ -1686,7 +1686,7 @@ class _DialogoRedimensionarImagen(QDialog):
         fila_slider.addWidget(self.slider_pct)
         self.lbl_pct= QLabel(f"{self.slider_pct.value()}%")
         fila_slider.addWidget(self.lbl_pct)
-        layout.addRow(fila_slider)
+        disposicion.addRow(fila_slider)
 
         self.spin_ancho.valueChanged.connect(self._sincronizar_desde_ancho)
         self.spin_alto.valueChanged.connect(self._sincronizar_desde_alto)
@@ -1703,7 +1703,7 @@ class _DialogoRedimensionarImagen(QDialog):
         fila_botones.addStretch()
         fila_botones.addWidget(btn_cancelar)
         fila_botones.addWidget(btn_aceptar)
-        layout.addRow(fila_botones)
+        disposicion.addRow(fila_botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -1792,9 +1792,9 @@ class _LabelElidido(QLabel):
         ancho_disponible= max(0, self.width())
         super().setText(metrica.elidedText(self._texto_completo, Qt.TextElideMode.ElideMiddle, ancho_disponible))
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         self._actualizar_elidido()
 
 
@@ -1810,23 +1810,23 @@ class _VentanaPantallaCompletaEditor(QWidget):
         super().__init__(parent, Qt.WindowType.Window)
         aplicar_icono_ventana(self, ICONO_DOCUMENTO)
         self._al_cerrar= al_cerrar
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.layout_contenido= layout
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
+        self.layout_contenido= disposicion
 
-    def closeEvent(self, event):
+    def closeEvent(self, evento):
 
         #Si cierran con la X, hay que devolver el editor a su sitio original antes de dejar que Qt oculte/destruya esta
         #ventana -si no, el editor (que vive dentro de ella) desaparecería con la ventana.
         self._al_cerrar()
-        event.accept()
+        evento.accept()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, evento):
 
-        if event.key() == Qt.Key.Key_Escape:
+        if evento.key() == Qt.Key.Key_Escape:
             self._al_cerrar()
             return
-        super().keyPressEvent(event)
+        super().keyPressEvent(evento)
 
 
 #Panel de previsualización y edición avanzada de reportes exportados
@@ -1874,7 +1874,7 @@ class VisorEditorReportes(QWidget):
         #_recalcular_barras_desplazables).
         self._barras_desplazables= []
 
-        self._build_ui()
+        self._construir_ui()
         self._mostrar_pagina("vacio")
         self.actualizar_tema()
 
@@ -1883,7 +1883,7 @@ class VisorEditorReportes(QWidget):
             app.aboutToQuit.connect(self._limpiar_antes_de_salir)
 
     #Construcción de la interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         #DISEÑO: para que la pestaña del editor jamás vuelva a "deformar" el módulo entero, el contenido pesado (barras
         #de herramientas, tabla, visor de PDF, editor de Word) YA NO vive nunca dentro de esta pestaña. Aquí, en
@@ -1896,11 +1896,11 @@ class VisorEditorReportes(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.setMinimumHeight(280)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
 
         self.panel_estado= self._construir_panel_estado()
-        layout.addWidget(self.panel_estado)
+        disposicion.addWidget(self.panel_estado)
 
         self.editor_pesado= self._construir_editor_pesado()
         self.editor_pesado.setParent(self)
@@ -2233,9 +2233,9 @@ class VisorEditorReportes(QWidget):
         #Widget interior real (el que tenía antes el papel de «contenedor»)
         inner_w= QWidget()
         inner_w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout= QVBoxLayout(inner_w)
-        layout.setContentsMargins(14, 12, 14, 14)
-        layout.setSpacing(10)
+        disposicion= QVBoxLayout(inner_w)
+        disposicion.setContentsMargins(14, 12, 14, 14)
+        disposicion.setSpacing(10)
 
         barra= QFrame()
         barra.setObjectName("TarjetaFiltros")
@@ -2365,11 +2365,11 @@ class VisorEditorReportes(QWidget):
         #1366px), Windows no podía maximizar la ventana a ese ancho -el mensaje "QWindowsWindow::setGeometry: Unable to
         #set geometry..." que se veía en consola- y la ventana quedaba con un tamaño roto hasta restaurarla y volver a
         #maximizarla a mano.
-        layout.addWidget(self._barra_desplazable(barra))
+        disposicion.addWidget(self._barra_desplazable(barra))
 
         self.stack= QStackedWidget()
         self.stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout.addWidget(self.stack, 1)
+        disposicion.addWidget(self.stack, 1)
 
         self.stack.addWidget(self._pagina_vacia())
         self.stack.addWidget(self._pagina_hoja_calculo())
@@ -2792,10 +2792,10 @@ class VisorEditorReportes(QWidget):
         fila= QHBoxLayout()
         fila.setSpacing(5)
         v.addLayout(fila, 1)
-        etiqueta= QLabel(titulo.upper())
-        etiqueta.setObjectName("EtiquetaGrupoRibbon")
-        etiqueta.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        v.addWidget(etiqueta)
+        lbl_etiqueta= QLabel(titulo.upper())
+        lbl_etiqueta.setObjectName("EtiquetaGrupoRibbon")
+        lbl_etiqueta.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        v.addWidget(lbl_etiqueta)
         return contenedor, fila
 
     #Control de zoom "−  100%  +" compacto, con los tres controles
@@ -2842,18 +2842,18 @@ class VisorEditorReportes(QWidget):
         contenedor= QWidget()
         disposicion= QVBoxLayout(contenedor)
         disposicion.addStretch()
-        icono= QLabel("")
-        icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_icono= QLabel("")
+        lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         from src.nucleo.iconos_emoji import pixmap_emoji
-        icono.setPixmap(pixmap_emoji("📄", 46))
-        disposicion.addWidget(icono)
-        texto= QLabel("Abre un PDF, Excel, Word o CSV para previsualizarlo y editarlo aquí.\n"
+        lbl_icono.setPixmap(pixmap_emoji("📄", 46))
+        disposicion.addWidget(lbl_icono)
+        lbl_texto= QLabel("Abre un PDF, Excel, Word o CSV para previsualizarlo y editarlo aquí.\n"
                        "También puedes usar los reportes que acabas de exportar desde\n"
                        "las otras pestañas: aparecerán en «Archivos recientes».")
-        texto.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        texto.setObjectName("DescModulo")
-        texto.setWordWrap(True)
-        disposicion.addWidget(texto)
+        lbl_texto.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_texto.setObjectName("DescModulo")
+        lbl_texto.setWordWrap(True)
+        disposicion.addWidget(lbl_texto)
         disposicion.addStretch()
         return contenedor
 
@@ -3079,7 +3079,7 @@ class VisorEditorReportes(QWidget):
         #Delegado propio: al editar una celda muestra la fórmula/valor crudo (no el resultado ya calculado) -ver
         #_DelegadoHojaCalculo.
         self.tabla_editor.setItemDelegate(_DelegadoHojaCalculo(self.tabla_editor, self, self.tabla_editor))
-        self.tabla_editor.itemChanged.connect(self._on_celda_editada)
+        self.tabla_editor.itemChanged.connect(self._al_celda_editada)
         #Permite ARRASTRAR con el mouse un "cuadro de texto" (una celda normal marcada con ROL_ES_CUADRO_TEXTO, no un
         #widget aparte como las imágenes) hacia otra celda -ver eventFilter más abajo.
         self.tabla_editor.setMouseTracking(True)
@@ -3253,9 +3253,9 @@ class VisorEditorReportes(QWidget):
         self.btn_texto_pdf.toggled.connect(self._pdf_alternar_panel_texto)
         f_extra.addWidget(self.btn_texto_pdf)
         tb2.addWidget(g_extra)
-        etiqueta_extra= QLabel("HERRAMIENTAS DE DOCUMENTO")
-        etiqueta_extra.setObjectName("EtiquetaGrupoRibbon")
-        tb2.addWidget(etiqueta_extra)
+        lbl_etiqueta_extra= QLabel("HERRAMIENTAS DE DOCUMENTO")
+        lbl_etiqueta_extra.setObjectName("EtiquetaGrupoRibbon")
+        tb2.addWidget(lbl_etiqueta_extra)
         tb2.addStretch()
         disposicion.addWidget(self._barra_desplazable(toolbar2))
 
@@ -3956,8 +3956,8 @@ class VisorEditorReportes(QWidget):
         dialogo.setWindowTitle("Sobre editar Excel aquí")
         aplicar_icono_ventana(dialogo, ICONO_DOCUMENTO)
         dialogo.setMinimumWidth(420)
-        layout= QVBoxLayout(dialogo)
-        texto= QLabel(
+        disposicion= QVBoxLayout(dialogo)
+        lbl_texto= QLabel(
             "<b> Esto sí funciona con total confianza:</b><br>"
             "• Editar celdas, fórmulas (con recálculo propio) y formato de texto/número.<br>"
             "• Insertar/eliminar filas y columnas, buscar y reemplazar.<br>"
@@ -3972,15 +3972,15 @@ class VisorEditorReportes(QWidget):
             "en blanco/plano por defecto: los colores que TÚ apliques aquí con « Relleno» sí se "
             "guardan correctamente en el archivo.<br>"
             "• No hay una integración con Microsoft Excel real: es un editor propio compatible con el formato.")
-        texto.setWordWrap(True)
-        texto.setTextFormat(Qt.TextFormat.RichText)
-        layout.addWidget(texto)
+        lbl_texto.setWordWrap(True)
+        lbl_texto.setTextFormat(Qt.TextFormat.RichText)
+        disposicion.addWidget(lbl_texto)
         btn_cerrar= QPushButton("Entendido")
         btn_cerrar.clicked.connect(dialogo.accept)
         fila= QHBoxLayout()
         fila.addStretch()
         fila.addWidget(btn_cerrar)
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
         dialogo.exec()
 
     #Lee xl/theme/theme1.xml directamente del .xlsx (es un zip) y
@@ -4136,11 +4136,11 @@ class VisorEditorReportes(QWidget):
                 return wb, wb_cache, tema
             self._hilo_abrir_xlsx= WorkerHilo(_tarea_io)
             self._hilo_abrir_xlsx.terminado.connect(
-                lambda res: self._on_xlsx_cargado(res[0], res[1], res[2]))
+                lambda res: self._al_xlsx_cargado(res[0], res[1], res[2]))
             self._hilo_abrir_xlsx.error.connect(
-                lambda msg: (self._bloquear_controles_xlsx(False),
+                lambda mensaje: (self._bloquear_controles_xlsx(False),
                              mostrar_mensaje("error", "Error al abrir Excel",
-                                             msg.split("\n")[0], self._padre_dialogo())))
+                                             mensaje.split("\n")[0], self._padre_dialogo())))
             self._hilo_abrir_xlsx.finished.connect(
                 lambda: self._bloquear_controles_xlsx(False))
             self._hilo_abrir_xlsx.start()
@@ -4153,11 +4153,11 @@ class VisorEditorReportes(QWidget):
             except Exception:
                 self._wb_valores_cache= None
             self._tema_colores_excel= self._extraer_tema_colores(ruta)
-            self._on_xlsx_cargado(self._wb, self._wb_valores_cache, self._tema_colores_excel)
+            self._al_xlsx_cargado(self._wb, self._wb_valores_cache, self._tema_colores_excel)
 
     #Slot que se ejecuta en el hilo principal cuando openpyxl terminó
     #de cargar el workbook en segundo plano. Actualiza todos los widgets Qt.
-    def _on_xlsx_cargado(self, wb, wb_cache, tema):
+    def _al_xlsx_cargado(self, wb, wb_cache, tema):
 
         self._wb= wb
         self._wb_valores_cache= wb_cache
@@ -4212,7 +4212,7 @@ class VisorEditorReportes(QWidget):
                     self.tabla_editor.removeCellWidget(r, c)
         self.tabla_editor.clear()
         #setUpdatesEnabled(False) + blockSignals(True): una hoja de cálculo
-        #puede traer miles de celdas, y sin esto cada setItem() dispara un repintado Y una llamada a _on_celda_editada
+        #puede traer miles de celdas, y sin esto cada setItem() dispara un repintado Y una llamada a _al_celda_editada
         #(aunque _sincronizando ya la descarta, el propio despacho de la señal cuesta tiempo). En equipos modestos esa
         #es la diferencia entre abrir un Excel grande al instante o que la app se quede "congelada" varios segundos.
         self.tabla_editor.setUpdatesEnabled(False)
@@ -4643,11 +4643,11 @@ class VisorEditorReportes(QWidget):
     #terminal al cerrar. Atajarlo aquí y devolver False dice
     #simplemente 'seguí con el procesamiento normal', que es
     #inofensivo porque la app se está cerrando de todas formas.
-    def eventFilter(self, obj, evento):
+    def eventFilter(self, objeto, evento):
 
         try:
 
-            return self._eventFilter_impl(obj, evento)
+            return self._eventFilter_impl(objeto, evento)
         except RuntimeError:
             return False
 
@@ -4673,17 +4673,17 @@ class VisorEditorReportes(QWidget):
     #hace que el QShortcut sí se dispare con normalidad.
     #3) Arrastre de "cuadro de texto" sobre el viewport de la tabla (ver
     #_mover_cuadro_texto).
-    def _eventFilter_impl(self, obj, evento):
+    def _eventFilter_impl(self, objeto, evento):
 
         if self._cerrando:
             return False
-        if (hasattr(self, "editor_word") and obj is self.editor_word.viewport()
+        if (hasattr(self, "editor_word") and objeto is self.editor_word.viewport()
                 and evento.type() == QEvent.Type.MouseButtonDblClick):
             cursor_img= self._word_cursor_sobre_imagen(evento.pos())
             if cursor_img is not None:
                 self._word_redimensionar_imagen_en(cursor_img)
                 return True
-        if hasattr(self, "editor_word") and obj is self.editor_word.viewport():
+        if hasattr(self, "editor_word") and objeto is self.editor_word.viewport():
             #Ctrl+clic sobre un hipervínculo lo abre -igual que en Word/ Office real-. Sin Ctrl, un clic sobre el enlace
             #simplemente posiciona el cursor de edición ahí, como en cualquier texto.
             if (evento.type() == QEvent.Type.MouseButtonRelease
@@ -4703,7 +4703,7 @@ class VisorEditorReportes(QWidget):
                     QToolTip.showText(evento.globalPosition().toPoint(), "Ctrl+clic para abrir el enlace")
                 else:
                     self.editor_word.viewport().setCursor(Qt.CursorShape.IBeamCursor)
-        if hasattr(self, "tabla_editor") and obj is self.tabla_editor.viewport():
+        if hasattr(self, "tabla_editor") and objeto is self.tabla_editor.viewport():
             #Mismo comportamiento que en Word: Ctrl+clic sobre una celda con hipervínculo lo abre; sin Ctrl, un clic normal
             #solo selecciona la celda como siempre.
             if (evento.type() == QEvent.Type.MouseButtonRelease
@@ -4741,7 +4741,7 @@ class VisorEditorReportes(QWidget):
                                     Qt.Key.Key_Minus, Qt.Key.Key_0):
                     evento.ignore()
                     return True
-        if obj is self.tabla_editor.viewport():
+        if objeto is self.tabla_editor.viewport():
             if evento.type() == QEvent.Type.MouseButtonPress and evento.button() == Qt.MouseButton.LeftButton:
                 indice= self.tabla_editor.indexAt(evento.pos())
                 if indice.isValid():
@@ -4759,7 +4759,7 @@ class VisorEditorReportes(QWidget):
                     if indice.isValid():
                         self._mover_cuadro_texto(origen, (indice.row(), indice.column()))
                     return True
-        return super().eventFilter(obj, evento)
+        return super().eventFilter(objeto, evento)
 
     #Mueve el contenido/formato de un "cuadro de texto" de la celda
     #`origen` a la celda `destino` -copia todo lo relevante y limpia el
@@ -4919,10 +4919,10 @@ class VisorEditorReportes(QWidget):
         dialogo= QDialog(self._padre_dialogo())
         dialogo.setWindowTitle("Opciones de imagen" if es_imagen_real else "Opciones del gráfico")
         aplicar_icono_ventana(dialogo, ICONO_DOCUMENTO)
-        layout= QVBoxLayout(dialogo)
+        disposicion= QVBoxLayout(dialogo)
         slider= None
         if es_imagen_real:
-            layout.addWidget(QLabel("Transparencia:"))
+            disposicion.addWidget(QLabel("Transparencia:"))
             fila_op= QHBoxLayout()
             slider= QSlider(Qt.Orientation.Horizontal)
             slider.setRange(0, 100)
@@ -4931,9 +4931,9 @@ class VisorEditorReportes(QWidget):
             slider.valueChanged.connect(lambda v: lbl_valor.setText(f"{v}%"))
             fila_op.addWidget(slider, 1)
             fila_op.addWidget(lbl_valor)
-            layout.addLayout(fila_op)
+            disposicion.addLayout(fila_op)
         else:
-            layout.addWidget(QLabel("¿Qué quieres hacer con este gráfico?"))
+            disposicion.addWidget(QLabel("¿Qué quieres hacer con este gráfico?"))
 
         botones= QHBoxLayout()
         btn_quitar= QPushButton("Quitar imagen" if es_imagen_real else "Quitar gráfico")
@@ -4950,7 +4950,7 @@ class VisorEditorReportes(QWidget):
             btn_aplicar.setIcon(icono_emoji("✅"))
             btn_aplicar.setIconSize(_QSize_emoji(16, 16))
             botones.addWidget(btn_aplicar)
-        layout.addLayout(botones)
+        disposicion.addLayout(botones)
 
         def _aplicar():
 
@@ -5370,7 +5370,7 @@ class VisorEditorReportes(QWidget):
             filas.append(fila)
         return filas
 
-    def _on_celda_editada(self, item):
+    def _al_celda_editada(self, item):
 
         if self._sincronizando or self._recalculando:
             return
@@ -5407,7 +5407,7 @@ class VisorEditorReportes(QWidget):
         self._recalculando= True
         #OPTIMIZACIÓN: esta función se llama en CADA edición de celda (una hoja grande puede tener miles de celdas), y
         #antes no bloqueaba señales ni el repintado -cada item.setText() disparaba un
-        #itemChanged (que _on_celda_editada descarta enseguida por
+        #itemChanged (que _al_celda_editada descarta enseguida por
         #_recalculando, pero el propio despacho de la señal ya cuesta tiempo) y un repintado parcial. Igual que en la
         #carga inicial, se bloquean señales/actualizaciones mientras se recalculan todas las celdas, y se reactivan al
         #final.
@@ -6135,7 +6135,7 @@ class VisorEditorReportes(QWidget):
             return
         self._registrar_deshacer_hoja()
         activar= not items[0].font().bold()
-        #_sincronizando evita que estos cambios de SOLO formato (no de contenido) disparen _on_celda_editada -que
+        #_sincronizando evita que estos cambios de SOLO formato (no de contenido) disparen _al_celda_editada -que
         #interpretaría el texto ya calculado que se ve como si fuera un nuevo valor escrito a mano y "aplanaría"
         #cualquier fórmula que hubiera en la celda-.
         self._sincronizando= True
@@ -6299,7 +6299,7 @@ class VisorEditorReportes(QWidget):
         ##OPTIMIZACIÓN / CORRECCIÓN DE FONDO: antes el bloqueo de señales
         #(self._sincronizando = True) se activaba recién DESPUÉS de este
         #primer bucle de etiquetado. Cada item.setData(ROL_FILA_ORIGEN, r)
-        #disparaba itemChanged -> _on_celda_editada, que -al no estar
+        #disparaba itemChanged -> _al_celda_editada, que -al no estar
         #todavía _sincronizando activo- ejecutaba una RECALCULACIÓN COMPLETA DE TODA LA HOJA por cada celda etiquetada.
         #En una hoja de 1000 filas x 20 columnas eso son 20 000 recálculos completos antes de siquiera empezar a
         #ordenar -el origen real de la lentitud y de valores/fórmulas inconsistentes a medio camino-. Ahora se bloquean
@@ -6520,10 +6520,10 @@ class VisorEditorReportes(QWidget):
                             getattr(self.main_window, "usuario_actual", None), ruta),
                         mostrar_mensaje("exito", "Guardado",
                             f"Los cambios se guardaron en:\n{ruta}", self._padre_dialogo())))
-                    self._hilo_guardado.error.connect(lambda msg: (
+                    self._hilo_guardado.error.connect(lambda mensaje: (
                         self._poner_btn_guardando(False),
                         mostrar_mensaje("error", "No se pudo guardar",
-                            msg.split("\n")[0], self._padre_dialogo())))
+                            mensaje.split("\n")[0], self._padre_dialogo())))
                     self._hilo_guardado.start()
                 else:
                     wb.save(ruta)
@@ -6575,7 +6575,7 @@ class VisorEditorReportes(QWidget):
 
                         wb.save(ruta)
                     self._hilo_guardado_como= WorkerHilo(_guardar_como_io)
-                    def _on_ok(_):
+                    def _al_ok(_):
 
                         self._poner_btn_guardando(False)
                         self.ruta_actual= ruta
@@ -6587,11 +6587,11 @@ class VisorEditorReportes(QWidget):
                             getattr(self.main_window, "usuario_actual", None), ruta)
                         mostrar_mensaje("exito", "Guardado",
                             f"Copia guardada en:\n{ruta}", self._padre_dialogo())
-                    self._hilo_guardado_como.terminado.connect(_on_ok)
-                    self._hilo_guardado_como.error.connect(lambda msg: (
+                    self._hilo_guardado_como.terminado.connect(_al_ok)
+                    self._hilo_guardado_como.error.connect(lambda mensaje: (
                         self._poner_btn_guardando(False),
                         mostrar_mensaje("error", "No se pudo guardar",
-                            msg.split("\n")[0], self._padre_dialogo())))
+                            mensaje.split("\n")[0], self._padre_dialogo())))
                     self._hilo_guardado_como.start()
                     return
                 else:
@@ -7213,8 +7213,8 @@ class VisorEditorReportes(QWidget):
         dialogo= QDialog(self._padre_dialogo())
         dialogo.setWindowTitle("Transparencia de la imagen")
         aplicar_icono_ventana(dialogo, ICONO_DOCUMENTO)
-        layout= QVBoxLayout(dialogo)
-        layout.addWidget(QLabel("Transparencia:"))
+        disposicion= QVBoxLayout(dialogo)
+        disposicion.addWidget(QLabel("Transparencia:"))
         fila= QHBoxLayout()
         slider= QSlider(Qt.Orientation.Horizontal)
         slider.setRange(0, 95)
@@ -7223,7 +7223,7 @@ class VisorEditorReportes(QWidget):
         slider.valueChanged.connect(lambda v: lbl_valor.setText(f"{v}%"))
         fila.addWidget(slider, 1)
         fila.addWidget(lbl_valor)
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
         botones= QHBoxLayout()
         btn_cancelar= QPushButton("Cancelar")
         btn_cancelar.setIcon(icono_emoji("✖"))
@@ -7234,7 +7234,7 @@ class VisorEditorReportes(QWidget):
         botones.addStretch()
         botones.addWidget(btn_cancelar)
         botones.addWidget(btn_aplicar)
-        layout.addLayout(botones)
+        disposicion.addLayout(botones)
         btn_cancelar.clicked.connect(dialogo.reject)
         btn_aplicar.clicked.connect(dialogo.accept)
         if dialogo.exec() != QDialog.DialogCode.Accepted:
@@ -8453,10 +8453,10 @@ class VisorEditorReportes(QWidget):
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("exito", "Exportado",
                         "El archivo se exportó correctamente.", self._padre_dialogo())))
-                self._hilo_exportar_xlsx.error.connect(lambda msg: (
+                self._hilo_exportar_xlsx.error.connect(lambda mensaje: (
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("error", "Error al exportar",
-                        msg.split("\n")[0], self._padre_dialogo())))
+                        mensaje.split("\n")[0], self._padre_dialogo())))
                 self._hilo_exportar_xlsx.start()
             else:
                 wb.save(ruta)
@@ -8499,10 +8499,10 @@ class VisorEditorReportes(QWidget):
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("exito", "Exportado",
                         "El archivo se exportó correctamente.", self._padre_dialogo())))
-                self._hilo_exportar_docx.error.connect(lambda msg: (
+                self._hilo_exportar_docx.error.connect(lambda mensaje: (
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("error", "Error al exportar",
-                        msg.split("\n")[0], self._padre_dialogo())))
+                        mensaje.split("\n")[0], self._padre_dialogo())))
                 self._hilo_exportar_docx.start()
             else:
                 documento.save(ruta)
@@ -8561,10 +8561,10 @@ class VisorEditorReportes(QWidget):
                 QApplication.restoreOverrideCursor(),
                 mostrar_mensaje("exito", "Exportado",
                     "El archivo se exportó correctamente.", self._padre_dialogo())))
-            self._hilo_exportar_pdf.error.connect(lambda msg: (
+            self._hilo_exportar_pdf.error.connect(lambda mensaje: (
                 QApplication.restoreOverrideCursor(),
                 mostrar_mensaje("error", "Error al exportar",
-                    msg.split("\n")[0], self._padre_dialogo())))
+                    mensaje.split("\n")[0], self._padre_dialogo())))
             self._hilo_exportar_pdf.start()
         else:
             from PySide6.QtPrintSupport import QPrinter

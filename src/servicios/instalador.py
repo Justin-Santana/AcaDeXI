@@ -29,7 +29,7 @@ import tempfile
 from datetime import datetime
 
 from src.nucleo.rutas import obtener_carpeta_raiz
-from src.nucleo.bd import get_app_data_dir, DB_PATH, obtener_conexion, existe_bd_base, RUTA_BD_BASE
+from src.nucleo.bd import obtener_carpeta_datos, RUTA_BD, obtener_conexion, existe_bd_base, RUTA_BD_BASE
 from src.interfaz.ventana_principal import CONFIG_PATH
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto
@@ -52,7 +52,7 @@ def _ruta_bd_para_paquete(forzar_bd_actual=False):
     if existe_bd_base():
         return RUTA_BD_BASE
     if forzar_bd_actual:
-        return DB_PATH
+        return RUTA_BD
     raise BDBaseNoDisponible(
         "Todavía no has guardado una 'BD Base Institucional' (Configuración "
         "Seguridad y Backups BD Base Institucional). Puedes generarla ahí, o "

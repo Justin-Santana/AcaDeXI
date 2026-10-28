@@ -19,7 +19,7 @@ from PySide6.QtCore import (Qt, QUrl, QObject, QEvent, QTimer, QRectF, QPointF, 
     QPropertyAnimation, QVariantAnimation, QEasingCurve, QSize)
 from PySide6.QtGui import QPixmap, QDesktopServices, QColor, QPainter, QPen
 from src.nucleo.bd import (obtener_conexion, hash_password, verificar_contrasena, registrar_auditoria, crear_backup,
-                restaurar_backup, get_app_data_dir, obtener_historial_backups,
+                restaurar_backup, obtener_carpeta_datos, obtener_historial_backups,
                 CRITERIOS_NUMERO_LISTA, DESCRIPCION_CRITERIO_NUMERO_LISTA, CRITERIO_APELLIDOS_NOMBRE,
                 CRITERIO_MANUAL, obtener_criterio_numero_lista, recalcular_numeros_lista_todas_secciones)
 from src.sincronizacion.sincronizacion import obtener_estado, subir_cambios, descargar_novedades
@@ -106,7 +106,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -130,13 +130,13 @@ class _RealceHover(QObject):
         self._blur_hover= blur_hover
         self._offset_hover= offset_hover
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        tipo= event.type()
-        if tipo == QEvent.Type.Enter and obj.isEnabled():
-            self._animar(obj, self._blur_hover)
+        tipo= evento.type()
+        if tipo == QEvent.Type.Enter and objeto.isEnabled():
+            self._animar(objeto, self._blur_hover)
         elif tipo == QEvent.Type.Leave:
-            self._animar(obj, self._blur_normal)
+            self._animar(objeto, self._blur_normal)
         return False
 
     def _animar(self, widget, destino_blur):
@@ -295,11 +295,11 @@ class TabWidgetNavegable(QTabWidget):
         self._botones_scroll_enganchados= set()
         self.tabBar().installEventFilter(self)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        if obj is self.tabBar() and event.type() == QEvent.Type.ChildPolished:
+        if objeto is self.tabBar() and evento.type() == QEvent.Type.ChildPolished:
             self._enganchar_botones_scroll()
-        return super().eventFilter(obj, event)
+        return super().eventFilter(objeto, evento)
 
     #Qt crea sus propias flechitas de scroll (QToolButton) como hijas
     #del QTabBar SOLO cuando las pestañas no caben todas y hacen falta -
@@ -351,15 +351,15 @@ class TabWidgetNavegable(QTabWidget):
         #las demás). Alto: se conserva el de Qt para no romper la barra de pestañas.
         return QSize(w.minimumSizeHint().width(), cromo.height())
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, evento):
 
-        if self.count() > 1 and event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-            paso= -1 if event.key() == Qt.Key.Key_Left else 1
+        if self.count() > 1 and evento.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+            paso= -1 if evento.key() == Qt.Key.Key_Left else 1
             self.setCurrentIndex((self.currentIndex() + paso) % self.count())
             self.tabBar().setFocus()
-            event.accept()
+            evento.accept()
             return
-        super().keyPressEvent(event)
+        super().keyPressEvent(evento)
 
 
 #QSS para las flechitas ('«' '»') que Qt agrega solas a la derecha de un
@@ -482,15 +482,15 @@ class TarjetaSeccion(QFrame):
                 f"background-color: {_hex_a_rgba(accent, alpha)}; border-radius: 17px; "
                 f"font-size: 15px; color: {accent};")
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         self._animar_sombra(24)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(14)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
     def _animar_sombra(self, destino):
 
@@ -822,7 +822,7 @@ class WizardStepper(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(380)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_valor_anim)
+        self._anim.valueChanged.connect(self._al_valor_animado)
 
     def establecer_colores(self, accent, muted, fondo_circulo, texto_muted):
 
@@ -832,7 +832,7 @@ class WizardStepper(QWidget):
         self._color_texto_muted= texto_muted
         self.update()
 
-    def _on_valor_anim(self, valor):
+    def _al_valor_animado(self, valor):
 
         self._progreso_visual= valor
         self.update()
@@ -848,7 +848,7 @@ class WizardStepper(QWidget):
         self._indice_actual= indice
         self._anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         if self._total < 2:
             return
@@ -922,15 +922,15 @@ class WizardConfiguracion(QDialog):
         aplicar_icono_ventana(self, ICONO_SETUP)
         self.setMinimumSize(760, 620)
         self.logo_path= ""
-        self._build_ui()
-        self._apply_theme()
+        self._construir_ui()
+        self._aplicar_tema()
         centrar_y_al_frente(self, main_window)
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
+        disposicion.setSpacing(0)
 
         header= QFrame()
         header.setObjectName("WizardHeader")
@@ -958,7 +958,7 @@ class WizardConfiguracion(QDialog):
 
         self.stepper= WizardStepper(8)
         header_v.addWidget(self.stepper)
-        layout.addWidget(header)
+        disposicion.addWidget(header)
 
         #Contenedor con margen alrededor del stack: dentro se ve la tarjeta elevada de cada paso (ver _nueva_pagina)
         #"flotando" sobre el fondo del diálogo, en vez de pegada borde a borde como antes.
@@ -968,7 +968,7 @@ class WizardConfiguracion(QDialog):
         contenedor_stack_layout.setContentsMargins(26, 20, 26, 10)
         self.stack= QStackedWidget()
         contenedor_stack_layout.addWidget(self.stack)
-        layout.addWidget(contenedor_stack, 1)
+        disposicion.addWidget(contenedor_stack, 1)
 
         self._crear_paso_bienvenida()
         self._crear_paso1_institucion()
@@ -996,7 +996,7 @@ class WizardConfiguracion(QDialog):
         self.btn_siguiente.setIconSize(_QSize_emoji(16, 16))
         self.btn_siguiente.clicked.connect(self._siguiente)
         pie_layout.addWidget(self.btn_siguiente)
-        layout.addWidget(pie)
+        disposicion.addWidget(pie)
 
         self.stack.currentChanged.connect(self._actualizar_encabezado)
         self._actualizar_encabezado(0)
@@ -1019,19 +1019,19 @@ class WizardConfiguracion(QDialog):
 
         return ["👋", "🏛", "🖼", "🏫", "📊", "🗓", "👤", "🏁"]
 
-    def _actualizar_encabezado(self, index):
+    def _actualizar_encabezado(self, indice):
 
         titulos= self._titulos()
         iconos= self._iconos_pasos()
-        self.lbl_paso.setText(titulos[index])
-        self.lbl_badge_paso.setPixmap(pixmap_emoji(iconos[index] if index < len(iconos) else "🧭", 20))
-        self.lbl_contador.setText(f"Paso {index + 1} de {len(titulos)}")
-        self.btn_atras.setEnabled(index > 0)
-        ultimo= index == len(titulos) - 1
+        self.lbl_paso.setText(titulos[indice])
+        self.lbl_badge_paso.setPixmap(pixmap_emoji(iconos[indice] if indice < len(iconos) else "🧭", 20))
+        self.lbl_contador.setText(f"Paso {indice + 1} de {len(titulos)}")
+        self.btn_atras.setEnabled(indice > 0)
+        ultimo= indice == len(titulos) - 1
         self.btn_siguiente.setText("Finalizar " if ultimo else "Siguiente ")
         self.btn_siguiente.setIcon(icono_emoji("🏁" if ultimo else "➡"))
         self.btn_siguiente.setIconSize(_QSize_emoji(16, 16))
-        self.stepper.ir_a(index)
+        self.stepper.ir_a(indice)
 
     def _crear_paso_bienvenida(self):
 
@@ -1041,18 +1041,18 @@ class WizardConfiguracion(QDialog):
         lbl_hero.setPixmap(pixmap_emoji("👋", 64))
         lbl_hero.setAlignment(Qt.AlignmentFlag.AlignCenter)
         l.addWidget(lbl_hero)
-        titulo= QLabel("Bienvenido a AcaDeXI")
-        titulo.setObjectName("WizardTitulo")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        l.addWidget(titulo)
-        desc= QLabel("Este asistente te guiará en 7 pasos para configurar la identidad institucional, "
+        lbl_titulo= QLabel("Bienvenido a AcaDeXI")
+        lbl_titulo.setObjectName("WizardTitulo")
+        lbl_titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        l.addWidget(lbl_titulo)
+        lbl_desc= QLabel("Este asistente te guiará en 7 pasos para configurar la identidad institucional, "
                       "el tipo de centro educativo, la escala de evaluación, el año académico y las "
                       "credenciales del Director. Al finalizar, AcaDeXI generará automáticamente la "
                       "estructura de la base de datos.")
-        desc.setObjectName("WizardDesc")
-        desc.setWordWrap(True)
-        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        l.addWidget(desc)
+        lbl_desc.setObjectName("WizardDesc")
+        lbl_desc.setWordWrap(True)
+        lbl_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        l.addWidget(lbl_desc)
         l.addSpacing(18)
 
         linea= QFrame()
@@ -1060,13 +1060,13 @@ class WizardConfiguracion(QDialog):
         l.addWidget(linea)
         l.addSpacing(10)
 
-        aviso_docente= QLabel("¿Eres Docente/Personal y tu Administrador/Director ya te entregó tu "
+        lbl_aviso_docente= QLabel("¿Eres Docente/Personal y tu Administrador/Director ya te entregó tu "
                                "archivo de Perfil Institucional (.acdx)? No necesitas completar este "
                                "asistente — impórtalo directamente y quedas listo.")
-        aviso_docente.setObjectName("WizardDesc")
-        aviso_docente.setWordWrap(True)
-        aviso_docente.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        l.addWidget(aviso_docente)
+        lbl_aviso_docente.setObjectName("WizardDesc")
+        lbl_aviso_docente.setWordWrap(True)
+        lbl_aviso_docente.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        l.addWidget(lbl_aviso_docente)
         fila_importar= QHBoxLayout()
         fila_importar.addStretch()
         btn_importar= QPushButton("Importar Perfil Institucional (.acdx)")
@@ -1183,7 +1183,7 @@ class WizardConfiguracion(QDialog):
 
     def _elegir_logo(self):
 
-        destino_dir= os.path.join(get_app_data_dir(), "logos")
+        destino_dir= os.path.join(obtener_carpeta_datos(), "logos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="logo")
         if not destino:
             return
@@ -1396,16 +1396,16 @@ class WizardConfiguracion(QDialog):
         lbl_hero.setPixmap(pixmap_emoji("🏁", 64))
         lbl_hero.setAlignment(Qt.AlignmentFlag.AlignCenter)
         l.addWidget(lbl_hero)
-        titulo= QLabel("Todo Listo")
-        titulo.setObjectName("WizardTitulo")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        l.addWidget(titulo)
-        desc= QLabel("AcaDeXI generará el esquema de datos de la institución y desplegará el panel principal. "
+        lbl_titulo= QLabel("Todo Listo")
+        lbl_titulo.setObjectName("WizardTitulo")
+        lbl_titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        l.addWidget(lbl_titulo)
+        lbl_desc= QLabel("AcaDeXI generará el esquema de datos de la institución y desplegará el panel principal. "
                       "Presiona Finalizar para continuar.")
-        desc.setObjectName("WizardDesc")
-        desc.setWordWrap(True)
-        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        l.addWidget(desc)
+        lbl_desc.setObjectName("WizardDesc")
+        lbl_desc.setWordWrap(True)
+        lbl_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        l.addWidget(lbl_desc)
         l.addStretch()
         self.stack.addWidget(w)
 
@@ -1564,7 +1564,7 @@ class WizardConfiguracion(QDialog):
                             f"Institución: {self.in_nombre.text().strip()} | Tipo: {self.combo_tipo.currentText()}")
         self.accept()
 
-    def _apply_theme(self):
+    def _aplicar_tema(self):
 
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
@@ -1624,15 +1624,15 @@ class ModuloConfiguracion(QWidget):
         super().__init__(main_window)
         self.main_window= main_window
         self._titulo_modulo_atajos= "Configuración"
-        self._build_ui()
+        self._construir_ui()
         self._configurar_atajos()
         self.refrescar()
 
     #Atajos de teclado (ver atajos.py)
     def _configurar_atajos(self):
 
-        #Ctrl+1..Ctrl+7: salto directo a cada pestaña, en el mismo orden en que aparecen en self.tabs (ver _build_ui).
-        #Se lee el texto real de cada pestaña -ya construidas en este punto, _build_ui corrió antes- para que la
+        #Ctrl+1..Ctrl+7: salto directo a cada pestaña, en el mismo orden en que aparecen en self.tabs (ver _construir_ui).
+        #Se lee el texto real de cada pestaña -ya construidas en este punto, _construir_ui corrió antes- para que la
         #ventanita de ayuda muestre "Ir a Institución" en vez de un genérico "Ir a la pestaña 1".
         for i in range(self.tabs.count()):
             titulo= self.tabs.tabText(i).split(" ", 1)[-1]  #sin el emoji
@@ -1644,11 +1644,11 @@ class ModuloConfiguracion(QWidget):
         if 0 <= indice < self.tabs.count() and self.tabs.isTabVisible(indice):
             self.tabs.setCurrentIndex(indice)
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(30, 25, 30, 20)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(30, 25, 30, 20)
+        disposicion.setSpacing(14)
 
         #--- Cabecera tipo "hero": icono + título + descripción ---
         self.frame_cabecera= QFrame()
@@ -1676,14 +1676,14 @@ class ModuloConfiguracion(QWidget):
         bloque_titulo_cabecera.addWidget(self.lbl_subtitulo_cabecera)
         cabecera_layout.addLayout(bloque_titulo_cabecera, 1)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         self.tabs= TabWidgetNavegable()
         self.tabs.setDocumentMode(True)
         #Ver nota en asistencia.py: quita la línea base nativa que Qt dibuja bajo la barra de pestañas y que el
         #stylesheet no puede eliminar.
         self.tabs.tabBar().setDrawBase(False)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tab_institucion= self._tab_institucion()
         self.tab_academico= self._tab_academico()
         self.tab_apariencia= self._tab_apariencia()
@@ -1763,7 +1763,7 @@ class ModuloConfiguracion(QWidget):
         self.lbl_logo_actual.setObjectName("PreviewLogo")
         self.lbl_logo_actual.setCursor(Qt.CursorShape.PointingHandCursor)
         self.lbl_logo_actual.setToolTip("Clic para elegir y recortar el logotipo")
-        self.lbl_logo_actual.mousePressEvent= lambda event: self._cambiar_logo()
+        self.lbl_logo_actual.mousePressEvent= lambda evento: self._cambiar_logo()
         fila_logo.addWidget(self.lbl_logo_actual)
         btn_logo= QPushButton("Cambiar y Recortar Logotipo")
         btn_logo.setIcon(icono_emoji(EMOJI_FOTO_RECORTAR))
@@ -1778,9 +1778,9 @@ class ModuloConfiguracion(QWidget):
         fila_logo.addWidget(btn_ver_logo)
         fila_logo.addStretch()
         t_imagen.contenido.addLayout(fila_logo)
-        linea_firma= QLabel("Firma Digital para Reportes:")
-        linea_firma.setObjectName("DescModulo")
-        t_imagen.contenido.addWidget(linea_firma)
+        lbl_linea_firma= QLabel("Firma Digital para Reportes:")
+        lbl_linea_firma.setObjectName("DescModulo")
+        t_imagen.contenido.addWidget(lbl_linea_firma)
         fila_firma= QHBoxLayout()
         self.lbl_firma_actual= QLabel("Sin firma")
         self.lbl_firma_actual.setFixedSize(90, 50)
@@ -1788,7 +1788,7 @@ class ModuloConfiguracion(QWidget):
         self.lbl_firma_actual.setObjectName("PreviewLogo")
         self.lbl_firma_actual.setCursor(Qt.CursorShape.PointingHandCursor)
         self.lbl_firma_actual.setToolTip("Clic para elegir y recortar la firma")
-        self.lbl_firma_actual.mousePressEvent= lambda event: self._cambiar_firma()
+        self.lbl_firma_actual.mousePressEvent= lambda evento: self._cambiar_firma()
         fila_firma.addWidget(self.lbl_firma_actual)
         btn_firma= QPushButton("Cambiar y Recortar Firma")
         btn_firma.setIcon(icono_emoji(EMOJI_FOTO_RECORTAR))
@@ -1835,7 +1835,7 @@ class ModuloConfiguracion(QWidget):
 
     def _cambiar_logo(self):
 
-        destino_dir= os.path.join(get_app_data_dir(), "logos")
+        destino_dir= os.path.join(obtener_carpeta_datos(), "logos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="logo")
         if not destino:
             return
@@ -1877,7 +1877,7 @@ class ModuloConfiguracion(QWidget):
 
     def _cambiar_firma(self):
 
-        destino_dir= os.path.join(get_app_data_dir(), "logos")
+        destino_dir= os.path.join(obtener_carpeta_datos(), "logos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="firma")
         if not destino:
             return
@@ -2047,11 +2047,11 @@ class ModuloConfiguracion(QWidget):
         self.lbl_info_sistema_config.setObjectName("DescModulo")
         t_config.contenido.addWidget(self.lbl_info_sistema_config)
         self._sync_sistema_calificacion_config(self.combo_sistema_calificacion.currentText())
-        aviso= QLabel("Cambiar el 'Tipo de Institución' activa o desactiva los módulos"
+        lbl_aviso= QLabel("Cambiar el 'Tipo de Institución' activa o desactiva los módulos"
                        "de Politécnico / Universidad al reiniciar la navegación lateral.")
-        aviso.setWordWrap(True)
-        aviso.setObjectName("DescModulo")
-        t_config.contenido.addWidget(aviso)
+        lbl_aviso.setWordWrap(True)
+        lbl_aviso.setObjectName("DescModulo")
+        t_config.contenido.addWidget(lbl_aviso)
         disposicion.addWidget(t_config)
         self._tarjetas_academico.append(t_config)
 
@@ -2691,7 +2691,7 @@ class ModuloConfiguracion(QWidget):
         btn_activar.setIcon(icono_emoji("🔘"))
         btn_activar.setIconSize(_QSize_emoji(16, 16))
         btn_activar.setObjectName("BtnAccionAjustar")
-        btn_activar.clicked.connect(self._toggle_usuario)
+        btn_activar.clicked.connect(self._alternar_usuario)
         fila_botones.addWidget(btn_activar)
 
         btn_eliminar= QPushButton("Eliminar")
@@ -2729,12 +2729,12 @@ class ModuloConfiguracion(QWidget):
         #que el resto de esta pestaña.
         t_psicologia= TarjetaSeccion("🧠", "Módulo de Psicología")
         self.tarjeta_psicologia_admin= t_psicologia
-        info_psic= QLabel(
+        lbl_info_psic= QLabel(
             "Habilita el módulo de Psicología para la cuenta de Administrador, de modo "
             "que puedas gestionar expedientes psicológicos sin depender de un cargo "
             "personalizado en Side Stepper.")
-        info_psic.setWordWrap(True)
-        t_psicologia.contenido.addWidget(info_psic)
+        lbl_info_psic.setWordWrap(True)
+        t_psicologia.contenido.addWidget(lbl_info_psic)
         self.chk_psicologia_admin= QCheckBox("Habilitar Psicología para el rol Administrador")
         self.chk_psicologia_admin.toggled.connect(self._guardar_psicologia_admin)
         t_psicologia.contenido.addWidget(self.chk_psicologia_admin)
@@ -2903,7 +2903,7 @@ class ModuloConfiguracion(QWidget):
             return None
         return int(self.tabla_usuarios.item(fila, 0).text())
 
-    def _toggle_usuario(self):
+    def _alternar_usuario(self):
 
         id_usuario= self._fila_usuario_seleccionada()
         if id_usuario is None:
@@ -3032,12 +3032,12 @@ class ModuloConfiguracion(QWidget):
         disposicion.setContentsMargins(4, 10, 10, 10)
         disposicion.setSpacing(14)
 
-        desc= QLabel("Gestiona tu propia cuenta: cambia tu contraseña o exporta tu Perfil Institucional "
+        lbl_desc= QLabel("Gestiona tu propia cuenta: cambia tu contraseña o exporta tu Perfil Institucional "
                       "(.acdx) actualizado para importarlo en otro equipo. Desde aquí solo puedes ver y "
                       "modificar tu propia cuenta, nunca la de otro usuario.")
-        desc.setObjectName("DescModulo")
-        desc.setWordWrap(True)
-        disposicion.addWidget(desc)
+        lbl_desc.setObjectName("DescModulo")
+        lbl_desc.setWordWrap(True)
+        disposicion.addWidget(lbl_desc)
 
         self._tarjetas_mi_cuenta= []
 
@@ -4071,7 +4071,7 @@ class ModuloConfiguracion(QWidget):
 
     def _restaurar_backup(self):
 
-        ruta, _= QFileDialog.getOpenFileName(self, "Seleccionar Backup", os.path.join(get_app_data_dir(), "backups"),
+        ruta, _= QFileDialog.getOpenFileName(self, "Seleccionar Backup", os.path.join(obtener_carpeta_datos(), "backups"),
                                                "Base de Datos (*.db)")
         if not ruta:
             return
@@ -4146,11 +4146,11 @@ class ModuloConfiguracion(QWidget):
         disposicion.setSpacing(16)
         self._tarjetas_auditoria= []
 
-        desc_intro= QLabel("Captura detallada de las acciones del sistema: creación, "
+        lbl_desc_intro= QLabel("Captura detallada de las acciones del sistema: creación, "
                              "modificación y eliminación de registros, inicios y cierres de sesión.")
-        desc_intro.setObjectName("DescModulo")
-        desc_intro.setWordWrap(True)
-        disposicion.addWidget(desc_intro)
+        lbl_desc_intro.setObjectName("DescModulo")
+        lbl_desc_intro.setWordWrap(True)
+        disposicion.addWidget(lbl_desc_intro)
 
         t_interruptor= TarjetaSeccion(
             "", "Preferencia de Auditoría",

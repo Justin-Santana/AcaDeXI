@@ -105,11 +105,11 @@ class LoginWindow(QDialog):
         self.translucido= getattr(main_window, "login_translucido", True)
         self._drag_pos= None
         aplicar_icono_ventana(self, ICONO_LOGIN)
-        self._build_ui()
-        self._apply_theme()
+        self._construir_ui()
+        self._aplicar_tema()
         self._cargar_usuario_recordado()
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
         self.setWindowTitle("Iniciar Sesión - AcaDeXI")
         self.setFixedWidth(440)
@@ -141,7 +141,7 @@ class LoginWindow(QDialog):
         self.btn_translucido.setToolTip("Alternar panel translúcido / sólido")
         self.btn_translucido.setIcon(icono_emoji("🌫" if self.translucido else "🪟"))
         self.btn_translucido.setIconSize(_QSize_emoji(16, 16))
-        self.btn_translucido.clicked.connect(self._toggle_translucido)
+        self.btn_translucido.clicked.connect(self._alternar_translucido)
         fila_superior.addWidget(self.btn_translucido)
         fila_superior.addStretch()
         btn_cerrar= QPushButton("")
@@ -253,7 +253,7 @@ class LoginWindow(QDialog):
         self.btn_ver_pass.setFixedSize(38, 38)
         self.btn_ver_pass.setObjectName("BtnVerPass")
         self.btn_ver_pass.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.btn_ver_pass.clicked.connect(self._toggle_password)
+        self.btn_ver_pass.clicked.connect(self._alternar_contrasena)
         fila_pass.addWidget(self.btn_ver_pass)
         layout_frame.addLayout(fila_pass)
 
@@ -338,33 +338,33 @@ class LoginWindow(QDialog):
             self._capslock_on= estado
             self.lbl_capslock.setVisible(estado)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        if obj in (self.input_usuario, self.input_password):
-            if event.type() == event.Type.KeyPress and event.key() == Qt.Key.Key_CapsLock:
+        if objeto in (self.input_usuario, self.input_password):
+            if evento.type() == evento.Type.KeyPress and evento.key() == Qt.Key.Key_CapsLock:
                 #Al presionar CapsLock consultamos el estado real del SO (GetKeyState), en lugar de alternar una bandera. OJO:
                 #el toggle NO se refleja en GetKeyState durante el propio
                 #KeyPress (se actualiza ~30-40 ms después), así que la
                 #consulta se poslona con un QTimer; de lo contrario leería el estado anterior y el aviso nunca cambiaría.
                 QTimer.singleShot(50, self._actualizar_capslock)
-            elif event.type() == event.Type.FocusIn:
+            elif evento.type() == evento.Type.FocusIn:
                 #Al enfocar usuario/contraseña, sincronizar con el estado real actual (cubre el caso de mayúsculas activadas
                 #fuera de la app, p. ej. al escribir el PIN del dispositivo).
                 self._actualizar_capslock()
-        return super().eventFilter(obj, event)
+        return super().eventFilter(objeto, evento)
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
         #Estado real de Bloq Mayús ya al abrir el diálogo de login.
         self._actualizar_capslock()
-        super().showEvent(event)
+        super().showEvent(evento)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, evento):
 
-        if event.key() == Qt.Key.Key_Escape:
+        if evento.key() == Qt.Key.Key_Escape:
             self.close()
             return
-        super().keyPressEvent(event)
+        super().keyPressEvent(evento)
 
     def _cargar_usuario_recordado(self):
 
@@ -473,7 +473,7 @@ class LoginWindow(QDialog):
                         f"Rol: {datos.get('rol', '')}\n"
                         f"Modo de trabajo: {datos.get('modo', '')}" + aviso_password + aviso_bd + aviso_extra, self)
 
-    def _toggle_password(self):
+    def _alternar_contrasena(self):
 
         self.password_visible= not self.password_visible
         self.input_password.setEchoMode(
@@ -485,7 +485,7 @@ class LoginWindow(QDialog):
             "Ocultar contraseña" if self.password_visible else "Mostrar contraseña")
 
 
-    def _toggle_translucido(self):
+    def _alternar_translucido(self):
 
         self.translucido= not self.translucido
         self.main_window.login_translucido= self.translucido
@@ -496,7 +496,7 @@ class LoginWindow(QDialog):
         self.btn_translucido.setToolTip(
             "Panel translúcido (pulsar para sólido)" if self.translucido
             else "Panel sólido (pulsar para translúcido)")
-        self._apply_theme()
+        self._aplicar_tema()
 
     def _abrir_recuperacion(self):
 
@@ -598,7 +598,7 @@ class LoginWindow(QDialog):
             self.btn_ingresar.setEnabled(True)
             self.btn_ingresar.setText("Iniciar Sesión")
 
-    def _apply_theme(self):
+    def _aplicar_tema(self):
 
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])
@@ -650,22 +650,22 @@ class LoginWindow(QDialog):
             }}
         """)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos= event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-        super().mousePressEvent(event)
+        if evento.button() == Qt.MouseButton.LeftButton:
+            self._drag_pos= evento.globalPosition().toPoint() - self.frameGeometry().topLeft()
+        super().mousePressEvent(evento)
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, evento):
 
-        if self._drag_pos is not None and event.buttons() & Qt.MouseButton.LeftButton:
-            self.move(event.globalPosition().toPoint() - self._drag_pos)
-        super().mouseMoveEvent(event)
+        if self._drag_pos is not None and evento.buttons() & Qt.MouseButton.LeftButton:
+            self.move(evento.globalPosition().toPoint() - self._drag_pos)
+        super().mouseMoveEvent(evento)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, evento):
 
         self._drag_pos= None
-        super().mouseReleaseEvent(event)
+        super().mouseReleaseEvent(evento)
 
 
 #Recuperación de contraseña: por autorización de un Administrador activo,
@@ -681,30 +681,30 @@ class RecuperarPasswordDialog(QDialog):
                              | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setFixedWidth(420)
-        self._build_ui()
-        self._apply_theme()
+        self._construir_ui()
+        self._aplicar_tema()
         _centrar_y_al_frente(self, parent)
 
-    def _campo(self, layout, etiqueta, placeholder="", es_password=False):
+    def _campo(self, disposicion, etiqueta, placeholder="", es_password=False):
 
         lbl= QLabel(etiqueta)
         lbl.setObjectName("LoginLabel")
-        layout.addWidget(lbl)
-        entrada= QLineEdit()
-        limitar_campo_texto(entrada, 300)
-        entrada.setObjectName("LoginInput")
-        entrada.setPlaceholderText(placeholder)
+        disposicion.addWidget(lbl)
+        in_entrada= QLineEdit()
+        limitar_campo_texto(in_entrada, 300)
+        in_entrada.setObjectName("LoginInput")
+        in_entrada.setPlaceholderText(placeholder)
         if not es_password:
-            layout.addWidget(entrada)
-            return entrada
+            disposicion.addWidget(in_entrada)
+            return in_entrada
 
         #Igual que en el login principal: un botón 👁 al lado del campo para mostrar/ocultar la contraseña mientras se
         #escribe, útil sobre todo aquí porque son contraseñas NUEVAS que el usuario está inventando (más fácil
         #equivocarse sin verlas).
-        entrada.setEchoMode(QLineEdit.EchoMode.Password)
+        in_entrada.setEchoMode(QLineEdit.EchoMode.Password)
         fila= QHBoxLayout()
         fila.setSpacing(6)
-        fila.addWidget(entrada)
+        fila.addWidget(in_entrada)
         btn_ver= QPushButton("")
         btn_ver.setIcon(icono_emoji("🔒"))
         btn_ver.setIconSize(_QSize_emoji(16, 16))
@@ -713,14 +713,14 @@ class RecuperarPasswordDialog(QDialog):
         btn_ver.setObjectName("BtnVerPass")
         btn_ver.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_ver.setCheckable(True)
-        btn_ver.toggled.connect(lambda visible, e=entrada, b=btn_ver: (
+        btn_ver.toggled.connect(lambda visible, e=in_entrada, b=btn_ver: (
             e.setEchoMode(QLineEdit.EchoMode.Normal if visible else QLineEdit.EchoMode.Password),
             b.setText("" if visible else "")))
         fila.addWidget(btn_ver)
-        layout.addLayout(fila)
-        return entrada
+        disposicion.addLayout(fila)
+        return in_entrada
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_principal= QVBoxLayout(self)
         layout_principal.setContentsMargins(24, 24, 24, 24)
@@ -733,9 +733,9 @@ class RecuperarPasswordDialog(QDialog):
         sombra.setColor(QColor(0, 0, 0, 140))
         self.frame.setGraphicsEffect(sombra)
 
-        layout= QVBoxLayout(self.frame)
-        layout.setContentsMargins(28, 20, 28, 24)
-        layout.setSpacing(6)
+        disposicion= QVBoxLayout(self.frame)
+        disposicion.setContentsMargins(28, 20, 28, 24)
+        disposicion.setSpacing(6)
 
         fila_top= QHBoxLayout()
         fila_top.addStretch()
@@ -748,56 +748,56 @@ class RecuperarPasswordDialog(QDialog):
         btn_cerrar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_cerrar.clicked.connect(self.reject)
         fila_top.addWidget(btn_cerrar)
-        layout.addLayout(fila_top)
+        disposicion.addLayout(fila_top)
 
-        titulo= QLabel("Restablecer contraseña")
-        titulo.setObjectName("LoginTitulo")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        titulo.setStyleSheet("font-size: 18px;")
-        layout.addWidget(titulo)
-        layout.addSpacing(8)
+        lbl_titulo= QLabel("Restablecer contraseña")
+        lbl_titulo.setObjectName("LoginTitulo")
+        lbl_titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_titulo.setStyleSheet("font-size: 18px;")
+        disposicion.addWidget(lbl_titulo)
+        disposicion.addSpacing(8)
 
         self.tabs= QTabWidget()
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tabs.addTab(self._tab_admin(), "Autorización Admin")
         self.tabs.addTab(self._tab_correo(), "Por Correo")
 
         layout_principal.addWidget(self.frame)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, evento):
 
-        if event.key() == Qt.Key.Key_Escape:
+        if evento.key() == Qt.Key.Key_Escape:
             self.reject()
             return
-        super().keyPressEvent(event)
+        super().keyPressEvent(evento)
 
     #---------------- TAB: AUTORIZACIÓN DE ADMINISTRADOR ----------------
     def _tab_admin(self):
 
         contenedor= QWidget()
-        layout= QVBoxLayout(contenedor)
-        layout.setContentsMargins(0, 8, 0, 0)
-        layout.setSpacing(6)
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(0, 8, 0, 0)
+        disposicion.setSpacing(6)
 
-        self.input_cuenta= self._campo(layout, "CUENTA A RESTABLECER", "Usuario de la cuenta afectada")
+        self.input_cuenta= self._campo(disposicion, "CUENTA A RESTABLECER", "Usuario de la cuenta afectada")
 
-        layout.addSpacing(4)
+        disposicion.addSpacing(4)
         linea= QFrame()
         linea.setFrameShape(QFrame.Shape.HLine)
-        layout.addWidget(linea)
-        layout.addSpacing(4)
+        disposicion.addWidget(linea)
+        disposicion.addSpacing(4)
 
-        self.input_admin_user= self._campo(layout, "AUTORIZACIÓN - USUARIO ADMIN", "Usuario administrador")
-        self.input_admin_pass= self._campo(layout, "AUTORIZACIÓN - CONTRASEÑA ADMIN", "Contraseña administrador",
+        self.input_admin_user= self._campo(disposicion, "AUTORIZACIÓN - USUARIO ADMIN", "Usuario administrador")
+        self.input_admin_pass= self._campo(disposicion, "AUTORIZACIÓN - CONTRASEÑA ADMIN", "Contraseña administrador",
                                              es_password= True)
 
-        layout.addSpacing(4)
-        self.input_nueva= self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
-        self.input_confirmar= self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
+        disposicion.addSpacing(4)
+        self.input_nueva= self._campo(disposicion, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
+        self.input_confirmar= self._campo(disposicion, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
                                             es_password= True)
         self.input_confirmar.returnPressed.connect(self._restablecer_por_admin)
 
-        layout.addSpacing(8)
+        disposicion.addSpacing(8)
         btn_restablecer= QPushButton("Restablecer contraseña")
         btn_restablecer.setIcon(icono_emoji("♻"))
         btn_restablecer.setIconSize(_QSize_emoji(16, 16))
@@ -805,29 +805,29 @@ class RecuperarPasswordDialog(QDialog):
         btn_restablecer.setMinimumHeight(42)
         btn_restablecer.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_restablecer.clicked.connect(self._restablecer_por_admin)
-        layout.addWidget(btn_restablecer)
+        disposicion.addWidget(btn_restablecer)
         return contenedor
 
     #---------------- TAB: RECUPERACIÓN POR CORREO ----------------
     def _tab_correo(self):
 
         contenedor= QWidget()
-        layout= QVBoxLayout(contenedor)
-        layout.setContentsMargins(0, 8, 0, 0)
-        layout.setSpacing(6)
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(0, 8, 0, 0)
+        disposicion.setSpacing(6)
 
-        info= QLabel("Se enviará un código de verificación de 6 dígitos al correo "
+        lbl_info= QLabel("Se enviará un código de verificación de 6 dígitos al correo "
                       "registrado de la cuenta. El código expira en 15 minutos.")
-        info.setObjectName("LoginInfoText")
-        info.setWordWrap(True)
-        info.setTextFormat(Qt.TextFormat.RichText)
-        info.setText(
+        lbl_info.setObjectName("LoginInfoText")
+        lbl_info.setWordWrap(True)
+        lbl_info.setTextFormat(Qt.TextFormat.RichText)
+        lbl_info.setText(
             "<p style='line-height:140%;'>Se enviará un código de verificación de 6 "
             "dígitos al correo registrado de la cuenta. El código expira en 15 minutos.</p>")
-        layout.addWidget(info)
-        layout.addSpacing(4)
+        disposicion.addWidget(lbl_info)
+        disposicion.addSpacing(4)
 
-        self.input_cuenta_correo= self._campo(layout, "CUENTA", "Usuario de la cuenta afectada")
+        self.input_cuenta_correo= self._campo(disposicion, "CUENTA", "Usuario de la cuenta afectada")
 
         btn_enviar_codigo= QPushButton("Enviar código al correo")
         btn_enviar_codigo.setIcon(icono_emoji("✉"))
@@ -836,21 +836,21 @@ class RecuperarPasswordDialog(QDialog):
         btn_enviar_codigo.setMinimumHeight(38)
         btn_enviar_codigo.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_enviar_codigo.clicked.connect(self._enviar_codigo)
-        layout.addWidget(btn_enviar_codigo)
+        disposicion.addWidget(btn_enviar_codigo)
 
-        layout.addSpacing(6)
+        disposicion.addSpacing(6)
         linea= QFrame()
         linea.setFrameShape(QFrame.Shape.HLine)
-        layout.addWidget(linea)
-        layout.addSpacing(6)
+        disposicion.addWidget(linea)
+        disposicion.addSpacing(6)
 
-        self.input_codigo= self._campo(layout, "CÓDIGO RECIBIDO", "Ej. 482913")
-        self.input_nueva_correo= self._campo(layout, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
-        self.input_confirmar_correo= self._campo(layout, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
+        self.input_codigo= self._campo(disposicion, "CÓDIGO RECIBIDO", "Ej. 482913")
+        self.input_nueva_correo= self._campo(disposicion, "NUEVA CONTRASEÑA", "Nueva contraseña", es_password=True)
+        self.input_confirmar_correo= self._campo(disposicion, "CONFIRMAR CONTRASEÑA", "Repita la nueva contraseña",
                                                     es_password= True)
         self.input_confirmar_correo.returnPressed.connect(self._restablecer_por_correo)
 
-        layout.addSpacing(8)
+        disposicion.addSpacing(8)
         btn_restablecer2= QPushButton("Restablecer con código")
         btn_restablecer2.setIcon(icono_emoji("♻"))
         btn_restablecer2.setIconSize(_QSize_emoji(16, 16))
@@ -858,10 +858,10 @@ class RecuperarPasswordDialog(QDialog):
         btn_restablecer2.setMinimumHeight(42)
         btn_restablecer2.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_restablecer2.clicked.connect(self._restablecer_por_correo)
-        layout.addWidget(btn_restablecer2)
+        disposicion.addWidget(btn_restablecer2)
         return contenedor
 
-    def _apply_theme(self):
+    def _aplicar_tema(self):
 
         paleta= self.main_window.theme_palettes.get(
             self.main_window.tema_actual, self.main_window.theme_palettes["Indigo"])

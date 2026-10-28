@@ -93,19 +93,19 @@ class _DialogoCentrado(QDialog):
         #padres hasta dar con el objeto que tenga la paleta del tema (ventana principal o módulo) -cubre también el
         #selector de íconos abierto desde el diálogo de categorías-.
         mw= parent.window() if parent is not None else None
-        obj= mw
-        while obj is not None and not hasattr(obj, "theme_palettes"):
-            obj= obj.parentWidget()
-        mw= obj
+        objeto= mw
+        while objeto is not None and not hasattr(objeto, "theme_palettes"):
+            objeto= objeto.parentWidget()
+        mw= objeto
         if mw is not None and hasattr(mw, "main_window") and not getattr(mw, "theme_palettes", None):
             mw= mw.main_window
         qss= _qss_tooltip_tema(mw)
         if qss:
             self.setStyleSheet(qss)
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
-        super().showEvent(event)
+        super().showEvent(evento)
         if not self._centrado_inicial:
             self._centrado_inicial= True
             centrar_y_al_frente(self, self.parent())
@@ -171,9 +171,9 @@ class ModuloMateriales(QWidget):
         contenido= QWidget()
         scroll.setWidget(contenido)
 
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(18, 18, 18, 18)
+        disposicion.setSpacing(14)
 
         #---------- Cabecera "hero" (mismo patrón que Materias/Observaciones) ----------
         self.frame_cabecera= QFrame()
@@ -191,9 +191,9 @@ class ModuloMateriales(QWidget):
 
         col_titulos= QVBoxLayout()
         col_titulos.setSpacing(2)
-        titulo= QLabel("Materiales")
-        titulo.setObjectName("TituloCabeceraModulo")
-        col_titulos.addWidget(titulo)
+        lbl_titulo= QLabel("Materiales")
+        lbl_titulo.setObjectName("TituloCabeceraModulo")
+        col_titulos.addWidget(lbl_titulo)
         self.lbl_subtitulo= QLabel("Inventario de recursos de la institución.")
         self.lbl_subtitulo.setObjectName("SubtituloCabeceraModulo")
         self.lbl_subtitulo.setWordWrap(True)
@@ -214,7 +214,7 @@ class ModuloMateriales(QWidget):
             btn_permisos.setIconSize(_QSize_emoji(16, 16))
             btn_permisos.clicked.connect(self._abrir_permisos_usuarios)
             cabecera.addWidget(btn_permisos)
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #---------- KPIs (reutiliza TarjetaIndicador de dashboard.py, igual que Materias: contador animado, tendencia y
         #elevación al pasar el mouse; se recalculan con cada refresco de tabla, según los filtros activos, para que se
@@ -227,11 +227,11 @@ class ModuloMateriales(QWidget):
         self.kpi_prestamo= TarjetaIndicador("🔁", "Unidades en préstamo", "#F59E0B")
         self.kpi_categorias= TarjetaIndicador(
             "🗂", "Categorías visibles", "#8B5CF6",
-            on_click= self._abrir_gestion_categorias if abre_categorias else None)
+            al_click= self._abrir_gestion_categorias if abre_categorias else None)
         self._tarjetas_kpi= [self.kpi_total, self.kpi_disponibles, self.kpi_prestamo, self.kpi_categorias]
         for tarjeta in self._tarjetas_kpi:
             fila_kpi.addWidget(tarjeta, 1)
-        layout.addLayout(fila_kpi)
+        disposicion.addLayout(fila_kpi)
 
         #---------- Filtros ----------
         self.tarjeta_filtros= QFrame()
@@ -289,7 +289,7 @@ class ModuloMateriales(QWidget):
         self._temporizador_busqueda.timeout.connect(self._refrescar)
         self.buscador.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
         fila_filtros.addWidget(marco_busqueda, stretch=1)
-        layout.addWidget(self.tarjeta_filtros)
+        disposicion.addWidget(self.tarjeta_filtros)
 
         #---------- Tabla ----------
         self.tarjeta_tabla= QFrame()
@@ -335,8 +335,8 @@ class ModuloMateriales(QWidget):
         self.estado_vacio= EstadoVacioFiltro(self.tabla, icono="📦",
                                                texto_filtra_primero= "No tienes categorías de materiales asignadas todavía",
                                                texto_sin_resultados= "No hay materiales con los filtros actuales")
-        layout.addWidget(self.tarjeta_tabla, stretch=1)
-        layout.addWidget(self.pagina)
+        disposicion.addWidget(self.tarjeta_tabla, stretch=1)
+        disposicion.addWidget(self.pagina)
 
         #---------- Botonera ---------- "Nuevo material" ya NO es un botón aparte: ese rol lo cumple el encabezado del
         #panel colapsable de abajo (mismo "cosito" +/- que usan banco_tareas.py/observaciones.py/materias.py para su
@@ -368,7 +368,7 @@ class ModuloMateriales(QWidget):
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla, self, titulo="Detalle del Material")
         self.tabla.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_botones.addStretch()
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
         #---------- Formulario ("Nuevo material", colapsable) ---------- Mismo componente que usan banco_tareas.py
         #("Nueva tarea"),
@@ -466,7 +466,7 @@ class ModuloMateriales(QWidget):
         fila_botones_form.addWidget(btn_limpiar_form)
         fila_botones_form.addStretch()
         form.addLayout(fila_botones_form)
-        layout.addWidget(self.panel_form_material)
+        disposicion.addWidget(self.panel_form_material)
 
         self._poblar_combos_categoria()
         self._refrescar()
@@ -958,13 +958,13 @@ class _DialogoSelectorIconoMaterial(_DialogoCentrado):
         self.clave_elegida= None
         clave_actual= (valor_actual or "").strip().lower()
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(18, 18, 18, 18)
+        disposicion.setSpacing(12)
 
-        info= QLabel("Elige el ícono que mejor represente esta categoría de inventario.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info= QLabel("Elige el ícono que mejor represente esta categoría de inventario.")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         contenedor_grid= QWidget()
         grid= QGridLayout(contenedor_grid)
@@ -1003,7 +1003,7 @@ class _DialogoSelectorIconoMaterial(_DialogoCentrado):
             """)
             btn.clicked.connect(lambda _checked=False, c=clave: self._elegir(c))
             grid.addWidget(btn, i // columnas, i % columnas)
-        layout.addWidget(contenedor_grid)
+        disposicion.addWidget(contenedor_grid)
 
         fila_icono_botones= QHBoxLayout()
         fila_icono_botones.addStretch()
@@ -1011,7 +1011,7 @@ class _DialogoSelectorIconoMaterial(_DialogoCentrado):
         btn_cancelar.setObjectName("BtnAccionNeutro")
         btn_cancelar.clicked.connect(self.reject)
         fila_icono_botones.addWidget(btn_cancelar)
-        layout.addLayout(fila_icono_botones)
+        disposicion.addLayout(fila_icono_botones)
 
         #La grilla tiene 4 columnas de 124px: sin este ancho mínimo la ventana podía abrirse aplastando los botones y
         #elidiendo los textos.
@@ -1035,14 +1035,14 @@ class DialogoGestionCategorias(_DialogoCentrado):
         #Tamaños holgados: antes con 460px de ancho y una tabla sin alto mínimo los textos quedaban cortados al abrir
         #la ventana.
         self.setMinimumSize(680, 520)
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(18, 18, 18, 18)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(18, 18, 18, 18)
+        disposicion.setSpacing(12)
 
-        info= QLabel("Define las categorías de materiales que gestiona tu institución "
+        lbl_info= QLabel("Define las categorías de materiales que gestiona tu institución "
                        "(por ejemplo: Libros, Equipos de Laboratorio, Herramientas de Taller...).")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         self.tabla= QTableWidget()
         self.tabla.setColumnCount(3)
@@ -1070,13 +1070,13 @@ class DialogoGestionCategorias(_DialogoCentrado):
         self.tabla.setColumnWidth(1, 210)
         self.tabla.itemChanged.connect(self._celda_editada)
         self._cargando= False  #ignora itemChanged mientras se llena la tabla
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
-        pista= QLabel("\U0001F4A1 Doble clic sobre el Nombre o la Descripción de una fila para editarla "
+        lbl_pista= QLabel("\U0001F4A1 Doble clic sobre el Nombre o la Descripción de una fila para editarla "
                        "directamente en la tabla (los cambios se guardan solos).")
-        pista.setWordWrap(True)
-        pista.setStyleSheet("color: palette(mid);")
-        layout.addWidget(pista)
+        lbl_pista.setWordWrap(True)
+        lbl_pista.setStyleSheet("color: palette(mid);")
+        disposicion.addWidget(lbl_pista)
 
         fila_nueva= QHBoxLayout()
         fila_nueva.setSpacing(8)
@@ -1113,7 +1113,7 @@ class DialogoGestionCategorias(_DialogoCentrado):
         btn_agregar.setToolTip("Crear esta categoría con el ícono y nombre indicados arriba.")
         btn_agregar.clicked.connect(self._agregar)
         fila_nueva.addWidget(btn_agregar)
-        layout.addLayout(fila_nueva)
+        disposicion.addLayout(fila_nueva)
 
         fila_botones= QHBoxLayout()
         btn_eliminar= QPushButton("Eliminar seleccionada")
@@ -1129,7 +1129,7 @@ class DialogoGestionCategorias(_DialogoCentrado):
         btn_cerrar.setToolTip("Cerrar esta ventana.")
         btn_cerrar.clicked.connect(self.accept)
         fila_botones.addWidget(btn_cerrar)
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
         centrar_y_al_frente(self, parent)
         self._cargar()
@@ -1286,15 +1286,15 @@ class DialogoPermisosMateriales(_DialogoCentrado):
         #Compacto: tabla con filas ceñidas en vez de la grilla+scroll de antes, que dejaba una franja de espacio en
         #blanco enorme entre la cabecera y las categorías cuando había pocas.
         self.setMinimumSize(520, 440)
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(10)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(16, 16, 16, 16)
+        disposicion.setSpacing(10)
 
-        info= QLabel("Marca a qué categorías puede acceder el usuario y si además puede "
+        lbl_info= QLabel("Marca a qué categorías puede acceder el usuario y si además puede "
                        "editarlas (si no, solo consulta). Los roles gerenciales tienen "
                        "acceso total y no aparecen en la lista.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         self.combo_usuario= QComboBox()
         self.combo_usuario.setMinimumHeight(34)
@@ -1312,7 +1312,7 @@ class DialogoPermisosMateriales(_DialogoCentrado):
             self.combo_usuario.addItem(f"{usuario['nombre_completo']} ({usuario['rol']})", usuario["id"])
         self.combo_usuario.currentIndexChanged.connect(self._cargar_permisos_usuario)
         conectar_tooltip_seleccion(self.combo_usuario, "Usuario al que se le asignarán los permisos")
-        layout.addWidget(self.combo_usuario)
+        disposicion.addWidget(self.combo_usuario)
 
         self._avisos= []
         if not self._usuarios:
@@ -1327,7 +1327,7 @@ class DialogoPermisosMateriales(_DialogoCentrado):
         for aviso in self._avisos:
             aviso.setWordWrap(True)
             aviso.setStyleSheet("color: #F59E0B; font-weight: 600;")
-            layout.addWidget(aviso)
+            disposicion.addWidget(aviso)
 
         #---------- Tabla de permisos (mismo look que las tablas de la app) ----------
         self.tarjeta_tabla= QFrame()
@@ -1353,7 +1353,7 @@ class DialogoPermisosMateriales(_DialogoCentrado):
         self.tabla.itemChanged.connect(self._check_cambiado)
         self._llenando= False
         lay_tabla.addWidget(self.tabla, 1)
-        layout.addWidget(self.tarjeta_tabla, 1)
+        disposicion.addWidget(self.tarjeta_tabla, 1)
 
         #fila -> id de categoría, para leer/guardar los checks de la tabla
         self._ids_fila= [cat["id"] for cat in self._categorias]
@@ -1362,7 +1362,7 @@ class DialogoPermisosMateriales(_DialogoCentrado):
         self.botones.button(QDialogButtonBox.StandardButton.Save).setEnabled(bool(self._usuarios))
         self.botones.accepted.connect(self._guardar)
         self.botones.rejected.connect(self.reject)
-        layout.addWidget(self.botones)
+        disposicion.addWidget(self.botones)
 
         self._pintar_categorias()
         centrar_y_al_frente(self, parent)
@@ -1464,8 +1464,8 @@ class DialogoMovimientoMaterial(_DialogoCentrado):
         #Ancho mayor (antes 420px): los placeholders largos como "Nombre de quien recibe/entrega (opcional)" quedaban
         #recortados.
         self.setMinimumWidth(540)
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(18, 18, 18, 18)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(18, 18, 18, 18)
 
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1473,7 +1473,7 @@ class DialogoMovimientoMaterial(_DialogoCentrado):
         self.material= c.fetchone()
         conn.close()
 
-        layout.addWidget(QLabel(f"Material: {self.material['nombre']}  "
+        disposicion.addWidget(QLabel(f"Material: {self.material['nombre']}  "
                                  f"(disponibles: {self.material['cantidad_disponible']} de {self.material['cantidad_total']})"))
 
         self.combo_tipo= QComboBox()
@@ -1483,34 +1483,34 @@ class DialogoMovimientoMaterial(_DialogoCentrado):
             "Préstamo resta unidades disponibles; Devolución las repone; Baja retira unidades "
             "definitivamente del inventario; Ingreso de inventario suma unidades nuevas.")
         conectar_tooltip_seleccion(self.combo_tipo, "Tipo de movimiento a registrar")
-        layout.addWidget(QLabel("Tipo de movimiento:"))
-        layout.addWidget(self.combo_tipo)
+        disposicion.addWidget(QLabel("Tipo de movimiento:"))
+        disposicion.addWidget(self.combo_tipo)
 
         self.spin_cantidad= QSpinBox()
         self.spin_cantidad.setRange(1, max(1, self.material["cantidad_total"]))
         self.spin_cantidad.setValue(1)
         self.spin_cantidad.setToolTip("Cantidad de unidades que involucra este movimiento.")
-        layout.addWidget(QLabel("Cantidad:"))
-        layout.addWidget(self.spin_cantidad)
+        disposicion.addWidget(QLabel("Cantidad:"))
+        disposicion.addWidget(self.spin_cantidad)
 
         self.in_responsable= QLineEdit()
         self.in_responsable.setPlaceholderText("Nombre de quien recibe/entrega (opcional)")
         self.in_responsable.setToolTip("Quién recibe (préstamo) o devuelve (devolución) el material, si aplica.")
         limitar_campo_texto(self.in_responsable, 150)
-        layout.addWidget(QLabel("Responsable:"))
-        layout.addWidget(self.in_responsable)
+        disposicion.addWidget(QLabel("Responsable:"))
+        disposicion.addWidget(self.in_responsable)
 
         self.txt_observacion= QTextEdit()
         self.txt_observacion.setMaximumHeight(70)
         self.txt_observacion.setToolTip("Nota adicional sobre este movimiento (condición del material, motivo, etc.).")
         limitar_campo_texto(self.txt_observacion, 500)
-        layout.addWidget(QLabel("Observación (opcional):"))
-        layout.addWidget(self.txt_observacion)
+        disposicion.addWidget(QLabel("Observación (opcional):"))
+        disposicion.addWidget(self.txt_observacion)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self._guardar)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
     def _guardar(self):

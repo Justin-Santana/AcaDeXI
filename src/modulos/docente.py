@@ -84,13 +84,13 @@ class FlowLayout(QLayout):
 
         return len(self._items)
 
-    def itemAt(self, index):
+    def itemAt(self, indice):
 
-        return self._items[index] if 0 <= index < len(self._items) else None
+        return self._items[indice] if 0 <= indice < len(self._items) else None
 
-    def takeAt(self, index):
+    def takeAt(self, indice):
 
-        return self._items.pop(index) if 0 <= index < len(self._items) else None
+        return self._items.pop(indice) if 0 <= indice < len(self._items) else None
 
     def expandingDirections(self):
 
@@ -242,7 +242,7 @@ class PastillaContador(QFrame):
 #con acento de color propio y elevación animada al pasar el mouse.
 class TarjetaMateria(QFrame):
 
-    def __init__(self, codigo, nombre, creditos, estado, color, parent=None, on_cambiar_color=None):
+    def __init__(self, codigo, nombre, creditos, estado, color, parent=None, al_cambiar_color=None):
 
         super().__init__(parent)
         self.setObjectName("TarjetaMateriaDocente")
@@ -250,9 +250,9 @@ class TarjetaMateria(QFrame):
         self.setFixedHeight(128)
         self._color= color
         self._nombre_materia= nombre or ""
-        self._on_cambiar_color= on_cambiar_color
+        self._al_cambiar_color= al_cambiar_color
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
-        if on_cambiar_color:
+        if al_cambiar_color:
             self.setToolTip("Clic derecho para cambiar el color de esta materia")
         #Sin QGraphicsDropShadowEffect a propósito: un efecto gráfico permanente obliga a Qt a recomponer esta tarjeta
         #en un buffer aparte en CADA repintado (incluido cada frame del colapso animado del sidebar). El hover se
@@ -307,10 +307,10 @@ class TarjetaMateria(QFrame):
         _fila_creditos= QHBoxLayout(self.creditos_contenedor)
         _fila_creditos.setContentsMargins(0, 0, 0, 0)
         _fila_creditos.setSpacing(4)
-        _icono_creditos= QLabel()
-        _icono_creditos.setPixmap(pixmap_emoji("🎓", 14))
-        _icono_creditos.setStyleSheet("background: transparent;")
-        _fila_creditos.addWidget(_icono_creditos)
+        lbl__icono_creditos= QLabel()
+        lbl__icono_creditos.setPixmap(pixmap_emoji("🎓", 14))
+        lbl__icono_creditos.setStyleSheet("background: transparent;")
+        _fila_creditos.addWidget(lbl__icono_creditos)
         self.lbl_creditos= QLabel(f"{creditos} créd.")
         self.lbl_creditos.setStyleSheet("background: transparent;")
         _fila_creditos.addWidget(self.lbl_creditos)
@@ -375,14 +375,14 @@ class TarjetaMateria(QFrame):
         self._color= color
         self._repintar()
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, evento):
 
-        if not self._on_cambiar_color:
+        if not self._al_cambiar_color:
             return
         menu= QMenu(self)
         accion_color= menu.addAction(icono_emoji("🎨"), "Cambiar color de esta materia")
         accion_reset= menu.addAction(icono_emoji("♻"), "Volver al color automático")
-        elegida= menu.exec(event.globalPos())
+        elegida= menu.exec(evento.globalPos())
         if elegida == accion_color:
             dialogo_color= QColorDialog(QColor(self._color), self)
             dialogo_color.setWindowTitle(f"Color para «{self._nombre_materia}»")
@@ -390,9 +390,9 @@ class TarjetaMateria(QFrame):
             if dialogo_color.exec() == QDialog.DialogCode.Accepted:
                 color_elegido= dialogo_color.selectedColor()
                 if color_elegido.isValid():
-                    self._on_cambiar_color(self._nombre_materia, color_elegido.name())
+                    self._al_cambiar_color(self._nombre_materia, color_elegido.name())
         elif elegida == accion_reset:
-            self._on_cambiar_color(self._nombre_materia, None)
+            self._al_cambiar_color(self._nombre_materia, None)
 
 
 #Bloque de una clase dentro del horario semanal visual. Color propio por
@@ -401,14 +401,14 @@ class TarjetaMateria(QFrame):
 class ChipClaseHorario(QFrame):
 
     def __init__(self, materia, seccion, aula, hora_ini, hora_fin, color, parent=None,
-                 clave= None, on_cambiar_color=None, main_window=None):
+                 clave= None, al_cambiar_color=None, main_window=None):
 
         super().__init__(parent)
         self.setObjectName("ChipClaseHorario")
         self._color= color
         self._materia= materia
         self._clave= clave if clave is not None else materia
-        self._on_cambiar_color= on_cambiar_color
+        self._al_cambiar_color= al_cambiar_color
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
@@ -420,7 +420,7 @@ class ChipClaseHorario(QFrame):
         detalle= f"{materia}<br>{seccion or 'Sección no especificada'}<br>{html_icono_emoji('🕐')} {hora_ini_fmt} - {hora_fin_fmt}"
         if aula:
             detalle += f"<br>{html_icono_emoji('📍')} {aula}"
-        if on_cambiar_color:
+        if al_cambiar_color:
             detalle += "\n Clic derecho para cambiar el color de esta materia"
         self.setToolTip(detalle)
 
@@ -461,14 +461,14 @@ class ChipClaseHorario(QFrame):
             QFrame#ChipClaseHorario:hover {{ background-color: {color_claro}; }}
         """)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, evento):
 
-        if not self._on_cambiar_color:
+        if not self._al_cambiar_color:
             return
         menu= QMenu(self)
         accion_color= menu.addAction(icono_emoji("🎨"), "Cambiar color de esta materia")
         accion_reset= menu.addAction(icono_emoji("♻"), "Volver al color automático")
-        elegida= menu.exec(event.globalPos())
+        elegida= menu.exec(evento.globalPos())
         if elegida == accion_color:
             dialogo_color= QColorDialog(QColor(self._color), self)
             dialogo_color.setWindowTitle(f"Color para «{self._materia}»")
@@ -477,9 +477,9 @@ class ChipClaseHorario(QFrame):
                 color_elegido= dialogo_color.selectedColor()
                 if color_elegido.isValid():
                     self._aplicar_color(color_elegido.name())
-                    self._on_cambiar_color(self._clave, color_elegido.name())
+                    self._al_cambiar_color(self._clave, color_elegido.name())
         elif elegida == accion_reset:
-            self._on_cambiar_color(self._clave, None)
+            self._al_cambiar_color(self._clave, None)
 
 
 #Vista visual del horario semanal del docente: columnas por día, bloques
@@ -510,17 +510,17 @@ class PanelHorarioSemanal(QWidget):
         self._color_linea= QColor("#E2E8F0")
         self._color_texto= QColor("#64748B")
         self._resolver_color= None
-        self._on_color_cambiada= None
+        self._al_color_cambiada= None
         self.setMinimumHeight(300)
 
     #resolver_color(materia) -> color hex a usar (respeta la
-    #personalización local del docente si existe). on_color_cambiada(clave,
+    #personalización local del docente si existe). al_color_cambiada(clave,
     #color_o_None) se llama cuando el docente elige/reinicia un color desde
     #el menú contextual de un chip.
-    def configurar_colores(self, resolver_color, on_color_cambiada):
+    def configurar_colores(self, resolver_color, al_color_cambiada):
 
         self._resolver_color= resolver_color
-        self._on_color_cambiada= on_color_cambiada
+        self._al_color_cambiada= al_color_cambiada
 
     #Repinta en el acto todos los chips visibles de esta materia, sin
     #reconstruir el panel entero.
@@ -572,7 +572,7 @@ class PanelHorarioSemanal(QWidget):
             color= self._resolver_color(entrada["materia"]) if self._resolver_color else _color_para_materia(entrada["materia"])
             chip= ChipClaseHorario(entrada["materia"], entrada["seccion"], entrada["aula"],
                                      entrada["hora_inicio"], entrada["hora_fin"], color, self,
-                                     clave= entrada["materia"], on_cambiar_color=self._on_color_cambiada,
+                                     clave= entrada["materia"], al_cambiar_color=self._al_color_cambiada,
                                      main_window= self.main_window)
             chip.show()
             self._pares.append((entrada, chip))
@@ -581,9 +581,9 @@ class PanelHorarioSemanal(QWidget):
             _animar_entrada_geometria(chip, offset_y=14, duracion=260, retraso=min(i, 12) * 25)
         self.update()
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         self._reflow()
 
     def _reflow(self):
@@ -610,7 +610,7 @@ class PanelHorarioSemanal(QWidget):
             pos_x= self.ANCHO_COL_HORA + 8 + dia_idx * ancho_col
             chip.setGeometry(int(pos_x) + 2, pos_y, max(10, int(ancho_col) - 8), h)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -672,7 +672,7 @@ class ModuloMisMaterias(QWidget):
         #Colores de materia personalizados por este docente en este equipo (ver datos_locales_docente.py): {clave:
         #(color, color_hv)}.
         self._colores_override= obtener_colores_materias_local(main_window)
-        self._build_ui()
+        self._construir_ui()
         self._actualizar_textos_politecnico()
         self.refrescar()
         self.actualizar_tema()  #por si el módulo se cargó de forma perezosa, ya con el tema definido
@@ -713,7 +713,7 @@ class ModuloMisMaterias(QWidget):
             "Aún no tienes materias asignadas. En cuanto Coordinación/Dirección te asigne una,"
             "aparecerá aquí automáticamente.")
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -725,9 +725,9 @@ class ModuloMisMaterias(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(16)
 
         #--- Cabecera tipo "hero": icono + título + descripción + contadores ---
         self.frame_cabecera= QFrame()
@@ -770,12 +770,12 @@ class ModuloMisMaterias(QWidget):
         self.pastilla_clases.poner_texto("clases/semana")
         cabecera_layout.addWidget(self.pastilla_clases)
         cabecera_layout.addWidget(_boton_info("¿Qué es esto?", self._mostrar_info))
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
 
         self.contenedor_materias= QWidget()
         FlowLayout(self.contenedor_materias, margin=0, spacing=14)
-        layout.addWidget(self.contenedor_materias)
+        disposicion.addWidget(self.contenedor_materias)
 
         self.lbl_vacio_materias= QLabel(
             "Aún no tienes materias asignadas. En cuanto Coordinación/Dirección te asigne una,"
@@ -783,15 +783,15 @@ class ModuloMisMaterias(QWidget):
         self.lbl_vacio_materias.setObjectName("DescModulo")
         self.lbl_vacio_materias.setWordWrap(True)
         self.lbl_vacio_materias.setVisible(False)
-        layout.addWidget(self.lbl_vacio_materias)
+        disposicion.addWidget(self.lbl_vacio_materias)
 
         lbl_horario= QLabel("Mi Horario de Clases")
         lbl_horario.setObjectName("DescModulo")
-        layout.addWidget(lbl_horario)
+        disposicion.addWidget(lbl_horario)
 
         self.panel_horario= PanelHorarioSemanal(main_window=self.main_window)
         self.panel_horario.configurar_colores(self._color_efectiva, self._cambiar_color_materia)
-        layout.addWidget(self.panel_horario)
+        disposicion.addWidget(self.panel_horario)
 
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
@@ -906,7 +906,7 @@ class ModuloMisMaterias(QWidget):
         for fila in filas:
             color= self._color_efectiva(fila["nombre"])
             tarjeta= TarjetaMateria(fila["codigo"], fila["nombre"], fila["creditos"] or 0, fila["estado"], color,
-                                      self.contenedor_materias, on_cambiar_color=self._cambiar_color_materia)
+                                      self.contenedor_materias, al_cambiar_color=self._cambiar_color_materia)
             flow.addWidget(tarjeta)
             tarjeta.show()
             self._tarjetas_materia.append(tarjeta)
@@ -983,7 +983,7 @@ class ModuloCopiasSeguridadDocente(QWidget):
 
         super().__init__(main_window)
         self.main_window= main_window
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         #Igual que en Mis Materias: si este módulo se carga de forma
         #perezosa (no en el arranque), hay que pintar la cabecera con el
@@ -999,11 +999,11 @@ class ModuloCopiasSeguridadDocente(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+B", "Crear backup ahora", self._crear_backup)
         registrar_atajo(self, self.main_window, "Ctrl+I", "Importar estudiantes y cursos",
                          self._importar_datos)
-    def _build_ui(self):
+    def _construir_ui(self):
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(14)
 
         #--- Cabecera tipo "hero": icono + título + descripción ---
         self.frame_cabecera= QFrame()
@@ -1033,11 +1033,11 @@ class ModuloCopiasSeguridadDocente(QWidget):
         cabecera_layout.addLayout(bloque_titulo_cabecera, 1)
 
         cabecera_layout.addWidget(_boton_info("¿Qué es esto?", self._mostrar_info))
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         self.lbl_estado= QLabel("")
         self.lbl_estado.setObjectName("DescModulo")
-        layout.addWidget(self.lbl_estado)
+        disposicion.addWidget(self.lbl_estado)
         fila= QHBoxLayout()
         btn_crear= QPushButton("Crear Backup Ahora")
         btn_crear.setIcon(icono_emoji("➕"))
@@ -1046,12 +1046,12 @@ class ModuloCopiasSeguridadDocente(QWidget):
         btn_crear.clicked.connect(self._crear_backup)
         fila.addWidget(btn_crear)
         fila.addStretch()
-        layout.addLayout(fila)
+        disposicion.addLayout(fila)
 
         linea= QFrame()
         linea.setFrameShape(QFrame.Shape.HLine)
-        layout.addWidget(linea)
-        layout.addWidget(self._titulo_seccion("Estudiantes y Cursos"))
+        disposicion.addWidget(linea)
+        disposicion.addWidget(self._titulo_seccion("Estudiantes y Cursos"))
         fila_import= QHBoxLayout()
         btn_importar= QPushButton("Importar Estudiantes y Cursos")
         btn_importar.setIcon(icono_emoji("\uE001"))
@@ -1060,9 +1060,9 @@ class ModuloCopiasSeguridadDocente(QWidget):
         btn_importar.clicked.connect(self._importar_datos)
         fila_import.addWidget(btn_importar)
         fila_import.addStretch()
-        layout.addLayout(fila_import)
+        disposicion.addLayout(fila_import)
 
-        layout.addStretch()
+        disposicion.addStretch()
 
     def _mostrar_info(self):
 
@@ -1144,11 +1144,11 @@ class ModuloCopiasSeguridadDocente(QWidget):
 def crear_modulo_en_construccion(main_window, icono, nombre, descripcion):
 
     page= QWidget()
-    layout= QVBoxLayout(page)
-    layout.setContentsMargins(30, 25, 30, 25)
-    titulo= QLabel(f"{html_icono_emoji(icono, 20) if icono else ''} {nombre}")
-    titulo.setObjectName("TituloModulo")
-    layout.addWidget(titulo)
+    disposicion= QVBoxLayout(page)
+    disposicion.setContentsMargins(30, 25, 30, 25)
+    lbl_titulo= QLabel(f"{html_icono_emoji(icono, 20) if icono else ''} {nombre}")
+    lbl_titulo.setObjectName("TituloModulo")
+    disposicion.addWidget(lbl_titulo)
     marco= QFrame()
     marco.setObjectName("PreviewLogo")
     marco_layout= QVBoxLayout(marco)
@@ -1158,7 +1158,7 @@ def crear_modulo_en_construccion(main_window, icono, nombre, descripcion):
     lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
     lbl.setWordWrap(True)
     marco_layout.addWidget(lbl)
-    layout.addWidget(marco, 1)
+    disposicion.addWidget(marco, 1)
     page.actualizar_tema= lambda: None
     page.refrescar= lambda: None
     return page

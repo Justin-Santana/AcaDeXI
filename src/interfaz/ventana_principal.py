@@ -14,7 +14,7 @@ from PySide6.QtCore import (Qt, QTimer, QEventLoop, QRect, QRectF, QPropertyAnim
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtGui import QPainter, QColor, QBrush, QPixmap, QPainterPath, QPen, QPalette, QIcon
 
-from src.nucleo.bd import get_app_data_dir, obtener_conexion, registrar_auditoria, ejecutar_backup_automatico_al_iniciar, ejecutar_backup_al_cerrar, inicializar_bd
+from src.nucleo.bd import obtener_carpeta_datos, obtener_conexion, registrar_auditoria, ejecutar_backup_automatico_al_iniciar, ejecutar_backup_al_cerrar, inicializar_bd
 from src.servicios.alarmas import MotorAlarmas
 from src.interfaz.foto_utils import seleccionar_y_recortar_foto
 from src.nucleo.edicion import edicion_actual
@@ -31,7 +31,7 @@ from src.nucleo.limite_campos import limitar_campo_texto
 from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji, pixmap_emoji, quitar_emojis_texto, establecer_modo_oscuro
 
-CONFIG_PATH= os.path.join(get_app_data_dir(), "config.json")
+CONFIG_PATH= os.path.join(obtener_carpeta_datos(), "config.json")
 
 #Los módulos de trabajo se construyen bajo demanda. Importarlos todos al arrancar anulaba ese beneficio: Python
 #tenía que leer y ejecutar cada uno antes de poder mostrar el login, aunque el usuario no llegara a abrirlos.
@@ -137,7 +137,7 @@ class GuardaInstanciaUnica:
 
         self.shared_memory= QSharedMemory(_ID_INSTANCIA_UNICA)
         self.local_server= None
-        self._on_segunda_instancia= None
+        self._al_segunda_instancia= None
 
         #attach() de prueba: si logra adjuntarse es que YA existe un
         #segmento válido de otro proceso vivo. En algunos sistemas (notablemente Linux tras un crash) el segmento puede
@@ -166,7 +166,7 @@ class GuardaInstanciaUnica:
     #se restaure en primer plano.
     def escuchar_segundas_instancias(self, callback_restaurar):
 
-        self._on_segunda_instancia= callback_restaurar
+        self._al_segunda_instancia= callback_restaurar
         #Por si quedó un servidor huérfano de una ejecución anterior que terminó mal (crash) sin poder cerrarlo
         #correctamente.
         QLocalServer.removeServer(_ID_INSTANCIA_UNICA)
@@ -185,8 +185,8 @@ class GuardaInstanciaUnica:
     def _leer_y_restaurar(self, socket):
 
         socket.readAll()
-        if callable(self._on_segunda_instancia):
-            self._on_segunda_instancia()
+        if callable(self._al_segunda_instancia):
+            self._al_segunda_instancia()
 
 
 def _hex_a_rgba(hex_color, alpha):
@@ -245,7 +245,7 @@ class PuntoEstado(QWidget):
         if self._anim.state() == QSequentialAnimationGroup.State.Paused:
             self._anim.resume()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -295,13 +295,13 @@ class InterruptorTema(QWidget):
         else:
             self._poner_pos_knob(destino)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -433,11 +433,11 @@ class ModuloNavItem(QWidget):
             self.lbl_eyebrow.setVisible(not colapsado)
         self.setToolTip(self.nombre if colapsado else "")
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.activado.emit(self.indice)
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
 
 #QStackedWidget normal, pero con una corrección a un comportamiento
@@ -503,25 +503,25 @@ class IndicadorCargaGiratorio(QWidget):
 
         self._timer.stop()
 
-    def hideEvent(self, event):
+    def hideEvent(self, evento):
 
         #Si el widget queda oculto (p. ej. otra pestaña al frente) no hace falta seguir gastando CPU animando algo que
         #nadie ve.
         self._timer.stop()
-        super().hideEvent(event)
+        super().hideEvent(evento)
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
         if not self._timer.isActive():
             self._timer.start(16)
-        super().showEvent(event)
+        super().showEvent(evento)
 
     def _avanzar(self):
 
         self._transcurrido_ms= (self._transcurrido_ms + 16) % self._DURACION_CICLO_MS
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         fase= (self._transcurrido_ms / self._DURACION_CICLO_MS) * 2 * math.pi
 
@@ -1357,16 +1357,16 @@ class MainWindow(QMainWindow):
         return page
 
     #Carga el módulo bajo demanda (lazy loading) si no está cargado.
-    def _asegurar_modulo_cargado(self, index):
+    def _asegurar_modulo_cargado(self, indice):
 
-        if index < 0 or index >= len(self.modulos):
+        if indice < 0 or indice >= len(self.modulos):
             return
-        if index in self._modulos_cargados:
+        if indice in self._modulos_cargados:
             return
-        nombre= self.modulos[index]
+        nombre= self.modulos[indice]
         fabrica= _obtener_fabrica_modulo(nombre)
         if fabrica is None:
-            self._modulos_cargados.add(index)
+            self._modulos_cargados.add(indice)
             return
 
         #Crear el módulo real (puede ser pesado: varias pestañas, tablas, consultas a la BD, animaciones). Para cuando
@@ -1375,8 +1375,8 @@ class MainWindow(QMainWindow):
         #siempre tiene un frame real que mostrar mientras el hilo se ocupa con esto, y nunca aparece un hueco en blanco
         #("ventana fantasma").
         pagina_real= fabrica(self)
-        placeholder= self.stacked_widget.widget(index)
-        era_visible= (self.stacked_widget.currentIndex() == index)
+        placeholder= self.stacked_widget.widget(indice)
+        era_visible= (self.stacked_widget.currentIndex() == indice)
 
         if placeholder is not None:
             spinner= getattr(placeholder, "spinner", None)
@@ -1384,11 +1384,11 @@ class MainWindow(QMainWindow):
                 spinner.detener()
             self.stacked_widget.removeWidget(placeholder)
             placeholder.deleteLater()
-        self.stacked_widget.insertWidget(index, pagina_real)
-        self._modulos_cargados.add(index)
+        self.stacked_widget.insertWidget(indice, pagina_real)
+        self._modulos_cargados.add(indice)
 
         if era_visible:
-            self.stacked_widget.setCurrentIndex(index)
+            self.stacked_widget.setCurrentIndex(indice)
             #El contenido real reemplaza al spinner con un fundido suave en vez de un corte seco -mismo efecto que usa el
             #resto de la app al cambiar de pestaña/paso (ver configuracion._fundido_entrada)- así la transición se siente
             #intencional y pulida.
@@ -1427,27 +1427,27 @@ class MainWindow(QMainWindow):
     #Construye el módulo real un instante después de mostrar el
     #placeholder «Cargando…» (ver cambiar_vista) y lo deja en su lugar
     #dentro del stack.
-    def _cargar_modulo_diferido(self, index):
+    def _cargar_modulo_diferido(self, indice):
 
         try:
 
-            self._asegurar_modulo_cargado(index)
+            self._asegurar_modulo_cargado(indice)
         except Exception:
             import traceback
             traceback.print_exc()
             return
         #Si seguimos viendo este módulo (el usuario no navegó a otro lado mientras se cargaba), refrescamos igual que
         #se hace con los módulos que ya estaban cargados.
-        if self.stacked_widget.currentIndex() == index:
-            pagina= self.stacked_widget.widget(index)
+        if self.stacked_widget.currentIndex() == indice:
+            pagina= self.stacked_widget.widget(indice)
             if hasattr(pagina, "refrescar"):
                 QTimer.singleShot(10, pagina.refrescar)
 
-    def _mover_pildora_nav(self, index, animar=True):
+    def _mover_pildora_nav(self, indice, animar=True):
 
-        if index < 0 or index >= self.nav_list.count():
+        if indice < 0 or indice >= self.nav_list.count():
             return
-        item= self.nav_list.item(index)
+        item= self.nav_list.item(indice)
         if item is None or item.isHidden():
             self._pildora_nav.setGeometry(0, 0, 0, 0)
             return
@@ -2428,7 +2428,7 @@ class MainWindow(QMainWindow):
             self.abrir_con_fundido()
 
     #Avatar de perfil (foto o iniciales)
-    def _abrir_menu_avatar(self, event=None):
+    def _abrir_menu_avatar(self, evento=None):
 
         if not self.id_usuario_actual:
             return
@@ -2439,7 +2439,7 @@ class MainWindow(QMainWindow):
 
     def _cambiar_foto_avatar(self):
 
-        destino_dir= os.path.join(get_app_data_dir(), "fotos")
+        destino_dir= os.path.join(obtener_carpeta_datos(), "fotos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="usr")
         if not destino:
             return
@@ -2576,9 +2576,9 @@ class MainWindow(QMainWindow):
         except OSError as error:
             print(f"Error al guardar configuración: {error}")
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
-        super().showEvent(event)
+        super().showEvent(evento)
         QTimer.singleShot(0, lambda: self._mover_pildora_nav(self.nav_list.currentRow(), animar=False))
         #Al volver desde la bandeja, reactivamos lo que pausamos en
         #hideEvent (ver ahí el porqué).
@@ -2586,9 +2586,9 @@ class MainWindow(QMainWindow):
             self.punto_estado.reanudar()
         self._pausar_reanudar_modulos_en_segundo_plano(pausar=False)
 
-    def hideEvent(self, event):
+    def hideEvent(self, evento):
 
-        super().hideEvent(event)
+        super().hideEvent(evento)
         #Cuando "Ejecutar en segundo plano al cerrar" está activo, closeEvent llama a self.hide() en vez de destruir la
         #ventana: la app sigue viva pero sin nada visible. Sin este pausar(), el punto verde de "sesión activa"
         #seguiría animándose (repintando) para siempre en segundo plano, gastando CPU/GPU por una animación que nadie
@@ -2621,15 +2621,15 @@ class MainWindow(QMainWindow):
                 except Exception as error:
                     print(f"No se pudo {'pausar' if pausar else 'reanudar'} actualizaciones de {pagina}: {error}")
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         if hasattr(self, "nav_list"):
             self._mover_pildora_nav(self.nav_list.currentRow(), animar=False)
         if hasattr(self, "motor_alarmas"):
             self.motor_alarmas.reposicionar()
 
-    def closeEvent(self, event):
+    def closeEvent(self, evento):
 
         if hasattr(self, "motor_alarmas"):
             self.motor_alarmas.detener_motor()
@@ -2641,7 +2641,7 @@ class MainWindow(QMainWindow):
         if (getattr(self, "tray_icon", None) is not None
                 and getattr(self, "minimizar_a_bandeja", True)
                 and not self._saliendo_de_verdad):
-            event.ignore()
+            evento.ignore()
             self.hide()
             if self.tray_icon.supportsMessages():
                 self.tray_icon.showMessage(
@@ -2658,7 +2658,7 @@ class MainWindow(QMainWindow):
             ejecutar_backup_al_cerrar()
         except Exception as error:
             print(f"Backup al cerrar fallido: {error}")
-        super().closeEvent(event)
+        super().closeEvent(evento)
         #Cierre REAL ('X' con "Ejecutar en segundo plano" desactivado, o botón "Salir"): como la app arranca con
         #setQuitOnLastWindowClosed(False) (necesario para el patrón de bandeja), cerrar la última ventana NO hace
         #retornar app.exec() — el proceso quedaba vivo e invisible y parecía que "siguiera en segundo plano" aunque el
@@ -2717,9 +2717,9 @@ class _FiltroTooltipsFrescos(QObject):
         super().__init__(parent)
         self._ultimo_widget= None
 
-    def eventFilter(self, watched, event):
+    def eventFilter(self, watched, evento):
 
-        if event.type() == QEvent.Type.ToolTip:
+        if evento.type() == QEvent.Type.ToolTip:
             if watched is not self._ultimo_widget and QToolTip.isVisible():
                 #OJO: NO se puede llamar QToolTip.hideText() aquí mismo, de forma síncrona, dentro del propio manejo del evento
                 #ToolTip. Ocultar el tooltip "en caliente" hace que Qt, como el mouse sigue quieto sobre el widget, vuelva a
@@ -2733,7 +2733,7 @@ class _FiltroTooltipsFrescos(QObject):
                 #reentrante.
                 QTimer.singleShot(0, QToolTip.hideText)
             self._ultimo_widget= watched
-        elif event.type() in (QEvent.Type.Leave, QEvent.Type.Hide):
+        elif evento.type() in (QEvent.Type.Leave, QEvent.Type.Hide):
             if watched is self._ultimo_widget:
                 self._ultimo_widget= None
         return False

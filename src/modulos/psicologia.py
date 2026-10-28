@@ -340,13 +340,13 @@ class FlowLayout(QLayout):
 
         return len(self._items)
 
-    def itemAt(self, index):
+    def itemAt(self, indice):
 
-        return self._items[index] if 0 <= index < len(self._items) else None
+        return self._items[indice] if 0 <= indice < len(self._items) else None
 
-    def takeAt(self, index):
+    def takeAt(self, indice):
 
-        return self._items.pop(index) if 0 <= index < len(self._items) else None
+        return self._items.pop(indice) if 0 <= indice < len(self._items) else None
 
     def expandingDirections(self):
 
@@ -414,7 +414,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -452,16 +452,16 @@ class BotonAnimado(QPushButton):
         self._anim.setEndValue(hasta)
         self._anim.start()
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         if self.isEnabled():
             self._animar_sombra(18)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(0)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Pastilla seleccionable con transición de color animada y una onda
@@ -512,10 +512,10 @@ class Chip(QFrame):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(180)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
         self._actualizar_estilo()
 
-    def _on_anim(self, valor):
+    def _al_animar(self, valor):
 
         self._factor= valor
         self._actualizar_estilo()
@@ -540,24 +540,24 @@ class Chip(QFrame):
         if emitir:
             self.alternado.emit(marcado)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._agregar_ripple(event.position())
+        if evento.button() == Qt.MouseButton.LeftButton:
+            self._agregar_ripple(evento.position())
             self.establecer_marcado(not self._marcado)
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         self._hover= True
         self.update()
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._hover= False
         self.update()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
     def _agregar_ripple(self, punto):
 
@@ -609,7 +609,7 @@ class Chip(QFrame):
         self.lbl.setStyleSheet(f"background: transparent; color: {color_texto};")
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -708,9 +708,9 @@ class SegmentadoPildora(QWidget):
             btn.setChecked(k == self._valor)
         self._fondo.lower()
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         self._fondo.setGeometry(self.rect())
 
     def valor(self):
@@ -803,11 +803,11 @@ class CintaAlerta(QFrame):
             self._anim.setEndValue(0)
             self._anim.start()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
 
 #Contenedor tipo tarjeta liviano que va DENTRO de `calendario.
@@ -911,10 +911,10 @@ class ModuloPsicologia(QWidget):
         layout_raiz.setContentsMargins(0, 0, 0, 0)
 
         if main_window is not None and not puede_ver_psicologia(main_window):
-            aviso= QLabel("No tienes acceso al módulo de Psicología.")
-            aviso.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            aviso.setStyleSheet("font-size: 14px; font-weight: 600; padding: 40px;")
-            layout_raiz.addWidget(aviso)
+            lbl_aviso= QLabel("No tienes acceso al módulo de Psicología.")
+            lbl_aviso.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl_aviso.setStyleSheet("font-size: 14px; font-weight: 600; padding: 40px;")
+            layout_raiz.addWidget(lbl_aviso)
             self._bloqueado= True
             return
         self._bloqueado= False
@@ -926,9 +926,9 @@ class ModuloPsicologia(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(18)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(18)
 
         #---------- Cabecera tipo "hero" ----------
         self.frame_cabecera= QFrame()
@@ -965,25 +965,25 @@ class ModuloPsicologia(QWidget):
         lay_chip_conf= QHBoxLayout(self.chip_confidencial)
         lay_chip_conf.setContentsMargins(14, 7, 14, 7)
         lay_chip_conf.setSpacing(6)
-        icono_chip_conf= QLabel()
-        icono_chip_conf.setPixmap(pixmap_emoji("🔒", 13))
-        icono_chip_conf.setStyleSheet("background: transparent;")
-        lay_chip_conf.addWidget(icono_chip_conf)
-        texto_chip_conf= QLabel("Confidencial")
-        texto_chip_conf.setStyleSheet(
+        lbl_icono_chip_conf= QLabel()
+        lbl_icono_chip_conf.setPixmap(pixmap_emoji("🔒", 13))
+        lbl_icono_chip_conf.setStyleSheet("background: transparent;")
+        lay_chip_conf.addWidget(lbl_icono_chip_conf)
+        lbl_texto_chip_conf= QLabel("Confidencial")
+        lbl_texto_chip_conf.setStyleSheet(
             "background: transparent; color: white; font-weight: 700; font-size: 11.5px;")
-        lay_chip_conf.addWidget(texto_chip_conf)
+        lay_chip_conf.addWidget(lbl_texto_chip_conf)
         cabecera_layout.addWidget(self.chip_confidencial, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.chip_contador= QLabel("0 casos")
         self.chip_contador.setObjectName("ChipContador")
         cabecera_layout.addWidget(self.chip_contador, 0, Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #---------- Alerta de citas vencidas ----------
         self.cinta_alerta= CintaAlerta()
         self.cinta_alerta.clicada.connect(self._ver_vencidas)
-        layout.addWidget(self.cinta_alerta)
+        disposicion.addWidget(self.cinta_alerta)
 
         #---------- Indicadores (KPI) ----------
         fila_kpis= QHBoxLayout()
@@ -995,7 +995,7 @@ class ModuloPsicologia(QWidget):
         for tarjeta in (self.tarjeta_kpi_total, self.tarjeta_kpi_abiertos,
                         self.tarjeta_kpi_seguimiento, self.tarjeta_kpi_vencidas):
             fila_kpis.addWidget(tarjeta, 1)
-        layout.addLayout(fila_kpis)
+        disposicion.addLayout(fila_kpis)
 
         #---------- Filtros ----------
         self.frame_filtros= QFrame()
@@ -1080,7 +1080,7 @@ class ModuloPsicologia(QWidget):
         self.btn_filtros.clicked.connect(self._abrir_dialogo_filtros)
         fila_filtros.addWidget(self.btn_filtros)
 
-        layout.addWidget(self.frame_filtros)
+        disposicion.addWidget(self.frame_filtros)
         self._construir_dialogo_filtros()
 
         #---------- Tabla ----------
@@ -1140,7 +1140,7 @@ class ModuloPsicologia(QWidget):
         self.estado_vacio= EstadoVacioFiltro(self.tabla, icono="🧠",
                                                texto_sin_resultados= "No hay registros con los filtros actuales")
         lay_tabla.addWidget(self.pagina)
-        layout.addWidget(self.frame_tabla, stretch=1)
+        disposicion.addWidget(self.frame_tabla, stretch=1)
 
         #---------- Botonera de acciones sobre la fila seleccionada ---------- Ya NO hay un botón "Nuevo registro"
         #aparte: el panel colapsable de
@@ -1173,7 +1173,7 @@ class ModuloPsicologia(QWidget):
         self.btn_deshacer.clicked.connect(self._deshacer_eliminacion)
         self.btn_deshacer.setVisible(False)
         fila_botones.addWidget(self.btn_deshacer)
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
         self._actualizar_botones_accion()
 
         #---------- Formulario (alta/edición), colapsable ---------- Mismo "cosito colapsable" que usa el resto de la
@@ -1370,10 +1370,10 @@ class ModuloPsicologia(QWidget):
         lay_nota_conf= QHBoxLayout(self.nota_confidencial)
         lay_nota_conf.setContentsMargins(14, 12, 14, 12)
         lay_nota_conf.setSpacing(10)
-        icono_nota_conf= QLabel()
-        icono_nota_conf.setPixmap(pixmap_emoji("🔒", 14))
-        icono_nota_conf.setStyleSheet("background: transparent;")
-        lay_nota_conf.addWidget(icono_nota_conf, 0, Qt.AlignmentFlag.AlignTop)
+        lbl_icono_nota_conf= QLabel()
+        lbl_icono_nota_conf.setPixmap(pixmap_emoji("🔒", 14))
+        lbl_icono_nota_conf.setStyleSheet("background: transparent;")
+        lay_nota_conf.addWidget(lbl_icono_nota_conf, 0, Qt.AlignmentFlag.AlignTop)
         self.lbl_texto_nota_confidencial= QLabel(
             "Este registro es confidencial: solo lo puede ver el/la psicólogo/a responsable "
             "y los roles gerenciales de la institución.")
@@ -1400,13 +1400,13 @@ class ModuloPsicologia(QWidget):
         fila_botones_form.addWidget(self.btn_guardar_form)
         form.addLayout(fila_botones_form)
 
-        layout.addWidget(self.panel_formulario)
+        disposicion.addWidget(self.panel_formulario)
         #Sin esto, cuando la ventana es más alta que el contenido, el sobrante de espacio queda repartido de forma
         #ambigua entre los widgets de
         #arriba (dejando huecos raros, como el que se veía debajo de la
         #botonera). Con el stretch al final, ese sobrante se va SIEMPRE después del panel, como margen inferior normal
         #de una página.
-        layout.addStretch(1)
+        disposicion.addStretch(1)
 
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
@@ -2122,20 +2122,20 @@ class ModuloPsicologia(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Combina los filtros que necesites; la tabla se actualiza al instante.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Combina los filtros que necesites; la tabla se actualiza al instante.")
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)

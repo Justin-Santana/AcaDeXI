@@ -136,7 +136,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -172,16 +172,16 @@ class BotonAnimado(QPushButton):
         self._anim.setEndValue(hasta)
         self._anim.start()
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         if self.isEnabled():
             self._animar_sombra(18)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(0)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Indicador circular de porcentaje dibujado con QPainter, con animación
@@ -232,7 +232,7 @@ class AnilloProgreso(QWidget):
         anim.start()
         self._anim= anim
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -317,7 +317,7 @@ class MiniBarras(QWidget):
         self._anim= anim
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -368,21 +368,21 @@ class MiniBarras(QWidget):
             #el tooltip con el nombre completo aparezca únicamente al pasar el mouse sobre el texto, no sobre el gráfico.
             self._zonas_barras.append((rect_etiqueta, cat))
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, evento):
 
-        pos= event.position() if hasattr(event, "position") else event.pos()
+        pos= evento.position() if hasattr(evento, "position") else evento.pos()
         for rect, cat in self._zonas_barras:
             if rect.contains(pos):
-                QToolTip.showText(event.globalPosition().toPoint(), cat, self)
+                QToolTip.showText(evento.globalPosition().toPoint(), cat, self)
                 break
         else:
             QToolTip.hideText()
-        super().mouseMoveEvent(event)
+        super().mouseMoveEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         QToolTip.hideText()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Tarjeta con icono + valor grande animado (conteo), con una pequeña
@@ -406,25 +406,25 @@ class TarjetaKPI(QFrame):
         self._anim_sombra.setDuration(180)
         self._anim_sombra.setEasingCurve(QEasingCurve.Type.OutCubic)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(16, 14, 16, 14)
-        layout.setSpacing(4)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(16, 14, 16, 14)
+        disposicion.setSpacing(4)
 
         self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji(icono, 26))
         self.lbl_icono.setObjectName("IconoKPI")
         self.lbl_icono.setFixedSize(38, 38)
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.lbl_icono)
+        disposicion.addWidget(self.lbl_icono)
 
         self.lbl_valor= QLabel("--")
         self.lbl_valor.setObjectName("ValorKPI")
-        layout.addWidget(self.lbl_valor)
+        disposicion.addWidget(self.lbl_valor)
 
         self.lbl_titulo= QLabel(titulo)
         self.lbl_titulo.setObjectName("TituloKPI")
         self.lbl_titulo.setWordWrap(True)
-        layout.addWidget(self.lbl_titulo)
+        disposicion.addWidget(self.lbl_titulo)
 
     def establecer_valor_animado(self, valor_final, sufijo=""):
 
@@ -442,21 +442,21 @@ class TarjetaKPI(QFrame):
         anim.start()
         self._anim_valor= anim
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(26)
         self._anim_sombra.start()
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(14)
         self._anim_sombra.start()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Variante de tarjeta KPI para métricas porcentuales: icono + título a
@@ -477,12 +477,12 @@ class TarjetaKPIAnillo(QFrame):
         self._anim_sombra.setDuration(180)
         self._anim_sombra.setEasingCurve(QEasingCurve.Type.OutCubic)
 
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(18, 14, 18, 14)
-        layout.setSpacing(16)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(18, 14, 18, 14)
+        disposicion.setSpacing(16)
 
         self.anillo= AnilloProgreso(color=color)
-        layout.addWidget(self.anillo)
+        disposicion.addWidget(self.anillo)
 
         bloque= QVBoxLayout()
         bloque.setSpacing(4)
@@ -497,27 +497,27 @@ class TarjetaKPIAnillo(QFrame):
         self.lbl_titulo.setWordWrap(True)
         bloque.addWidget(self.lbl_titulo)
         bloque.addStretch()
-        layout.addLayout(bloque, 1)
+        disposicion.addLayout(bloque, 1)
 
     def establecer_porcentaje(self, valor):
 
         self.anillo.animar_a(valor)
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(26)
         self._anim_sombra.start()
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._anim_sombra.stop()
         self._anim_sombra.setStartValue(self._sombra.blurRadius())
         self._anim_sombra.setEndValue(14)
         self._anim_sombra.start()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Módulo principal
@@ -530,14 +530,14 @@ class ModuloReportes(QWidget):
         self._paneles= {}
         self._cache_materias_docente= None
         self._indices_pestanas= {}
-        #Se define ANTES de _build_ui(): al agregar la primera pestaña con
+        #Se define ANTES de _construir_ui(): al agregar la primera pestaña con
         #self.tabs.addTab(...), Qt puede disparar currentChanged de
         #inmediato (para la pestaña 0), y ese handler
         #(_construir_visor_editor_diferido) ya comprueba self.visor_editor -si el atributo todavía no existiera en ese
         #punto, reventaba con AttributeError apenas se abría el módulo.
         self.visor_editor= None
         self._rutas_recientes_reportes= []
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         self.actualizar_tema()
         self._registrar_atajos_teclado()
@@ -551,9 +551,9 @@ class ModuloReportes(QWidget):
 
     #Navegación desde otros módulos (p. ej. la tarjeta KPI "Estudiantes en Riesgo" del Dashboard, tanto el
     #institucional como el de Docentes)
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
-        super().showEvent(event)
+        super().showEvent(evento)
         pendiente= getattr(self.main_window, "_pestana_pendiente_dashboard", None)
         if pendiente:
             self.main_window._pestana_pendiente_dashboard= None
@@ -562,7 +562,7 @@ class ModuloReportes(QWidget):
                 self.tabs.setCurrentIndex(indice)
 
     #Construcción de la interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -574,9 +574,9 @@ class ModuloReportes(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(18)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(18)
 
         #--- Cabecera tipo "hero" ---
         self.frame_cabecera= QFrame()
@@ -612,7 +612,7 @@ class ModuloReportes(QWidget):
         self.btn_actualizar_todo.clicked.connect(self.refrescar)
         cabecera_layout.addWidget(self.btn_actualizar_todo)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #--- Pestañas con transición animada ---
         #TabWidgetNavegable (la misma que usan Configuración y el consolidado
@@ -621,7 +621,7 @@ class ModuloReportes(QWidget):
         self.tabs= TabWidgetNavegable()
         self.tabs.currentChanged.connect(self._animar_cambio_tab)
         self.tabs.currentChanged.connect(self._construir_visor_editor_diferido)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         if self._es_docente():
             #Un docente NO debería ver analítica de todo el colegio (Institucional, Cuadro de Honor, Rendimiento Técnico,
             #PDF con gráficos institucionales): solo lo que le compete a él mismo, y ya filtrado a sus propias materias.
@@ -855,9 +855,9 @@ class ModuloReportes(QWidget):
         btn_limpiar.setCursor(Qt.CursorShape.PointingHandCursor)
         fila.addWidget(btn_limpiar)
 
-        chip_resultado= QLabel("0 resultados")
-        chip_resultado.setObjectName("ChipResultadoFiltro")
-        fila.addWidget(chip_resultado)
+        lbl_chip_resultado= QLabel("0 resultados")
+        lbl_chip_resultado.setObjectName("ChipResultadoFiltro")
+        fila.addWidget(lbl_chip_resultado)
 
         dialogo_filtros= None
         btn_filtros= None
@@ -881,20 +881,20 @@ class ModuloReportes(QWidget):
 
             fila_encabezado= QHBoxLayout()
             fila_encabezado.setSpacing(8)
-            icono_encabezado= QLabel()
-            pixmap_boton_filtro(icono_encabezado, 20)
-            icono_encabezado.setObjectName("IconoEncabezadoFiltrosRep")
-            fila_encabezado.addWidget(icono_encabezado)
-            titulo_encabezado= QLabel("Filtros")
-            titulo_encabezado.setObjectName("TituloEncabezadoFiltrosRep")
-            fila_encabezado.addWidget(titulo_encabezado)
+            lbl_icono_encabezado= QLabel()
+            pixmap_boton_filtro(lbl_icono_encabezado, 20)
+            lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosRep")
+            fila_encabezado.addWidget(lbl_icono_encabezado)
+            lbl_titulo_encabezado= QLabel("Filtros")
+            lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosRep")
+            fila_encabezado.addWidget(lbl_titulo_encabezado)
             fila_encabezado.addStretch()
             lay_dialogo.addLayout(fila_encabezado)
 
-            subtitulo= QLabel("Todos son opcionales; se combinan con la búsqueda.")
-            subtitulo.setObjectName("SubtituloFiltrosRep")
-            subtitulo.setWordWrap(True)
-            lay_dialogo.addWidget(subtitulo)
+            lbl_subtitulo= QLabel("Todos son opcionales; se combinan con la búsqueda.")
+            lbl_subtitulo.setObjectName("SubtituloFiltrosRep")
+            lbl_subtitulo.setWordWrap(True)
+            lay_dialogo.addWidget(lbl_subtitulo)
 
             separador= QFrame()
             separador.setFrameShape(QFrame.Shape.HLine)
@@ -954,7 +954,7 @@ class ModuloReportes(QWidget):
             "combo_filtro_carrera_rep": combo_filtro_carrera_rep,
             "lbl_filtro_especialidad_rep": lbl_filtro_especialidad_rep,
             "lbl_filtro_carrera_rep": lbl_filtro_carrera_rep,
-            "btn_limpiar": btn_limpiar, "chip": chip_resultado,
+            "btn_limpiar": btn_limpiar, "chip": lbl_chip_resultado,
             "dialogo_filtros": dialogo_filtros, "btn_filtros": btn_filtros,
         }
 
@@ -1663,11 +1663,11 @@ class ModuloReportes(QWidget):
 
         contenedor= QWidget()
         disposicion= QVBoxLayout(contenedor)
-        info= QLabel("Rendimiento académico desglosado por materia técnica y especialidad, "
+        lbl_info= QLabel("Rendimiento académico desglosado por materia técnica y especialidad, "
                       "independiente del reporte general de rendimiento institucional.")
-        info.setObjectName("DescModulo")
-        info.setWordWrap(True)
-        disposicion.addWidget(info)
+        lbl_info.setObjectName("DescModulo")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         panel= self._crear_barra_filtros("Buscar por materia o especialidad…",
                                           con_curso_seccion= False, con_especialidad=True,
@@ -1930,12 +1930,12 @@ class ModuloReportes(QWidget):
 
         contenedor= QWidget()
         disposicion= QVBoxLayout(contenedor)
-        info= QLabel("Genera reportes PDF con el logotipo institucional y gráficos de barras/pastel "
+        lbl_info= QLabel("Genera reportes PDF con el logotipo institucional y gráficos de barras/pastel "
                       "sobre el rendimiento académico y la asistencia general. Los archivos generados "
                       "quedan disponibles al instante en la pestaña «Vista Previa y Edición».")
-        info.setObjectName("DescModulo")
-        info.setWordWrap(True)
-        disposicion.addWidget(info)
+        lbl_info.setObjectName("DescModulo")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
         btn_rendimiento= BotonAnimado("Exportar Reporte de Rendimiento Académico (PDF)")
         btn_rendimiento.setObjectName("BtnAccionAgregar")
         btn_rendimiento.clicked.connect(self._exportar_rendimiento_pdf)
@@ -2151,17 +2151,17 @@ class ModuloReportes(QWidget):
         contenedor= QWidget()
         disposicion= QVBoxLayout(contenedor)
         if self._es_docente():
-            info= QLabel("Genera listados en formato Excel (.xlsx) con estilos, encabezados congelados y "
+            lbl_info= QLabel("Genera listados en formato Excel (.xlsx) con estilos, encabezados congelados y "
                           "anchos de columna ajustados. Las calificaciones y la asistencia se exportan "
                           "solo de las materias que tú impartes. Ábrelos directamente en «Vista Previa y "
                           "Edición» para revisarlos o retocarlos sin salir de AcaDeXI.")
         else:
-            info= QLabel("Genera listados institucionales completos en formato Excel (.xlsx) con estilos, "
+            lbl_info= QLabel("Genera listados institucionales completos en formato Excel (.xlsx) con estilos, "
                           "encabezados congelados y anchos de columna ajustados. Ábrelos directamente en "
                           "«Vista Previa y Edición» para revisarlos o retocarlos sin salir de AcaDeXI.")
-        info.setObjectName("DescModulo")
-        info.setWordWrap(True)
-        disposicion.addWidget(info)
+        lbl_info.setObjectName("DescModulo")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
         btn_estudiantes= BotonAnimado("Exportar Listado de Estudiantes (XLSX)")
         btn_estudiantes.setObjectName("BtnAccionAgregar")
         btn_estudiantes.clicked.connect(self._exportar_estudiantes_xlsx)
@@ -2347,13 +2347,13 @@ class ModuloReportes(QWidget):
         contenedor= QWidget()
         disposicion= QVBoxLayout(contenedor)
         disposicion.setContentsMargins(0, 4, 0, 0)
-        info= QLabel("Abre aquí los reportes que generes (CSV, Excel, Word o PDF): se abren en una vista "
+        lbl_info= QLabel("Abre aquí los reportes que generes (CSV, Excel, Word o PDF): se abren en una vista "
                       "grande y cómoda donde puedes escribir directamente, dar formato, filtrar/ordenar, "
                       "exportarlos a otros formatos e imprimirlos, y en PDF navegar, rotar, insertar o "
                       "eliminar páginas, añadir una marca de agua o combinar documentos.")
-        info.setObjectName("DescModulo")
-        info.setWordWrap(True)
-        disposicion.addWidget(info)
+        lbl_info.setObjectName("DescModulo")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
         self._contenedor_visor_editor= QWidget()
         QVBoxLayout(self._contenedor_visor_editor).setContentsMargins(0, 0, 0, 0)
         disposicion.addWidget(self._contenedor_visor_editor, 1)
@@ -2395,16 +2395,16 @@ class ModuloReportes(QWidget):
         contenedor= QWidget()
         cl= QVBoxLayout(contenedor)
         cl.addStretch()
-        icono= QLabel("")
-        icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_icono= QLabel("")
+        lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         from src.nucleo.iconos_emoji import pixmap_emoji
-        icono.setPixmap(pixmap_emoji("📄", 46))
-        cl.addWidget(icono)
-        texto= QLabel("Abre un PDF, Excel, Word o CSV para previsualizarlo y editarlo aquí.")
-        texto.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        texto.setObjectName("DescModulo")
-        texto.setWordWrap(True)
-        cl.addWidget(texto)
+        lbl_icono.setPixmap(pixmap_emoji("📄", 46))
+        cl.addWidget(lbl_icono)
+        lbl_texto= QLabel("Abre un PDF, Excel, Word o CSV para previsualizarlo y editarlo aquí.")
+        lbl_texto.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_texto.setObjectName("DescModulo")
+        lbl_texto.setWordWrap(True)
+        cl.addWidget(lbl_texto)
         btn_abrir= BotonAnimado("Abrir archivo")
         btn_abrir.setObjectName("BtnAccionAgregar")
         fila_btn= QHBoxLayout()
@@ -2495,8 +2495,8 @@ class ModuloReportes(QWidget):
 
         if getattr(self, "visor_editor", None) is None:
             return
-        layout= self._contenedor_visor_editor.layout()
-        layout.removeWidget(self.visor_editor)
+        disposicion= self._contenedor_visor_editor.layout()
+        disposicion.removeWidget(self.visor_editor)
         self.visor_editor.deleteLater()
         self.visor_editor= None
         self._mostrar_placeholder_visor_editor()
@@ -2524,7 +2524,7 @@ class ModuloReportes(QWidget):
     def refrescar(self):
 
         #Para un docente, varias de estas pestañas ni siquiera se
-        #construyeron (ver _build_ui): solo refrescamos lo que exista.
+        #construyeron (ver _construir_ui): solo refrescamos lo que exista.
         #OJO: antes se comprobaba `hasattr(self, "tabla_institucional")`, pero esa pestaña nunca crea ninguna tabla con
         #ese nombre -crea tarjetas KPI (self.kpi_estudiantes, etc.)-, así que esa condición era SIEMPRE False y
         #_cargar_institucional() nunca se llamaba: la pestaña "Institucional" se quedaba en blanco/con ceros para

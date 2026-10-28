@@ -21,14 +21,14 @@ import hashlib
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from src.nucleo.bd import DB_PATH, crear_backup
+from src.nucleo.bd import RUTA_BD, crear_backup
 
 NOMBRE_ARCHIVO_SYNC= "acadexi_sync.db"
 
 _CLAVE_LOCAL= b"AcaDeXI-credenciales-locales-clave-2026"
 _fernet= Fernet(base64.urlsafe_b64encode(_CLAVE_LOCAL.ljust(32, b"0")[:32]))
 
-RUTA_CREDENCIALES= os.path.join(os.path.dirname(os.path.abspath(DB_PATH)), "sync_credenciales.enc")
+RUTA_CREDENCIALES= os.path.join(os.path.dirname(os.path.abspath(RUTA_BD)), "sync_credenciales.enc")
 
 METODOS= {
     "carpeta": "Carpeta compartida (simple)",
@@ -179,7 +179,7 @@ def google_drive_subir():
     from googleapiclient.http import MediaFileUpload
     servicio= _google_drive_servicio()
     existente= _google_drive_buscar_archivo(servicio)
-    media= MediaFileUpload(DB_PATH, mimetype="application/octet-stream", resumable=False)
+    media= MediaFileUpload(RUTA_BD, mimetype="application/octet-stream", resumable=False)
     if existente:
         servicio.files().update(fileId=existente["id"], media_body=media).execute()
     else:
@@ -202,7 +202,7 @@ def google_drive_descargar():
     listo= False
     while not listo:
         _, listo= descargador.next_chunk()
-    with open(DB_PATH, "wb") as f:
+    with open(RUTA_BD, "wb") as f:
         f.write(buffer.getvalue())
     return ruta_respaldo
 
@@ -246,7 +246,7 @@ def dropbox_subir():
 
     import dropbox
     dbx= _dropbox_cliente()
-    with open(DB_PATH, "rb") as f:
+    with open(RUTA_BD, "rb") as f:
         dbx.files_upload(f.read(), f"/{NOMBRE_ARCHIVO_SYNC}", mode=dropbox.files.WriteMode("overwrite"))
     return "Dropbox"
 
@@ -256,7 +256,7 @@ def dropbox_descargar():
     dbx= _dropbox_cliente()
     ruta_respaldo= crear_backup(tipo="Pre-sincronización (Dropbox)")
     _, respuesta= dbx.files_download(f"/{NOMBRE_ARCHIVO_SYNC}")
-    with open(DB_PATH, "wb") as f:
+    with open(RUTA_BD, "wb") as f:
         f.write(respuesta.content)
     return ruta_respaldo
 
@@ -312,7 +312,7 @@ def onedrive_subir():
 
     import requests
     token= _onedrive_token()
-    with open(DB_PATH, "rb") as f:
+    with open(RUTA_BD, "rb") as f:
         contenido= f.read()
     resp= requests.put(
         f"https://graph.microsoft.com/v1.0/me/drive/root:/{NOMBRE_ARCHIVO_SYNC}:/content",
@@ -332,7 +332,7 @@ def onedrive_descargar():
     if resp.status_code == 404:
         raise RuntimeError("Todavía no hay ninguna copia en OneDrive.")
     resp.raise_for_status()
-    with open(DB_PATH, "wb") as f:
+    with open(RUTA_BD, "wb") as f:
         f.write(resp.content)
     return ruta_respaldo
 
@@ -369,7 +369,7 @@ def servidor_subir():
 
     import requests
     datos= _servidor_datos()
-    with open(DB_PATH, "rb") as f:
+    with open(RUTA_BD, "rb") as f:
         resp= requests.post(
             f"{datos['url']}/subir", headers={"Authorization": f"Bearer {datos['token']}"},
             files= {"archivo": (NOMBRE_ARCHIVO_SYNC, f, "application/octet-stream")}, timeout=120)
@@ -386,7 +386,7 @@ def servidor_descargar():
     if resp.status_code == 404:
         raise RuntimeError("Todavía no hay ninguna copia en el servidor.")
     resp.raise_for_status()
-    with open(DB_PATH, "wb") as f:
+    with open(RUTA_BD, "wb") as f:
         f.write(resp.content)
     return ruta_respaldo
 

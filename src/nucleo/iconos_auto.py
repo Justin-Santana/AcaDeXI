@@ -305,12 +305,12 @@ class _Iconizador(QObject):
             pass
         return 0
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, objeto, evento):
 
-        t= event.type()
+        t= evento.type()
         if t != QEvent.Type.Polish and t != QEvent.Type.Show:
             return False
-        clase= obj.__class__
+        clase= objeto.__class__
         cache= self._cache_clases
         tag= cache.get(clase)
         if tag is None:
@@ -320,15 +320,15 @@ class _Iconizador(QObject):
         try:
 
             if tag == self._TAG_BOTON:
-                if obj.icon().isNull() and obj.text() \
-                        and not icono_para_texto(obj.text()).isNull():
-                    self._botones.add(obj)
+                if objeto.icon().isNull() and objeto.text() \
+                        and not icono_para_texto(objeto.text()).isNull():
+                    self._botones.add(objeto)
                     self._agendar()
             elif tag == self._TAG_TABS:
-                self._tabs.add(obj)
+                self._tabs.add(objeto)
                 self._agendar()
-            elif tag == self._TAG_VENTANA and not isinstance(obj, QMessageBox):
-                self._ventanas.add(obj)
+            elif tag == self._TAG_VENTANA and not isinstance(objeto, QMessageBox):
+                self._ventanas.add(objeto)
                 self._agendar()
         except RuntimeError:
             pass  #el widget C++ ya fue destruido; no importa

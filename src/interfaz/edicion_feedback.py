@@ -74,9 +74,9 @@ class BannerEdicion(QFrame):
 
         self.hide()
 
-    def changeEvent(self, event):
+    def changeEvent(self, evento):
 
-        super().changeEvent(event)
+        super().changeEvent(evento)
         #_aplicar_estilo() se llamaba solo desde activar() -al mostrar el
         #banner por primera vez para un formulario-, así que si el usuario cambiaba de tema con el banner YA abierto
         #(formulario en edición mientras se togglea modo claro/oscuro), el color se quedaba congelado con el que tenía
@@ -88,7 +88,7 @@ class BannerEdicion(QFrame):
         #formulario) tenga que acordarse de este widget en particular.
         ##Guard de reentrancia: _aplicar_estilo() llama a self.setStyleSheet(), que a su vez DISPARA otro StyleChange
         #sobre sí mismo -sin este guard, quedaría llamándose a sí mismo sin parar.
-        if event.type() in (QEvent.Type.StyleChange, QEvent.Type.PaletteChange):
+        if evento.type() in (QEvent.Type.StyleChange, QEvent.Type.PaletteChange):
             if not getattr(self, "_actualizando_estilo_por_tema", False):
                 self._actualizando_estilo_por_tema= True
                 try:

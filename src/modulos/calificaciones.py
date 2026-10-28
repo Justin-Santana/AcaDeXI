@@ -12,7 +12,7 @@ from PySide6.QtCore import (Qt, QPropertyAnimation, QEasingCurve, QSequentialAni
     QRect, QRectF, QPointF, Property, Signal, QTimer, QDate)
 from PySide6.QtGui import (QColor, QPainter, QPen, QBrush, QFont, QPainterPath, QIcon, QPixmap,
     QLinearGradient, QConicalGradient, QRadialGradient)
-from src.nucleo.bd import obtener_conexion, registrar_auditoria, get_app_data_dir, mostrar_columna_numero_lista
+from src.nucleo.bd import obtener_conexion, registrar_auditoria, obtener_carpeta_datos, mostrar_columna_numero_lista
 from src.interfaz.filtros_curso_seccion import (poblar_combo_curso, cascada_seccion_por_curso,
     poblar_combo_nivel_educativo, secciones_del_nivel_educativo, interseccion_opcional)
 from src.nucleo.iconos import mostrar_mensaje, centrar_y_al_frente, aplicar_icono_cabecera
@@ -264,8 +264,8 @@ class SearchBarCalificaciones(QWidget):
         self._timer.setInterval(delay_ms)
         self._timer.timeout.connect(self._emitir_busqueda)
 
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(0, 0, 0, 0)
 
         self.marco= QFrame()
         self.marco.setStyleSheet(
@@ -281,10 +281,10 @@ class SearchBarCalificaciones(QWidget):
         limitar_campo_texto(self.line_edit, 300)
         self.line_edit.setStyleSheet(
             "QLineEdit { border: none; background: transparent; padding: 8px 0; }")
-        self.line_edit.textChanged.connect(self._on_texto_cambiado)
+        self.line_edit.textChanged.connect(self._al_texto_cambiado)
         lay_marco.addWidget(self.line_edit, 1)
 
-        layout.addWidget(self.marco)
+        disposicion.addWidget(self.marco)
         #Tamaño fijo: sin esto, en pestañas donde el layout vertical tiene espacio sobrante y ningún otro widget lo
         #reclama, Qt lo reparte entre los widgets con política "Preferred" (como este) y la barra de búsqueda termina
         #estirándose a alturas absurdas. Fijarla asegura además que TODAS las searchbars del módulo midan siempre lo
@@ -292,7 +292,7 @@ class SearchBarCalificaciones(QWidget):
         self.setFixedHeight(44)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
-    def _on_texto_cambiado(self, _texto):
+    def _al_texto_cambiado(self, _texto):
 
         self._timer.stop()
         self._timer.start()
@@ -422,7 +422,7 @@ class TarjetaAlerta(QWidget):
         if self._anim_glow:
             self._anim_glow.resume()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -543,7 +543,7 @@ class AnilloProgreso(QWidget):
         self._anim= anim
         anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -641,7 +641,7 @@ class BarraSegmentada(QWidget):
         t= self._t
         return [(f0 + (f1 - f0) * t, c) for (f0, c), (f1, _) in zip(self._inicio, self._fin)]
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -758,7 +758,7 @@ class GraficoDona(QWidget):
         t= self._t
         return [(f0 + (f1 - f0) * t, c) for (f0, c), (f1, _) in zip(self._segmentos_inicio, self._segmentos_fin)]
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -852,7 +852,7 @@ class MedidorGauge(QWidget):
         self._anim= anim
         anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -971,7 +971,7 @@ class TimelineEvaluacion(QWidget):
         t= self._t
         return [r0 + (r1 - r0) * t for r0, r1 in zip(self._radios_inicio, self._radios_fin)]
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -1093,7 +1093,7 @@ class LineaTendencia(QWidget):
         self._anim= anim
         anim.start()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -1371,11 +1371,11 @@ class DialogoCompetenciasEspecificas(QDialog):
         self._seleccionadas_ids= set(seleccionadas_ids or [])
         self._competencias= competencias_de_materia_grado(materia_id, grado_id)
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Marca las Competencias Específicas (CE) que esta evidencia califica. "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Marca las Competencias Específicas (CE) que esta evidencia califica. "
                        "Una evidencia (examen, proyecto, práctica) puede validar varias CE a la vez.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         self.lista= QListWidget()
         self.lista.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
@@ -1390,12 +1390,12 @@ class DialogoCompetenciasEspecificas(QDialog):
                                 else Qt.CheckState.Unchecked)
             item.setData(Qt.ItemDataRole.UserRole, comp["id"])
             self.lista.addItem(item)
-        layout.addWidget(self.lista)
+        disposicion.addWidget(self.lista)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -1421,11 +1421,11 @@ class DialogoRecuperacionPedagogica(QDialog):
         self.setMinimumWidth(440)
         datos_actuales= datos_actuales or {}
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Registra el proceso de Recuperación Pedagógica: qué se hizo para reforzar "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Registra el proceso de Recuperación Pedagógica: qué se hizo para reforzar "
                        "al estudiante y la nota obtenida al final del proceso.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         form= QGridLayout()
         form.addWidget(QLabel("Fecha:"), 0, 0)
@@ -1448,26 +1448,26 @@ class DialogoRecuperacionPedagogica(QDialog):
         self.nota.setDecimals(2)
         self.nota.setValue(datos_actuales.get("nota_rp") or 0)
         form.addWidget(self.nota, 1, 1)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
-        layout.addWidget(QLabel("Actividades realizadas durante la RP:"))
+        disposicion.addWidget(QLabel("Actividades realizadas durante la RP:"))
         self.actividades= QTextEdit()
         limitar_campo_texto(self.actividades, 5000)
         self.actividades.setPlainText(datos_actuales.get("actividades_realizadas") or "")
         self.actividades.setMaximumHeight(80)
-        layout.addWidget(self.actividades)
+        disposicion.addWidget(self.actividades)
 
-        layout.addWidget(QLabel("Observación del docente:"))
+        disposicion.addWidget(QLabel("Observación del docente:"))
         self.observacion= QTextEdit()
         limitar_campo_texto(self.observacion, 5000)
         self.observacion.setPlainText(datos_actuales.get("observacion") or "")
         self.observacion.setMaximumHeight(80)
-        layout.addWidget(self.observacion)
+        disposicion.addWidget(self.observacion)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -1493,7 +1493,7 @@ class DialogoEvaluacionFinal(QDialog):
         self.setMinimumWidth(420)
         datos_actuales= datos_actuales or {}
 
-        layout= QVBoxLayout(self)
+        disposicion= QVBoxLayout(self)
         form= QGridLayout()
         form.addWidget(QLabel("Nota obtenida (0-100):"), 0, 0)
         self.nota= QDoubleSpinBox()
@@ -1505,19 +1505,19 @@ class DialogoEvaluacionFinal(QDialog):
         self.responsable= QLineEdit(datos_actuales.get("responsable") or docente_sugerido)
         limitar_campo_texto(self.responsable, 300)
         form.addWidget(self.responsable, 1, 1)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
-        layout.addWidget(QLabel("Observación del proceso:"))
+        disposicion.addWidget(QLabel("Observación del proceso:"))
         self.observacion= QTextEdit()
         limitar_campo_texto(self.observacion, 5000)
         self.observacion.setPlainText(datos_actuales.get("observacion") or "")
         self.observacion.setMaximumHeight(80)
-        layout.addWidget(self.observacion)
+        disposicion.addWidget(self.observacion)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         centrar_y_al_frente(self, parent)
 
 
@@ -1541,12 +1541,12 @@ class DialogoIndicadoresLogro(QDialog):
         self.setWindowTitle(f"Indicadores de Logro — {codigo_ce}")
         self.setMinimumSize(520, 420)
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Los Indicadores de Logro describen qué se observa concretamente para dar por "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Los Indicadores de Logro describen qué se observa concretamente para dar por "
                        "alcanzada esta competencia. Son opcionales pero recomendados para justificar "
                        "cada evidencia con precisión.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         self.tabla= QTableWidget(0, 3)
         aplicar_estructura_tabla(self.tabla)
@@ -1559,7 +1559,7 @@ class DialogoIndicadoresLogro(QDialog):
         self.tabla.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.tabla.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.tabla.verticalHeader().setVisible(False)
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         form= QGridLayout()
         self.in_codigo= QLineEdit()
@@ -1576,7 +1576,7 @@ class DialogoIndicadoresLogro(QDialog):
         form.addWidget(QLabel("Orden:"), 0, 2)
         form.addWidget(self.spin_orden, 0, 3)
         form.addWidget(self.in_descripcion, 1, 0, 1, 4)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         fila_botones= QHBoxLayout()
         self.btn_guardar= QPushButton("Guardar Indicador")
@@ -1598,12 +1598,12 @@ class DialogoIndicadoresLogro(QDialog):
         self.btn_eliminar.clicked.connect(self._eliminar)
         fila_botones.addWidget(self.btn_eliminar)
         fila_botones.addStretch()
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         botones.rejected.connect(self.accept)
         botones.accepted.connect(self.accept)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
 
         if not puede_editar_flag:
             self.btn_guardar.setEnabled(False)
@@ -1726,23 +1726,23 @@ class _IndicadorCargaGiratorio(QWidget):
 
         self._timer.stop()
 
-    def hideEvent(self, event):
+    def hideEvent(self, evento):
 
         self._timer.stop()
-        super().hideEvent(event)
+        super().hideEvent(evento)
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
         if not self._timer.isActive():
             self._timer.start(16)
-        super().showEvent(event)
+        super().showEvent(evento)
 
     def _avanzar(self):
 
         self._transcurrido_ms= (self._transcurrido_ms + 16) % self._DURACION_CICLO_MS
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         fase= (self._transcurrido_ms / self._DURACION_CICLO_MS) * 2 * math.pi
         rotacion_base= (self._transcurrido_ms / self._DURACION_CICLO_MS) * 720
@@ -1787,8 +1787,8 @@ class ModuloCalificaciones(QWidget):
         self._tarjetas_alerta= []  #tarjetas con 'latido' — se pausan/reanudan según visibilidad
         self._firma_tema_aplicada= None
         self._invalidar_cache()
-        self._build_ui()
-        self.tabs.currentChanged.connect(self._on_tab_changed)
+        self._construir_ui()
+        self.tabs.currentChanged.connect(self._al_cambiar_pestana)
         self.actualizar_tema()
         self.refrescar()
         self._registrar_atajos_teclado()
@@ -2188,7 +2188,7 @@ class ModuloCalificaciones(QWidget):
         return self._cache_permitidas_materias
 
     #---- carga perezosa: solo se pueblan combos/tablas de la pestaña que se ve ----
-    def _on_tab_changed(self, idx):
+    def _al_cambiar_pestana(self, idx):
 
         if idx in self._tabs_cargados:
             _efecto_transicion(self.tabs.currentWidget())
@@ -2237,7 +2237,7 @@ class ModuloCalificaciones(QWidget):
         #El contenido real reemplaza al spinner con un fundido suave en vez de un corte seco -mismo efecto que ya se
         #usaba al cambiar entre pestañas ya cargadas- así la transición se siente intencional.
         _efecto_transicion(placeholder)
-        #Esta pestaña no existía cuando _build_ui() conectó el rebote a los botones iniciales, así que lo hacemos ahora
+        #Esta pestaña no existía cuando _construir_ui() conectó el rebote a los botones iniciales, así que lo hacemos ahora
         #para los suyos.
         for boton in placeholder.findChildren(QPushButton):
             boton.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -2305,7 +2305,7 @@ class ModuloCalificaciones(QWidget):
             self._cargar_periodos_compartir()
             self._cargar_paquetes_importados()
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -2317,9 +2317,9 @@ class ModuloCalificaciones(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(18)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(18)
 
         #--- Cabecera tipo "hero": icono + título + descripción --- Mismo diseño (objectName, gradiente y estructura)
         #que usan Reportes, Estudiantes, Profesores, Materias, etc. — antes Calificaciones era el único módulo sin esta
@@ -2350,10 +2350,10 @@ class ModuloCalificaciones(QWidget):
         bloque_titulo.addWidget(self.lbl_subtitulo_cabecera)
         cabecera_layout.addLayout(bloque_titulo, 1)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         self.tabs= TabWidgetNavegable()
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         #Solo la pestaña visible al abrir el módulo (Registro) se construye de inmediato; las demás quedan como
         #placeholders vacíos y su contenido
         #real (tablas, tarjetas de alerta, combos) se construye la primera vez
@@ -2510,13 +2510,13 @@ class ModuloCalificaciones(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltrosCalif")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltrosCalif")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosCalif")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosCalif")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
@@ -2789,9 +2789,9 @@ class ModuloCalificaciones(QWidget):
         #Búsqueda flexible: no distingue mayúsculas/minúsculas ni acentos (mismo diseño visual que la searchbar de
         #configuracion.py)
         disposicion.addSpacing(10)
-        titulo_tabla_registro= QLabel("Calificaciones registradas")
-        titulo_tabla_registro.setObjectName("DescModulo")
-        disposicion.addWidget(titulo_tabla_registro)
+        lbl_titulo_tabla_registro= QLabel("Calificaciones registradas")
+        lbl_titulo_tabla_registro.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_titulo_tabla_registro)
         self.in_buscar_registro= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_registro.setPlaceholderText(
             "Buscar por materia, periodo, categoría o descripción (ignora tildes y mayúsculas)...")
@@ -3213,9 +3213,9 @@ class ModuloCalificaciones(QWidget):
         dialogo= QDialog(self)
         dialogo.setWindowTitle(f"Historial de cambios — Calificación #{id_calificacion}")
         dialogo.setMinimumSize(560, 360)
-        layout= QVBoxLayout(dialogo)
+        disposicion= QVBoxLayout(dialogo)
         if not filas:
-            layout.addWidget(QLabel("Esta calificación no tiene cambios registrados en el historial "
+            disposicion.addWidget(QLabel("Esta calificación no tiene cambios registrados en el historial "
                                      "(o fue creada antes de esta función)."))
         else:
             tabla= QTableWidget(len(filas), 5)
@@ -3230,11 +3230,11 @@ class ModuloCalificaciones(QWidget):
                 tabla.setItem(i, 2, QTableWidgetItem(f["valor_nuevo"] or ""))
                 tabla.setItem(i, 3, QTableWidgetItem(f["usuario"] or ""))
                 tabla.setItem(i, 4, QTableWidgetItem(f["fecha"] or ""))
-            layout.addWidget(tabla, 1)
+            disposicion.addWidget(tabla, 1)
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         botones.rejected.connect(dialogo.reject)
         botones.accepted.connect(dialogo.accept)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         dialogo.exec()
     def _cargar_registro_estudiante(self):
 
@@ -3511,9 +3511,9 @@ class ModuloCalificaciones(QWidget):
         fila_acciones_boletin.addStretch()
         disposicion.addLayout(fila_acciones_boletin)
         #--- Exportación masiva por Curso (todas sus secciones a la vez) ---
-        linea= QLabel("Exportación Masiva de Boletines (todo un curso, incluye todas sus secciones):")
-        linea.setObjectName("DescModulo")
-        disposicion.addWidget(linea)
+        lbl_linea= QLabel("Exportación Masiva de Boletines (todo un curso, incluye todas sus secciones):")
+        lbl_linea.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_linea)
         fila_masiva= QHBoxLayout()
         self.combo_curso_masivo= QComboBox()
         fila_masiva.addWidget(QLabel("Curso:"))
@@ -4092,7 +4092,7 @@ class ModuloCalificaciones(QWidget):
                 _dibujar_pie_pagina(_cvs, _ancho, institucion)
                 _cvs.save()
 
-            def _on_boletin_ok(_):
+            def _al_boletin_ok(_):
 
                 from PySide6.QtWidgets import QApplication
                 QApplication.restoreOverrideCursor()
@@ -4102,10 +4102,10 @@ class ModuloCalificaciones(QWidget):
                                f"Boletín guardado en:\n{ruta}", self)
 
             self._hilo_boletin_simple= WorkerHilo(_tarea_boletin)
-            self._hilo_boletin_simple.terminado.connect(_on_boletin_ok)
-            self._hilo_boletin_simple.error.connect(lambda msg: (
+            self._hilo_boletin_simple.terminado.connect(_al_boletin_ok)
+            self._hilo_boletin_simple.error.connect(lambda mensaje: (
                 QApplication.restoreOverrideCursor(),
-                mostrar_mensaje("error", "Error al exportar", msg.split("\n")[0], self)))
+                mostrar_mensaje("error", "Error al exportar", mensaje.split("\n")[0], self)))
             self._hilo_boletin_simple.start()
         else:
             cvs= canvas.Canvas(ruta, pagesize=letter)
@@ -4239,7 +4239,7 @@ class ModuloCalificaciones(QWidget):
                 _cvs.save()
                 return len(estudiantes)
 
-            def _on_masivo_ok(total):
+            def _al_masivo_ok(total):
 
                 from PySide6.QtWidgets import QApplication
                 QApplication.restoreOverrideCursor()
@@ -4254,18 +4254,18 @@ class ModuloCalificaciones(QWidget):
                 mostrar_mensaje("exito", "Boletines exportados",
                                f"Se generaron boletines para {total} estudiantes en:\n{ruta}", self)
 
-            def _on_masivo_error(msg):
+            def _al_masivo_error(mensaje):
 
                 from PySide6.QtWidgets import QApplication
                 QApplication.restoreOverrideCursor()
                 if btn:
                     btn.setEnabled(True)
                 mostrar_mensaje("error", "Error al exportar",
-                               msg.split("\n")[0], self)
+                               mensaje.split("\n")[0], self)
 
             self._hilo_boletin_masivo= WorkerHilo(_tarea_masiva)
-            self._hilo_boletin_masivo.terminado.connect(_on_masivo_ok)
-            self._hilo_boletin_masivo.error.connect(_on_masivo_error)
+            self._hilo_boletin_masivo.terminado.connect(_al_masivo_ok)
+            self._hilo_boletin_masivo.error.connect(_al_masivo_error)
             self._hilo_boletin_masivo.start()
         else:
             #Fallback síncrono
@@ -4661,10 +4661,10 @@ class ModuloCalificaciones(QWidget):
         w= w if w is not None else QWidget()
         disposicion= QVBoxLayout(w)
         disposicion.setSpacing(14)
-        aviso= QLabel("Calificación cualitativa por Competencias Fundamentales.")
-        aviso.setWordWrap(True)
-        aviso.setObjectName("DescModulo")
-        disposicion.addWidget(aviso)
+        lbl_aviso= QLabel("Calificación cualitativa por Competencias Fundamentales.")
+        lbl_aviso.setWordWrap(True)
+        lbl_aviso.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_aviso)
         self.lbl_filtro_especialidad_desempeno, self.combo_filtro_especialidad_desempeno,\
             self.lbl_filtro_carrera_desempeno, self.combo_filtro_carrera_desempeno=\
             self._crear_combos_filtro_tecnico(self._cargar_estudiantes_desempeno)
@@ -4767,12 +4767,12 @@ class ModuloCalificaciones(QWidget):
         disposicion.addWidget(panel_resumen_desempeno)
         self._actualizar_resumen_desempeno()
 
-        leyenda= QLabel(
+        lbl_leyenda= QLabel(
             "Escala: Destacado 89-100 · Logrado 77-88 · En Proceso 65-76 · Insuficiente < 65. "
             "'Sin Evaluar (NE)' significa que ese renglón aún no se ha calificado.")
-        leyenda.setWordWrap(True)
-        leyenda.setObjectName("DescModulo")
-        disposicion.addWidget(leyenda)
+        lbl_leyenda.setWordWrap(True)
+        lbl_leyenda.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_leyenda)
 
         btn_guardar= QPushButton("Guardar Desempeño Individual")
         btn_guardar.setIcon(icono_emoji("💾"))
@@ -4961,11 +4961,11 @@ class ModuloCalificaciones(QWidget):
         w= w if w is not None else QWidget()
         disposicion= QVBoxLayout(w)
         disposicion.setSpacing(16)
-        aviso= QLabel("Identifica de un vistazo a quién le falta calificar, Recuperación Pedagógica "
+        lbl_aviso= QLabel("Identifica de un vistazo a quién le falta calificar, Recuperación Pedagógica "
                        "o Desempeño Individual.")
-        aviso.setWordWrap(True)
-        aviso.setObjectName("DescModulo")
-        disposicion.addWidget(aviso)
+        lbl_aviso.setWordWrap(True)
+        lbl_aviso.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_aviso)
 
         self.lbl_filtro_especialidad_seguimiento, self.combo_filtro_especialidad_seguimiento,\
             self.lbl_filtro_carrera_seguimiento, self.combo_filtro_carrera_seguimiento=\
@@ -5384,11 +5384,11 @@ class ModuloCalificaciones(QWidget):
         w= w if w is not None else QWidget()
         disposicion= QVBoxLayout(w)
         disposicion.setSpacing(16)
-        aviso= QLabel("Cascada del año: Nota del Año Completiva Extraordinaria Especial. "
+        lbl_aviso= QLabel("Cascada del año: Nota del Año Completiva Extraordinaria Especial. "
                        "AcaDeXI calcula cada etapa; tú decides si pasa a la siguiente y la decisión final.")
-        aviso.setWordWrap(True)
-        aviso.setObjectName("DescModulo")
-        disposicion.addWidget(aviso)
+        lbl_aviso.setWordWrap(True)
+        lbl_aviso.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_aviso)
 
         panel_cascada= _crear_panel_dashboard()
         lay_cascada= panel_cascada.layout()
@@ -5519,17 +5519,17 @@ class ModuloCalificaciones(QWidget):
         self.in_observacion_decision= QLineEdit()
         limitar_campo_texto(self.in_observacion_decision, 300)
         self.in_observacion_decision.setPlaceholderText("Observación de la decisión (opcional)")
-        nota_decision= QLabel("Esta decisión (promoción, Evaluación Especial o repitencia) la registra el "
+        lbl_nota_decision= QLabel("Esta decisión (promoción, Evaluación Especial o repitencia) la registra el "
                                "docente/Coordinación manualmente; AcaDeXI solo la guarda y la muestra, no la calcula.")
-        nota_decision.setWordWrap(True)
-        nota_decision.setObjectName("DescModulo")
+        lbl_nota_decision.setWordWrap(True)
+        lbl_nota_decision.setObjectName("DescModulo")
         frame_form_decision= QWidget()
         lay_frame_form_decision= QVBoxLayout(frame_form_decision)
         lay_frame_form_decision.setContentsMargins(0, 0, 0, 0)
         lay_frame_form_decision.setSpacing(10)
         lay_frame_form_decision.addLayout(fila_decision)
         lay_frame_form_decision.addWidget(self.in_observacion_decision)
-        lay_frame_form_decision.addWidget(nota_decision)
+        lay_frame_form_decision.addWidget(lbl_nota_decision)
         self._envolver_en_panel(disposicion, "Registrar Decisión Final de Promoción", frame_form_decision)
         disposicion.addStretch(1)
         return w
@@ -5918,18 +5918,18 @@ class ModuloCalificaciones(QWidget):
         w= w if w is not None else QWidget()
         disposicion= QVBoxLayout(w)
         disposicion.setSpacing(16)
-        aviso= QLabel("Define aquí las Competencias Específicas de cada materia+grado, con sus "
+        lbl_aviso= QLabel("Define aquí las Competencias Específicas de cada materia+grado, con sus "
                        "Indicadores de Logro. Aparecerán al registrar evidencias y en Notas por Competencia.")
-        aviso.setWordWrap(True)
-        aviso.setObjectName("DescModulo")
-        disposicion.addWidget(aviso)
+        lbl_aviso.setWordWrap(True)
+        lbl_aviso.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_aviso)
 
         self._puede_editar_curriculo= tiene_acceso_gerencial(self.main_window)
         if not self._puede_editar_curriculo:
-            solo_lectura= QLabel("Tu rol solo puede consultar el currículo.")
-            solo_lectura.setWordWrap(True)
-            solo_lectura.setObjectName("DescModulo")
-            disposicion.addWidget(solo_lectura)
+            lbl_solo_lectura= QLabel("Tu rol solo puede consultar el currículo.")
+            lbl_solo_lectura.setWordWrap(True)
+            lbl_solo_lectura.setObjectName("DescModulo")
+            disposicion.addWidget(lbl_solo_lectura)
 
         fila_filtro= QHBoxLayout()
         self.combo_materia_curriculo= QComboBox()
@@ -6214,13 +6214,13 @@ class ModuloCalificaciones(QWidget):
         w= w if w is not None else QWidget()
         disposicion= QVBoxLayout(w)
         disposicion.setSpacing(16)
-        aviso= QLabel("Notas por Competencia Específica: se calculan automáticamente promediando (según "
+        lbl_aviso= QLabel("Notas por Competencia Específica: se calculan automáticamente promediando (según "
                        "el método de cálculo configurado) las evidencias que vinculaste a cada CE en la "
                        "pestaña Registrar Calificación. Puedes agregar una observación por competencia; "
                        "la nota se recalcula con el botón .")
-        aviso.setWordWrap(True)
-        aviso.setObjectName("DescModulo")
-        disposicion.addWidget(aviso)
+        lbl_aviso.setWordWrap(True)
+        lbl_aviso.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_aviso)
 
         self.lbl_filtro_especialidad_competencias, self.combo_filtro_especialidad_competencias,\
             self.lbl_filtro_carrera_competencias, self.combo_filtro_carrera_competencias=\
@@ -6484,13 +6484,13 @@ class ModuloCalificaciones(QWidget):
         w= w if w is not None else QWidget()
         disposicion= QVBoxLayout(w)
         disposicion.setSpacing(14)
-        aviso= QLabel("Comparte calificaciones entre docentes: si tú impartes una materia, expórtala "
+        lbl_aviso= QLabel("Comparte calificaciones entre docentes: si tú impartes una materia, expórtala "
                        "aquí para dársela al profesor titular de la sección. Si eres titular, importa el "
                        "archivo que te compartieron para completar el boletín de tus estudiantes con "
                        "materias que no impartes tú. Las notas importadas quedan de solo lectura.")
-        aviso.setWordWrap(True)
-        aviso.setObjectName("DescModulo")
-        disposicion.addWidget(aviso)
+        lbl_aviso.setWordWrap(True)
+        lbl_aviso.setObjectName("DescModulo")
+        disposicion.addWidget(lbl_aviso)
 
         self.lbl_filtro_especialidad_compartir, self.combo_filtro_especialidad_compartir,\
             self.lbl_filtro_carrera_compartir, self.combo_filtro_carrera_compartir=\
@@ -6540,10 +6540,10 @@ class ModuloCalificaciones(QWidget):
         self._envolver_en_panel(disposicion, "Exportar mis calificaciones", frame_form_exportar)
 
         #--- Importar ---
-        info_imp= QLabel("Los estudiantes se emparejan por matrícula (el dato oficial), no por nombre, "
+        lbl_info_imp= QLabel("Los estudiantes se emparejan por matrícula (el dato oficial), no por nombre, "
                            "así que solo se importan los que ya existen en tu sección con esa matrícula.")
-        info_imp.setWordWrap(True)
-        info_imp.setObjectName("DescModulo")
+        lbl_info_imp.setWordWrap(True)
+        lbl_info_imp.setObjectName("DescModulo")
         btn_importar= QPushButton("Importar Archivo de Calificaciones (.acnotas)")
         btn_importar.setIcon(icono_emoji("\uE001"))
         btn_importar.setIconSize(_QSize_emoji(16, 16))
@@ -6552,7 +6552,7 @@ class ModuloCalificaciones(QWidget):
         frame_form_importar= QWidget()
         lay_frame_form_importar= QVBoxLayout(frame_form_importar)
         lay_frame_form_importar.setContentsMargins(0, 0, 0, 0)
-        lay_frame_form_importar.addWidget(info_imp)
+        lay_frame_form_importar.addWidget(lbl_info_imp)
         lay_frame_form_importar.addWidget(btn_importar)
         self._envolver_en_panel(disposicion, "Importar calificaciones que me compartieron", frame_form_importar)
 
@@ -6967,7 +6967,7 @@ class ModuloCalificaciones(QWidget):
         if hasattr(self, "btn_vincular_competencias"):
             self.btn_vincular_competencias.setVisible(es_dominicano)
         #Solo se cargan los combos/tablas de la pestaña que el usuario está viendo ahora mismo; las demás se cargan la
-        #primera vez que se les hace clic (ver _on_tab_changed). Antes, abrir el módulo disparaba ~20 consultas para
+        #primera vez que se les hace clic (ver _al_cambiar_pestana). Antes, abrir el módulo disparaba ~20 consultas para
         #poblar las 6 pestañas de una vez, aunque solo se fuera a ver una.
         self._cargar_tab(self.tabs.currentIndex())
     def actualizar_tema(self):
@@ -7099,16 +7099,16 @@ class ModuloCalificaciones(QWidget):
                 "bg_panel": p["display_bg"][idx], "bg_btn": p["btn_num_bg"][idx],
                 "txt_prim": p["text_primary"][idx], "txt_sec": p["text_secondary"][idx]}
 
-    def hideEvent(self, event):
+    def hideEvent(self, evento):
 
-        super().hideEvent(event)
+        super().hideEvent(evento)
         #El módulo pasa a segundo plano (otra pestaña de la sidebar está activa): pausamos el 'latido' de las tarjetas
         #de alerta para no gastar ciclos de CPU en animaciones que nadie está viendo.
         for tarjeta in self._tarjetas_alerta:
             tarjeta.pausar()
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
-        super().showEvent(event)
+        super().showEvent(evento)
         for tarjeta in self._tarjetas_alerta:
             tarjeta.reanudar()

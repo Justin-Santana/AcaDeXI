@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QToolTip, QWidget, QVBoxLayout, QHBoxLayout, QLab
 from PySide6.QtCore import (Qt, QDate, QTimer, QRectF, QPointF, QPropertyAnimation, QEasingCurve,
     QVariantAnimation, QParallelAnimationGroup)
 from PySide6.QtGui import QPixmap, QPainter, QPainterPath, QColor, QPen
-from src.nucleo.bd import obtener_conexion, registrar_auditoria, get_app_data_dir
+from src.nucleo.bd import obtener_conexion, registrar_auditoria, obtener_carpeta_datos
 from src.interfaz.configuracion import conectar_tooltip_seleccion
 from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_cabecera, aplicar_icono_ventana, ICONO_FILTRO
 from src.nucleo.permisos import puede_editar
@@ -109,7 +109,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -147,16 +147,16 @@ class BotonAnimado(QPushButton):
         self._anim.setEndValue(hasta)
         self._anim.start()
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         if self.isEnabled():
             self._animar_sombra(18)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(0)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Anillo (donut) dibujado a mano con QPainter que compara el personal
@@ -183,7 +183,7 @@ class AnilloEstado(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.setStartValue(0.0)
         self._anim.setEndValue(1.0)
-        self._anim.valueChanged.connect(self._on_progreso)
+        self._anim.valueChanged.connect(self._al_progreso)
 
     def establecer_colores_tema(self, color_pista, color_texto):
 
@@ -203,12 +203,12 @@ class AnilloEstado(QWidget):
             self._progreso= 1.0
             self.update()
 
-    def _on_progreso(self, valor):
+    def _al_progreso(self, valor):
 
         self._progreso= valor
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -262,7 +262,7 @@ class BarrasDistribucion(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.setStartValue(0.0)
         self._anim.setEndValue(1.0)
-        self._anim.valueChanged.connect(self._on_progreso)
+        self._anim.valueChanged.connect(self._al_progreso)
 
     def establecer_colores_tema(self, color_barra, color_texto, color_texto_sec, color_pista):
 
@@ -283,12 +283,12 @@ class BarrasDistribucion(QWidget):
             self._progreso= 1.0
             self.update()
 
-    def _on_progreso(self, valor):
+    def _al_progreso(self, valor):
 
         self._progreso= valor
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -342,21 +342,21 @@ class BarrasDistribucion(QWidget):
             pintor.drawText(rect_valor, int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight), str(valor_mostrado))
         pintor.end()
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, evento):
 
-        pos= event.position() if hasattr(event, "position") else event.pos()
+        pos= evento.position() if hasattr(evento, "position") else evento.pos()
         for rect_fila, etiqueta in self._filas_rect:
             if rect_fila.contains(pos):
-                QToolTip.showText(event.globalPosition().toPoint(), etiqueta, self)
+                QToolTip.showText(evento.globalPosition().toPoint(), etiqueta, self)
                 break
         else:
             QToolTip.hideText()
-        super().mouseMoveEvent(event)
+        super().mouseMoveEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         QToolTip.hideText()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
 
 #Fila de miniaturas circulares superpuestas ('team avatars') que muestra
@@ -388,7 +388,7 @@ class PilaAvatares(QWidget):
         self.setFixedWidth(max(ancho, self.TAMANO))
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         pintor= QPainter(self)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -422,7 +422,7 @@ class ModuloPersonal(QWidget):
         self.id_edicion= None
         self.foto_path= ""
         self._contador_valor_actual= 0
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         self._registrar_atajos_teclado()
 
@@ -435,7 +435,7 @@ class ModuloPersonal(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+E", "Cargar seleccionado", self._cargar_seleccionado)
         registrar_atajo(self, self.main_window, "Ctrl+Del", "Eliminar", self._eliminar)
 
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -447,9 +447,9 @@ class ModuloPersonal(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(18)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(18)
 
         #--- Cabecera tipo "hero": icono + título + descripción + fotos recientes + contador ---
         self.frame_cabecera= QFrame()
@@ -487,7 +487,7 @@ class ModuloPersonal(QWidget):
         self.chip_contador.setObjectName("ChipContador")
         self.chip_contador.setTextFormat(Qt.TextFormat.RichText)
         cabecera_layout.addWidget(self.chip_contador, 0, Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #--- Panorama del personal: anillo Activo/Inactivo + barras por cargo --- (reemplaza a las tarjetas KPI
         #clásicas por gráficos dibujados a mano)
@@ -535,7 +535,7 @@ class ModuloPersonal(QWidget):
         fila_panorama.addLayout(col_der, 1)
 
         panorama_layout.addLayout(fila_panorama)
-        layout.addWidget(self.frame_panorama)
+        disposicion.addWidget(self.frame_panorama)
 
         #--- Panel de creación/edición ---
         self.panel_edicion= QFrame()
@@ -618,7 +618,7 @@ class ModuloPersonal(QWidget):
         #foto en grande está el botón "Ver Ampliada" — no se usa doble clic aquí porque el diálogo de selección, al ser
         #modal, se comería el segundo clic.
         self.lbl_foto.setToolTip("Clic para elegir foto")
-        self.lbl_foto.mousePressEvent= lambda event: self._elegir_foto()
+        self.lbl_foto.mousePressEvent= lambda evento: self._elegir_foto()
         fila_foto.addWidget(self.lbl_foto)
 
         btn_foto= BotonAnimado("Elegir y Recortar Foto")
@@ -649,7 +649,7 @@ class ModuloPersonal(QWidget):
         fila_foto.addWidget(btn_limpiar)
         panel_layout.addLayout(fila_foto)
 
-        layout.addWidget(self.panel_edicion)
+        disposicion.addWidget(self.panel_edicion)
 
         #--- Búsqueda (mismo diseño que horario.py: no distingue mayúsculas ni acentos) ---
         self.frame_filtros= QFrame()
@@ -698,7 +698,7 @@ class ModuloPersonal(QWidget):
         self.btn_filtros.setToolTip("Abrir panel de filtros (cargo y estado)")
         self.btn_filtros.clicked.connect(self._abrir_dialogo_filtros)
         fila_busqueda.addWidget(self.btn_filtros)
-        layout.addWidget(self.frame_filtros)
+        disposicion.addWidget(self.frame_filtros)
         self._construir_dialogo_filtros()
 
         #--- Tabla ---
@@ -772,7 +772,7 @@ class ModuloPersonal(QWidget):
         fila_acciones.addStretch()
         tabla_card_layout.addLayout(fila_acciones)
 
-        layout.addWidget(self.frame_tabla, 1)
+        disposicion.addWidget(self.frame_tabla, 1)
 
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
@@ -783,7 +783,7 @@ class ModuloPersonal(QWidget):
     #del archivo guardado.
     def _elegir_foto(self):
 
-        destino_dir= os.path.join(get_app_data_dir(), "fotos")
+        destino_dir= os.path.join(obtener_carpeta_datos(), "fotos")
         destino= seleccionar_y_recortar_foto(self, destino_dir, prefijo="pers")
         if not destino:
             return
@@ -1076,21 +1076,21 @@ class ModuloPersonal(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Ambos son opcionales: combínalos con la búsqueda de arriba, "
+        lbl_subtitulo= QLabel("Ambos son opcionales: combínalos con la búsqueda de arriba, "
                             "la lista se actualiza al instante.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)

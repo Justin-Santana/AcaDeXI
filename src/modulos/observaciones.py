@@ -303,13 +303,13 @@ class FlowLayout(QLayout):
 
         return len(self._items)
 
-    def itemAt(self, index):
+    def itemAt(self, indice):
 
-        return self._items[index] if 0 <= index < len(self._items) else None
+        return self._items[indice] if 0 <= indice < len(self._items) else None
 
-    def takeAt(self, index):
+    def takeAt(self, indice):
 
-        return self._items.pop(index) if 0 <= index < len(self._items) else None
+        return self._items.pop(indice) if 0 <= indice < len(self._items) else None
 
     def expandingDirections(self):
 
@@ -378,7 +378,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -551,10 +551,10 @@ class Chip(QFrame):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(180)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
         self._actualizar_estilo()
 
-    def _on_anim(self, valor):
+    def _al_animar(self, valor):
 
         self._factor= valor
         self._actualizar_estilo()
@@ -586,24 +586,24 @@ class Chip(QFrame):
 
         self._actualizar_texto(n)
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._agregar_ripple(event.position())
+        if evento.button() == Qt.MouseButton.LeftButton:
+            self._agregar_ripple(evento.position())
             self.establecer_marcado(not self._marcado)
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         self._hover= True
         self.update()
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._hover= False
         self.update()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
     def _agregar_ripple(self, punto):
 
@@ -660,7 +660,7 @@ class Chip(QFrame):
         self.lbl_icono.setPixmap(pixmap_categoria(self.clave, color_texto, 16))
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -728,9 +728,9 @@ class SegmentadoNaturaleza(QWidget):
         self._fondo.lower()
         QTimer.singleShot(0, lambda: self._reposicionar_resaltado(animar=False))
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         self._fondo.setGeometry(self.rect())
         self._reposicionar_resaltado(animar=False)
 
@@ -800,9 +800,9 @@ class BarraFrecuencia(QWidget):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(480)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self._anim.valueChanged.connect(self._on_anim)
+        self._anim.valueChanged.connect(self._al_animar)
 
-    def _on_anim(self, v):
+    def _al_animar(self, v):
 
         self._progreso= v
         self.update()
@@ -825,7 +825,7 @@ class BarraFrecuencia(QWidget):
         self._color_pista= QColor(color_pista)
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -932,11 +932,11 @@ class CintaAlerta(QFrame):
             self._anim.setEndValue(0)
             self._anim.start()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        if event.button() == Qt.MouseButton.LeftButton:
+        if evento.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
 
 #Tabla de registros — columnas y helpers de contenido Reemplaza la antigua lista de "tarjetas" (QFrame apiladas
@@ -1144,17 +1144,17 @@ class DialogoAjusteCompetencia(QDialog):
         self.setWindowTitle("Ajustar Competencia por Observación")
         self.setMinimumWidth(460)
 
-        layout= QVBoxLayout(self)
-        info= QLabel("Esto crea una pequeña evidencia (\"Ajuste por Observación\") vinculada a la "
+        disposicion= QVBoxLayout(self)
+        lbl_info= QLabel("Esto crea una pequeña evidencia (\"Ajuste por Observación\") vinculada a la "
                        "competencia que elijas, con un peso modesto — no reemplaza las evidencias "
                        "académicas normales, solo las complementa.")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
-        cita= QLabel(f"“{texto_observacion[:140]}{'…' if len(texto_observacion) > 140 else ''}”")
-        cita.setWordWrap(True)
-        cita.setStyleSheet("font-style: italic; color: #6B7280;")
-        layout.addWidget(cita)
+        lbl_cita= QLabel(f"“{texto_observacion[:140]}{'…' if len(texto_observacion) > 140 else ''}”")
+        lbl_cita.setWordWrap(True)
+        lbl_cita.setStyleSheet("font-style: italic; color: #6B7280;")
+        disposicion.addWidget(lbl_cita)
 
         form= QGridLayout()
         self.grado_id= grado_de_estudiante(estudiante_id)
@@ -1196,18 +1196,18 @@ class DialogoAjusteCompetencia(QDialog):
         self.spin_ajuste.setValue(5 if naturaleza == "Positiva" else (-5 if naturaleza == "Negativa" else 0))
         form.addWidget(QLabel("Ajuste (+/-):"), 3, 0)
         form.addWidget(self.spin_ajuste, 3, 1)
-        layout.addLayout(form)
+        disposicion.addLayout(form)
 
         if self.combo_materia.count() == 0:
-            aviso= QLabel("El grado de este estudiante todavía no tiene Competencias Específicas"
+            lbl_aviso= QLabel("El grado de este estudiante todavía no tiene Competencias Específicas"
                             "definidas en ninguna materia (Calificaciones ▸ Currículo).")
-            aviso.setWordWrap(True)
-            layout.addWidget(aviso)
+            lbl_aviso.setWordWrap(True)
+            disposicion.addWidget(lbl_aviso)
 
         botones= QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         botones.accepted.connect(self.accept)
         botones.rejected.connect(self.reject)
-        layout.addWidget(botones)
+        disposicion.addWidget(botones)
         self._cargar_competencias()
         centrar_y_al_frente(self, parent)
 
@@ -1244,7 +1244,7 @@ class ModuloObservaciones(QWidget):
         self._filtro_naturaleza= None
         self._sugerencias_descartadas= False
         self.paginacion= ControlPaginacion(tamano_inicial=10)
-        self._build_ui()
+        self._construir_ui()
         self._aplicar_tema_visual()
         self.refrescar()
         QTimer.singleShot(0, lambda: _animar_aparicion(self._contenido, 320))
@@ -1264,7 +1264,7 @@ class ModuloObservaciones(QWidget):
                          self._eliminar_seleccionada, solo_no_docente=True)
 
     #Construcción de interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -1277,9 +1277,9 @@ class ModuloObservaciones(QWidget):
 
         contenido= QWidget()
         self._contenido= contenido
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(16)
 
         #--- Cabecera tipo "hero": icono + título + subtítulo + contador animado ---
         self.frame_cabecera= QFrame()
@@ -1311,12 +1311,12 @@ class ModuloObservaciones(QWidget):
         self.chip_contador= ContadorAnimado(lambda v: f"{v} observación" + ("es" if v != 1 else ""))
         self.chip_contador.setObjectName("ChipContador")
         cabecera_layout.addWidget(self.chip_contador, 0, Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #--- Cinta de destacadas (oculta hasta que haya alguna) ---
         self.cinta_destacadas= CintaAlerta()
         self.cinta_destacadas.clicada.connect(self._al_pulsar_banner_destacadas)
-        layout.addWidget(self.cinta_destacadas)
+        disposicion.addWidget(self.cinta_destacadas)
 
         #--- Filtros: una sola fila (buscador + botón "☰ Filtros"), igual que el resto de módulos de AcaDeXI, con un
         #desplegable opcional para las dimensiones propias de observaciones (naturaleza / categoría) -eso es "🔧 Más
@@ -1445,7 +1445,7 @@ class ModuloObservaciones(QWidget):
         layout_avanzado.addLayout(fila_limpiar)
 
         filtros_raiz.addWidget(self.panel_avanzado)
-        layout.addWidget(self.tarjeta_filtros)
+        disposicion.addWidget(self.tarjeta_filtros)
 
         #--- Registros (tabla) — va justo debajo de los filtros, arriba de "categorías frecuentes" y del formulario de
         #captura, para que lo que el docente/gerencia consulta con más frecuencia (el historial) esté visible sin tener
@@ -1504,11 +1504,11 @@ class ModuloObservaciones(QWidget):
         self.tabla.cellDoubleClicked.connect(lambda fila, _col: self._abrir_detalle_fila(fila))
         tabla_card_layout.addWidget(self.tabla, 1)
 
-        layout.addWidget(self.frame_tabla)
+        disposicion.addWidget(self.frame_tabla)
 
         #La paginación y los botones de acción sobre la fila seleccionada quedan fuera de la tarjeta de la tabla (antes
         #vivían dentro de "TarjetaTabla" y visualmente parecían parte de la tabla misma).
-        layout.addWidget(self.paginacion)
+        disposicion.addWidget(self.paginacion)
 
         #Botón ⛶ que abre filtros + tabla + paginación (los mismos widgets, no una copia) dentro de un diálogo
         #maximizado -mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-. Se
@@ -1537,7 +1537,7 @@ class ModuloObservaciones(QWidget):
         self.btn_eliminar_seleccionada.clicked.connect(self._eliminar_seleccionada)
         fila_acciones_tabla.addWidget(self.btn_eliminar_seleccionada)
         fila_acciones_tabla.addStretch()
-        layout.addLayout(fila_acciones_tabla)
+        disposicion.addLayout(fila_acciones_tabla)
 
         #--- Categorías más frecuentes ---
         self.tarjeta_frecuentes= TarjetaPanel("Categorías más frecuentes")
@@ -1550,15 +1550,15 @@ class ModuloObservaciones(QWidget):
         self.lbl_sin_datos_frecuentes= QLabel("Aún no hay observaciones suficientes para mostrar tendencias.")
         self.lbl_sin_datos_frecuentes.setObjectName("DescModulo")
         self.tarjeta_frecuentes.contenido.addWidget(self.lbl_sin_datos_frecuentes)
-        layout.addWidget(self.tarjeta_frecuentes)
+        disposicion.addWidget(self.tarjeta_frecuentes)
 
         #--- Formulario de nueva observación ---
         self.tarjeta_form= TarjetaPanel("Nueva observación", con_sombra=True)
         form= self.tarjeta_form.contenido
 
-        desc_form= QLabel("Describe lo que pasó; te sugeriremos las categorías.")
-        desc_form.setObjectName("DescModulo")
-        form.addWidget(desc_form)
+        lbl_desc_form= QLabel("Describe lo que pasó; te sugeriremos las categorías.")
+        lbl_desc_form.setObjectName("DescModulo")
+        form.addWidget(lbl_desc_form)
 
         #Área Técnica (Politécnico) / Carrera (Universidad, o Personalizado con el módulo correspondiente activo): en
         #su propia fila, dentro de un cuadrito propio, ARRIBA de Curso/Sección/Estudiante (igual que en Asistencia y en
@@ -1626,7 +1626,7 @@ class ModuloObservaciones(QWidget):
         self._temporizador_sugerencias.setSingleShot(True)
         self._temporizador_sugerencias.setInterval(350)
         self._temporizador_sugerencias.timeout.connect(self._actualizar_sugerencias)
-        self.in_texto.textChanged.connect(self._on_texto_observacion_cambiado)
+        self.in_texto.textChanged.connect(self._al_texto_observacion_cambiado)
         form.addWidget(self.in_texto)
 
         self.marco_sugerencias= QWidget()
@@ -1714,7 +1714,7 @@ class ModuloObservaciones(QWidget):
 
         self.panel_form_observacion= PanelDesplegable("Nueva observación")
         self.panel_form_observacion.cuerpo_layout().addWidget(self.tarjeta_form)
-        layout.addWidget(self.panel_form_observacion)
+        disposicion.addWidget(self.panel_form_observacion)
 
         self.scroll.setWidget(contenido)
         layout_raiz.addWidget(self.scroll, 1)
@@ -1858,20 +1858,20 @@ class ModuloObservaciones(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltrosObs")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltrosObs")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosObs")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosObs")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Todos son opcionales; se combinan con la búsqueda y con \" Más filtros\".")
-        subtitulo.setObjectName("SubtituloFiltrosObs")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Todos son opcionales; se combinan con la búsqueda y con \" Más filtros\".")
+        lbl_subtitulo.setObjectName("SubtituloFiltrosObs")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         separador= QFrame()
         separador.setFrameShape(QFrame.Shape.HLine)
@@ -2100,7 +2100,7 @@ class ModuloObservaciones(QWidget):
         self.combo_materia_obs.blockSignals(False)
 
     #Sugerencias dinámicas de categoría
-    def _on_texto_observacion_cambiado(self):
+    def _al_texto_observacion_cambiado(self):
 
         #Cada vez que el docente sigue escribiendo se vuelve a "armar" la franja de sugerencias, aunque la haya cerrado
         #con la ✕ antes: cerrar solo descarta las sugerencias vigentes en ese momento, no apaga la función para el
@@ -2314,7 +2314,7 @@ class ModuloObservaciones(QWidget):
     #competencia', 'Ajustar RA técnico', o -si esa fue la única sugerencia
     #aplicable- 'Marcar entrega'. El botón SECUNDARIO ('Marcar entrega', cuando
     #aparece junto a una de calificación) va directo por su propia señal
-    #(ajustar_secundario -> _abrir_ajuste_entrega, conectado en _build_ui).
+    #(ajustar_secundario -> _abrir_ajuste_entrega, conectado en _construir_ui).
     def _al_pulsar_ajustar(self):
 
         datos_previos= getattr(self, "_ultimo_ajuste", None)
@@ -2816,9 +2816,9 @@ class ModuloObservaciones(QWidget):
                 barra.setVisible(False)
         self.lbl_sin_datos_frecuentes.setVisible(not top)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         #Si el panel avanzado está expandido y el ancho cambia (lo que puede reacomodar los chips en más o menos
         #filas), se sigue el nuevo alto natural en vez de dejarlo recortado o con hueco de sobra.
         if self.panel_avanzado.maximumHeight() > 0:

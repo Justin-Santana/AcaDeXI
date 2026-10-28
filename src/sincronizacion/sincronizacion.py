@@ -39,7 +39,7 @@ from PySide6.QtCore import (Qt, QPropertyAnimation, QEasingCurve, QSequentialAni
     QRect, QRectF, Property, Signal, QThread)
 from PySide6.QtGui import QPainter, QPen, QColor
 
-from src.nucleo.bd import DB_PATH, crear_backup, registrar_auditoria
+from src.nucleo.bd import RUTA_BD, crear_backup, registrar_auditoria
 from src.nucleo.iconos import mostrar_mensaje, aplicar_icono_cabecera
 from src.nucleo.atajos import registrar_atajo
 from src.sincronizacion import sync_backends as avanzado
@@ -264,7 +264,7 @@ def obtener_estado(main_window):
     if hash_remoto is None:
         return {"estado": "sin_copia_remota", "carpeta": carpeta, "ruta_remota": ruta_remota}
 
-    hash_local= _hash_archivo(DB_PATH)
+    hash_local= _hash_archivo(RUTA_BD)
     hash_ultima_sync= getattr(main_window, "sync_ultimo_hash", "") or None
 
     if hash_local == hash_remoto:
@@ -291,8 +291,8 @@ def subir_cambios(main_window):
     if not carpeta or not os.path.isdir(carpeta):
         raise RuntimeError("No hay una carpeta de sincronización configurada o la ruta ya no existe.")
     destino= _ruta_remota(carpeta)
-    shutil.copy2(DB_PATH, destino)
-    main_window.sync_ultimo_hash= _hash_archivo(DB_PATH)
+    shutil.copy2(RUTA_BD, destino)
+    main_window.sync_ultimo_hash= _hash_archivo(RUTA_BD)
     main_window.sync_ultima_fecha= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     main_window.guardar_configuracion()
     return destino
@@ -309,8 +309,8 @@ def descargar_novedades(main_window):
     if not os.path.exists(origen):
         raise RuntimeError("Todavía no hay una copia en la carpeta compartida.")
     ruta_respaldo= crear_backup(tipo="Pre-sincronización", usuario=getattr(main_window, "usuario_actual", None))
-    shutil.copy2(origen, DB_PATH)
-    main_window.sync_ultimo_hash= _hash_archivo(DB_PATH)
+    shutil.copy2(origen, RUTA_BD)
+    main_window.sync_ultimo_hash= _hash_archivo(RUTA_BD)
     main_window.sync_ultima_fecha= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     main_window.guardar_configuracion()
     return ruta_respaldo
@@ -470,7 +470,7 @@ class SpinnerCircular(QWidget):
         self._anim.stop()
         self.hide()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -517,16 +517,16 @@ class TarjetaEstado(QFrame):
         self._sombra= _crear_sombra(blur=22, y=6, alpha=90)
         self.setGraphicsEffect(self._sombra)
 
-        layout= QHBoxLayout(self)
-        layout.setContentsMargins(20, 18, 20, 18)
-        layout.setSpacing(16)
+        disposicion= QHBoxLayout(self)
+        disposicion.setContentsMargins(20, 18, 20, 18)
+        disposicion.setSpacing(16)
 
         self.lbl_icono= QLabel()
         self.lbl_icono.setPixmap(pixmap_emoji("➕", 20))
         self.lbl_icono.setFixedSize(46, 46)
         self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_icono.setObjectName("IconoEstadoSync")
-        layout.addWidget(self.lbl_icono)
+        disposicion.addWidget(self.lbl_icono)
 
         columna= QVBoxLayout()
         columna.setSpacing(2)
@@ -537,10 +537,10 @@ class TarjetaEstado(QFrame):
         self.lbl_detalle.setObjectName("DetalleEstadoSync")
         self.lbl_detalle.setWordWrap(True)
         columna.addWidget(self.lbl_detalle)
-        layout.addLayout(columna, 1)
+        disposicion.addLayout(columna, 1)
 
         self.spinner= SpinnerCircular(self, diametro=22, color="#6366F1")
-        layout.addWidget(self.spinner, 0, Qt.AlignmentFlag.AlignVCenter)
+        disposicion.addWidget(self.spinner, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self._color_actual= "#94A3B8"
 
@@ -665,7 +665,7 @@ class ModuloSincronizacion(QWidget):
         self._avanzado_abierto= False
         self._metodo_avanzado_actual_clave= None
         self._titulo_modulo_atajos= "Sincronización"
-        self._build_ui()
+        self._construir_ui()
         self._configurar_atajos()
         self.actualizar_tema()
         self.refrescar()
@@ -680,16 +680,16 @@ class ModuloSincronizacion(QWidget):
         registrar_atajo(self, self.main_window, "Ctrl+E", "Elegir carpeta de sincronización", self._elegir_carpeta)
 
     #Construcción de la interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_externo= QVBoxLayout(self)
         layout_externo.setContentsMargins(0, 0, 0, 0)
 
         contenido= QWidget()
         self._contenido= contenido
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(16)
 
         #--- Cabecera tipo "hero": icono + título + descripción ---
         self.frame_cabecera= QFrame()
@@ -721,11 +721,11 @@ class ModuloSincronizacion(QWidget):
         bloque_titulo_cabecera.addWidget(self.lbl_subtitulo_cabecera)
         cabecera_layout.addLayout(bloque_titulo_cabecera, 1)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #--- Estado de sincronización ---
         self.tarjeta_estado= TarjetaEstado()
-        layout.addWidget(self.tarjeta_estado)
+        disposicion.addWidget(self.tarjeta_estado)
 
         fila_acciones= QHBoxLayout()
         fila_acciones.setSpacing(10)
@@ -742,15 +742,15 @@ class ModuloSincronizacion(QWidget):
         btn_refrescar= self._boton_accion("Verificar Ahora", "BtnAccionNeutro", self._refrescar_estado)
         fila_acciones.addWidget(btn_refrescar)
         fila_acciones.addStretch()
-        layout.addLayout(fila_acciones)
+        disposicion.addLayout(fila_acciones)
 
         #--- Este equipo ---
-        layout.addWidget(self._tarjeta_este_equipo())
+        disposicion.addWidget(self._tarjeta_este_equipo())
 
         #--- Sincronización directa (avanzada, colapsable) ---
-        layout.addWidget(self._tarjeta_avanzada())
+        disposicion.addWidget(self._tarjeta_avanzada())
 
-        layout.addStretch()
+        disposicion.addStretch()
 
         scroll= QScrollArea()
         scroll.setWidgetResizable(True)
@@ -760,22 +760,22 @@ class ModuloSincronizacion(QWidget):
 
     def _boton_accion(self, texto, object_name, callback):
 
-        boton= QPushButton(texto)
-        boton.setObjectName(object_name)
-        boton.setCursor(Qt.CursorShape.PointingHandCursor)
-        boton.clicked.connect(callback)
+        btn_boton= QPushButton(texto)
+        btn_boton.setObjectName(object_name)
+        btn_boton.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_boton.clicked.connect(callback)
         #El estilo global vuelve el texto casi ilegible cuando el botón está
         #deshabilitado (fondo y letra quedan casi del mismo tono). Se busca
         #que se note que "no se puede pulsar ahora mismo" sin sacrificar la lectura: fondo apagado con buen contraste,
         #sin importar el tema.
-        boton.setStyleSheet("""
+        btn_boton.setStyleSheet("""
             QPushButton:disabled {
                 color: rgba(148, 163, 184, 0.95);
                 background-color: rgba(100, 116, 139, 0.18);
                 border: 1px solid rgba(148, 163, 184, 0.25);
             }
         """)
-        return boton
+        return btn_boton
 
     def _tarjeta_este_equipo(self):
 
@@ -787,13 +787,13 @@ class ModuloSincronizacion(QWidget):
         disposicion.setSpacing(8)
 
         cab= QHBoxLayout()
-        icono= QLabel()
-        icono.setPixmap(pixmap_emoji("➕", 20))
-        icono.setObjectName("IconoSeccionSync")
-        cab.addWidget(icono)
-        titulo_seccion= QLabel("Este equipo")
-        titulo_seccion.setObjectName("TituloSeccionSync")
-        cab.addWidget(titulo_seccion)
+        lbl_icono= QLabel()
+        lbl_icono.setPixmap(pixmap_emoji("➕", 20))
+        lbl_icono.setObjectName("IconoSeccionSync")
+        cab.addWidget(lbl_icono)
+        lbl_titulo_seccion= QLabel("Este equipo")
+        lbl_titulo_seccion.setObjectName("TituloSeccionSync")
+        cab.addWidget(lbl_titulo_seccion)
         cab.addStretch()
         disposicion.addLayout(cab)
 
@@ -871,13 +871,13 @@ class ModuloSincronizacion(QWidget):
         contenido_av.setContentsMargins(2, 8, 2, 2)
         contenido_av.setSpacing(12)
 
-        desc_avanzada= QLabel("Alternativa a la carpeta compartida: conecta directamente una cuenta "
+        lbl_desc_avanzada= QLabel("Alternativa a la carpeta compartida: conecta directamente una cuenta "
                                "de nube o tu propio servidor institucional, sin depender de un cliente "
                                "de escritorio ya instalado. Requiere credenciales propias de tu "
                                "institución (ver detalles en cada panel).")
-        desc_avanzada.setObjectName("DescModulo")
-        desc_avanzada.setWordWrap(True)
-        contenido_av.addWidget(desc_avanzada)
+        lbl_desc_avanzada.setObjectName("DescModulo")
+        lbl_desc_avanzada.setWordWrap(True)
+        contenido_av.addWidget(lbl_desc_avanzada)
 
         fila_asistente= QHBoxLayout()
         fila_asistente.setSpacing(10)
@@ -911,14 +911,14 @@ class ModuloSincronizacion(QWidget):
         #aquí, y así se ve igual de coherente que cualquier otro botón de la app.
         claves= [c for c in avanzado.METODOS if c != "carpeta"]
         for i, clave in enumerate(claves):
-            chip= QPushButton(avanzado.METODOS[clave])
-            chip.setObjectName("ChipBackendSync")
-            chip.setCheckable(True)
-            chip.setCursor(Qt.CursorShape.PointingHandCursor)
-            chip.clicked.connect(lambda checked, idx=i, cl=clave: self._cambiar_metodo_avanzado(idx, cl))
-            self.grupo_backends.addButton(chip, i)
-            self._chips_backend[clave]= chip
-            fila_chips.addWidget(chip)
+            btn_chip= QPushButton(avanzado.METODOS[clave])
+            btn_chip.setObjectName("ChipBackendSync")
+            btn_chip.setCheckable(True)
+            btn_chip.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn_chip.clicked.connect(lambda checked, idx=i, cl=clave: self._cambiar_metodo_avanzado(idx, cl))
+            self.grupo_backends.addButton(btn_chip, i)
+            self._chips_backend[clave]= btn_chip
+            fila_chips.addWidget(btn_chip)
         fila_chips.addStretch()
         contenido_av.addLayout(fila_chips)
 
@@ -1438,9 +1438,9 @@ class ModuloSincronizacion(QWidget):
         self._refrescar_estado()
         self._refrescar_estado_avanzado()
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
-        super().showEvent(event)
+        super().showEvent(evento)
         if self.tarjeta_estado._pulso is not None:
             self.tarjeta_estado._pulso.resume()
         #Antes se reutilizaba un único QGraphicsOpacityEffect que se dejaba pegado a `contenido` para siempre. Un
@@ -1451,9 +1451,9 @@ class ModuloSincronizacion(QWidget):
         #mismo patrón ya usado en _efecto_transicion_panel: un efecto nuevo cada vez que se desprende solo al terminar.
         _fundido_entrada(self._contenido, duracion=380)
 
-    def hideEvent(self, event):
+    def hideEvent(self, evento):
 
-        super().hideEvent(event)
+        super().hideEvent(evento)
         #El módulo pasa a segundo plano (otra pestaña de la sidebar está activa): pausamos el 'latido' de la tarjeta de
         #estado para no gastar ciclos de CPU en una animación que nadie está viendo.
         if self.tarjeta_estado._pulso is not None:

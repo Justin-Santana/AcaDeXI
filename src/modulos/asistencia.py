@@ -160,7 +160,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -329,22 +329,22 @@ class TarjetaEstadistica(QFrame):
         self._anim_sombra= QPropertyAnimation(self._sombra, b"blurRadius", self)
         self._anim_sombra.setDuration(160)
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(14, 10, 14, 10)
-        layout.setSpacing(1)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(14, 10, 14, 10)
+        disposicion.setSpacing(1)
 
         lbl_icono= QLabel()
         lbl_icono.setPixmap(pixmap_emoji(icono, 24))
-        layout.addWidget(lbl_icono)
+        disposicion.addWidget(lbl_icono)
 
         self.contador= ContadorAnimado()
         self.contador.setStyleSheet(f"font-size: 23px; font-weight: 800; color: {color};")
-        layout.addWidget(self.contador)
+        disposicion.addWidget(self.contador)
 
         lbl_titulo= QLabel(titulo)
         lbl_titulo.setObjectName("DescModulo")
         lbl_titulo.setStyleSheet("font-size: 11px; font-weight: 600;")
-        layout.addWidget(lbl_titulo)
+        disposicion.addWidget(lbl_titulo)
 
     #Actualiza los colores de la tarjeta para coincidir con el tema activo.
     #El color semántico (verde/rojo/etc.) del borde izquierdo y del número
@@ -365,15 +365,15 @@ class TarjetaEstadistica(QFrame):
 
         self.contador.establecer(valor)
 
-    def enterEvent(self, event):
+    def enterEvent(self, evento):
 
         self._animar_sombra(24)
-        super().enterEvent(event)
+        super().enterEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         self._animar_sombra(14)
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
     def _animar_sombra(self, destino):
 
@@ -399,24 +399,24 @@ class DialogoValoresAsistencia(QDialog):
         self.setMinimumWidth(460)
         self._combos= {}
 
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(22, 20, 22, 20)
-        layout.setSpacing(12)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(22, 20, 22, 20)
+        disposicion.setSpacing(12)
 
-        encabezado= QLabel("Valores de Asistencia")
-        fuente= encabezado.font()
+        lbl_encabezado= QLabel("Valores de Asistencia")
+        fuente= lbl_encabezado.font()
         fuente.setBold(True)
         fuente.setPointSize(13)
-        encabezado.setFont(fuente)
-        layout.addWidget(encabezado)
+        lbl_encabezado.setFont(fuente)
+        disposicion.addWidget(lbl_encabezado)
 
-        info= QLabel(
+        lbl_info= QLabel(
             "Define qué representa cada estado a la hora de contar la asistencia. "
             "Por ejemplo: 'Presente' cuenta como día asistido, mientras que 'Excusado' "
             "o 'Licencia Médica' pueden no afectar el % de asistencia.")
-        info.setWordWrap(True)
-        info.setStyleSheet("color: #6B7280; font-size: 11px;")
-        layout.addWidget(info)
+        lbl_info.setWordWrap(True)
+        lbl_info.setStyleSheet("color: #6B7280; font-size: 11px;")
+        disposicion.addWidget(lbl_info)
 
         grid= QGridLayout()
         grid.setHorizontalSpacing(12)
@@ -443,7 +443,7 @@ class DialogoValoresAsistencia(QDialog):
             conectar_tooltip_seleccion(combo, f"Cómo cuenta '{estado}' en las estadísticas de asistencia")
             grid.addWidget(combo, fila, 1)
             self._combos[estado]= combo
-        layout.addLayout(grid)
+        disposicion.addLayout(grid)
 
         botones= QHBoxLayout()
         btn_restablecer= QPushButton("Restablecer valores predeterminados")
@@ -468,7 +468,7 @@ class DialogoValoresAsistencia(QDialog):
         btn_guardar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_guardar.clicked.connect(self.accept)
         botones.addWidget(btn_guardar)
-        layout.addLayout(botones)
+        disposicion.addLayout(botones)
 
         centrar_y_al_frente(self, parent)
 
@@ -522,16 +522,16 @@ class FlowLayout(QLayout):
 
         return len(self._items)
 
-    def itemAt(self, index):
+    def itemAt(self, indice):
 
-        if 0 <= index < len(self._items):
-            return self._items[index]
+        if 0 <= indice < len(self._items):
+            return self._items[indice]
         return None
 
-    def takeAt(self, index):
+    def takeAt(self, indice):
 
-        if 0 <= index < len(self._items):
-            return self._items.pop(index)
+        if 0 <= indice < len(self._items):
+            return self._items.pop(indice)
         return None
 
     def expandingDirections(self):
@@ -597,7 +597,7 @@ class ModuloAsistencia(QWidget):
         #Clasificación estado -> categoría de conteo (Presente/Ausente/Tardanza/
         #Neutro), configurable desde el botón ⚙️ junto al resumen.
         self._valores_estado= cargar_valores_estado()
-        self._build_ui()
+        self._construir_ui()
         self.refrescar()
         self._registrar_atajos_teclado()
 
@@ -614,7 +614,7 @@ class ModuloAsistencia(QWidget):
                          self._abrir_valores_estado, solo_no_docente=True)
 
     #Construcción de interfaz
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -626,11 +626,11 @@ class ModuloAsistencia(QWidget):
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(16)
 
-        layout.addWidget(self._crear_cabecera())
+        disposicion.addWidget(self._crear_cabecera())
 
         self.tabs= TabWidgetNavegable()
         self.tabs.setDocumentMode(True)
@@ -654,7 +654,7 @@ class ModuloAsistencia(QWidget):
             QTabBar::tab:!selected:hover { background: rgba(127,127,127,35); }
         """)
         self.tabs.currentChanged.connect(self._al_cambiar_tab)
-        layout.addWidget(self.tabs)
+        disposicion.addWidget(self.tabs)
         self.tabs.addTab(self._tab_registro(), "Registro Diario")
         self.tabs.addTab(self._tab_alertas(), "Alertas de Inasistencia")
 
@@ -689,25 +689,25 @@ class ModuloAsistencia(QWidget):
         #violeta detrás de una cabecera roja).
         self._sombra_cabecera= sombra
 
-        layout= QHBoxLayout(tarjeta)
-        layout.setContentsMargins(22, 16, 22, 16)
-        layout.setSpacing(14)
+        disposicion= QHBoxLayout(tarjeta)
+        disposicion.setContentsMargins(22, 16, 22, 16)
+        disposicion.setSpacing(14)
 
-        icono= QLabel()
-        icono.setPixmap(pixmap_emoji("✅", 20))
-        icono.setStyleSheet("font-size: 28px;")
-        aplicar_icono_cabecera(icono, "Asistencia", tamano=28)
-        layout.addWidget(icono)
+        lbl_icono= QLabel()
+        lbl_icono.setPixmap(pixmap_emoji("✅", 20))
+        lbl_icono.setStyleSheet("font-size: 28px;")
+        aplicar_icono_cabecera(lbl_icono, "Asistencia", tamano=28)
+        disposicion.addWidget(lbl_icono)
 
         columna= QVBoxLayout()
         columna.setSpacing(2)
-        titulo= QLabel("Asistencia y Registro Diario")
-        titulo.setObjectName("TituloCabeceraAsistencia")
-        columna.addWidget(titulo)
-        subtitulo= QLabel("Registra la asistencia por sección y vigila el ausentismo en tiempo real.")
-        subtitulo.setObjectName("SubtituloCabeceraAsistencia")
-        columna.addWidget(subtitulo)
-        layout.addLayout(columna, 1)
+        lbl_titulo= QLabel("Asistencia y Registro Diario")
+        lbl_titulo.setObjectName("TituloCabeceraAsistencia")
+        columna.addWidget(lbl_titulo)
+        lbl_subtitulo= QLabel("Registra la asistencia por sección y vigila el ausentismo en tiempo real.")
+        lbl_subtitulo.setObjectName("SubtituloCabeceraAsistencia")
+        columna.addWidget(lbl_subtitulo)
+        disposicion.addLayout(columna, 1)
 
         self.lbl_fecha_hoy= QLabel(_fecha_larga_es(QDate.currentDate()))
         self.lbl_fecha_hoy.setStyleSheet("""
@@ -717,7 +717,7 @@ class ModuloAsistencia(QWidget):
             font-weight: 700;
             color: white;
         """)
-        layout.addWidget(self.lbl_fecha_hoy, 0, Qt.AlignmentFlag.AlignVCenter)
+        disposicion.addWidget(self.lbl_fecha_hoy, 0, Qt.AlignmentFlag.AlignVCenter)
 
         return tarjeta
 
@@ -816,9 +816,9 @@ class ModuloAsistencia(QWidget):
             activos.append((etiqueta, f"{etiqueta}: {texto}"))
 
         if not activos:
-            vacio= QLabel("Sin filtros aplicados — mostrando todo")
-            vacio.setStyleSheet("color: #94A3B8; font-style: italic; font-size: 12px;")
-            contenedor_layout.addWidget(vacio)
+            lbl_vacio= QLabel("Sin filtros aplicados — mostrando todo")
+            lbl_vacio.setStyleSheet("color: #94A3B8; font-style: italic; font-size: 12px;")
+            contenedor_layout.addWidget(lbl_vacio)
         else:
             for etiqueta, texto in activos:
                 contenedor_layout.addWidget(self._crear_chip_filtro(etiqueta, texto))
@@ -826,8 +826,8 @@ class ModuloAsistencia(QWidget):
     def _tab_registro(self):
 
         contenedor= QWidget()
-        layout= QVBoxLayout(contenedor)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         #--- Filtros --- Los combos de filtro (Nivel, Curso, Sección, Materia, Fecha, y los técnicos de Área/Carrera)
         #NO van expandidos en la pestaña: con varios activos a la vez empujaban la tabla y rompían el ancho disponible
@@ -860,7 +860,7 @@ class ModuloAsistencia(QWidget):
             "área técnica/carrera)")
         self.btn_filtros_registro.clicked.connect(self._abrir_dialogo_filtros_registro)
         fila_filtros_registro.addWidget(self.btn_filtros_registro)
-        layout.addLayout(fila_filtros_registro)
+        disposicion.addLayout(fila_filtros_registro)
 
         #Los combos siguen siendo atributos normales del módulo (igual que
         #antes) pero se crean sin insertarlos en ninguna fila visible aquí:
@@ -966,7 +966,7 @@ class ModuloAsistencia(QWidget):
         """)
         self.btn_valores_estado.clicked.connect(self._abrir_valores_estado)
         fila_resumen.addWidget(self.btn_valores_estado, 0, Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(self.marco_resumen_asistencia)
+        disposicion.addWidget(self.marco_resumen_asistencia)
 
         #--- Búsqueda de estudiantes (mismo diseño y criterio que configuracion.py) ---
         self.marco_busqueda_estudiantes= QFrame()
@@ -983,7 +983,7 @@ class ModuloAsistencia(QWidget):
         self.in_buscar_estudiantes.setStyleSheet(
             "QLineEdit { border: none; background: transparent; padding: 8px 0; }")
         lay_busqueda.addWidget(self.in_buscar_estudiantes, 1)
-        layout.addWidget(self.marco_busqueda_estudiantes)
+        disposicion.addWidget(self.marco_busqueda_estudiantes)
 
         #Debounce de 150ms: evita re-filtrar/repintar la tabla en cada tecla cuando se escribe rápido, igual que en
         #configuracion.py.
@@ -1019,11 +1019,11 @@ class ModuloAsistencia(QWidget):
         #mantiene la tabla fluida incluso con muchos estudiantes.
         self.tabla.verticalHeader().setDefaultSectionSize(46)
         self.tabla.setStyleSheet("QTableWidget::item:hover { background-color: rgba(127,127,127,30); }")
-        layout.addWidget(self.tabla, 1)
+        disposicion.addWidget(self.tabla, 1)
 
         #Paginación (mismo control que el resto de la app)
         self.paginacion_registro= ControlPaginacion()
-        self.paginacion_registro.cambio.connect(self._on_cambio_pagina_registro)
+        self.paginacion_registro.cambio.connect(self._al_cambio_pagina_registro)
         #Envuelta en un QWidget real (self.marco_paginacion_registro) por la misma razón que
         #self.marco_resumen_asistencia arriba: solo widgets pueden entrar a la lista de
         #agregar_boton_pantalla_completa.
@@ -1033,7 +1033,7 @@ class ModuloAsistencia(QWidget):
         fila_paginacion.addStretch()
         fila_paginacion.addWidget(self.paginacion_registro)
         fila_paginacion.addStretch()
-        layout.addWidget(self.marco_paginacion_registro)
+        disposicion.addWidget(self.marco_paginacion_registro)
 
         #"Marcar todos": un botón tipo "chip" por estado (como en la versión original). Con los 2 estados nuevos
         #(Licencia Médica, Permiso) ya son 6 en total, así que se acomodan en una cuadrícula de 3 columnas (2 filas) en
@@ -1054,7 +1054,7 @@ class ModuloAsistencia(QWidget):
             btn.clicked.connect(lambda checked=False, e=estado, b=btn: self._marcar_todos(e, b))
             fila, columna= divmod(indice, COLUMNAS_MARCAR)
             grid_marcar.addWidget(btn, fila, columna)
-        layout.addWidget(self.marco_marcar_todos)
+        disposicion.addWidget(self.marco_marcar_todos)
 
         self.barra_porcentaje= BarraAnimada()
         self.barra_porcentaje.setFormat("Asistencia del grupo: %p%")
@@ -1063,7 +1063,7 @@ class ModuloAsistencia(QWidget):
             "Los estados 'Neutro' (Excusado, Licencia Médica, Permiso...) no se cuentan "
             "ni a favor ni en contra — ajustable desde el botón.")
         self.barra_porcentaje.setFixedHeight(26)
-        layout.addWidget(self.barra_porcentaje)
+        disposicion.addWidget(self.barra_porcentaje)
 
         btn_guardar= QPushButton("Guardar Registro de Asistencia")
         btn_guardar.setIcon(icono_emoji("💾"))
@@ -1071,7 +1071,7 @@ class ModuloAsistencia(QWidget):
         btn_guardar.setObjectName("BtnAccionAgregar")
         btn_guardar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_guardar.clicked.connect(self._guardar)
-        layout.addWidget(btn_guardar)
+        disposicion.addWidget(btn_guardar)
         self._btn_guardar= btn_guardar
 
         #Botón ⛶ de pantalla completa: en pantalla completa solo se llevan el buscador, la tabla, la paginación y
@@ -1088,13 +1088,13 @@ class ModuloAsistencia(QWidget):
     def _tab_alertas(self):
 
         contenedor= QWidget()
-        layout= QVBoxLayout(contenedor)
-        layout.setSpacing(14)
-        info= QLabel("El sistema calcula automáticamente el % de inasistencia (Ausente + Tardanza) "
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
+        lbl_info= QLabel("El sistema calcula automáticamente el % de inasistencia (Ausente + Tardanza) "
                       "por estudiante y marca en alerta a quienes superen el umbral configurado.")
-        info.setObjectName("DescModulo")
-        info.setWordWrap(True)
-        layout.addWidget(info)
+        lbl_info.setObjectName("DescModulo")
+        lbl_info.setWordWrap(True)
+        disposicion.addWidget(lbl_info)
 
         #--- Filtros --- Mismo criterio que en Registro Diario: los combos (Área Técnica/ Carrera, Nivel Educativo,
         #Curso, Sección, Umbral) viven dentro de una ventanita aparte que se abre con este botón (ver
@@ -1130,7 +1130,7 @@ class ModuloAsistencia(QWidget):
         btn_generar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_generar.clicked.connect(self._generar_informe_inasistencia)
         fila_filtros_alertas.addWidget(btn_generar)
-        layout.addLayout(fila_filtros_alertas)
+        disposicion.addLayout(fila_filtros_alertas)
         self._btn_generar_informe= btn_generar
 
         #Los combos siguen siendo atributos normales del módulo, creados sin insertarlos en ninguna fila visible aquí:
@@ -1191,16 +1191,16 @@ class ModuloAsistencia(QWidget):
         self.tabla_alertas.verticalHeader().setVisible(False)
         self.tabla_alertas.verticalHeader().setDefaultSectionSize(42)
         self.tabla_alertas.setStyleSheet("QTableWidget::item:hover { background-color: rgba(127,127,127,30); }")
-        layout.addWidget(self.tabla_alertas, 1)
+        disposicion.addWidget(self.tabla_alertas, 1)
 
         #Paginación para alertas
         self.paginacion_alertas= ControlPaginacion()
         self.paginacion_alertas.cambio.connect(self._generar_informe_inasistencia)
-        layout.addWidget(self.paginacion_alertas)
+        disposicion.addWidget(self.paginacion_alertas)
 
         self.lbl_resumen_alertas= QLabel("Genera el informe para ver el resumen.")
         self.lbl_resumen_alertas.setObjectName("DescModulo")
-        layout.addWidget(self.lbl_resumen_alertas)
+        disposicion.addWidget(self.lbl_resumen_alertas)
 
         fila_exportar= QHBoxLayout()
         btn_pdf= QPushButton("Exportar Informe (PDF)")
@@ -1218,7 +1218,7 @@ class ModuloAsistencia(QWidget):
         btn_csv.clicked.connect(self._exportar_informe_csv)
         fila_exportar.addWidget(btn_csv)
         fila_exportar.addStretch()
-        layout.addLayout(fila_exportar)
+        disposicion.addLayout(fila_exportar)
 
         return contenedor
 
@@ -1239,20 +1239,20 @@ class ModuloAsistencia(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltrosAsis")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltrosAsis")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosAsis")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosAsis")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Elige curso, sección, materia y fecha; la tabla se actualiza al instante.")
-        subtitulo.setObjectName("SubtituloFiltrosAsis")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Elige curso, sección, materia y fecha; la tabla se actualiza al instante.")
+        lbl_subtitulo.setObjectName("SubtituloFiltrosAsis")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         self.linea_separadora_filtros_registro= QFrame()
         self.linea_separadora_filtros_registro.setFrameShape(QFrame.Shape.HLine)
@@ -1359,20 +1359,20 @@ class ModuloAsistencia(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltrosAsis")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltrosAsis")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltrosAsis")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltrosAsis")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Combina los filtros que necesites antes de generar el informe.")
-        subtitulo.setObjectName("SubtituloFiltrosAsis")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Combina los filtros que necesites antes de generar el informe.")
+        lbl_subtitulo.setObjectName("SubtituloFiltrosAsis")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         self.linea_separadora_filtros_alertas= QFrame()
         self.linea_separadora_filtros_alertas.setFrameShape(QFrame.Shape.HLine)
@@ -1859,7 +1859,7 @@ class ModuloAsistencia(QWidget):
                 est_id= item.data(Qt.ItemDataRole.UserRole)
                 self._registros_asistencia[est_id]= combo.currentText()
 
-    def _on_cambio_pagina_registro(self):
+    def _al_cambio_pagina_registro(self):
 
         #Se llama cuando el usuario cambia de página: primero guardamos en memoria lo marcado en la página que se está
         #por reemplazar (para no perder cambios sin guardar) y luego pintamos la nueva página.
@@ -2005,7 +2005,7 @@ class ModuloAsistencia(QWidget):
             }}
         """)
 
-    def _on_cambio_estado_fila(self, estudiante_id, estado, combo):
+    def _al_cambio_estado_fila(self, estudiante_id, estado, combo):
 
         self._registros_asistencia[estudiante_id]= estado
         self._estilizar_combo_estado(combo, estado)
@@ -2055,7 +2055,7 @@ class ModuloAsistencia(QWidget):
             conectar_tooltip_seleccion(combo, f"Estado de asistencia de {est['nombre']}")
             self._estilizar_combo_estado(combo, estado_actual)
             combo.currentTextChanged.connect(
-                lambda estado, eid=est["id"], cb=combo: self._on_cambio_estado_fila(eid, estado, cb))
+                lambda estado, eid=est["id"], cb=combo: self._al_cambio_estado_fila(eid, estado, cb))
             self.tabla.setCellWidget(i, 2, combo)
         ajustar_anchos_columnas(self.tabla)
         self.tabla.setUpdatesEnabled(True)

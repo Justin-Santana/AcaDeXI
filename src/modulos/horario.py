@@ -167,9 +167,9 @@ class PanelDesplegable(QWidget):
         super().__init__(parent)
         self._titulo= titulo
         self._expandido= False
-        layout= QVBoxLayout(self)
-        layout.setContentsMargins(0, 6, 0, 6)
-        layout.setSpacing(0)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(0, 6, 0, 6)
+        disposicion.setSpacing(0)
 
         self.btn_cabecera= QPushButton(f" {titulo}")
         self.btn_cabecera.setIcon(QIcon(_pixmap_circulo_mas_menos(False)))
@@ -177,7 +177,7 @@ class PanelDesplegable(QWidget):
         self.btn_cabecera.setCursor(Qt.CursorShape.PointingHandCursor)
         self._aplicar_color_tema()
         self.btn_cabecera.clicked.connect(self._alternar)
-        layout.addWidget(self.btn_cabecera)
+        disposicion.addWidget(self.btn_cabecera)
 
         self.contenedor= QWidget()
         self.contenedor.setMaximumHeight(0)
@@ -187,7 +187,7 @@ class PanelDesplegable(QWidget):
         self.contenedor.setVisible(False)
         self.contenedor_layout= QVBoxLayout(self.contenedor)
         self.contenedor_layout.setContentsMargins(4, 12, 4, 4)
-        layout.addWidget(self.contenedor)
+        disposicion.addWidget(self.contenedor)
 
         self._anim= QPropertyAnimation(self.contenedor, b"maximumHeight")
         self._anim.setDuration(260)
@@ -222,7 +222,7 @@ class PanelDesplegable(QWidget):
 
         self._aplicar_color_tema()
 
-    def showEvent(self, event):
+    def showEvent(self, evento):
 
         #Al mostrarse la ventana ya está enganchada al main window, así que aquí el modo claro/oscuro se conoce con
         #certeza (en __init__ puede no estarlo todavía si el panel se crea antes de asignar el padre).
@@ -231,7 +231,7 @@ class PanelDesplegable(QWidget):
             self._aplicar_color_tema()
         except RuntimeError:
             pass
-        super().showEvent(event)
+        super().showEvent(evento)
 
     def _al_terminar_animacion(self):
 
@@ -279,7 +279,7 @@ class IconoLupa(QWidget):
         self._color= color
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -351,7 +351,7 @@ class CargaSemanalWidget(QWidget):
         self._valores_animados= [o + (v - o) * t for o, v in zip(self._origen, self._valores)]
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -468,7 +468,7 @@ class AnilloProporcionWidget(QWidget):
         self._fraccion_animada= v
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -586,9 +586,9 @@ class VistaSemanalHorario(QWidget):
         self.setGraphicsEffect(None)
         self._efecto= None
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, evento):
 
-        super().resizeEvent(event)
+        super().resizeEvent(evento)
         self._recalcular_geometria()
 
     def _recalcular_geometria(self):
@@ -642,7 +642,7 @@ class VistaSemanalHorario(QWidget):
 
         return self.ALTO_CABECERA + indice * (self.ALTO_FILA + self.ESPACIO_FILA)
 
-    def paintEvent(self, event):
+    def paintEvent(self, evento):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -652,7 +652,7 @@ class VistaSemanalHorario(QWidget):
         #Región realmente dañada (event.rect()), no todo el widget. Cuando el hover invalida solo el rect de un chip
         #(ver mouseMoveEvent), "clip" aquí es ese rect pequeño, y todo lo que sigue lo usa para saltarse el trabajo
         #caro (gradientes, sombras, iconos, texto) de las filas y chips que ni siquiera se van a ver en este repintado.
-        clip= QRectF(event.rect())
+        clip= QRectF(evento.rect())
 
         #Fondo tipo "panel" con esquinas redondeadas
         painter.setPen(Qt.PenStyle.NoPen)
@@ -874,20 +874,20 @@ class VistaSemanalHorario(QWidget):
                 return idx, rect, item
         return None, None, None
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, evento):
 
-        punto= event.position()
+        punto= evento.position()
         item= self._item_en(punto)
         if item is not None:
             if "_overflow" in item:
                 self.overflow_activado.emit(item["_overflow"])
             else:
                 self.clase_activada.emit(item)
-        super().mousePressEvent(event)
+        super().mousePressEvent(evento)
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, evento):
 
-        punto= event.position()
+        punto= evento.position()
         nuevo, rect_nuevo, item_hover= self._item_en_detalle(punto)
         nuevo= -1 if nuevo is None else nuevo
         if nuevo != self._indice_hover:
@@ -910,9 +910,9 @@ class VistaSemanalHorario(QWidget):
                 self.update(rect_anterior.marginsAdded(margen_sombra).toAlignedRect())
             if rect_nuevo is not None:
                 self.update(rect_nuevo.marginsAdded(margen_sombra).toAlignedRect())
-        super().mouseMoveEvent(event)
+        super().mouseMoveEvent(evento)
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, evento):
 
         if self._indice_hover != -1:
             rect_anterior= (self._hitboxes[self._indice_hover][0]
@@ -923,7 +923,7 @@ class VistaSemanalHorario(QWidget):
                 self.update(rect_anterior.marginsAdded(QMarginsF(2, 2, 2, 6)).toAlignedRect())
             else:
                 self.update()
-        super().leaveEvent(event)
+        super().leaveEvent(evento)
 
     def _texto_tooltip(self, item):
 
@@ -979,7 +979,7 @@ class ModuloHorario(QWidget):
 
         #Construimos solo la UI (sin tocar la base de datos) para que el módulo se pinte de inmediato al hacer clic en
         #la barra lateral. main.py llama a refrescar() ~10ms después de crear la página.
-        self._build_ui()
+        self._construir_ui()
         self._refrescar_colores_tema()
         self._registrar_atajos_teclado()
 
@@ -988,7 +988,7 @@ class ModuloHorario(QWidget):
         self._titulo_modulo_atajos= "Horario"
         #Las clases "locales" (datos_locales_docente.py) son 100% del equipo/docente actual, y el formulario
         #correspondiente (y sus widgets internos, que estos cuatro atajos tocan directamente) solo se construye más
-        #abajo cuando self.restringido es True (Modo Docente) -ver _build_ui-. Para Dirección/Coordinación/Admin ese
+        #abajo cuando self.restringido es True (Modo Docente) -ver _construir_ui-. Para Dirección/Coordinación/Admin ese
         #formulario NO EXISTE: si estos atajos se registraran igual, un Ctrl+G/Ctrl+L/Ctrl+E/Ctrl+Del ahí reventaría
         #contra widgets inexistentes, y encima aparecerían en la ventanita de ayuda como si fueran una acción
         #disponible que no lo es. Por eso solo se registran para el propio docente restringido.
@@ -1002,7 +1002,7 @@ class ModuloHorario(QWidget):
         registrar_atajo(self, self.main_window, "F5", "Actualizar horario", self.refrescar)
 
     #--------------------------------------------------------
-    def _build_ui(self):
+    def _construir_ui(self):
 
         layout_raiz= QVBoxLayout(self)
         layout_raiz.setContentsMargins(0, 0, 0, 0)
@@ -1015,9 +1015,9 @@ class ModuloHorario(QWidget):
         scroll.verticalScrollBar().setSingleStep(24)  #scroll más suave, sin saltos bruscos
 
         contenido= QWidget()
-        layout= QVBoxLayout(contenido)
-        layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(14)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(30, 25, 30, 25)
+        disposicion.setSpacing(14)
 
         #--- Cabecera tipo "hero": icono + título + descripción + fecha ---
         self.frame_cabecera= QFrame()
@@ -1086,7 +1086,7 @@ class ModuloHorario(QWidget):
             self.btn_info_docente.clicked.connect(self._mostrar_info_docente)
             cabecera_layout.addWidget(self.btn_info_docente, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        layout.addWidget(self.frame_cabecera)
+        disposicion.addWidget(self.frame_cabecera)
 
         #--- Resumen visual: barras de carga + anillo + leyenda ---
         fila_resumen= QHBoxLayout()
@@ -1104,7 +1104,7 @@ class ModuloHorario(QWidget):
             bloque_anillo.addWidget(self.anillo_proporcion, 0, Qt.AlignmentFlag.AlignCenter)
             fila_resumen.addLayout(bloque_anillo)
         fila_resumen.addLayout(self._construir_leyenda())
-        layout.addLayout(fila_resumen)
+        disposicion.addLayout(fila_resumen)
 
         #--- Buscador (fila propia, con todo el ancho disponible) --- Antes el buscador compartía una sola fila con la
         #etiqueta "Filtrar por:", 3 combos y 2 botones. Con curso+sección+materia ya pidiendo 170/190/190px de mínimo
@@ -1152,7 +1152,7 @@ class ModuloHorario(QWidget):
                                 "(solo se ve en este equipo)")
         btn_colores.clicked.connect(self._abrir_colores_materias)
         fila_busqueda.addWidget(btn_colores)
-        layout.addLayout(fila_busqueda)
+        disposicion.addLayout(fila_busqueda)
 
         #--- Combos de filtro: se crean aquí (siguen siendo atributos normales del módulo) pero NO se agregan a ningún
         #layout visible de esta pantalla — viven dentro del diálogo de filtros. ---
@@ -1200,14 +1200,14 @@ class ModuloHorario(QWidget):
             self.panel_local= PanelDesplegable("Agregar una clase local (solo en este equipo)")
             cuerpo= self.panel_local.cuerpo_layout()
 
-            aviso= QLabel(
+            lbl_aviso= QLabel(
                 "No es recomendable crear tu horario manualmente aquí. Lo ideal es que Dirección/"
                 "Coordinación programe tus clases en el módulo institucional y te reexporte el paquete "
                 "desde Copias de Seguridad ▸ Importar Estudiantes y Cursos. Usa este panel solo para "
                 "casos puntuales. Lo que agregues aquí se guarda SOLO en este equipo.")
-            aviso.setObjectName("DescModulo")
-            aviso.setWordWrap(True)
-            cuerpo.addWidget(aviso)
+            lbl_aviso.setObjectName("DescModulo")
+            lbl_aviso.setWordWrap(True)
+            cuerpo.addWidget(lbl_aviso)
 
             form_local= QGridLayout()
             form_local.setHorizontalSpacing(12)
@@ -1363,7 +1363,7 @@ class ModuloHorario(QWidget):
             fila_acciones_local.addStretch()
             cuerpo.addLayout(fila_acciones_local)
 
-            layout.addWidget(self.panel_local)
+            disposicion.addWidget(self.panel_local)
             self.panel_local.expandir(False, animar=False)
 
         #--- Calendario semanal --- Icono real (QPixmap dibujado con QPainter) en vez del emoji ⏳ suelto en el texto
@@ -1373,27 +1373,27 @@ class ModuloHorario(QWidget):
         _fila_cargando.setContentsMargins(0, 0, 0, 0)
         _fila_cargando.setSpacing(6)
         _fila_cargando.addStretch()
-        _icono_cargando= QLabel()
-        _icono_cargando.setPixmap(pixmap_emoji("⏳", 15))
-        _fila_cargando.addWidget(_icono_cargando)
-        _txt_cargando= QLabel("Preparando tu horario…")
-        _txt_cargando.setObjectName("DescModulo")
-        _fila_cargando.addWidget(_txt_cargando)
+        lbl__icono_cargando= QLabel()
+        lbl__icono_cargando.setPixmap(pixmap_emoji("⏳", 15))
+        _fila_cargando.addWidget(lbl__icono_cargando)
+        lbl__txt_cargando= QLabel("Preparando tu horario…")
+        lbl__txt_cargando.setObjectName("DescModulo")
+        _fila_cargando.addWidget(lbl__txt_cargando)
         _fila_cargando.addStretch()
-        layout.addWidget(self.lbl_cargando)
+        disposicion.addWidget(self.lbl_cargando)
 
         self.lbl_vacio= QLabel("No hay clases que coincidan con la búsqueda o los filtros.")
         self.lbl_vacio.setObjectName("DescModulo")
         self.lbl_vacio.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.lbl_vacio.setVisible(False)
-        layout.addWidget(self.lbl_vacio)
+        disposicion.addWidget(self.lbl_vacio)
 
         self.canvas= VistaSemanalHorario()
         self.canvas.main_window= self.main_window
         self.canvas.clase_activada.connect(self._mostrar_detalle_clase)
         self.canvas.overflow_activado.connect(self._mostrar_detalle_overflow)
         self.canvas.setVisible(False)
-        layout.addWidget(self.canvas)
+        disposicion.addWidget(self.canvas)
 
         fila_botones= QHBoxLayout()
         btn_actualizar= QPushButton("Actualizar")
@@ -1403,9 +1403,9 @@ class ModuloHorario(QWidget):
         btn_actualizar.clicked.connect(self.refrescar)
         fila_botones.addWidget(btn_actualizar)
         fila_botones.addStretch()
-        layout.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
-        layout.addStretch()
+        disposicion.addStretch()
         scroll.setWidget(contenido)
         layout_raiz.addWidget(scroll, 1)
 
@@ -1425,9 +1425,9 @@ class ModuloHorario(QWidget):
         h= QHBoxLayout(fila)
         h.setContentsMargins(0, 0, 0, 0)
         h.setSpacing(6)
-        punto= QLabel("●")
-        punto.setStyleSheet(f"color: {color}; font-size: 14px;")
-        h.addWidget(punto)
+        lbl_punto= QLabel("●")
+        lbl_punto.setStyleSheet(f"color: {color}; font-size: 14px;")
+        h.addWidget(lbl_punto)
         lbl= QLabel(texto)
         lbl.setObjectName("DescModulo")
         h.addWidget(lbl)
@@ -1486,10 +1486,10 @@ class ModuloHorario(QWidget):
         dialogo.resize(420, 480)
         layout_dlg= QVBoxLayout(dialogo)
 
-        info= QLabel("Elige un color para cada materia de tu calendario. Se guarda solo en "
+        lbl_info= QLabel("Elige un color para cada materia de tu calendario. Se guarda solo en "
                        "este equipo y no afecta lo que ven otros roles.")
-        info.setWordWrap(True)
-        layout_dlg.addWidget(info)
+        lbl_info.setWordWrap(True)
+        layout_dlg.addWidget(lbl_info)
 
         scroll= QScrollArea()
         scroll.setWidgetResizable(True)
@@ -1864,20 +1864,20 @@ class ModuloHorario(QWidget):
 
         fila_encabezado= QHBoxLayout()
         fila_encabezado.setSpacing(8)
-        icono_encabezado= QLabel()
-        pixmap_boton_filtro(icono_encabezado, 20)
-        icono_encabezado.setObjectName("IconoEncabezadoFiltros")
-        fila_encabezado.addWidget(icono_encabezado)
-        titulo_encabezado= QLabel("Filtros")
-        titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
-        fila_encabezado.addWidget(titulo_encabezado)
+        lbl_icono_encabezado= QLabel()
+        pixmap_boton_filtro(lbl_icono_encabezado, 20)
+        lbl_icono_encabezado.setObjectName("IconoEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_icono_encabezado)
+        lbl_titulo_encabezado= QLabel("Filtros")
+        lbl_titulo_encabezado.setObjectName("TituloEncabezadoFiltros")
+        fila_encabezado.addWidget(lbl_titulo_encabezado)
         fila_encabezado.addStretch()
         lay_dialogo.addLayout(fila_encabezado)
 
-        subtitulo= QLabel("Combina los filtros que necesites; el calendario se actualiza al instante.")
-        subtitulo.setObjectName("SubtituloFiltros")
-        subtitulo.setWordWrap(True)
-        lay_dialogo.addWidget(subtitulo)
+        lbl_subtitulo= QLabel("Combina los filtros que necesites; el calendario se actualiza al instante.")
+        lbl_subtitulo.setObjectName("SubtituloFiltros")
+        lbl_subtitulo.setWordWrap(True)
+        lay_dialogo.addWidget(lbl_subtitulo)
 
         self.linea_separadora_filtros= QFrame()
         self.linea_separadora_filtros.setFrameShape(QFrame.Shape.HLine)

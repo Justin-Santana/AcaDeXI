@@ -33,7 +33,7 @@ from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from src.nucleo.bd import obtener_conexion, DB_PATH
+from src.nucleo.bd import obtener_conexion, RUTA_BD
 from src.interfaz.configuracion import conectar_tooltip_seleccion
 from src.nucleo.iconos import aplicar_icono_ventana, ICONO_DOCUMENTO
 
@@ -277,10 +277,10 @@ def local_ya_tiene_usuarios():
 #perfil vía .acdx también ve el logotipo institucional.
 def aplicar_bd_base(datos):
 
-    from src.nucleo.bd import crear_backup, get_app_data_dir
+    from src.nucleo.bd import crear_backup, obtener_carpeta_datos
 
     ruta_backup= None
-    if os.path.exists(DB_PATH) and os.path.getsize(DB_PATH) > 0:
+    if os.path.exists(RUTA_BD) and os.path.getsize(RUTA_BD) > 0:
         try:
 
             ruta_backup= crear_backup(tipo="Pre-importación de Perfil Institucional (.acdx)")
@@ -288,8 +288,8 @@ def aplicar_bd_base(datos):
             ruta_backup= None
 
     contenido= base64.b64decode(datos["bd_base"])
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    with open(DB_PATH, "wb") as f:
+    os.makedirs(os.path.dirname(RUTA_BD), exist_ok=True)
+    with open(RUTA_BD, "wb") as f:
         f.write(contenido)
 
     logo_base64= datos.get("logo_base64")
@@ -297,7 +297,7 @@ def aplicar_bd_base(datos):
     if logo_base64 and nombre_logo:
         try:
 
-            carpeta_logos= os.path.join(get_app_data_dir(), "logos")
+            carpeta_logos= os.path.join(obtener_carpeta_datos(), "logos")
             os.makedirs(carpeta_logos, exist_ok=True)
             ruta_logo_local= os.path.join(carpeta_logos, nombre_logo)
             with open(ruta_logo_local, "wb") as f_logo:
