@@ -20,7 +20,6 @@ venv/
 .venv
 
 # PyInstaller / auto-py-to-exe
-configacadexi.json
 *.manifest
 
 # IDE

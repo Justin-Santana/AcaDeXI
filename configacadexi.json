@@ -1,0 +1,257 @@
+{
+  "version": "auto-py-to-exe-configuration_v1",
+  "pyinstallerOptions": [
+    {
+      "optionDest": "noconfirm",
+      "value": true
+    },
+    {
+      "optionDest": "filenames",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/main.py"
+    },
+    {
+      "optionDest": "onefile",
+      "value": false
+    },
+    {
+      "optionDest": "console",
+      "value": false
+    },
+    {
+      "optionDest": "icon_file",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/src/assets/iconos/schoolsys.ico"
+    },
+    {
+      "optionDest": "name",
+      "value": "AcaDeXI"
+    },
+    {
+      "optionDest": "clean_build",
+      "value": false
+    },
+    {
+      "optionDest": "strip",
+      "value": false
+    },
+    {
+      "optionDest": "noupx",
+      "value": true
+    },
+    {
+      "optionDest": "disable_windowed_traceback",
+      "value": false
+    },
+    {
+      "optionDest": "uac_admin",
+      "value": false
+    },
+    {
+      "optionDest": "uac_uiaccess",
+      "value": false
+    },
+    {
+      "optionDest": "argv_emulation",
+      "value": false
+    },
+    {
+      "optionDest": "bootloader_ignore_signals",
+      "value": false
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/src/assets/iconos;iconos/"
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/servidor/servidor_institucional.py;."
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/servidor/requirements_servidor.txt;."
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/docs/guia_sincronizacion_directa.pdf;."
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/src/assets/terminos.txt;."
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/LICENSE.txt;."
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/src/assets/ICON_LICENSES.txt;."
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/README.md;."
+    },
+    {
+      "optionDest": "datas",
+      "value": "C:/Users/usuario/Desktop/AcaDeXI/docs/Intentions_Letter.pdf;."
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "PySide6"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "PySide6.QtMultimedia"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "PySide6.QtNetwork"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "PySide6.QtPrintSupport"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "PySide6.QtSql"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "PySide6.QtSvg"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "reportlab"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "openpyxl"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "et_xmlfile"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "PIL"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "argon2"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "argon2.low_level"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "cryptography"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "fitz"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "pymupdf"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "pypdf"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "google.auth"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "google.oauth2"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "google.auth.transport.requests"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "google_auth_oauthlib"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "googleapiclient"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "dropbox"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "msal"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "requests"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "fastapi"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "uvicorn"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "multipart"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "boletin_estilo"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.oxml"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.oxml.ns"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.enum.text"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.enum.style"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.shared"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.opc"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.parts"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "docx.image"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "lxml"
+    },
+    {
+      "optionDest": "hiddenimports",
+      "value": "lxml.etree"
+    }
+  ],
+  "nonPyinstallerOptions": {
+    "increaseRecursionLimit": true,
+    "manualArguments": "--version-file=\"C:/Users/usuario/Desktop/AcaDeXI/empaquetado/version_info.txt\" --collect-all PySide6.QtMultimedia --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/plugins/multimedia;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avcodec-61.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avformat-61.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avutil-59.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/swresample-5.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/swscale-8.dll;PySide6/plugins/multimedia\" --collect-submodules src"
+  }
+}
