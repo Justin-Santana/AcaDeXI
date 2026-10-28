@@ -160,8 +160,8 @@ class AnilloFacultades(QWidget):
 
     def establecer_datos(self, segmentos):
 
-        self._segmentos= [s for s in segmentos if s["valor"] > 0]
-        self._total= sum(s["valor"] for s in self._segmentos)
+        self._segmentos= [segmento for segmento in segmentos if segmento["valor"] > 0]
+        self._total= sum(segmento["valor"] for segmento in self._segmentos)
         self._anim.stop()
         self._progreso= 0.0
         self._anim.start()
@@ -177,10 +177,10 @@ class AnilloFacultades(QWidget):
         lado= min(self.width(), self.height()) - 16
         if lado <= 0:
             return
-        x= (self.width() - lado) / 2
-        y= (self.height() - lado) / 2
+        pos_x= (self.width() - lado) / 2
+        pos_y= (self.height() - lado) / 2
         grosor= max(12, int(lado * 0.16))
-        rect= QRectF(x + grosor / 2, y + grosor / 2, lado - grosor, lado - grosor)
+        rect= QRectF(pos_x + grosor / 2, pos_y + grosor / 2, lado - grosor, lado - grosor)
 
         pen_pista= QPen(QColor(self._color_pista))
         pen_pista.setWidth(grosor)
@@ -208,14 +208,14 @@ class AnilloFacultades(QWidget):
         fuente.setPointSize(max(13, int(lado * 0.13)))
         fuente.setBold(True)
         painter.setFont(fuente)
-        rect_num= QRectF(x, y + lado * 0.30, lado, lado * 0.32)
+        rect_num= QRectF(pos_x, pos_y + lado * 0.30, lado, lado * 0.32)
         painter.drawText(rect_num, Qt.AlignmentFlag.AlignCenter, str(total_mostrado))
 
         painter.setPen(QColor(self._color_sub))
         fuente_sub= QFont()
         fuente_sub.setPointSize(max(8, int(lado * 0.07)))
         painter.setFont(fuente_sub)
-        rect_sub= QRectF(x, y + lado * 0.56, lado, lado * 0.18)
+        rect_sub= QRectF(pos_x, pos_y + lado * 0.56, lado, lado * 0.18)
         painter.drawText(rect_sub, Qt.AlignmentFlag.AlignCenter, "carreras")
 
 
@@ -253,7 +253,7 @@ class BarraSegmentada(QWidget):
 
     def establecer_datos(self, segmentos):
 
-        self._segmentos= [s for s in segmentos if s["valor"] > 0]
+        self._segmentos= [segmento for segmento in segmentos if segmento["valor"] > 0]
         self._anim.stop()
         self._progreso= 0.0
         self._anim.start()
@@ -269,7 +269,7 @@ class BarraSegmentada(QWidget):
         painter.setBrush(QBrush(QColor(self._color_pista)))
         painter.drawPath(ruta_fondo)
 
-        total= sum(s["valor"] for s in self._segmentos)
+        total= sum(segmento["valor"] for segmento in self._segmentos)
         if total <= 0:
             return
         painter.setClipPath(ruta_fondo)
@@ -335,16 +335,16 @@ class MallaCurricular(QWidget):
 
         self._nodos= {}
         self._por_semestre= {}
-        for f in filas:
-            mid= f.get("materia_id")
+        for fila in filas:
+            mid= fila.get("materia_id")
             if mid is None or mid in self._nodos:
                 continue
-            sem= max(1, int(f.get("semestre") or 1))
+            sem= max(1, int(fila.get("semestre") or 1))
             self._nodos[mid]= {
-                "nombre": f.get("materia_nombre") or "—",
+                "nombre": fila.get("materia_nombre") or "—",
                 "semestre": sem,
-                "prereq_id": f.get("prerrequisito_id"),
-                "electiva": bool(f.get("electiva")),
+                "prereq_id": fila.get("prerrequisito_id"),
+                "electiva": bool(fila.get("electiva")),
                 "rect": None,
             }
             self._por_semestre.setdefault(sem, []).append(mid)
@@ -372,10 +372,10 @@ class MallaCurricular(QWidget):
         alto= self.MARGEN * 2 + 34 + max_filas * (self.ALTO_FICHA + self.ESPACIO_V)
         self.setMinimumSize(int(ancho), int(alto))
         for idx_col, sem in enumerate(semestres):
-            x= self.MARGEN + idx_col * self.ANCHO_COLUMNA + 8
+            pos_x= self.MARGEN + idx_col * self.ANCHO_COLUMNA + 8
             for fila, mid in enumerate(self._por_semestre[sem]):
-                y= self.MARGEN + 34 + fila * (self.ALTO_FICHA + self.ESPACIO_V)
-                self._nodos[mid]["rect"]= QRectF(x, y, self.ANCHO_COLUMNA - 24, self.ALTO_FICHA)
+                pos_y= self.MARGEN + 34 + fila * (self.ALTO_FICHA + self.ESPACIO_V)
+                self._nodos[mid]["rect"]= QRectF(pos_x, pos_y, self.ANCHO_COLUMNA - 24, self.ALTO_FICHA)
         self.updateGeometry()
 
     def mouseMoveEvent(self, event):
@@ -435,9 +435,9 @@ class MallaCurricular(QWidget):
         fuente_header.setBold(True)
         painter.setFont(fuente_header)
         for idx_col, sem in enumerate(semestres):
-            x= self.MARGEN + idx_col * self.ANCHO_COLUMNA
+            pos_x= self.MARGEN + idx_col * self.ANCHO_COLUMNA
             painter.setPen(QColor(self._color_acento))
-            painter.drawText(QRectF(x, 2, self.ANCHO_COLUMNA - 8, 24),
+            painter.drawText(QRectF(pos_x, 2, self.ANCHO_COLUMNA - 8, 24),
                               Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                               f"Semestre {sem}")
 
@@ -695,10 +695,10 @@ class ModuloUniversidad(QWidget):
         filas= c.fetchall()
         conn.close()
         objetivo= _normalizar(nombre or "")
-        for f in filas:
-            if id_excluir is not None and f["id"] == id_excluir:
+        for fila in filas:
+            if id_excluir is not None and fila["id"] == id_excluir:
                 continue
-            if _normalizar(f[columna] or "") == objetivo:
+            if _normalizar(fila[columna] or "") == objetivo:
                 return True
         return False
 
@@ -715,9 +715,9 @@ class ModuloUniversidad(QWidget):
             funcion(conn, c)
             conn.commit()
             return True
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"{mensaje_error}:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"{mensaje_error}:\n{error}", self)
             return False
         finally:
             conn.close()
@@ -803,12 +803,12 @@ class ModuloUniversidad(QWidget):
             return self._cache_iconos_punto[color_hex]
         pix= QPixmap(12, 12)
         pix.fill(Qt.GlobalColor.transparent)
-        p= QPainter(pix)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(color_hex))
-        p.drawEllipse(0, 0, 12, 12)
-        p.end()
+        pintor= QPainter(pix)
+        pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pintor.setPen(Qt.PenStyle.NoPen)
+        pintor.setBrush(QColor(color_hex))
+        pintor.drawEllipse(0, 0, 12, 12)
+        pintor.end()
         icono= QIcon(pix)
         self._cache_iconos_punto[color_hex]= icono
         return icono
@@ -830,9 +830,9 @@ class ModuloUniversidad(QWidget):
     #---------------- FACULTADES ----------------
     def _tab_facultades(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         tarjeta_dist, layout_dist, _= self._crear_tarjeta()
         titulo_dist= QLabel("Distribución de carreras por facultad")
@@ -848,7 +848,7 @@ class ModuloUniversidad(QWidget):
         self.layout_leyenda_donut.setSpacing(6)
         fila_dist.addWidget(self.contenedor_leyenda_donut, 1, Qt.AlignmentFlag.AlignTop)
         layout_dist.addLayout(fila_dist)
-        l.addWidget(tarjeta_dist)
+        disposicion.addWidget(tarjeta_dist)
 
         self.tarjeta_form_facultad, layout_form, self.sombra_form_facultad= self._crear_tarjeta()
         titulo_form= QLabel("Nueva facultad")
@@ -865,7 +865,7 @@ class ModuloUniversidad(QWidget):
         self.btn_guardar_facultad.clicked.connect(self._guardar_facultad)
         fila.addWidget(self.btn_guardar_facultad)
         layout_form.addLayout(fila)
-        l.addWidget(self.tarjeta_form_facultad)
+        disposicion.addWidget(self.tarjeta_form_facultad)
 
         tarjeta_tabla, layout_tabla, _= self._crear_tarjeta()
         marco_busqueda_fac, self.in_buscar_facultades= self._crear_barra_busqueda(
@@ -926,9 +926,9 @@ class ModuloUniversidad(QWidget):
         self.tabla_facultades.doubleClicked.connect(lambda *_: btn_detalle_fac.click())
         fila_acciones_fac.addStretch()
         layout_tabla.addLayout(fila_acciones_fac)
-        l.addWidget(tarjeta_tabla)
-        l.addStretch()
-        return w
+        disposicion.addWidget(tarjeta_tabla)
+        disposicion.addStretch()
+        return contenedor
 
     def _limpiar_facultad(self):
 
@@ -1033,7 +1033,7 @@ class ModuloUniversidad(QWidget):
         filas= c.fetchall()
         conn.close()
         if texto:
-            filas= [f for f in filas if texto in _normalizar(f["nombre"] or "")]
+            filas= [fila for fila in filas if texto in _normalizar(fila["nombre"] or "")]
         self.paginacion_facultades.establecer_total(len(filas))
         inicio, fin= self.paginacion_facultades.rango_actual()
         pagina= filas[inicio:fin]
@@ -1075,7 +1075,7 @@ class ModuloUniversidad(QWidget):
             self.anillo_facultades.establecer_datos(segmentos)
             self._actualizar_leyenda_donut(segmentos)
         total_facultades= len(filas)
-        total_carreras= sum(f["total"] for f in filas)
+        total_carreras= sum(fila["total"] for fila in filas)
         if hasattr(self, "chip_facultades"):
             #Iconos dibujados con QPainter (mismos dibujos que ya usa el resto de la app), insertados como <img> inline en
             #vez del emoji real para no depender de una fuente de emojis del sistema.
@@ -1115,9 +1115,9 @@ class ModuloUniversidad(QWidget):
     #---------------- CARRERAS ----------------
     def _tab_carreras(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         self.tarjeta_form_carrera, layout_form, self.sombra_form_carrera= self._crear_tarjeta()
         titulo_form= QLabel("Nueva carrera")
@@ -1137,7 +1137,7 @@ class ModuloUniversidad(QWidget):
         self.btn_guardar_carrera.clicked.connect(self._guardar_carrera)
         form.addWidget(self.btn_guardar_carrera, 1, 0)
         layout_form.addLayout(form)
-        l.addWidget(self.tarjeta_form_carrera)
+        disposicion.addWidget(self.tarjeta_form_carrera)
 
         tarjeta_tabla, layout_tabla, _= self._crear_tarjeta()
         marco_busqueda_car, self.in_buscar_carreras= self._crear_barra_busqueda(
@@ -1189,9 +1189,9 @@ class ModuloUniversidad(QWidget):
         self.tabla_carreras.doubleClicked.connect(lambda *_: btn_detalle_car.click())
         fila_acciones_car.addStretch()
         layout_tabla.addLayout(fila_acciones_car)
-        l.addWidget(tarjeta_tabla)
-        l.addStretch()
-        return w
+        disposicion.addWidget(tarjeta_tabla)
+        disposicion.addStretch()
+        return contenedor
 
     def _limpiar_carrera(self):
 
@@ -1210,8 +1210,8 @@ class ModuloUniversidad(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM facultades ORDER BY nombre")
-        for f in c.fetchall():
-            self.car_facultad.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.car_facultad.addItem(fila["nombre"], fila["id"])
         conn.close()
         if seleccion_previa is not None:
             idx= self.car_facultad.findData(seleccion_previa)
@@ -1316,8 +1316,8 @@ class ModuloUniversidad(QWidget):
         filas= c.fetchall()
         conn.close()
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['nombre'] or ''} {f['facultad_nombre'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['nombre'] or ''} {fila['facultad_nombre'] or ''}")]
         self.paginacion_carreras.establecer_total(len(filas))
         inicio, fin= self.paginacion_carreras.rango_actual()
         pagina= filas[inicio:fin]
@@ -1336,9 +1336,9 @@ class ModuloUniversidad(QWidget):
     #---------------- PENSUM / MALLA CURRICULAR ----------------
     def _tab_pensum(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         self.tarjeta_malla, layout_malla, _= self._crear_tarjeta()
         fila_malla_titulo= QHBoxLayout()
@@ -1370,7 +1370,7 @@ class ModuloUniversidad(QWidget):
         self.malla_scroll.setFixedHeight(300)
         self.malla_scroll.setWidget(self.malla)
         layout_malla.addWidget(self.malla_scroll)
-        l.addWidget(self.tarjeta_malla)
+        disposicion.addWidget(self.tarjeta_malla)
 
         self.tarjeta_form_pensum, layout_form, self.sombra_form_pensum= self._crear_tarjeta()
         titulo_form= QLabel("Agregar materia al pensum")
@@ -1402,7 +1402,7 @@ class ModuloUniversidad(QWidget):
         self.btn_guardar_pensum.clicked.connect(self._guardar_pensum)
         form.addWidget(self.btn_guardar_pensum, 2, 0)
         layout_form.addLayout(form)
-        l.addWidget(self.tarjeta_form_pensum)
+        disposicion.addWidget(self.tarjeta_form_pensum)
 
         tarjeta_tabla, layout_tabla, _= self._crear_tarjeta()
         marco_busqueda_pensum, self.in_buscar_pensum= self._crear_barra_busqueda(
@@ -1454,9 +1454,9 @@ class ModuloUniversidad(QWidget):
         self.tabla_pensum.doubleClicked.connect(lambda *_: btn_detalle_pen.click())
         fila_acciones_pensum.addStretch()
         layout_tabla.addLayout(fila_acciones_pensum)
-        l.addWidget(tarjeta_tabla)
-        l.addStretch()
-        return w
+        disposicion.addWidget(tarjeta_tabla)
+        disposicion.addStretch()
+        return contenedor
 
     def _limpiar_pensum(self):
 
@@ -1509,13 +1509,13 @@ class ModuloUniversidad(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-        for f in c.fetchall():
-            self.pen_carrera.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.pen_carrera.addItem(fila["nombre"], fila["id"])
             if hasattr(self, "malla_filtro_carrera"):
-                self.malla_filtro_carrera.addItem(f["nombre"], f["id"])
+                self.malla_filtro_carrera.addItem(fila["nombre"], fila["id"])
         c.execute("SELECT id, nombre FROM materias ORDER BY nombre")
-        for f in c.fetchall():
-            self.pen_materia.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.pen_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
         if hasattr(self, "malla_filtro_carrera"):
             if seleccion_malla_previa is not None:
@@ -1550,10 +1550,10 @@ class ModuloUniversidad(QWidget):
             c.execute("""SELECT DISTINCT materias.id, materias.nombre
                          FROM pensum LEFT JOIN materias ON pensum.materia_id = materias.id
                          WHERE pensum.carrera_id = ? ORDER BY materias.nombre""", (carrera_id,))
-            for f in c.fetchall():
-                if materia_actual is not None and f["id"] == materia_actual:
+            for fila in c.fetchall():
+                if materia_actual is not None and fila["id"] == materia_actual:
                     continue
-                self.pen_prerrequisito.addItem(f["nombre"], f["id"])
+                self.pen_prerrequisito.addItem(fila["nombre"], fila["id"])
             conn.close()
         idx= self.pen_prerrequisito.findData(seleccion_previa)
         self.pen_prerrequisito.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1652,9 +1652,9 @@ class ModuloUniversidad(QWidget):
                           (carrera_id, materia_id, semestre, prerrequisito_id, electiva, id_actual))
                 accion= "Editó materia del pensum"
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar el pensum:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar el pensum:\n{error}", self)
             return
         finally:
             conn.close()
@@ -1706,8 +1706,8 @@ class ModuloUniversidad(QWidget):
         filas= c.fetchall()
         conn.close()
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['carrera_nombre'] or ''} {f['materia_nombre'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['carrera_nombre'] or ''} {fila['materia_nombre'] or ''}")]
         self.paginacion_pensum.establecer_total(len(filas))
         inicio, fin= self.paginacion_pensum.rango_actual()
         pagina= filas[inicio:fin]

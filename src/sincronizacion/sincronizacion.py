@@ -236,11 +236,11 @@ def _hash_archivo(ruta):
         cacheado= _CACHE_HASHES.get(ruta)
         if cacheado is not None and cacheado[0] == firma:
             return cacheado[1]
-    h= hashlib.sha256()
+    huella= hashlib.sha256()
     with open(ruta, "rb") as f:
         for bloque in iter(lambda: f.read(65536), b""):
-            h.update(bloque)
-    digest= h.hexdigest()
+            huella.update(bloque)
+    digest= huella.hexdigest()
     if firma is not None:
         _CACHE_HASHES[ruta]= (firma, digest)
     return digest
@@ -501,8 +501,8 @@ class _HiloOperacionSync(QThread):
 
             resultado= self._funcion()
             self.terminado.emit(resultado, None)
-        except Exception as e:  #se reporta al usuario en el hilo principal, no se silencia
-            self.terminado.emit(None, e)
+        except Exception as error:  #se reporta al usuario en el hilo principal, no se silencia
+            self.terminado.emit(None, error)
 
 
 #Tarjeta grande que resume el estado de sincronización, con un latido
@@ -635,8 +635,8 @@ def exportar_paquete_servidor(main_window, padre):
             z.writestr("iniciar_servidor.sh", _SCRIPT_INICIO_SH)
             z.writestr("iniciar_servidor.bat", _SCRIPT_INICIO_BAT)
             z.writestr("LEEME_PRIMERO.txt", _GUIA_SERVIDOR_TXT)
-    except Exception as e:
-        mostrar_mensaje("error", "Error", f"No se pudo crear el paquete:\n{e}", padre)
+    except Exception as error:
+        mostrar_mensaje("error", "Error", f"No se pudo crear el paquete:\n{error}", padre)
         return
 
     if main_window is not None:
@@ -782,9 +782,9 @@ class ModuloSincronizacion(QWidget):
         tarjeta= QFrame()
         tarjeta.setObjectName("TarjetaSeccionSync")
         tarjeta.setGraphicsEffect(_crear_sombra(blur=16, y=3, alpha=55))
-        l= QVBoxLayout(tarjeta)
-        l.setContentsMargins(20, 16, 20, 18)
-        l.setSpacing(8)
+        disposicion= QVBoxLayout(tarjeta)
+        disposicion.setContentsMargins(20, 16, 20, 18)
+        disposicion.setSpacing(8)
 
         cab= QHBoxLayout()
         icono= QLabel()
@@ -795,9 +795,9 @@ class ModuloSincronizacion(QWidget):
         titulo_seccion.setObjectName("TituloSeccionSync")
         cab.addWidget(titulo_seccion)
         cab.addStretch()
-        l.addLayout(cab)
+        disposicion.addLayout(cab)
 
-        l.addWidget(QLabel("Modo de trabajo de este equipo:"))
+        disposicion.addWidget(QLabel("Modo de trabajo de este equipo:"))
         self.combo_modo= QComboBox()
         self.combo_modo.addItems(MODOS_TRABAJO)
         for i, modo in enumerate(MODOS_TRABAJO):
@@ -805,9 +805,9 @@ class ModuloSincronizacion(QWidget):
         self.combo_modo.setToolTip(TOOLTIPS_MODOS_TRABAJO.get(self.combo_modo.currentText(), ""))
         self.combo_modo.currentTextChanged.connect(
             lambda texto: self.combo_modo.setToolTip(TOOLTIPS_MODOS_TRABAJO.get(texto, "")))
-        l.addWidget(self.combo_modo)
+        disposicion.addWidget(self.combo_modo)
 
-        l.addWidget(QLabel("Carpeta de sincronización (opcional):"))
+        disposicion.addWidget(QLabel("Carpeta de sincronización (opcional):"))
         fila= QHBoxLayout()
         self.in_carpeta= QLineEdit()
         limitar_campo_texto(self.in_carpeta, 300)
@@ -822,10 +822,10 @@ class ModuloSincronizacion(QWidget):
         btn_examinar.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_examinar.clicked.connect(self._elegir_carpeta)
         fila.addWidget(btn_examinar)
-        l.addLayout(fila)
+        disposicion.addLayout(fila)
 
         btn_guardar= self._boton_accion("Guardar Preferencia de este Equipo", "BtnAccionEditar", self._guardar)
-        l.addWidget(btn_guardar)
+        disposicion.addWidget(btn_guardar)
 
         return tarjeta
 
@@ -834,15 +834,15 @@ class ModuloSincronizacion(QWidget):
         tarjeta= QFrame()
         tarjeta.setObjectName("TarjetaSeccionSync")
         tarjeta.setGraphicsEffect(_crear_sombra(blur=16, y=3, alpha=55))
-        l= QVBoxLayout(tarjeta)
-        l.setContentsMargins(20, 16, 20, 12)
-        l.setSpacing(6)
+        disposicion= QVBoxLayout(tarjeta)
+        disposicion.setContentsMargins(20, 16, 20, 12)
+        disposicion.setSpacing(6)
 
         self.btn_toggle_avanzado= QPushButton("▸  Sincronización Directa (avanzada, opcional)")
         self.btn_toggle_avanzado.setObjectName("BtnToggleAvanzadoSync")
         self.btn_toggle_avanzado.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_toggle_avanzado.clicked.connect(self._alternar_avanzado)
-        l.addWidget(self.btn_toggle_avanzado)
+        disposicion.addWidget(self.btn_toggle_avanzado)
 
         #El contenido (formularios de Google/Dropbox/OneDrive/Servidor) es relativamente costoso de construir y casi
         #nunca se usa de entrada, así que el panel arranca vacío: se rellena recién la primera vez que el usuario lo
@@ -850,7 +850,7 @@ class ModuloSincronizacion(QWidget):
         self.panel_avanzado= QWidget()
         self.panel_avanzado.setMaximumHeight(0)
         self.panel_avanzado.setMinimumHeight(0)
-        l.addWidget(self.panel_avanzado)
+        disposicion.addWidget(self.panel_avanzado)
         self._contenido_avanzado_listo= False
 
         self._anim_avanzado= QPropertyAnimation(self.panel_avanzado, b"maximumHeight", self)
@@ -968,74 +968,74 @@ class ModuloSincronizacion(QWidget):
     #Paneles de configuración por backend avanzado
     def _crear_panel_google(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(0, 4, 0, 0)
-        l.setSpacing(6)
-        l.addWidget(QLabel("Client ID (app OAuth tipo 'Desktop' en Google Cloud Console):"))
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(0, 4, 0, 0)
+        disposicion.setSpacing(6)
+        disposicion.addWidget(QLabel("Client ID (app OAuth tipo 'Desktop' en Google Cloud Console):"))
         self.in_google_client_id= QLineEdit()
         limitar_campo_texto(self.in_google_client_id, 300)
-        l.addWidget(self.in_google_client_id)
-        l.addWidget(QLabel("Client Secret:"))
+        disposicion.addWidget(self.in_google_client_id)
+        disposicion.addWidget(QLabel("Client Secret:"))
         self.in_google_client_secret= QLineEdit()
         limitar_campo_texto(self.in_google_client_secret, 128)
         self.in_google_client_secret.setEchoMode(QLineEdit.EchoMode.Password)
-        l.addWidget(self.in_google_client_secret)
+        disposicion.addWidget(self.in_google_client_secret)
         btn= self._boton_accion("Conectar con Google Drive", "BtnAccionEditar", self._conectar_google)
-        l.addWidget(btn)
-        return w
+        disposicion.addWidget(btn)
+        return contenedor
 
     def _crear_panel_dropbox(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(0, 4, 0, 0)
-        l.setSpacing(6)
-        l.addWidget(QLabel("App Key (app registrada en Dropbox App Console):"))
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(0, 4, 0, 0)
+        disposicion.setSpacing(6)
+        disposicion.addWidget(QLabel("App Key (app registrada en Dropbox App Console):"))
         self.in_dropbox_key= QLineEdit()
         limitar_campo_texto(self.in_dropbox_key, 128)
-        l.addWidget(self.in_dropbox_key)
-        l.addWidget(QLabel("App Secret:"))
+        disposicion.addWidget(self.in_dropbox_key)
+        disposicion.addWidget(QLabel("App Secret:"))
         self.in_dropbox_secret= QLineEdit()
         limitar_campo_texto(self.in_dropbox_secret, 128)
         self.in_dropbox_secret.setEchoMode(QLineEdit.EchoMode.Password)
-        l.addWidget(self.in_dropbox_secret)
+        disposicion.addWidget(self.in_dropbox_secret)
         btn= self._boton_accion("Conectar con Dropbox", "BtnAccionEditar", self._conectar_dropbox)
-        l.addWidget(btn)
-        return w
+        disposicion.addWidget(btn)
+        return contenedor
 
     def _crear_panel_onedrive(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(0, 4, 0, 0)
-        l.setSpacing(6)
-        l.addWidget(QLabel("Client ID (app registrada en Microsoft Entra ID / Azure AD):"))
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(0, 4, 0, 0)
+        disposicion.setSpacing(6)
+        disposicion.addWidget(QLabel("Client ID (app registrada en Microsoft Entra ID / Azure AD):"))
         self.in_onedrive_client_id= QLineEdit()
         limitar_campo_texto(self.in_onedrive_client_id, 300)
-        l.addWidget(self.in_onedrive_client_id)
+        disposicion.addWidget(self.in_onedrive_client_id)
         btn= self._boton_accion("Conectar con OneDrive", "BtnAccionEditar", self._conectar_onedrive)
-        l.addWidget(btn)
-        return w
+        disposicion.addWidget(btn)
+        return contenedor
 
     def _crear_panel_servidor(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(0, 4, 0, 0)
-        l.setSpacing(6)
-        l.addWidget(QLabel("URL del servidor institucional (ej. https://sync.miescuela.edu):"))
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(0, 4, 0, 0)
+        disposicion.setSpacing(6)
+        disposicion.addWidget(QLabel("URL del servidor institucional (ej. https://sync.miescuela.edu):"))
         self.in_servidor_url= QLineEdit()
         limitar_campo_texto(self.in_servidor_url, 200)
-        l.addWidget(self.in_servidor_url)
-        l.addWidget(QLabel("Token de acceso (definido en el servidor):"))
+        disposicion.addWidget(self.in_servidor_url)
+        disposicion.addWidget(QLabel("Token de acceso (definido en el servidor):"))
         self.in_servidor_token= QLineEdit()
         limitar_campo_texto(self.in_servidor_token, 128)
         self.in_servidor_token.setEchoMode(QLineEdit.EchoMode.Password)
-        l.addWidget(self.in_servidor_token)
+        disposicion.addWidget(self.in_servidor_token)
         btn= self._boton_accion("Conectar con Servidor", "BtnAccionEditar", self._conectar_servidor)
-        l.addWidget(btn)
-        return w
+        disposicion.addWidget(btn)
+        return contenedor
 
     #Acordeón / selector de backend (animaciones de interfaz)
     def _alternar_avanzado(self):
@@ -1105,8 +1105,8 @@ class ModuloSincronizacion(QWidget):
         try:
 
             shutil.copy2(ruta_guia, destino)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar la guía:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar la guía:\n{error}", self)
             return
         registrar_auditoria("Sistema", "Descargó la Guía de Sincronización Directa (PDF)",
                             self.main_window.usuario_actual, destino)
@@ -1149,8 +1149,8 @@ class ModuloSincronizacion(QWidget):
         try:
 
             avanzado.google_drive_conectar(client_id, client_secret)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo conectar Google Drive:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo conectar Google Drive:\n{error}", self)
             return
         mostrar_mensaje("exito", "Conectado", "Google Drive se conectó correctamente.", self)
         self._refrescar_estado_avanzado()
@@ -1165,8 +1165,8 @@ class ModuloSincronizacion(QWidget):
         try:
 
             flow, url= avanzado.dropbox_conectar(app_key, app_secret)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo iniciar la conexión con Dropbox:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo iniciar la conexión con Dropbox:\n{error}", self)
             return
         webbrowser.open(url)
         codigo, ok= QInputDialog.getText(
@@ -1178,8 +1178,8 @@ class ModuloSincronizacion(QWidget):
         try:
 
             avanzado.dropbox_finalizar_conexion(flow, codigo, app_key, app_secret)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo completar la conexión con Dropbox:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo completar la conexión con Dropbox:\n{error}", self)
             return
         mostrar_mensaje("exito", "Conectado", "Dropbox se conectó correctamente.", self)
         self._refrescar_estado_avanzado()
@@ -1193,8 +1193,8 @@ class ModuloSincronizacion(QWidget):
         try:
 
             app, flujo= avanzado.onedrive_conectar(client_id)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo iniciar la conexión con OneDrive:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo iniciar la conexión con OneDrive:\n{error}", self)
             return
         if mostrar_mensaje("pregunta", "Conectar OneDrive",
                 f"{flujo['message']}\n\n¿Ya completaste el inicio de sesión en el navegador?",
@@ -1203,8 +1203,8 @@ class ModuloSincronizacion(QWidget):
         try:
 
             avanzado.onedrive_finalizar_conexion(app, flujo, client_id)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo completar la conexión con OneDrive:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo completar la conexión con OneDrive:\n{error}", self)
             return
         mostrar_mensaje("exito", "Conectado", "OneDrive se conectó correctamente.", self)
         self._refrescar_estado_avanzado()
@@ -1219,8 +1219,8 @@ class ModuloSincronizacion(QWidget):
         try:
 
             avanzado.servidor_conectar(url, token)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo conectar con el servidor:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo conectar con el servidor:\n{error}", self)
             return
         mostrar_mensaje("exito", "Conectado", "Servidor institucional conectado correctamente.", self)
         self._refrescar_estado_avanzado()

@@ -140,9 +140,9 @@ def obtener_nivel_educativo_grado(grado_id):
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT nivel_educativo FROM grados WHERE id=?", (grado_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return f["nivel_educativo"] if f else None
+    return fila["nivel_educativo"] if fila else None
 
 
 #Nivel educativo del grado/curso al que pertenece `seccion_id`.
@@ -154,9 +154,9 @@ def obtener_nivel_educativo_de_seccion(seccion_id):
     c= conn.cursor()
     c.execute("""SELECT grados.nivel_educativo as nivel FROM secciones
                  LEFT JOIN grados ON secciones.grado_id = grados.id WHERE secciones.id=?""", (seccion_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return f["nivel"] if f else None
+    return fila["nivel"] if fila else None
 
 
 #Nivel educativo del grado/curso del estudiante (vía su sección).
@@ -169,9 +169,9 @@ def obtener_nivel_educativo_de_estudiante(estudiante_id):
     c.execute("""SELECT grados.nivel_educativo as nivel FROM estudiantes
                  LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
                  LEFT JOIN grados ON secciones.grado_id = grados.id WHERE estudiantes.id=?""", (estudiante_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return f["nivel"] if f else None
+    return fila["nivel"] if fila else None
 
 
 # -----------------------------------------
@@ -197,11 +197,11 @@ def resolver_nivel_academico_grado(grado_id):
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT nivel_educativo, ciclo_secundaria FROM grados WHERE id=?", (grado_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    if not f:
+    if not fila:
         return None, None
-    return f["nivel_educativo"], f["ciclo_secundaria"]
+    return fila["nivel_educativo"], fila["ciclo_secundaria"]
 
 
 #(nivel, ciclo) del Grado/Curso al que pertenece `seccion_id`.
@@ -214,11 +214,11 @@ def resolver_nivel_academico_de_seccion(seccion_id):
     c.execute("""SELECT grados.nivel_educativo as nivel, grados.ciclo_secundaria as ciclo
                  FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id
                  WHERE secciones.id=?""", (seccion_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    if not f:
+    if not fila:
         return None, None
-    return f["nivel"], f["ciclo"]
+    return fila["nivel"], fila["ciclo"]
 
 
 #(nivel, ciclo) real de un estudiante: 'Universidad' si tiene
@@ -238,13 +238,13 @@ def resolver_nivel_academico_estudiante(estudiante_id):
                  LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
                  LEFT JOIN grados ON secciones.grado_id = grados.id
                  WHERE estudiantes.id=?""", (estudiante_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    if not f:
+    if not fila:
         return None, None
-    if f["carrera_id"] is not None:
+    if fila["carrera_id"] is not None:
         return "Universidad", None
-    return f["nivel"], f["ciclo"]
+    return fila["nivel"], fila["ciclo"]
 
 
 # -----------------------------------------
@@ -544,7 +544,7 @@ def _columna_existe(conn, tabla, columna):
 
     c= conn.cursor()
     c.execute(f"PRAGMA table_info({tabla})")
-    columnas= [f["name"] for f in c.fetchall()]
+    columnas= [fila["name"] for fila in c.fetchall()]
     return columna in columnas
 
 
@@ -1944,18 +1944,18 @@ def obtener_config_smtp():
     c= conn.cursor()
     c.execute("""SELECT smtp_host, smtp_puerto, smtp_usuario, smtp_password, smtp_remitente,
                  smtp_seguridad, nombre_institucion FROM configuracion WHERE id=1""")
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    if not f:
+    if not fila:
         return None
     return {
-        "host": f["smtp_host"] or "",
-        "puerto": f["smtp_puerto"] or 587,
-        "usuario": f["smtp_usuario"] or "",
-        "password": f["smtp_password"] or "",
-        "remitente": f["smtp_remitente"] or f["smtp_usuario"] or "",
-        "seguridad": f["smtp_seguridad"] or "TLS",
-        "institucion": f["nombre_institucion"] or "AcaDeXI",
+        "host": fila["smtp_host"] or "",
+        "puerto": fila["smtp_puerto"] or 587,
+        "usuario": fila["smtp_usuario"] or "",
+        "password": fila["smtp_password"] or "",
+        "remitente": fila["smtp_remitente"] or fila["smtp_usuario"] or "",
+        "seguridad": fila["smtp_seguridad"] or "TLS",
+        "institucion": fila["nombre_institucion"] or "AcaDeXI",
     }
 
 
@@ -2005,11 +2005,11 @@ def auditoria_esta_activa():
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT auditoria_activa FROM configuracion WHERE id=1")
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if f is None or f["auditoria_activa"] is None:
+        if fila is None or fila["auditoria_activa"] is None:
             return True
-        return bool(f["auditoria_activa"])
+        return bool(fila["auditoria_activa"])
     except Exception:
         return True
 
@@ -2029,8 +2029,8 @@ def registrar_auditoria(modulo, accion, usuario, detalle=""):
         )
         conn.commit()
         conn.close()
-    except Exception as e:
-        print(f"Error registrando auditoría: {e}")
+    except Exception as error:
+        print(f"Error registrando auditoría: {error}")
 
 
 def obtener_config_backup():
@@ -2038,14 +2038,14 @@ def obtener_config_backup():
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT backup_modo, backup_carpeta, backup_ultima_fecha FROM configuracion WHERE id=1")
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    if not f:
+    if not fila:
         return {"modo": "Manual", "carpeta": "", "ultima_fecha": ""}
     return {
-        "modo": f["backup_modo"] or "Manual",
-        "carpeta": f["backup_carpeta"] or "",
-        "ultima_fecha": f["backup_ultima_fecha"] or "",
+        "modo": fila["backup_modo"] or "Manual",
+        "carpeta": fila["backup_carpeta"] or "",
+        "ultima_fecha": fila["backup_ultima_fecha"] or "",
     }
 
 
@@ -2063,9 +2063,9 @@ def mostrar_backups_gerenciales():
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT mostrar_backups_gerenciales FROM configuracion WHERE id=1")
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return bool(f["mostrar_backups_gerenciales"]) if f else False
+    return bool(fila["mostrar_backups_gerenciales"]) if fila else False
 
 
 def guardar_mostrar_backups_gerenciales(valor):
@@ -2090,8 +2090,8 @@ def _registrar_historial_backup(tipo, destino, usuario="Sistema", exitoso=True):
                    usuario or "Sistema", int(exitoso)))
         conn.commit()
         conn.close()
-    except Exception as e:
-        print(f"Error registrando historial de backup: {e}")
+    except Exception as error:
+        print(f"Error registrando historial de backup: {error}")
 
 
 def obtener_historial_backups(limite=100):
@@ -2131,8 +2131,8 @@ def crear_backup(carpeta_extra=None, tipo="Manual", usuario="Sistema"):
             destino_extra= os.path.join(carpeta_extra, nombre)
             shutil.copy2(DB_PATH, destino_extra)
             _registrar_historial_backup(f"{tipo} (Carpeta Personalizada)", destino_extra, usuario)
-        except Exception as e:
-            print(f"No se pudo copiar el backup a la carpeta configurada: {e}")
+        except Exception as error:
+            print(f"No se pudo copiar el backup a la carpeta configurada: {error}")
             _registrar_historial_backup(f"{tipo} (Carpeta Personalizada)", carpeta_extra, usuario, exitoso=False)
 
     try:

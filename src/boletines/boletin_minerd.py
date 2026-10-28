@@ -113,9 +113,9 @@ def formato_boletin_general():
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT formato_boletin_general FROM configuracion WHERE id=1")
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return (f["formato_boletin_general"] if f and f["formato_boletin_general"] else "simple")
+    return (fila["formato_boletin_general"] if fila and fila["formato_boletin_general"] else "simple")
 
 
 def guardar_formato_boletin_general(formato):
@@ -136,13 +136,13 @@ def colores_boletin(nivel_educativo=None):
     c.execute("""SELECT boletin_color_banda_secundaria, boletin_color_texto_banda_secundaria,
                         boletin_color_banda_primaria, boletin_color_texto_banda_primaria
                  FROM configuracion WHERE id=1""")
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
     if es_nivel_primaria(nivel_educativo):
-        return {"banda": (f["boletin_color_banda_primaria"] if f else None) or "#E8863C",
-                "texto_banda": (f["boletin_color_texto_banda_primaria"] if f else None) or "#FFFFFF"}
-    return {"banda": (f["boletin_color_banda_secundaria"] if f else None) or "#1F9E9E",
-            "texto_banda": (f["boletin_color_texto_banda_secundaria"] if f else None) or "#FFFFFF"}
+        return {"banda": (fila["boletin_color_banda_primaria"] if fila else None) or "#E8863C",
+                "texto_banda": (fila["boletin_color_texto_banda_primaria"] if fila else None) or "#FFFFFF"}
+    return {"banda": (fila["boletin_color_banda_secundaria"] if fila else None) or "#1F9E9E",
+            "texto_banda": (fila["boletin_color_texto_banda_secundaria"] if fila else None) or "#FFFFFF"}
 
 
 def guardar_colores_boletin(nivel_educativo, color_banda, color_texto_banda):
@@ -173,23 +173,23 @@ def datos_estudiante_boletin(estudiante_id):
                  LEFT JOIN grados ON secciones.grado_id = grados.id
                  LEFT JOIN profesores ON secciones.profesor_guia_id = profesores.id
                  WHERE estudiantes.id=?""", (estudiante_id,))
-    f= c.fetchone()
-    if not f:
+    fila= c.fetchone()
+    if not fila:
         conn.close()
         return None
     c.execute("""SELECT id FROM estudiantes WHERE seccion_id=? AND estado='Activo'
-                 ORDER BY apellidos, nombre""", (f["seccion_id"],))
-    orden= [r["id"] for r in c.fetchall()]
+                 ORDER BY apellidos, nombre""", (fila["seccion_id"],))
+    orden= [fila["id"] for fila in c.fetchall()]
     numero_orden= (orden.index(estudiante_id) + 1) if estudiante_id in orden else None
     conn.close()
     docente= ""
-    if f["docente_nombre"]:
-        docente= f"{f['docente_nombre']} {f['docente_apellidos'] or ''}".strip()
+    if fila["docente_nombre"]:
+        docente= f"{fila['docente_nombre']} {fila['docente_apellidos'] or ''}".strip()
     return {
-        "id": f["id"], "nombre": f["nombre"], "apellidos": f["apellidos"] or "",
-        "seccion_id": f["seccion_id"], "seccion_nombre": f["seccion_nombre"] or "",
-        "anio_academico": f["anio_academico"] or "", "grado_id": f["grado_id"],
-        "grado_nombre": f["grado_nombre"] or "", "nivel_educativo": f["nivel_educativo"],
+        "id": fila["id"], "nombre": fila["nombre"], "apellidos": fila["apellidos"] or "",
+        "seccion_id": fila["seccion_id"], "seccion_nombre": fila["seccion_nombre"] or "",
+        "anio_academico": fila["anio_academico"] or "", "grado_id": fila["grado_id"],
+        "grado_nombre": fila["grado_nombre"] or "", "nivel_educativo": fila["nivel_educativo"],
         "docente": docente, "numero_orden": numero_orden,
     }
 
@@ -200,8 +200,8 @@ def materias_de_estudiante(estudiante_id, seccion_id=None):
     c= conn.cursor()
     if seccion_id is None:
         c.execute("SELECT seccion_id FROM estudiantes WHERE id=?", (estudiante_id,))
-        f= c.fetchone()
-        seccion_id= f["seccion_id"] if f else None
+        fila= c.fetchone()
+        seccion_id= fila["seccion_id"] if fila else None
     if seccion_id is None:
         conn.close()
         return []
@@ -211,7 +211,7 @@ def materias_de_estudiante(estudiante_id, seccion_id=None):
                  AND materias.estado='Activa'
                  AND (materias.modelo_evaluacion IS NULL OR materias.modelo_evaluacion != 'Técnica (RA)')
                  ORDER BY materias.nombre""", (seccion_id,))
-    filas= [dict(f) for f in c.fetchall()]
+    filas= [dict(fila) for fila in c.fetchall()]
     conn.close()
     return filas
 
@@ -222,14 +222,14 @@ def periodos_del_anio(anio_academico):
     c= conn.cursor()
     c.execute("SELECT id, nombre, fecha_inicio, fecha_fin FROM periodos WHERE anio_academico=? ORDER BY orden",
               (anio_academico,))
-    filas= [dict(f) for f in c.fetchall()]
+    filas= [dict(fila) for fila in c.fetchall()]
     conn.close()
     return filas
 
 
 def _promedio(valores):
 
-    limpios= [v for v in valores if v is not None]
+    limpios= [valor for valor in valores if valor is not None]
     return (sum(limpios) / len(limpios)) if limpios else None
 
 
@@ -264,7 +264,7 @@ def grilla_area(estudiante_id, materia_id, grado_id, periodos, grupos_display):
             c.execute(f"""SELECT nota FROM competencia_periodo
                          WHERE estudiante_id=? AND periodo_id=? AND competencia_id IN ({marcadores})""",
                       [estudiante_id, periodo["id"]] + ids_ce)
-            notas= [r["nota"] for r in c.fetchall() if r["nota"] is not None]
+            notas= [fila["nota"] for fila in c.fetchall() if fila["nota"] is not None]
             valores_por_periodo.append(_promedio(notas))
         grupos[etiqueta]= valores_por_periodo
     conn.close()
@@ -288,7 +288,7 @@ def _nota_simple_area(estudiante_id, materia_id, periodos, metodo):
     for periodo in periodos:
         c.execute("SELECT valor, peso FROM calificaciones WHERE estudiante_id=? AND materia_id=? AND periodo_id=?",
                   (estudiante_id, materia_id, periodo["id"]))
-        filas= [dict(f) for f in c.fetchall()]
+        filas= [dict(fila) for fila in c.fetchall()]
         nota= calcular_nota_final(filas, metodo) if filas else None
         valores_por_periodo.append(nota)
         todas.extend(filas)
@@ -306,8 +306,8 @@ def _recuperacion_pedagogica_area(estudiante_id, materia_id, periodos):
         c.execute("""SELECT nota_rp FROM recuperacion_pedagogica
                      WHERE estudiante_id=? AND materia_id=? AND periodo_id=?""",
                   (estudiante_id, materia_id, periodo["id"]))
-        f= c.fetchone()
-        valores.append(f["nota_rp"] if f and f["nota_rp"] is not None else None)
+        fila= c.fetchone()
+        valores.append(fila["nota_rp"] if fila and fila["nota_rp"] is not None else None)
     conn.close()
     return valores
 
@@ -358,9 +358,9 @@ def _situacion_general_estudiante(estudiante_id, anio_academico):
     c= conn.cursor()
     c.execute("SELECT decision FROM decision_promocion WHERE estudiante_id=? AND anio_academico=?",
               (estudiante_id, anio_academico))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    decision= (f["decision"] if f else None) or "Pendiente"
+    decision= (fila["decision"] if fila else None) or "Pendiente"
     return {"decision": decision,
             "promovido": decision == "Promovido",
             "aplazado": decision == "Evaluación Especial Autorizada",
@@ -380,7 +380,7 @@ def resumen_asistencia(estudiante_id, seccion_id, periodos):
                      WHERE estudiante_id=? AND seccion_id=? AND fecha BETWEEN ? AND ?
                      GROUP BY estado""",
                   (estudiante_id, seccion_id, periodo["fecha_inicio"], periodo["fecha_fin"]))
-        conteos= {r["estado"]: r["n"] for r in c.fetchall()}
+        conteos= {fila["estado"]: fila["n"] for fila in c.fetchall()}
         resultado[periodo["id"]]= {
             "asistencia": conteos.get("Presente", 0),
             "ausencia": sum(v for k, v in conteos.items() if k != "Presente"),

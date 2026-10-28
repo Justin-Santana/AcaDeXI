@@ -81,9 +81,9 @@ def tutorial_general_visto(main_window):
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT tutorial_general_visto FROM usuarios WHERE id=?", (id_usuario,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return bool(f["tutorial_general_visto"]) if f else True
+    return bool(fila["tutorial_general_visto"]) if fila else True
 
 
 def marcar_tutorial_general_visto(main_window, visto=True):
@@ -225,8 +225,8 @@ def _activar_sandbox(main_window, tipo):
         motor.DB_PATH= ruta_sandbox
         motor.SANDBOX_TUTORIAL_ACTIVO= True
         return True
-    except Exception as e:
-        print(f"⚠ No se pudo activar el sandbox del tutorial, se continúa sobre la BD real: {e}")
+    except Exception as error:
+        print(f"⚠ No se pudo activar el sandbox del tutorial, se continúa sobre la BD real: {error}")
         motor.DB_PATH= ruta_real
         motor.SANDBOX_TUTORIAL_ACTIVO= False
         return False
@@ -887,8 +887,8 @@ class _IconoInterfazGeneral(QWidget):
 
         if not self.tipo:
             return
-        p= QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pintor= QPainter(self)
+        pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         w, h= self.width(), self.height()
         cx, cy= w / 2.0, h / 2.0
 
@@ -900,9 +900,9 @@ class _IconoInterfazGeneral(QWidget):
         if self.tipo in ("buscador", "perfil"):
             fondo= QColor(self.color)
             fondo.setAlpha(34)
-            p.setPen(Qt.PenStyle.NoPen)
-            p.setBrush(fondo)
-            p.drawEllipse(rect_fondo)
+            pintor.setPen(Qt.PenStyle.NoPen)
+            pintor.setBrush(fondo)
+            pintor.drawEllipse(rect_fondo)
 
         if self.tipo == "buscador":
             #Lupa: aro grueso de puntas redondeadas + mango corto en diagonal, ligeramente desplazada del centro para
@@ -910,34 +910,34 @@ class _IconoInterfazGeneral(QWidget):
             pen= QPen(self.color)
             pen.setWidthF(diam * 0.075)
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-            p.setPen(pen)
-            p.setBrush(Qt.BrushStyle.NoBrush)
+            pintor.setPen(pen)
+            pintor.setBrush(Qt.BrushStyle.NoBrush)
 
             radio_lente= diam * 0.235
             centro_lente= QPointF(cx - diam * 0.075, cy - diam * 0.075)
-            p.drawEllipse(centro_lente, radio_lente, radio_lente)
+            pintor.drawEllipse(centro_lente, radio_lente, radio_lente)
 
             ang= math.radians(45)
             desde= QPointF(centro_lente.x() + math.cos(ang) * radio_lente,
                              centro_lente.y() + math.sin(ang) * radio_lente)
             hasta= QPointF(cx + diam * 0.30, cy + diam * 0.30)
-            p.drawLine(desde, hasta)
+            pintor.drawLine(desde, hasta)
 
         elif self.tipo == "perfil":
             #Avatar minimalista: cabeza + hombros como dos círculos solapados, recortados por el propio badge para que el
             #"cuerpo" se sugiera sin necesitar una curva Bézier.
-            p.setClipPath(self._circulo(rect_fondo))
-            p.setPen(Qt.PenStyle.NoPen)
-            p.setBrush(self.color)
+            pintor.setClipPath(self._circulo(rect_fondo))
+            pintor.setPen(Qt.PenStyle.NoPen)
+            pintor.setBrush(self.color)
 
             radio_cuerpo= diam * 0.40
             centro_cuerpo= QPointF(cx, cy + diam * 0.40)
-            p.drawEllipse(centro_cuerpo, radio_cuerpo, radio_cuerpo)
+            pintor.drawEllipse(centro_cuerpo, radio_cuerpo, radio_cuerpo)
 
             radio_cabeza= diam * 0.185
             centro_cabeza= QPointF(cx, cy - diam * 0.155)
-            p.drawEllipse(centro_cabeza, radio_cabeza, radio_cabeza)
-            p.setClipping(False)
+            pintor.drawEllipse(centro_cabeza, radio_cabeza, radio_cabeza)
+            pintor.setClipping(False)
 
         elif self.tipo == "tema":
             #Sol a la izquierda / luna a la derecha, en dos mitades de color reales (no solo un aro con rayos): comunica
@@ -955,29 +955,29 @@ class _IconoInterfazGeneral(QWidget):
             color_sol= QColor("#F59E0B")
             color_luna= QColor("#F1F5F9")
 
-            p.setPen(Qt.PenStyle.NoPen)
-            p.setBrush(color_claro)
-            p.drawPath(mitad_clara)
-            p.setBrush(color_oscuro)
-            p.drawPath(mitad_oscura)
+            pintor.setPen(Qt.PenStyle.NoPen)
+            pintor.setBrush(color_claro)
+            pintor.drawPath(mitad_clara)
+            pintor.setBrush(color_oscuro)
+            pintor.drawPath(mitad_oscura)
 
             #Sol: núcleo + 6 rayos cortos, todo dentro de la mitad clara.
             radio_sol= diam * 0.125
             centro_sol= QPointF(cx - diam * 0.22, cy)
-            p.setBrush(color_sol)
-            p.drawEllipse(centro_sol, radio_sol, radio_sol)
+            pintor.setBrush(color_sol)
+            pintor.drawEllipse(centro_sol, radio_sol, radio_sol)
 
             pen_rayo= QPen(color_sol)
             pen_rayo.setWidthF(diam * 0.028)
             pen_rayo.setCapStyle(Qt.PenCapStyle.RoundCap)
-            p.setPen(pen_rayo)
+            pintor.setPen(pen_rayo)
             for i in range(6):
                 ang= math.radians(60 * i)
                 x1= centro_sol.x() + math.cos(ang) * radio_sol * 1.55
                 y1= centro_sol.y() + math.sin(ang) * radio_sol * 1.55
                 x2= centro_sol.x() + math.cos(ang) * radio_sol * 2.05
                 y2= centro_sol.y() + math.sin(ang) * radio_sol * 2.05
-                p.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+                pintor.drawLine(QPointF(x1, y1), QPointF(x2, y2))
 
             #Luna: media luna (círculo menos un recorte desplazado), dentro de la mitad oscura.
             centro_luna= QPointF(cx + diam * 0.22, cy)
@@ -988,25 +988,25 @@ class _IconoInterfazGeneral(QWidget):
             recorte.addEllipse(QPointF(centro_luna.x() + radio_luna * 0.55,
                                         centro_luna.y() - radio_luna * 0.35),
                                 radio_luna * 0.85, radio_luna * 0.85)
-            p.setPen(Qt.PenStyle.NoPen)
-            p.setBrush(color_luna)
-            p.drawPath(luna.subtracted(recorte))
+            pintor.setPen(Qt.PenStyle.NoPen)
+            pintor.setBrush(color_luna)
+            pintor.drawPath(luna.subtracted(recorte))
 
             #Línea divisoria sutil entre las dos mitades.
             pen_div= QPen(QColor(127, 127, 127, 90))
             pen_div.setWidthF(1.0)
-            p.setPen(pen_div)
-            p.drawLine(QPointF(cx, rect_fondo.top() + 1), QPointF(cx, rect_fondo.bottom() - 1))
+            pintor.setPen(pen_div)
+            pintor.drawLine(QPointF(cx, rect_fondo.top() + 1), QPointF(cx, rect_fondo.bottom() - 1))
 
         #Aro fino compartido por los tres, para que el badge se lea como un elemento acabado (como un marco de avatar)
         #y no como una mancha de color sin borde.
         pen_borde= QPen(QColor(127, 127, 127, 80))
         pen_borde.setWidthF(1.0)
-        p.setPen(pen_borde)
-        p.setBrush(Qt.BrushStyle.NoBrush)
-        p.drawEllipse(rect_fondo)
+        pintor.setPen(pen_borde)
+        pintor.setBrush(Qt.BrushStyle.NoBrush)
+        pintor.drawEllipse(rect_fondo)
 
-        p.end()
+        pintor.end()
 
     @staticmethod
     def _circulo(rect):
@@ -1534,12 +1534,12 @@ class _ConfettiOverlay(QWidget):
     def _avanzar(self):
 
         self._transcurrido_ms += self._INTERVALO_MS
-        for p in self._particulas:
-            p["y"] += p["vy"] * self._INTERVALO_MS
+        for particula in self._particulas:
+            particula["y"] += particula["vy"] * self._INTERVALO_MS
             #Un vaivén lateral en seno (además de la deriva `vx` lineal) es lo que hace que el confeti "revolotee" al caer
             #en vez de descender en línea recta -mucho más creíble visualmente.
-            p["x"] += p["vx"] * self._INTERVALO_MS + math.sin(p["y"] / 28.0 + p["fase"]) * 0.6
-            p["rot"] += p["vrot"] * self._INTERVALO_MS
+            particula["x"] += particula["vx"] * self._INTERVALO_MS + math.sin(particula["y"] / 28.0 + particula["fase"]) * 0.6
+            particula["rot"] += particula["vrot"] * self._INTERVALO_MS
         self.update()
         if self._transcurrido_ms >= self._DURACION_MS:
             self._timer.stop()
@@ -1554,15 +1554,15 @@ class _ConfettiOverlay(QWidget):
         #termina.
         restante= max(0.0, 1.0 - (self._transcurrido_ms / self._DURACION_MS))
         opacidad= min(1.0, restante * 1.6)
-        for p in self._particulas:
+        for particula in self._particulas:
             pintor.save()
-            pintor.translate(p["x"], p["y"])
-            pintor.rotate(p["rot"])
-            color= QColor(p["color"])
+            pintor.translate(particula["x"], particula["y"])
+            pintor.rotate(particula["rot"])
+            color= QColor(particula["color"])
             color.setAlphaF(max(0.0, opacidad))
             pintor.setBrush(color)
             pintor.setPen(Qt.PenStyle.NoPen)
-            pintor.drawRect(QRectF(-p["ancho"] / 2, -p["alto"] / 2, p["ancho"], p["alto"]))
+            pintor.drawRect(QRectF(-particula["ancho"] / 2, -particula["alto"] / 2, particula["ancho"], particula["alto"]))
             pintor.restore()
         pintor.end()
 
@@ -1971,7 +1971,7 @@ class AsistenteSpotlight(QWidget):
         nuevos= self._expandir_paneles_desplegables(pagina)
         previos= getattr(self, "_paneles_expandidos_tutorial", None) or []
         self._paneles_expandidos_tutorial= previos + [
-            p for p in nuevos if not any(p is q for q in previos)]
+            p for p in nuevos if not any(p is previo for previo in previos)]
         boton= self._buscar_boton_por_texto(pagina, texto_boton_objetivo)
         self._boton_objetivo_actual= boton
         self._colocar_spotlight()
@@ -2107,27 +2107,27 @@ class AsistenteSpotlight(QWidget):
         y_min= self.banner.height() + 12
 
         if self._panel_movido_manualmente:
-            x= max(24, min(self.panel.x(), ancho_ventana - ancho_panel - 24))
-            y= max(y_min, min(self.panel.y(), alto_ventana - alto_panel - 24))
+            pos_x= max(24, min(self.panel.x(), ancho_ventana - ancho_panel - 24))
+            pos_y= max(y_min, min(self.panel.y(), alto_ventana - alto_panel - 24))
         elif rect_referencia is not None and rect_referencia.right() + 24 + ancho_panel < ancho_ventana:
-            x= rect_referencia.right() + 24
-            y= max(y_min, min(rect_referencia.top(), alto_ventana - alto_panel - 24))
+            pos_x= rect_referencia.right() + 24
+            pos_y= max(y_min, min(rect_referencia.top(), alto_ventana - alto_panel - 24))
         elif rect_referencia is not None and rect_referencia.left() - 24 - ancho_panel > 0:
-            x= rect_referencia.left() - 24 - ancho_panel
-            y= max(y_min, min(rect_referencia.top(), alto_ventana - alto_panel - 24))
+            pos_x= rect_referencia.left() - 24 - ancho_panel
+            pos_y= max(y_min, min(rect_referencia.top(), alto_ventana - alto_panel - 24))
         else:
             #Sin objetivo localizado (o sin espacio a los lados): esquina inferior derecha, lejos del centro, para no
             #interrumpir la visibilidad de lo que el usuario tiene que hacer.
-            x= ancho_ventana - ancho_panel - 24
-            y= alto_ventana - alto_panel - 24
-        y= max(y, y_min)
+            pos_x= ancho_ventana - ancho_panel - 24
+            pos_y= alto_ventana - alto_panel - 24
+        pos_y= max(pos_y, y_min)
         if self._animacion_entrada_pendiente:
             self._animacion_entrada_pendiente= False
             self.panel.raise_()
             self.banner.raise_()
-            self._reproducir_animacion_entrada(x, y)
+            self._reproducir_animacion_entrada(pos_x, pos_y)
         else:
-            self.panel.move(x, y)
+            self.panel.move(pos_x, pos_y)
             self.panel.raise_()
             self.banner.raise_()
             self._actualizar_mascara_propia()  #el panel ya está en su posición final

@@ -76,9 +76,9 @@ def _redondear_pixmap(pixmap, tamano):
     ruta= QPainterPath()
     ruta.addEllipse(0, 0, tamano, tamano)
     pintor.setClipPath(ruta)
-    x= (tamano - fuente.width()) // 2
-    y= (tamano - fuente.height()) // 2
-    pintor.drawPixmap(x, y, fuente)
+    pos_x= (tamano - fuente.width()) // 2
+    pos_y= (tamano - fuente.height()) // 2
+    pintor.drawPixmap(pos_x, pos_y, fuente)
     pintor.end()
     return resultado
 
@@ -300,8 +300,8 @@ class BarrasDistribucion(QWidget):
             return
 
         maximo= max(valor for _, valor in self._datos) or 1
-        n= len(self._datos)
-        alto_fila= self.height() / n
+        cantidad= len(self._datos)
+        alto_fila= self.height() / cantidad
         alto_barra= min(16, alto_fila * 0.42)
         ancho_etiqueta= 122
         ancho_valor= 26
@@ -820,9 +820,9 @@ class ModuloPersonal(QWidget):
                          SELECT usuario_id FROM personal_administrativo WHERE usuario_id IS NOT NULL
                          AND (?='' OR id != ?)
                      ) ORDER BY usuarios.username""", (self.id_edicion or "", self.id_edicion or -1))
-        for f in c.fetchall():
-            etiqueta= f["nombre_completo"] or f["username"]
-            self.combo_usuario.addItem(f"{etiqueta} ({f['username']})", f["id"])
+        for fila in c.fetchall():
+            etiqueta= fila["nombre_completo"] or fila["username"]
+            self.combo_usuario.addItem(f"{etiqueta} ({fila['username']})", fila["id"])
         conn.close()
 
     def _guardar(self):
@@ -856,9 +856,9 @@ class ModuloPersonal(QWidget):
                 accion= "Editó personal administrativo"
             conn.commit()
             conn.close()
-        except Exception as e:
+        except Exception as error:
             self._destello("#EF4444")
-            mostrar_mensaje("error", "Error", f"No se pudo guardar el registro:\n{e}", self)
+            mostrar_mensaje("error", "Error", f"No se pudo guardar el registro:\n{error}", self)
             return
         registrar_auditoria("Personal", accion, self.main_window.usuario_actual, self.in_nombre.text().strip())
         self._destello("#22C55E")
@@ -956,12 +956,12 @@ class ModuloPersonal(QWidget):
         conn.close()
         filtradas= filas
         if texto:
-            filtradas= [f for f in filtradas
-                        if texto in _normalizar(f"{f['nombre']} {f['apellidos']} {f['cargo'] or ''} {f['departamento'] or ''}")]
+            filtradas= [filtrada for filtrada in filtradas
+                        if texto in _normalizar(f"{filtrada['nombre']} {filtrada['apellidos']} {filtrada['cargo'] or ''} {filtrada['departamento'] or ''}")]
         if filtro_cargo is not None:
-            filtradas= [f for f in filtradas if (f["cargo"] or "") == filtro_cargo]
+            filtradas= [filtrada for filtrada in filtradas if (filtrada["cargo"] or "") == filtro_cargo]
         if filtro_estado is not None:
-            filtradas= [f for f in filtradas if (f["estado"] or "Activo") == filtro_estado]
+            filtradas= [filtrada for filtrada in filtradas if (filtrada["estado"] or "Activo") == filtro_estado]
         self.paginacion.establecer_total(len(filtradas))
         inicio, fin= self.paginacion.rango_actual()
         pagina= filtradas[inicio:fin]
@@ -1005,23 +1005,23 @@ class ModuloPersonal(QWidget):
     #búsqueda), para que el panorama siempre refleje toda la planta.
     def _actualizar_panorama(self, filas, animar=True):
 
-        activos= sum(1 for f in filas if (f["estado"] or "Activo") == "Activo")
+        activos= sum(1 for fila in filas if (fila["estado"] or "Activo") == "Activo")
         inactivos= len(filas) - activos
         self.anillo_estado.establecer_datos(activos, inactivos, animar=animar)
         self.lbl_leyenda_activos.setText(f"● Activos: {activos}")
         self.lbl_leyenda_inactivos.setText(f"● Inactivos: {inactivos}")
 
         conteo_cargos= {}
-        for f in filas:
-            cargo= (f["cargo"] or "").strip()
+        for fila in filas:
+            cargo= (fila["cargo"] or "").strip()
             if not cargo:
                 continue
             conteo_cargos[cargo]= conteo_cargos.get(cargo, 0) + 1
         top_cargos= sorted(conteo_cargos.items(), key=lambda kv: kv[1], reverse=True)[:5]
         self.barras_cargos.establecer_datos(top_cargos, animar=animar)
 
-        con_foto= [f for f in filas
-                    if (f["foto"] if "foto" in f.keys() else None) and os.path.exists(f["foto"])]
+        con_foto= [fila for fila in filas
+                    if (fila["foto"] if "foto" in fila.keys() else None) and os.path.exists(fila["foto"])]
         con_foto= sorted(con_foto, key=lambda f: f["id"], reverse=True)[:5]
         pixmaps= [p for p in (obtener_pixmap_circular_cacheado(f["foto"], 32) for f in con_foto) if p is not None]
         if pixmaps:
@@ -1047,7 +1047,7 @@ class ModuloPersonal(QWidget):
         c= conn.cursor()
         c.execute("""SELECT DISTINCT cargo FROM personal_administrativo
                      WHERE cargo IS NOT NULL AND TRIM(cargo) != '' ORDER BY cargo""")
-        cargos= [f["cargo"] for f in c.fetchall()]
+        cargos= [fila["cargo"] for fila in c.fetchall()]
         conn.close()
         self.combo_filtro_cargo.blockSignals(True)
         self.combo_filtro_cargo.clear()

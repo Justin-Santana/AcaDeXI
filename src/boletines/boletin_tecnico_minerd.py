@@ -48,7 +48,7 @@ def modulos_tecnicos_de_estudiante(estudiante_id, seccion_id, anio_academico):
                  FROM horarios JOIN materias ON horarios.materia_id = materias.id
                  WHERE horarios.seccion_id=? AND materias.modelo_evaluacion=?
                  ORDER BY materias.nombre""", (seccion_id, MODELO_EVALUACION_TECNICA))
-    modulos= [dict(f) for f in c.fetchall()]
+    modulos= [dict(fila) for fila in c.fetchall()]
     if not modulos:
         c.execute("""SELECT DISTINCT materias.id, materias.nombre, materias.codigo FROM calificacion_ra
                      JOIN resultados_aprendizaje ra ON calificacion_ra.resultado_aprendizaje_id = ra.id
@@ -56,7 +56,7 @@ def modulos_tecnicos_de_estudiante(estudiante_id, seccion_id, anio_academico):
                      WHERE calificacion_ra.estudiante_id=? AND calificacion_ra.anio_academico=?
                      AND materias.modelo_evaluacion=?
                      ORDER BY materias.nombre""", (estudiante_id, anio_academico, MODELO_EVALUACION_TECNICA))
-        modulos= [dict(f) for f in c.fetchall()]
+        modulos= [dict(fila) for fila in c.fetchall()]
     conn.close()
     return modulos
 
@@ -71,14 +71,14 @@ def grilla_modulo_tecnico(estudiante_id, materia_id, anio_academico):
     c= conn.cursor()
     c.execute("""SELECT * FROM resultados_aprendizaje WHERE materia_id=? AND estado='Activo'
                  ORDER BY orden, codigo""", (materia_id,))
-    ra_lista= [dict(f) for f in c.fetchall()]
+    ra_lista= [dict(fila) for fila in c.fetchall()]
     contribuciones= []
     notas_validas, pesos_validos= [], []
     for ra in ra_lista:
         c.execute("""SELECT nota FROM calificacion_ra WHERE estudiante_id=? AND resultado_aprendizaje_id=?
                      AND anio_academico=?""", (estudiante_id, ra["id"], anio_academico))
-        f= c.fetchone()
-        nota= f["nota"] if f and f["nota"] is not None else None
+        fila= c.fetchone()
+        nota= fila["nota"] if fila and fila["nota"] is not None else None
         peso= ra["peso"] or 0
         if nota is not None:
             contribuciones.append(nota * peso / 100)
@@ -101,15 +101,15 @@ def situacion_estudiante_politecnico(estudiante_id, anio_academico):
     c= conn.cursor()
     c.execute("""SELECT decision, accion_no_promocion, motivo_conducta FROM decision_promocion
                  WHERE estudiante_id=? AND anio_academico=?""", (estudiante_id, anio_academico))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    if not f:
+    if not fila:
         return {"decision": "Pendiente", "situacion": "", "condicion_final": ""}
-    situacion= DECISIONES_PROMOCION_SITUACION.get(f["decision"], "")
-    condicion= f["decision"] or "Pendiente"
-    if f["accion_no_promocion"]:
-        condicion += f" — {f['accion_no_promocion']}"
-    return {"decision": f["decision"] or "Pendiente", "situacion": situacion, "condicion_final": condicion}
+    situacion= DECISIONES_PROMOCION_SITUACION.get(fila["decision"], "")
+    condicion= fila["decision"] or "Pendiente"
+    if fila["accion_no_promocion"]:
+        condicion += f" — {fila['accion_no_promocion']}"
+    return {"decision": fila["decision"] or "Pendiente", "situacion": situacion, "condicion_final": condicion}
 
 
 #Ensambla los datos del boletín técnico: módulos técnicos del

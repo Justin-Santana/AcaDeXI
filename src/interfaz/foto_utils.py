@@ -178,6 +178,6 @@ def seleccionar_y_recortar_foto(parent, carpeta_destino, prefijo="foto"):
         imagen_final= dialogo.imagen_recortada or QImage(ruta_origen)
         imagen_final.save(destino, "PNG")
         return destino
-    except Exception as e:
-        mostrar_mensaje("error", "Error", f"No se pudo procesar la fotografía:\n{e}", parent)
+    except Exception as error:
+        mostrar_mensaje("error", "Error", f"No se pudo procesar la fotografía:\n{error}", parent)
         return None

@@ -320,35 +320,35 @@ def buscar_global(main_window, texto):
                      LEFT JOIN carreras car ON car.id = e.carrera_id
                      WHERE e.estado='Activo'""")
         coincidencias= []
-        for f in c.fetchall():
+        for fila in c.fetchall():
             #El RBAC por fila se decide SIEMPRE con la sección institucional
             #real (f), nunca con la del override: un retoque local es solo
             #una personalización de texto, no un cambio real de acceso.
-            if secciones_permitidas is not None and f["seccion_id"] not in secciones_permitidas:
+            if secciones_permitidas is not None and fila["seccion_id"] not in secciones_permitidas:
                 continue
-            datos= aplicar_override(f, overrides.get(f["id"])) if restringir_secciones else f
+            datos= aplicar_override(fila, overrides.get(fila["id"])) if restringir_secciones else fila
 
             nombre_completo= f"{datos['nombre']} {datos['apellidos'] or ''}"
             seccion_id_efectiva= datos["seccion_id"]
-            if restringir_secciones and seccion_id_efectiva != f["seccion_id"]:
+            if restringir_secciones and seccion_id_efectiva != fila["seccion_id"]:
                 #El docente reasignó localmente a este estudiante a otra sección: se resuelve su nombre en el mapa completo
                 #(arriba) en vez del que trae el JOIN (que sigue la sección institucional).
                 grado_nombre, seccion_nombre= mapa_grado_seccion.get(
-                    seccion_id_efectiva, (f["grado_nombre"] or "", f["seccion_nombre"] or ""))
+                    seccion_id_efectiva, (fila["grado_nombre"] or "", fila["seccion_nombre"] or ""))
             else:
-                grado_nombre= f["grado_nombre"] or ""
-                seccion_nombre= f["seccion_nombre"] or ""
+                grado_nombre= fila["grado_nombre"] or ""
+                seccion_nombre= fila["seccion_nombre"] or ""
             #El área técnica y la carrera SÍ se muestran en la tabla de "Mis Estudiantes" siempre con el dato institucional
             #(nunca el override), así que aquí se respeta el mismo criterio.
-            especialidad_nombre= f["especialidad_nombre"] or ""
-            carrera_nombre= f["carrera_nombre"] or ""
+            especialidad_nombre= fila["especialidad_nombre"] or ""
+            carrera_nombre= fila["carrera_nombre"] or ""
             #Nivel educativo como criterio de búsqueda más ("Juan Pérez secundaria", "3ro C informática secundaria"): mismo
             #dato que ya usa el filtro de Nivel Educativo en Estudiantes - Universidad se reconoce por tener Carrera (dato
             #existente), el resto por grados.nivel_educativo (ver resolver_nivel_academico_* en bd.py, la misma fuente de
             #verdad en todos lados).
-            nivel_nombre= "Universidad" if f["carrera_id"] is not None else (f["nivel_educativo"] or "")
+            nivel_nombre= "Universidad" if fila["carrera_id"] is not None else (fila["nivel_educativo"] or "")
 
-            partes_busqueda= [nombre_completo, f["matricula"] or "", "estudiante alumno alumna"]
+            partes_busqueda= [nombre_completo, fila["matricula"] or "", "estudiante alumno alumna"]
             if grado_nombre:
                 partes_busqueda.append(grado_nombre)
             if seccion_nombre:
@@ -376,7 +376,7 @@ def buscar_global(main_window, texto):
                 etiqueta= f"{nombre_completo} — Matrícula {datos['matricula'] or 's/n'}"
                 if detalle:
                     etiqueta += f" ({detalle})"
-                if restringir_secciones and f["id"] in overrides:
+                if restringir_secciones and fila["id"] in overrides:
                     #Antes esto agregaba un emoji de lapicito suelto al final de la etiqueta; con los emojis fuera del texto, se
                     #dice con palabras que ese dato tiene un retoque local propio del docente que Dirección aún no actualizó en el
                     #sistema.
@@ -386,7 +386,7 @@ def buscar_global(main_window, texto):
                 #contra el nombre/matrícula institucional, no contra el override.
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Estudiantes", etiqueta, destino_estudiantes,
-                                        f["matricula"] or f["nombre"], _icono_categoria(destino_estudiantes))))
+                                        fila["matricula"] or fila["nombre"], _icono_categoria(destino_estudiantes))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -395,15 +395,15 @@ def buscar_global(main_window, texto):
         c.execute("""SELECT id, nombre, apellidos, especialidad FROM profesores
                      WHERE estado='Activo'""")
         coincidencias= []
-        for f in c.fetchall():
-            nombre_completo= f"{f['nombre']} {f['apellidos'] or ''}"
+        for fila in c.fetchall():
+            nombre_completo= f"{fila['nombre']} {fila['apellidos'] or ''}"
             #Alias "profesor/profesora/docente" para que una búsqueda tipo "profesor felix" encuentre al profesor Félix
             #aunque la palabra "profesor" no forme parte de su nombre ni especialidad.
-            texto_concatenado= f"{nombre_completo} {f['especialidad'] or ''} profesor profesora docente"
+            texto_concatenado= f"{nombre_completo} {fila['especialidad'] or ''} profesor profesora docente"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta= nombre_completo + (f" — {f['especialidad']}" if f["especialidad"] else "")
+                etiqueta= nombre_completo + (f" — {fila['especialidad']}" if fila["especialidad"] else "")
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
-                                       ("Profesores", etiqueta, "Profesores", f["nombre"],
+                                       ("Profesores", etiqueta, "Profesores", fila["nombre"],
                                         _icono_categoria("Profesores"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
@@ -413,13 +413,13 @@ def buscar_global(main_window, texto):
         c.execute("""SELECT id, nombre, apellidos, cargo FROM personal_administrativo
                      WHERE estado='Activo'""")
         coincidencias= []
-        for f in c.fetchall():
-            nombre_completo= f"{f['nombre']} {f['apellidos'] or ''}"
-            texto_concatenado= f"{nombre_completo} {f['cargo'] or ''} personal administrativo"
+        for fila in c.fetchall():
+            nombre_completo= f"{fila['nombre']} {fila['apellidos'] or ''}"
+            texto_concatenado= f"{nombre_completo} {fila['cargo'] or ''} personal administrativo"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta= nombre_completo + (f" — {f['cargo']}" if f["cargo"] else "")
+                etiqueta= nombre_completo + (f" — {fila['cargo']}" if fila["cargo"] else "")
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
-                                       ("Personal", etiqueta, "Personal", f["nombre"],
+                                       ("Personal", etiqueta, "Personal", fila["nombre"],
                                         _icono_categoria("Personal"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
@@ -436,14 +436,14 @@ def buscar_global(main_window, texto):
                      WHERE estado='Activa'
                      AND (modelo_evaluacion IS NULL OR modelo_evaluacion != 'Técnica (RA)')""")
         coincidencias= []
-        for f in c.fetchall():
-            if materias_permitidas is not None and f["id"] not in materias_permitidas:
+        for fila in c.fetchall():
+            if materias_permitidas is not None and fila["id"] not in materias_permitidas:
                 continue
-            texto_concatenado= f"{f['nombre']} {f['codigo'] or ''} materia asignatura"
+            texto_concatenado= f"{fila['nombre']} {fila['codigo'] or ''} materia asignatura"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta= f"{f['nombre']}" + (f" ({f['codigo']})" if f["codigo"] else "")
+                etiqueta= f"{fila['nombre']}" + (f" ({fila['codigo']})" if fila["codigo"] else "")
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
-                                       ("Materias", etiqueta, destino_materias, f["nombre"],
+                                       ("Materias", etiqueta, destino_materias, fila["nombre"],
                                         _icono_categoria(destino_materias))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
@@ -457,18 +457,18 @@ def buscar_global(main_window, texto):
         usuario_id= getattr(main_window, "id_usuario_actual", None)
         c.execute("SELECT id, titulo, descripcion, tipo, fecha, visibilidad, usuario_id FROM eventos")
         coincidencias= []
-        for f in c.fetchall():
-            if f["visibilidad"] == "Personal" and f["usuario_id"] != usuario_id:
+        for fila in c.fetchall():
+            if fila["visibilidad"] == "Personal" and fila["usuario_id"] != usuario_id:
                 continue
-            texto_concatenado= (f"{f['titulo']} {f['descripcion'] or ''} {f['tipo'] or ''} "
+            texto_concatenado= (f"{fila['titulo']} {fila['descripcion'] or ''} {fila['tipo'] or ''} "
                                   f"evento cita calendario")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt= formatear_fecha(f["fecha"], main_window)
-                etiqueta= f["titulo"] + (f" — {fecha_fmt}" if fecha_fmt else "")
-                if f["tipo"]:
-                    etiqueta += f" ({f['tipo']})"
+                fecha_fmt= formatear_fecha(fila["fecha"], main_window)
+                etiqueta= fila["titulo"] + (f" — {fecha_fmt}" if fecha_fmt else "")
+                if fila["tipo"]:
+                    etiqueta += f" ({fila['tipo']})"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
-                                       ("Calendario", etiqueta, "Calendario", f["titulo"],
+                                       ("Calendario", etiqueta, "Calendario", fila["titulo"],
                                         _icono_categoria("Calendario"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
@@ -483,21 +483,21 @@ def buscar_global(main_window, texto):
                      FROM tareas t LEFT JOIN materias m ON m.id = t.materia_id
                      WHERE t.estado='Activa'""")
         coincidencias= []
-        for f in c.fetchall():
-            if materias_permitidas is not None and f["materia_id"] not in materias_permitidas:
+        for fila in c.fetchall():
+            if materias_permitidas is not None and fila["materia_id"] not in materias_permitidas:
                 continue
-            texto_concatenado= (f"{f['titulo']} {f['categoria'] or ''} {f['materia_nombre'] or ''} "
+            texto_concatenado= (f"{fila['titulo']} {fila['categoria'] or ''} {fila['materia_nombre'] or ''} "
                                   f"tarea actividad")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt= formatear_fecha(f["fecha_entrega"], main_window)
-                etiqueta= f["titulo"]
-                detalle= " · ".join(p for p in (f["materia_nombre"], f["categoria"]) if p)
+                fecha_fmt= formatear_fecha(fila["fecha_entrega"], main_window)
+                etiqueta= fila["titulo"]
+                detalle= " · ".join(p for p in (fila["materia_nombre"], fila["categoria"]) if p)
                 if detalle:
                     etiqueta += f" — {detalle}"
                 if fecha_fmt:
                     etiqueta += f" (entrega {fecha_fmt})"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
-                                       ("Banco de Tareas", etiqueta, "Banco de Tareas", f["titulo"],
+                                       ("Banco de Tareas", etiqueta, "Banco de Tareas", fila["titulo"],
                                         _icono_categoria("Banco de Tareas"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
@@ -514,17 +514,17 @@ def buscar_global(main_window, texto):
                      FROM observaciones o
                      LEFT JOIN estudiantes e ON e.id = o.estudiante_id""")
         coincidencias= []
-        for f in c.fetchall():
+        for fila in c.fetchall():
             if restringir_secciones and (secciones_permitidas_glob is None
-                                          or f["seccion_id"] not in secciones_permitidas_glob):
+                                          or fila["seccion_id"] not in secciones_permitidas_glob):
                 continue
-            nombre_est= f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
-            texto_concatenado= (f"{nombre_est} {f['texto'] or ''} {f['naturaleza'] or ''} "
-                                  f"{f['categorias'] or ''} observación anotación")
+            nombre_est= f"{fila['est_nombre'] or ''} {fila['est_apellidos'] or ''}".strip()
+            texto_concatenado= (f"{nombre_est} {fila['texto'] or ''} {fila['naturaleza'] or ''} "
+                                  f"{fila['categorias'] or ''} observación anotación")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt= formatear_fecha(f["fecha"][:10], main_window) if f["fecha"] else None
-                etiqueta= f"{f['naturaleza'] or 'Informativa'} — {nombre_est or 'Sin estudiante'}"
-                if f["destacada"]:
+                fecha_fmt= formatear_fecha(fila["fecha"][:10], main_window) if fila["fecha"] else None
+                etiqueta= f"{fila['naturaleza'] or 'Informativa'} — {nombre_est or 'Sin estudiante'}"
+                if fila["destacada"]:
                     etiqueta += " (destacada)"
                 if fecha_fmt:
                     etiqueta += f" — {fecha_fmt}"
@@ -543,13 +543,13 @@ def buscar_global(main_window, texto):
                      FROM psicologia p
                      LEFT JOIN estudiantes e ON e.id = p.estudiante_id""")
         coincidencias= []
-        for f in c.fetchall():
-            nombre_est= f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
-            texto_concatenado= (f"{nombre_est} {f['texto'] or ''} {f['naturaleza'] or ''} "
-                                  f"{f['estado_caso'] or ''} caso psicología psicológico")
+        for fila in c.fetchall():
+            nombre_est= f"{fila['est_nombre'] or ''} {fila['est_apellidos'] or ''}".strip()
+            texto_concatenado= (f"{nombre_est} {fila['texto'] or ''} {fila['naturaleza'] or ''} "
+                                  f"{fila['estado_caso'] or ''} caso psicología psicológico")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                fecha_fmt= formatear_fecha(f["fecha"][:10], main_window) if f["fecha"] else None
-                etiqueta= f"{f['estado_caso'] or 'Caso'} — {nombre_est or 'Sin estudiante'}"
+                fecha_fmt= formatear_fecha(fila["fecha"][:10], main_window) if fila["fecha"] else None
+                etiqueta= f"{fila['estado_caso'] or 'Caso'} — {nombre_est or 'Sin estudiante'}"
                 if fecha_fmt:
                     etiqueta += f" — {fecha_fmt}"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
@@ -571,20 +571,20 @@ def buscar_global(main_window, texto):
                      FROM materiales m
                      LEFT JOIN categorias_material cm ON cm.id = m.categoria_id""")
         coincidencias= []
-        for f in c.fetchall():
-            if categorias_permitidas is not None and f["categoria_id"] not in categorias_permitidas:
+        for fila in c.fetchall():
+            if categorias_permitidas is not None and fila["categoria_id"] not in categorias_permitidas:
                 continue
-            texto_concatenado= (f"{f['nombre']} {f['codigo'] or ''} {f['descripcion'] or ''} "
-                                  f"{f['ubicacion'] or ''} {f['categoria_nombre'] or ''} "
-                                  f"{f['estado'] or ''} material inventario equipo")
+            texto_concatenado= (f"{fila['nombre']} {fila['codigo'] or ''} {fila['descripcion'] or ''} "
+                                  f"{fila['ubicacion'] or ''} {fila['categoria_nombre'] or ''} "
+                                  f"{fila['estado'] or ''} material inventario equipo")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                detalle= " · ".join(p for p in (f["categoria_nombre"], f["ubicacion"]) if p)
-                etiqueta= f["nombre"] + (f" ({f['codigo']})" if f["codigo"] else "")
+                detalle= " · ".join(p for p in (fila["categoria_nombre"], fila["ubicacion"]) if p)
+                etiqueta= fila["nombre"] + (f" ({fila['codigo']})" if fila["codigo"] else "")
                 if detalle:
                     etiqueta += f" — {detalle}"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Materiales", etiqueta, "Materiales",
-                                        f["nombre"], _icono_categoria("Materiales"))))
+                                        fila["nombre"], _icono_categoria("Materiales"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -602,27 +602,27 @@ def buscar_global(main_window, texto):
                      LEFT JOIN grados g ON g.id = s.grado_id
                      LEFT JOIN aulas a ON a.id = h.aula_id""")
         coincidencias= []
-        for f in c.fetchall():
-            if materias_permitidas is not None and f["materia_id"] not in materias_permitidas:
+        for fila in c.fetchall():
+            if materias_permitidas is not None and fila["materia_id"] not in materias_permitidas:
                 continue
             if restringir_secciones and secciones_permitidas_glob is not None \
-                    and f["seccion_id"] not in secciones_permitidas_glob:
+                    and fila["seccion_id"] not in secciones_permitidas_glob:
                 continue
-            grupo= f"{f['grado_nombre'] or ''} {f['seccion_nombre'] or ''}".strip()
-            texto_concatenado= (f"{f['materia_nombre'] or ''} {grupo} {f['dia'] or ''} "
-                                  f"{f['aula_nombre'] or ''} clase horario")
+            grupo= f"{fila['grado_nombre'] or ''} {fila['seccion_nombre'] or ''}".strip()
+            texto_concatenado= (f"{fila['materia_nombre'] or ''} {grupo} {fila['dia'] or ''} "
+                                  f"{fila['aula_nombre'] or ''} clase horario")
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                franja= " · ".join(p for p in (f["dia"], f["hora_inicio"], f["hora_fin"]) if p)
-                etiqueta= f"{f['materia_nombre'] or 'Sin materia'}"
+                franja= " · ".join(p for p in (fila["dia"], fila["hora_inicio"], fila["hora_fin"]) if p)
+                etiqueta= f"{fila['materia_nombre'] or 'Sin materia'}"
                 if grupo:
                     etiqueta += f" — {grupo}"
                 if franja:
                     etiqueta += f" ({franja})"
-                if f["aula_nombre"]:
-                    etiqueta += f" — Aula {f['aula_nombre']}"
+                if fila["aula_nombre"]:
+                    etiqueta += f" — Aula {fila['aula_nombre']}"
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Horario", etiqueta, "Horario",
-                                        f["materia_nombre"], _icono_categoria("Horario"))))
+                                        fila["materia_nombre"], _icono_categoria("Horario"))))
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -634,37 +634,37 @@ def buscar_global(main_window, texto):
                             (SELECT GROUP_CONCAT(cr.nombre, ', ') FROM carreras cr
                               WHERE cr.facultad_id = f.id) AS carreras_txt
                      FROM facultades f""")
-        for f in c.fetchall():
-            texto_concatenado= f"{f['facultad_nombre']} {f['carreras_txt'] or ''} facultad universidad"
+        for fila in c.fetchall():
+            texto_concatenado= f"{fila['facultad_nombre']} {fila['carreras_txt'] or ''} facultad universidad"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                resultados.append(("Universidad", f"Facultad: {f['facultad_nombre']}", "Universidad",
+                resultados.append(("Universidad", f"Facultad: {fila['facultad_nombre']}", "Universidad",
                                     None, _icono_categoria("Universidad")))
         c.execute("""SELECT cr.nombre AS carrera_nombre, fa.nombre AS facultad_nombre
                      FROM carreras cr LEFT JOIN facultades fa ON fa.id = cr.facultad_id""")
-        for f in c.fetchall():
-            texto_concatenado= f"{f['carrera_nombre']} {f['facultad_nombre'] or ''} carrera universidad"
+        for fila in c.fetchall():
+            texto_concatenado= f"{fila['carrera_nombre']} {fila['facultad_nombre'] or ''} carrera universidad"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta= f"Carrera: {f['carrera_nombre']}"
-                if f["facultad_nombre"]:
-                    etiqueta += f" — {f['facultad_nombre']}"
+                etiqueta= f"Carrera: {fila['carrera_nombre']}"
+                if fila["facultad_nombre"]:
+                    etiqueta += f" — {fila['facultad_nombre']}"
                 resultados.append(("Universidad", etiqueta, "Universidad", None,
                                     _icono_categoria("Universidad")))
 
     #--- Politécnico: especialidades, empresas y pasantías ---
     if modulo_visible(rol, "Politécnico"):
         c.execute("SELECT nombre, codigo FROM especialidades")
-        for f in c.fetchall():
-            texto_concatenado= f"{f['nombre']} {f['codigo'] or ''} especialidad área técnica politécnico"
+        for fila in c.fetchall():
+            texto_concatenado= f"{fila['nombre']} {fila['codigo'] or ''} especialidad área técnica politécnico"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                resultados.append(("Politécnico", f"Especialidad: {f['nombre']}", "Politécnico",
+                resultados.append(("Politécnico", f"Especialidad: {fila['nombre']}", "Politécnico",
                                     None, _icono_categoria("Politécnico")))
         c.execute("SELECT nombre, rubro, ubicacion FROM empresas_pasantia")
-        for f in c.fetchall():
-            texto_concatenado= f"{f['nombre']} {f['rubro'] or ''} {f['ubicacion'] or ''} empresa pasantía"
+        for fila in c.fetchall():
+            texto_concatenado= f"{fila['nombre']} {fila['rubro'] or ''} {fila['ubicacion'] or ''} empresa pasantía"
             if _coincidencia_fuzzy(texto, texto_concatenado):
-                etiqueta= f"Empresa: {f['nombre']}"
-                if f["rubro"]:
-                    etiqueta += f" ({f['rubro']})"
+                etiqueta= f"Empresa: {fila['nombre']}"
+                if fila["rubro"]:
+                    etiqueta += f" ({fila['rubro']})"
                 resultados.append(("Politécnico", etiqueta, "Politécnico",
                                     None, _icono_categoria("Politécnico")))
         #Pasantías: el resultado es el ESTUDIANTE en pasantía; un Profesor restringido solo ve las de sus secciones
@@ -675,18 +675,18 @@ def buscar_global(main_window, texto):
                      FROM pasantias p
                      LEFT JOIN estudiantes e ON e.id = p.estudiante_id
                      LEFT JOIN empresas_pasantia ep ON ep.id = p.empresa_id""")
-        for f in c.fetchall():
+        for fila in c.fetchall():
             if restringir_secciones and (secciones_permitidas_glob is None
-                                          or f["seccion_id"] not in secciones_permitidas_glob):
+                                          or fila["seccion_id"] not in secciones_permitidas_glob):
                 continue
-            nombre_est= f"{f['est_nombre'] or ''} {f['est_apellidos'] or ''}".strip()
-            texto_concatenado= f"{nombre_est} {f['empresa_nombre'] or ''} {f['estado'] or ''} pasantía"
+            nombre_est= f"{fila['est_nombre'] or ''} {fila['est_apellidos'] or ''}".strip()
+            texto_concatenado= f"{nombre_est} {fila['empresa_nombre'] or ''} {fila['estado'] or ''} pasantía"
             if _coincidencia_fuzzy(texto, texto_concatenado):
                 etiqueta= f"Pasantía: {nombre_est or '—'}"
-                if f["empresa_nombre"]:
-                    etiqueta += f" — {f['empresa_nombre']}"
-                if f["estado"]:
-                    etiqueta += f" ({f['estado']})"
+                if fila["empresa_nombre"]:
+                    etiqueta += f" — {fila['empresa_nombre']}"
+                if fila["estado"]:
+                    etiqueta += f" ({fila['estado']})"
                 resultados.append(("Politécnico", etiqueta, "Politécnico",
                                     nombre_est or None, _icono_categoria("Politécnico")))
 

@@ -957,16 +957,16 @@ class MainWindow(QMainWindow):
     def _icono_bandeja_con_estado(self):
 
         base= icono_app().pixmap(64, 64)
-        p= QPainter(base)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pintor= QPainter(base)
+        pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         azul= QColor("#3B82F6") if getattr(self, "minimizar_a_bandeja", True) else QColor("#EF4444")
         borde= QColor("#FFFFFF")
         s= base.width()
         d= s * 0.34  #diámetro del punto
-        p.setBrush(QBrush(azul))
-        p.setPen(QPen(borde, max(2.0, s * 0.045)))
-        p.drawEllipse(QRectF(s - d - s * 0.04, s - d - s * 0.04, d, d))
-        p.end()
+        pintor.setBrush(QBrush(azul))
+        pintor.setPen(QPen(borde, max(2.0, s * 0.045)))
+        pintor.drawEllipse(QRectF(s - d - s * 0.04, s - d - s * 0.04, d, d))
+        pintor.end()
         return QIcon(base)
 
     #Punto de estado AZUL/ROJO solo (mismo color que el badge del icono
@@ -976,14 +976,14 @@ class MainWindow(QMainWindow):
 
         pm= QPixmap(size, size)
         pm.fill(Qt.GlobalColor.transparent)
-        p= QPainter(pm)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pintor= QPainter(pm)
+        pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         azul= QColor("#3B82F6") if getattr(self, "minimizar_a_bandeja", True) else QColor("#EF4444")
         s= size
-        p.setBrush(QBrush(azul))
-        p.setPen(QPen(QColor("#FFFFFF"), max(1.5, s * 0.09)))
-        p.drawEllipse(QRectF(s * 0.10, s * 0.10, s * 0.80, s * 0.80))
-        p.end()
+        pintor.setBrush(QBrush(azul))
+        pintor.setPen(QPen(QColor("#FFFFFF"), max(1.5, s * 0.09)))
+        pintor.drawEllipse(QRectF(s * 0.10, s * 0.10, s * 0.80, s * 0.80))
+        pintor.end()
         return QIcon(pm)
 
     #Repinta el icono de la bandeja (y su tooltip) según el estado de
@@ -2467,9 +2467,9 @@ class MainWindow(QMainWindow):
             return None
         origen= origen.scaled(tamano, tamano, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                                 Qt.TransformationMode.SmoothTransformation)
-        x= max(0, (origen.width() - tamano) // 2)
-        y= max(0, (origen.height() - tamano) // 2)
-        origen= origen.copy(x, y, tamano, tamano)
+        pos_x= max(0, (origen.width() - tamano) // 2)
+        pos_y= max(0, (origen.height() - tamano) // 2)
+        origen= origen.copy(pos_x, pos_y, tamano, tamano)
         resultado= QPixmap(tamano, tamano)
         resultado.fill(Qt.GlobalColor.transparent)
         pintor= QPainter(resultado)
@@ -2488,9 +2488,9 @@ class MainWindow(QMainWindow):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT foto FROM usuarios WHERE id=?", (self.id_usuario_actual,))
-            f= c.fetchone()
+            fila= c.fetchone()
             conn.close()
-            foto= (f["foto"] if f else "") or ""
+            foto= (fila["foto"] if fila else "") or ""
         if foto and os.path.exists(foto):
             pixmap= self._generar_pixmap_circular(foto, 38)
             if pixmap is not None:
@@ -2573,8 +2573,8 @@ class MainWindow(QMainWindow):
 
             with open(CONFIG_PATH, "w", encoding="utf-8") as f:
                 json.dump(cfg, f, ensure_ascii=False, indent=4)
-        except OSError as e:
-            print(f"Error al guardar configuración: {e}")
+        except OSError as error:
+            print(f"Error al guardar configuración: {error}")
 
     def showEvent(self, event):
 
@@ -2618,8 +2618,8 @@ class MainWindow(QMainWindow):
                 try:
 
                     funcion()
-                except Exception as e:
-                    print(f"No se pudo {'pausar' if pausar else 'reanudar'} actualizaciones de {pagina}: {e}")
+                except Exception as error:
+                    print(f"No se pudo {'pausar' if pausar else 'reanudar'} actualizaciones de {pagina}: {error}")
 
     def resizeEvent(self, event):
 
@@ -2656,8 +2656,8 @@ class MainWindow(QMainWindow):
         try:
 
             ejecutar_backup_al_cerrar()
-        except Exception as e:
-            print(f"Backup al cerrar fallido: {e}")
+        except Exception as error:
+            print(f"Backup al cerrar fallido: {error}")
         super().closeEvent(event)
         #Cierre REAL ('X' con "Ejecutar en segundo plano" desactivado, o botón "Salir"): como la app arranca con
         #setQuitOnLastWindowClosed(False) (necesario para el patrón de bandeja), cerrar la última ventana NO hace
@@ -2846,8 +2846,8 @@ def main():
     try:
 
         ejecutar_backup_automatico_al_iniciar()
-    except Exception as e:
-        print(f"Backup automático fallido: {e}")
+    except Exception as error:
+        print(f"Backup automático fallido: {error}")
 
     window.abrir_con_fundido()
     sys.exit(app.exec())

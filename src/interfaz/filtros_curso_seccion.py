@@ -59,13 +59,13 @@ def poblar_combo_curso(combo, incluir_todos=False, seleccion_previa=None, seccio
     c= conn.cursor()
     c.execute("SELECT id, nombre FROM grados ORDER BY orden, nombre")
     filas_grados= c.fetchall()
-    for f in filas_grados:
+    for filas_grado in filas_grados:
         if secciones_permitidas is not None:
-            c.execute("SELECT id FROM secciones WHERE grado_id=?", (f["id"],))
-            ids_seccion= {s["id"] for s in c.fetchall()}
+            c.execute("SELECT id FROM secciones WHERE grado_id=?", (filas_grado["id"],))
+            ids_seccion= {fila["id"] for fila in c.fetchall()}
             if not (ids_seccion & secciones_permitidas):
                 continue
-        combo.addItem(f["nombre"], f["id"])
+        combo.addItem(filas_grado["nombre"], filas_grado["id"])
     conn.close()
     idx= combo.findData(seleccion_previa)
     combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -109,27 +109,27 @@ def cascada_seccion_por_curso(combo_curso, combo_seccion, incluir_todas=False, s
         c= conn.cursor()
         if curso_id is not None:
             c.execute("SELECT id, nombre FROM secciones WHERE grado_id=? ORDER BY nombre", (curso_id,))
-            for f in c.fetchall():
-                if secciones_permitidas is not None and f["id"] not in secciones_permitidas:
+            for fila in c.fetchall():
+                if secciones_permitidas is not None and fila["id"] not in secciones_permitidas:
                     continue
-                combo_seccion.addItem(f["nombre"], f["id"])  #etiqueta corta: ya sabemos el curso
+                combo_seccion.addItem(fila["nombre"], fila["id"])  #etiqueta corta: ya sabemos el curso
         elif etiquetas_cortas_sin_curso:
             c.execute("""SELECT secciones.id, secciones.nombre FROM secciones
                          LEFT JOIN grados ON secciones.grado_id = grados.id
                          ORDER BY grados.orden, secciones.nombre""")
-            for f in c.fetchall():
-                if secciones_permitidas is not None and f["id"] not in secciones_permitidas:
+            for fila in c.fetchall():
+                if secciones_permitidas is not None and fila["id"] not in secciones_permitidas:
                     continue
-                combo_seccion.addItem(f["nombre"], f["id"])
+                combo_seccion.addItem(fila["nombre"], fila["id"])
         else:
             c.execute("""SELECT secciones.id, secciones.nombre,
                          (grados.nombre || ' - ' || secciones.nombre) as etiqueta
                          FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id
                          ORDER BY grados.orden, secciones.nombre""")
-            for f in c.fetchall():
-                if secciones_permitidas is not None and f["id"] not in secciones_permitidas:
+            for fila in c.fetchall():
+                if secciones_permitidas is not None and fila["id"] not in secciones_permitidas:
                     continue
-                combo_seccion.addItem(f["etiqueta"], f["id"])
+                combo_seccion.addItem(fila["etiqueta"], fila["id"])
         conn.close()
 
     if curso_id is None:
@@ -172,7 +172,7 @@ def poblar_combo_nivel_educativo(combo, incluir_todos=True, seleccion_previa=Non
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT DISTINCT nivel_educativo FROM grados WHERE nivel_educativo IS NOT NULL")
-    presentes= {f["nivel_educativo"] for f in c.fetchall()}
+    presentes= {fila["nivel_educativo"] for fila in c.fetchall()}
     conn.close()
     for nivel in ORDEN_NIVELES:
         if nivel in presentes:
@@ -200,7 +200,7 @@ def secciones_del_nivel_educativo(nivel):
     c.execute("""SELECT secciones.id FROM secciones
                  JOIN grados ON secciones.grado_id = grados.id
                  WHERE grados.nivel_educativo=?""", (nivel,))
-    ids= {f["id"] for f in c.fetchall()}
+    ids= {fila["id"] for fila in c.fetchall()}
     conn.close()
     return ids
 
@@ -223,7 +223,7 @@ def secciones_del_nivel_educativo(nivel):
 #significa "ninguna sección cumple las condiciones combinadas").
 def interseccion_opcional(*sets_opcionales):
 
-    activos= [s for s in sets_opcionales if s is not None]
+    activos= [sets_opcionale for sets_opcionale in sets_opcionales if sets_opcionale is not None]
     if not activos:
         return None
     resultado= activos[0]
@@ -275,9 +275,9 @@ def curso_admite_componente_tecnico(grado_id):
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT nivel_educativo, ciclo_secundaria FROM grados WHERE id=?", (grado_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return bool(f) and puede_tener_componente_tecnico(f["nivel_educativo"], f["ciclo_secundaria"], None)
+    return bool(fila) and puede_tener_componente_tecnico(fila["nivel_educativo"], fila["ciclo_secundaria"], None)
 
 
 #Combo de Curso/Grado OPCIONAL: primera opción "— Sin curso específico —" (data=None),
@@ -295,11 +295,11 @@ def poblar_combo_curso_opcional(combo, solo_con_componente_tecnico=False, selecc
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute("SELECT id, nombre, nivel_educativo, ciclo_secundaria FROM grados ORDER BY orden, nombre")
-    for f in c.fetchall():
+    for fila in c.fetchall():
         if solo_con_componente_tecnico and not puede_tener_componente_tecnico(
-                f["nivel_educativo"], f["ciclo_secundaria"], None):
+                fila["nivel_educativo"], fila["ciclo_secundaria"], None):
             continue
-        combo.addItem(f["nombre"], f["id"])
+        combo.addItem(fila["nombre"], fila["id"])
     conn.close()
     idx= combo.findData(seleccion_previa)
     combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -324,7 +324,7 @@ def modulos_tecnicos_por_area_y_curso(especialidad_id=None, grado_id=None):
     conn= obtener_conexion()
     c= conn.cursor()
     c.execute(sql, params)
-    filas= [(f["id"], f["nombre"]) for f in c.fetchall()]
+    filas= [(fila["id"], fila["nombre"]) for fila in c.fetchall()]
     conn.close()
     return filas
 

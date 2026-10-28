@@ -287,10 +287,10 @@ def _col_index_desde_letras(letras):
 #'B3' (o '$B$3') -> (fila 0-indexada, columna 0-indexada). (None, None) si no es válida.
 def _celda_a_indices(ref):
 
-    m= re.match(r"^\$?([A-Za-z]{1,3})\$?(\d+)$", ref)
-    if not m:
+    coincidencia= re.match(r"^\$?([A-Za-z]{1,3})\$?(\d+)$", ref)
+    if not coincidencia:
         return None, None
-    letras, numero= m.group(1), int(m.group(2))
+    letras, numero= coincidencia.group(1), int(coincidencia.group(2))
     return numero - 1, _col_index_desde_letras(letras)
 
 
@@ -529,11 +529,11 @@ def _aplicar_comparacion(op, izq, der):
 def _aplanar(argumentos):
 
     resultado= []
-    for a in argumentos:
-        if isinstance(a, list):
-            resultado.extend(a)
+    for argumento in argumentos:
+        if isinstance(argumento, list):
+            resultado.extend(argumento)
         else:
-            resultado.append(a)
+            resultado.append(argumento)
     return resultado
 
 
@@ -585,8 +585,8 @@ def _f_product(a):
 
     numeros= _numeros(a)
     total= 1
-    for n in numeros:
-        total *= n
+    for numero in numeros:
+        total *= numero
     return total
 
 
@@ -807,13 +807,13 @@ def _tokenizar_formula(texto):
     tokens= []
     pos, largo= 0, len(texto)
     while pos < largo:
-        m= _PATRON_TOKEN_FORMULA.match(texto, pos)
-        if not m:
+        coincidencia= _PATRON_TOKEN_FORMULA.match(texto, pos)
+        if not coincidencia:
             raise _ErrorFormulaValor("#¡ERROR!")
-        tipo= m.lastgroup
+        tipo= coincidencia.lastgroup
         if tipo != "WS":
-            tokens.append((tipo, m.group(tipo)))
-        pos= m.end()
+            tokens.append((tipo, coincidencia.group(tipo)))
+        pos= coincidencia.end()
     return tokens
 
 
@@ -1388,10 +1388,10 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         if rect is None or (rect.width() < 3 and rect.height() < 3):
             return []
         seleccionadas= []
-        for p in self.palabras:
-            wrect= QRect(int(p[0]), int(p[1]), max(1, int(p[2] - p[0])), max(1, int(p[3] - p[1])))
+        for palabra in self.palabras:
+            wrect= QRect(int(palabra[0]), int(palabra[1]), max(1, int(palabra[2] - palabra[0])), max(1, int(palabra[3] - palabra[1])))
             if rect.intersects(wrect):
-                seleccionadas.append(p)
+                seleccionadas.append(palabra)
         #Orden de lectura real: bloque -> línea -> número de palabra (así
         #como lo entrega PyMuPDF), no el orden en que el mouse las tocó.
         seleccionadas.sort(key=lambda p: (p[5], p[6], p[7]))
@@ -1445,11 +1445,11 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
 
         #Doble clic: selecciona la palabra bajo el cursor (como en Edge).
         punto= evento.position().toPoint()
-        for p in self.palabras:
-            wrect= QRect(int(p[0]), int(p[1]), max(1, int(p[2] - p[0])), max(1, int(p[3] - p[1])))
+        for palabra in self.palabras:
+            wrect= QRect(int(palabra[0]), int(palabra[1]), max(1, int(palabra[2] - palabra[0])), max(1, int(palabra[3] - palabra[1])))
             if wrect.contains(punto):
-                self._inicio= QPoint(int(p[0]), int(p[1]))
-                self._fin= QPoint(int(p[2]), int(p[3]))
+                self._inicio= QPoint(int(palabra[0]), int(palabra[1]))
+                self._fin= QPoint(int(palabra[2]), int(palabra[3]))
                 texto= self.texto_seleccionado()
                 self.update()
                 if texto:
@@ -1480,10 +1480,10 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
                 QApplication.clipboard().setText(texto)
         elif elegido == accion_todo:
             if self.palabras:
-                xs0= min(p[0] for p in self.palabras)
-                ys0= min(p[1] for p in self.palabras)
-                xs1= max(p[2] for p in self.palabras)
-                ys1= max(p[3] for p in self.palabras)
+                xs0= min(palabra[0] for palabra in self.palabras)
+                ys0= min(palabra[1] for palabra in self.palabras)
+                xs1= max(palabra[2] for palabra in self.palabras)
+                ys1= max(palabra[3] for palabra in self.palabras)
                 self._inicio= QPoint(int(xs0), int(ys0))
                 self._fin= QPoint(int(xs1), int(ys1))
                 self.update()
@@ -2839,31 +2839,31 @@ class VisorEditorReportes(QWidget):
 
     def _pagina_vacia(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.addStretch()
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.addStretch()
         icono= QLabel("")
         icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
         from src.nucleo.iconos_emoji import pixmap_emoji
         icono.setPixmap(pixmap_emoji("📄", 46))
-        l.addWidget(icono)
+        disposicion.addWidget(icono)
         texto= QLabel("Abre un PDF, Excel, Word o CSV para previsualizarlo y editarlo aquí.\n"
                        "También puedes usar los reportes que acabas de exportar desde\n"
                        "las otras pestañas: aparecerán en «Archivos recientes».")
         texto.setAlignment(Qt.AlignmentFlag.AlignCenter)
         texto.setObjectName("DescModulo")
         texto.setWordWrap(True)
-        l.addWidget(texto)
-        l.addStretch()
-        return w
+        disposicion.addWidget(texto)
+        disposicion.addStretch()
+        return contenedor
 
     #---------------- Página de hoja de cálculo (CSV / XLSX) ----------------
     def _pagina_hoja_calculo(self):
 
-        w= QWidget()
-        w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        l= QVBoxLayout(w)
-        l.setSpacing(8)
+        contenedor= QWidget()
+        contenedor.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(8)
 
         fila_hojas= QHBoxLayout()
         self.lbl_hojas= QLabel("Hoja:")
@@ -2888,7 +2888,7 @@ class VisorEditorReportes(QWidget):
         self.lbl_celdas= QLabel("")
         self.lbl_celdas.setObjectName("DescModulo")
         fila_hojas.addWidget(self.lbl_celdas)
-        l.addLayout(fila_hojas)
+        disposicion.addLayout(fila_hojas)
 
         toolbar= QFrame()
         toolbar.setObjectName("TarjetaFiltros")
@@ -3050,7 +3050,7 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(g_vista)
 
         tb.addStretch()
-        l.addWidget(self._barra_desplazable(toolbar))
+        disposicion.addWidget(self._barra_desplazable(toolbar))
 
         fila_buscar= QHBoxLayout()
         self.in_buscar_celda= QLineEdit()
@@ -3071,7 +3071,7 @@ class VisorEditorReportes(QWidget):
         btn_reemplazar.setIconSize(_QSize_emoji(16, 16))
         btn_reemplazar.clicked.connect(self._reemplazar_en_hoja)
         fila_buscar.addWidget(btn_reemplazar)
-        l.addLayout(fila_buscar)
+        disposicion.addLayout(fila_buscar)
 
         self.tabla_editor= QTableWidget(0, 0)
         aplicar_estructura_tabla(self.tabla_editor)
@@ -3119,7 +3119,7 @@ class VisorEditorReportes(QWidget):
         self.tabla_editor.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.tabla_editor.horizontalScrollBar().setSingleStep(24)
         self.tabla_editor.verticalScrollBar().setSingleStep(24)
-        l.addWidget(self.tabla_editor, 1)
+        disposicion.addWidget(self.tabla_editor, 1)
 
         fila_opciones_guardado= QHBoxLayout()
         self.chk_congelar_encabezado= QCheckBox("Congelar la primera fila al guardar (Excel)")
@@ -3129,17 +3129,17 @@ class VisorEditorReportes(QWidget):
         self.chk_autofiltro.setChecked(True)
         fila_opciones_guardado.addWidget(self.chk_autofiltro)
         fila_opciones_guardado.addStretch()
-        l.addLayout(fila_opciones_guardado)
+        disposicion.addLayout(fila_opciones_guardado)
 
-        return w
+        return contenedor
 
     #---------------- Página de PDF ----------------
     def _pagina_pdf(self):
 
-        w= QWidget()
-        w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        l= QVBoxLayout(w)
-        l.setSpacing(8)
+        contenedor= QWidget()
+        contenedor.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(8)
 
         toolbar= QFrame()
         toolbar.setObjectName("TarjetaFiltros")
@@ -3211,7 +3211,7 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(g_sel)
 
         tb.addStretch()
-        l.addWidget(self._barra_desplazable(toolbar))
+        disposicion.addWidget(self._barra_desplazable(toolbar))
 
         toolbar2= QFrame()
         toolbar2.setObjectName("TarjetaFiltros")
@@ -3257,7 +3257,7 @@ class VisorEditorReportes(QWidget):
         etiqueta_extra.setObjectName("EtiquetaGrupoRibbon")
         tb2.addWidget(etiqueta_extra)
         tb2.addStretch()
-        l.addWidget(self._barra_desplazable(toolbar2))
+        disposicion.addWidget(self._barra_desplazable(toolbar2))
 
         cuerpo= QHBoxLayout()
         self.scroll_pdf= QScrollArea()
@@ -3305,16 +3305,16 @@ class VisorEditorReportes(QWidget):
         panel_lateral.addWidget(self.btn_copiar_texto_pdf)
         cuerpo.addLayout(panel_lateral, 1)
 
-        l.addLayout(cuerpo, 1)
-        return w
+        disposicion.addLayout(cuerpo, 1)
+        return contenedor
 
     #---------------- Página de Word (.docx) ----------------
     def _pagina_word(self):
 
-        w= QWidget()
-        w.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        l= QVBoxLayout(w)
-        l.setSpacing(8)
+        contenedor= QWidget()
+        contenedor.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(8)
 
         toolbar= QFrame()
         toolbar.setObjectName("TarjetaFiltros")
@@ -3499,7 +3499,7 @@ class VisorEditorReportes(QWidget):
         tb.addWidget(g_vista_w)
 
         tb.addStretch()
-        l.addWidget(self._barra_desplazable(toolbar))
+        disposicion.addWidget(self._barra_desplazable(toolbar))
 
         fila_busqueda= QHBoxLayout()
         self.in_buscar_word= QLineEdit()
@@ -3523,7 +3523,7 @@ class VisorEditorReportes(QWidget):
         btn_reemplazar_word.setObjectName("BtnAccionNeutro")
         btn_reemplazar_word.clicked.connect(self._word_reemplazar_todo)
         fila_busqueda.addWidget(btn_reemplazar_word)
-        l.addLayout(fila_busqueda)
+        disposicion.addLayout(fila_busqueda)
 
         self.editor_word= QTextEdit()
         limitar_campo_texto(self.editor_word, 5000)
@@ -3563,7 +3563,7 @@ class VisorEditorReportes(QWidget):
         self._vista_word.setRenderHints(QPainter.RenderHint.Antialiasing | QPainter.RenderHint.TextAntialiasing
                                          | QPainter.RenderHint.SmoothPixmapTransform)
         self._vista_word.verticalScrollBar().setSingleStep(24)
-        l.addWidget(self._vista_word, 1)
+        disposicion.addWidget(self._vista_word, 1)
 
         #Herramientas de documento al guardar, igual que las de la hoja de
         #cálculo (self.chk_congelar_encabezado / self.chk_autofiltro) pero
@@ -3583,9 +3583,9 @@ class VisorEditorReportes(QWidget):
             "se guardan justificados en vez de con el margen derecho irregular")
         fila_opciones_guardado_word.addWidget(self.chk_justificar_auto_word)
         fila_opciones_guardado_word.addStretch()
-        l.addLayout(fila_opciones_guardado_word)
+        disposicion.addLayout(fila_opciones_guardado_word)
 
-        return w
+        return contenedor
 
     def _mostrar_pagina(self, nombre):
 
@@ -3836,8 +3836,8 @@ class VisorEditorReportes(QWidget):
                 self._abrir_docx(ruta)
             elif ext == "pdf":
                 self._abrir_pdf(ruta)
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo abrir el archivo", str(e), self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo abrir el archivo", str(error), self._padre_dialogo())
             return
         self.ruta_actual= ruta
         self.tipo_actual= ext
@@ -4009,9 +4009,9 @@ class VisorEditorReportes(QWidget):
                        "accent3", "accent4", "accent5", "accent6"]
         crudos= {}
         for nombre in nombres_xml:
-            m= _re.search(rf'<a:{nombre}>\s*<a:(?:srgbClr val="([0-9A-Fa-f]{{6}})"|sysClr[^>]*lastClr="([0-9A-Fa-f]{{6}})")', xml)
-            if m:
-                crudos[nombre]= (m.group(1) or m.group(2)).upper()
+            coincidencia= _re.search(rf'<a:{nombre}>\s*<a:(?:srgbClr val="([0-9A-Fa-f]{{6}})"|sysClr[^>]*lastClr="([0-9A-Fa-f]{{6}})")', xml)
+            if coincidencia:
+                crudos[nombre]= (coincidencia.group(1) or coincidencia.group(2)).upper()
         if not crudos:
             return None
         #Orden real de los ÍNDICES de tema (0-9) que usa un fgColor con
@@ -4019,7 +4019,7 @@ class VisorEditorReportes(QWidget):
         #XML -esto es un detalle documentado del formato OOXML, no un capricho nuestro-.
         orden_indices= ["lt1", "dk1", "lt2", "dk2", "accent1", "accent2",
                           "accent3", "accent4", "accent5", "accent6"]
-        return [crudos.get(n, "FFFFFF") for n in orden_indices]
+        return [crudos.get(orden_indiz, "FFFFFF") for orden_indiz in orden_indices]
 
     #Aplica el mismo ajuste de "tint" (más claro/oscuro) que Excel le
     #aplica a un color de tema -Excel guarda el color BASE del tema más
@@ -4261,14 +4261,14 @@ class VisorEditorReportes(QWidget):
                 #comprobaciones.
                 fnt= celda.font
                 if fnt and (fnt.bold or fnt.italic or fnt.underline):
-                    f= item.font()
+                    fuente= item.font()
                     if fnt.bold:
-                        f.setBold(True)
+                        fuente.setBold(True)
                     if fnt.italic:
-                        f.setItalic(True)
+                        fuente.setItalic(True)
                     if fnt.underline:
-                        f.setUnderline(True)
-                    item.setFont(f)
+                        fuente.setUnderline(True)
+                    item.setFont(fuente)
                 #Detección mejorada del color de relleno que YA trae el archivo -incluye colores de tema (resueltos contra el
                 #theme1.xml real del libro, con su tint) e indexados (paleta heredada de Excel 97-2003), no solo RGB directo
                 #como antes. Si de verdad no se puede resolver con confianza, la celda se deja en blanco -mejor sin pintar que
@@ -4299,9 +4299,9 @@ class VisorEditorReportes(QWidget):
                         and enlace_es_seguro(enlace_celda.target)):
                     item.setData(ROL_HIPERVINCULO, enlace_celda.target)
                     item.setForeground(QColor("#2563EB"))
-                    f= item.font()
-                    f.setUnderline(True)
-                    item.setFont(f)
+                    fuente= item.font()
+                    fuente.setUnderline(True)
+                    item.setFont(fuente)
                 self.tabla_editor.setItem(r - 1, c - 1, item)
                 #Respaldo: si la celda es una fórmula y trae un resultado ya calculado en caché (de la copia data_only), lo
                 #guardamos aparte para poder usarlo si nuestro motor no la soporta.
@@ -4560,8 +4560,8 @@ class VisorEditorReportes(QWidget):
             celda_ancla= f"{_letra_columna(col)}{fila + 1}"
             ws= self._wb[self._hoja_actual]
             ws.add_image(img_excel, celda_ancla)
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo insertar", f"No se pudo insertar la imagen: {e}", self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo insertar", f"No se pudo insertar la imagen: {error}", self._padre_dialogo())
             return
         pixmap= QPixmap(ruta)
         if not pixmap.isNull():
@@ -4802,9 +4802,9 @@ class VisorEditorReportes(QWidget):
         item_o.setData(ROL_ES_CUADRO_TEXTO, None)
         item_o.setBackground(QBrush())
         item_o.setForeground(QBrush())
-        f= item_o.font()
-        f.setItalic(False)
-        item_o.setFont(f)
+        fuente= item_o.font()
+        fuente.setItalic(False)
+        item_o.setFont(fuente)
         item_o.setText("")
         item_o.setToolTip("")
         self._sincronizando= False
@@ -5104,9 +5104,9 @@ class VisorEditorReportes(QWidget):
         color_fondo= QColor("#FEF9C3")
         item.setBackground(color_fondo)
         item.setForeground(_color_texto_contrastado(color_fondo))
-        f= item.font()
-        f.setItalic(True)
-        item.setFont(f)
+        fuente= item.font()
+        fuente.setItalic(True)
+        item.setFont(fuente)
         item.setText(texto)
         item.setToolTip("Cuadro de texto (celda con relleno y borde: openpyxl no puede crear formas flotantes "
                         "reales). Se puede arrastrar con clic sostenido a otra celda, igual que una imagen.")
@@ -5506,8 +5506,8 @@ class VisorEditorReportes(QWidget):
             mostrar_mensaje("advertencia", "Selecciona una fila", "Selecciona primero la(s) fila(s) a eliminar.", self._padre_dialogo())
             return
         self._registrar_deshacer_hoja()
-        for f in filas:
-            self.tabla_editor.removeRow(f)
+        for fila in filas:
+            self.tabla_editor.removeRow(fila)
         self.lbl_celdas.setText(f"{self.tabla_editor.rowCount()} filas × {self.tabla_editor.columnCount()} columnas")
         self._recalcular_hoja()
 
@@ -5820,7 +5820,7 @@ class VisorEditorReportes(QWidget):
             if not texto:
                 return
             filas= [f.split("\t") for f in texto.replace("\r\n", "\n").rstrip("\n").split("\n")]
-            ancho= max((len(f) for f in filas), default=0)
+            ancho= max((len(fila) for fila in filas), default=0)
             bloque= [[{"crudo": (f[i] if i < len(f) and f[i] != "" else None), "formato_num": None,
                        "tamano_base": None, "fondo": None, "frente": None, "fuente": None, "alineacion": None}
                       for i in range(ancho)] for f in filas]
@@ -6050,9 +6050,9 @@ class VisorEditorReportes(QWidget):
 
             texto_incremental= None
             if alto_patron == 1 and not son_formulas and isinstance(crudos[0], str):
-                m= self._RE_TEXTO_NUM_FINAL.match(crudos[0])
-                if m and m.group(2) and (not son_numeros):
-                    texto_incremental= m
+                coincidencia= self._RE_TEXTO_NUM_FINAL.match(crudos[0])
+                if coincidencia and coincidencia.group(2) and (not son_numeros):
+                    texto_incremental= coincidencia
 
             for r in range(fila_fin + 1, fila_hasta + 1):
                 idx_patron= (r - fila_fin - 1) % alto_patron
@@ -6123,9 +6123,9 @@ class VisorEditorReportes(QWidget):
         familia= self.combo_fuente_hoja.currentText()
         self._sincronizando= True
         for item in items:
-            f= item.font()
-            f.setFamily(familia)
-            item.setFont(f)
+            fuente= item.font()
+            fuente.setFamily(familia)
+            item.setFont(fuente)
         self._sincronizando= False
 
     def _alternar_negrita(self):
@@ -6140,9 +6140,9 @@ class VisorEditorReportes(QWidget):
         #cualquier fórmula que hubiera en la celda-.
         self._sincronizando= True
         for item in items:
-            f= item.font()
-            f.setBold(activar)
-            item.setFont(f)
+            fuente= item.font()
+            fuente.setBold(activar)
+            item.setFont(fuente)
         self._sincronizando= False
 
     def _alternar_cursiva(self):
@@ -6154,9 +6154,9 @@ class VisorEditorReportes(QWidget):
         activar= not items[0].font().italic()
         self._sincronizando= True
         for item in items:
-            f= item.font()
-            f.setItalic(activar)
-            item.setFont(f)
+            fuente= item.font()
+            fuente.setItalic(activar)
+            item.setFont(fuente)
         self._sincronizando= False
 
     def _alternar_subrayado(self):
@@ -6168,9 +6168,9 @@ class VisorEditorReportes(QWidget):
         activar= not items[0].font().underline()
         self._sincronizando= True
         for item in items:
-            f= item.font()
-            f.setUnderline(activar)
-            item.setFont(f)
+            fuente= item.font()
+            fuente.setUnderline(activar)
+            item.setFont(fuente)
         self._sincronizando= False
 
     def _elegir_color_relleno(self):
@@ -6240,18 +6240,18 @@ class VisorEditorReportes(QWidget):
         if url:
             item.setData(ROL_HIPERVINCULO, url)
             item.setForeground(QColor("#2563EB"))
-            f= item.font()
-            f.setUnderline(True)
-            item.setFont(f)
+            fuente= item.font()
+            fuente.setUnderline(True)
+            item.setFont(fuente)
             if not item.text().strip():
                 item.setText(url)
                 item.setData(ROL_CRUDO, url)
         else:
             item.setData(ROL_HIPERVINCULO, None)
             item.setForeground(QColor("#0F172A"))
-            f= item.font()
-            f.setUnderline(False)
-            item.setFont(f)
+            fuente= item.font()
+            fuente.setUnderline(False)
+            item.setFont(fuente)
         self._sincronizando= False
 
     def _hoja_quitar_enlace(self, item):
@@ -6262,9 +6262,9 @@ class VisorEditorReportes(QWidget):
         self._sincronizando= True
         item.setData(ROL_HIPERVINCULO, None)
         item.setForeground(QColor("#0F172A"))
-        f= item.font()
-        f.setUnderline(False)
-        item.setFont(f)
+        fuente= item.font()
+        fuente.setUnderline(False)
+        item.setFont(fuente)
         self._sincronizando= False
 
     def _alinear(self, alineacion):
@@ -6411,9 +6411,9 @@ class VisorEditorReportes(QWidget):
                     if base <= 0:
                         base= 10.0
                     item.setData(ROL_TAMANO_BASE, base)
-                f= item.font()
-                f.setPointSizeF(max(6.0, base * nuevo / 100))
-                item.setFont(f)
+                fuente= item.font()
+                fuente.setPointSizeF(max(6.0, base * nuevo / 100))
+                item.setFont(fuente)
         alto_fila= max(18, int(22 * nuevo / 100))
         for r in range(self.tabla_editor.rowCount()):
             self.tabla_editor.setRowHeight(r, alto_fila)
@@ -6921,7 +6921,7 @@ class VisorEditorReportes(QWidget):
                 if docx is None:
                     raise RuntimeError("python-docx no está disponible en este equipo")
                 documento= docx.Document(ruta)
-                texto= "\n".join(p.text for p in documento.paragraphs)
+                texto= "\n".join(paragraph.text for paragraph in documento.paragraphs)
             elif ext in ("html", "htm"):
                 from PySide6.QtGui import QTextDocument
                 doc_tmp= QTextDocument()
@@ -6931,8 +6931,8 @@ class VisorEditorReportes(QWidget):
             else:
                 with open(ruta, "r", encoding="utf-8", errors="replace") as fh:
                     texto= fh.read()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo leer el documento", str(e), self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo leer el documento", str(error), self._padre_dialogo())
             return
         if not texto.strip():
             mostrar_mensaje("advertencia", "Documento vacío",
@@ -7085,8 +7085,8 @@ class VisorEditorReportes(QWidget):
 
             with open(ruta, "rb") as f:
                 datos= f.read()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo insertar", str(e), self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo insertar", str(error), self._padre_dialogo())
             return
         imagen= QImage(ruta)
         if imagen.isNull():
@@ -7788,8 +7788,8 @@ class VisorEditorReportes(QWidget):
                                                max(1, int((r.x1 - r.x0) * sx)),
                                                max(1, int((r.y1 - r.y0) * sx))), uri))
                 lbl.setPixmap(QPixmap.fromImage(imagen))
-            except Exception as e:
-                print(f"[PDF] No se pudo renderizar la página {i + 1}: {e}")
+            except Exception as error:
+                print(f"[PDF] No se pudo renderizar la página {i + 1}: {error}")
         if self._cola_render_pdf:
             QTimer.singleShot(0, lambda: self._continuar_render_pdf_por_tandas(token, tamano_tanda))
         else:
@@ -8192,8 +8192,8 @@ class VisorEditorReportes(QWidget):
         try:
 
             pagina.insert_htmlbox(area, html, overlay=True)
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo aplicar", f"No se pudo escribir el contenido en la página: {e}",
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo aplicar", f"No se pudo escribir el contenido en la página: {error}",
                            self._padre_dialogo())
             return
         self._paginas_pdf_editables.add(pagina.xref)
@@ -8234,8 +8234,8 @@ class VisorEditorReportes(QWidget):
             otro= fitz.open(ruta)
             self._doc_pdf.insert_pdf(otro)
             otro.close()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo combinar", str(e), self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo combinar", str(error), self._padre_dialogo())
             return
         self.spin_pagina_pdf.blockSignals(True)
         self.spin_pagina_pdf.setMaximum(len(self._doc_pdf))
@@ -8276,8 +8276,8 @@ class VisorEditorReportes(QWidget):
                 shutil.move(temporal, ruta)
                 import fitz
                 self._doc_pdf= fitz.open(ruta)
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo guardar el PDF", str(e), self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo guardar el PDF", str(error), self._padre_dialogo())
             return
         self.ruta_actual= ruta
         self.lbl_archivo_actual.poner_texto_completo(f"{os.path.basename(ruta)}  —  {ruta}")
@@ -8320,8 +8320,8 @@ class VisorEditorReportes(QWidget):
         try:
 
             self._renderizar_para_impresion(printer)
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo imprimir", str(e), self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo imprimir", str(error), self._padre_dialogo())
 
     def _renderizar_para_impresion(self, printer):
 
@@ -8372,9 +8372,9 @@ class VisorEditorReportes(QWidget):
             imagen= QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format.Format_RGB888).copy()
             escala= min(rect_pagina.width() / imagen.width(), rect_pagina.height() / imagen.height())
             ancho, alto= imagen.width() * escala, imagen.height() * escala
-            x= rect_pagina.x() + (rect_pagina.width() - ancho) / 2
-            y= rect_pagina.y() + (rect_pagina.height() - alto) / 2
-            painter.drawImage(QRectF(x, y, ancho, alto), imagen)
+            pos_x= rect_pagina.x() + (rect_pagina.width() - ancho) / 2
+            pos_y= rect_pagina.y() + (rect_pagina.height() - alto) / 2
+            painter.drawImage(QRectF(pos_x, pos_y, ancho, alto), imagen)
         painter.end()
 
     #Exportar a otros formatos
@@ -8411,8 +8411,8 @@ class VisorEditorReportes(QWidget):
                     self._pdf_exportar_imagen()
                 elif formato == "texto":
                     self._pdf_exportar_texto()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo exportar", str(e), self._padre_dialogo())
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo exportar", str(error), self._padre_dialogo())
 
     def _exportar_desde_hoja(self, formato):
 
@@ -8486,8 +8486,8 @@ class VisorEditorReportes(QWidget):
                         celda= tabla.cell(r, c)
                         celda.text= str(valor) if valor is not None else ""
                         if r == 0:
-                            for p in celda.paragraphs:
-                                for run in p.runs:
+                            for paragraph in celda.paragraphs:
+                                for run in paragraph.runs:
                                     run.bold= True
             if WorkerHilo is not None:
                 QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)

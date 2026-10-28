@@ -31,14 +31,14 @@ _FUENTES_EMOJI= ["Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji"]
 
 def _aplicar_fuente_emoji(label, tamano_pt=None):
 
-    f= label.font()
+    fuente= label.font()
     disponibles= set(QFontDatabase.families())
     familias= [fam for fam in _FUENTES_EMOJI if fam in disponibles] or _FUENTES_EMOJI[:1]
-    familias.append(f.family())
-    f.setFamilies(familias)
+    familias.append(fuente.family())
+    fuente.setFamilies(familias)
     if tamano_pt:
-        f.setPointSize(tamano_pt)
-    label.setFont(f)
+        fuente.setPointSize(tamano_pt)
+    label.setFont(fuente)
 
 
 #Utilidades de color
@@ -451,10 +451,10 @@ class AnilloProgreso(QWidget):
             painter.drawArc(rect_arco, 90 * 16, -angulo)
 
         painter.setPen(self._texto_color)
-        f= painter.font()
-        f.setPointSize(max(12, int(lado * 0.16)))
-        f.setBold(True)
-        painter.setFont(f)
+        fuente= painter.font()
+        fuente.setPointSize(max(12, int(lado * 0.16)))
+        fuente.setBold(True)
+        painter.setFont(fuente)
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{self._valor:.0f}%")
 
 
@@ -504,20 +504,20 @@ class GraficoBarrasSemanal(QWidget):
         margen_inf= 20
         margen_sup= 24
         alto_disponible= self.height() - margen_inf - margen_sup
-        n= len(self._datos)
+        cantidad= len(self._datos)
         espacio= 10
-        ancho_barra= max(12, (self.width() - espacio * (n + 1)) / n)
+        ancho_barra= max(12, (self.width() - espacio * (cantidad + 1)) / cantidad)
 
         x= espacio
         for etiqueta, valor in self._datos:
             valor_clamp= max(0, min(100, valor))
             h= alto_disponible * (valor_clamp / 100) * self._progreso
-            y= margen_sup + (alto_disponible - h)
+            pos_y= margen_sup + (alto_disponible - h)
             color= QColor(_color_por_umbral_asistencia(valor_clamp))
 
             path= QPainterPath()
             radio= min(6, ancho_barra / 2)
-            path.addRoundedRect(QRectF(x, y, ancho_barra, max(h, 2)), radio, radio)
+            path.addRoundedRect(QRectF(x, pos_y, ancho_barra, max(h, 2)), radio, radio)
             painter.fillPath(path, QBrush(color))
 
             if valor > 0 and self._progreso > 0.85:
@@ -526,7 +526,7 @@ class GraficoBarrasSemanal(QWidget):
                 f_valor.setPointSize(8)
                 f_valor.setBold(True)
                 painter.setFont(f_valor)
-                rect_valor= QRectF(x - 4, y - 16, ancho_barra + 8, 14)
+                rect_valor= QRectF(x - 4, pos_y - 16, ancho_barra + 8, 14)
                 painter.drawText(rect_valor, Qt.AlignmentFlag.AlignCenter, f"{valor:.0f}")
 
             painter.setPen(self._color_texto)
@@ -641,7 +641,7 @@ class PanelDetalleAsistencia(QWidget):
     #datos: lista de tuplas (clave, nombre, porcentaje), en el orden deseado.
     def poner_datos(self, datos):
 
-        claves_nuevas= [d[0] for d in datos]
+        claves_nuevas= [dato[0] for dato in datos]
         for clave in list(self._filas):
             if clave not in claves_nuevas:
                 fila= self._filas.pop(clave)

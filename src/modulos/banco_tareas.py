@@ -207,7 +207,7 @@ class BarraSegmentada(QWidget):
         self._claves_activas= set(claves_activas) if claves_activas else None
         self.update()
 
-    def _segmento_en_x(self, x):
+    def _segmento_en_x(self, pos_x):
 
         ancho= self.width()
         acumulado= 0.0
@@ -215,7 +215,7 @@ class BarraSegmentada(QWidget):
             frac= self._fracciones.get(clave, 0.0)
             inicio_px= acumulado * ancho
             fin_px= (acumulado + frac) * ancho
-            if inicio_px <= x < fin_px:
+            if inicio_px <= pos_x < fin_px:
                 return clave
             acumulado += frac
         return None
@@ -470,7 +470,7 @@ class DialogoCompetenciasEspecificasTarea(QDialog):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM grados ORDER BY orden, nombre")
-            grados= [dict(f) for f in c.fetchall()]
+            grados= [dict(fila) for fila in c.fetchall()]
             conn.close()
         if not grados:
             contenido.addWidget(QLabel("No hay grados configurados todavía en el sistema."))
@@ -539,7 +539,7 @@ class DialogoResultadosAprendizajeTarea(QDialog):
         c= conn.cursor()
         c.execute("""SELECT id, codigo, descripcion FROM resultados_aprendizaje
                      WHERE materia_id=? AND estado='Activo' ORDER BY orden, codigo""", (materia_id,))
-        ras= [dict(f) for f in c.fetchall()]
+        ras= [dict(fila) for fila in c.fetchall()]
         conn.close()
         for ra in ras:
             chk= QCheckBox(f"{ra['codigo']} — {ra['descripcion']}")
@@ -632,9 +632,9 @@ class DialogoAjusteEntrega(QDialog):
                      WHERE materia_id=? AND estado='Activa' ORDER BY fecha_entrega DESC""", (materia_id,))
         filas= c.fetchall()
         conn.close()
-        for f in filas:
-            etiqueta= f["titulo"] + (f" ({f['fecha_entrega']})" if f["fecha_entrega"] else "")
-            self.combo_tarea.addItem(etiqueta, f["id"])
+        for fila in filas:
+            etiqueta= fila["titulo"] + (f" ({fila['fecha_entrega']})" if fila["fecha_entrega"] else "")
+            self.combo_tarea.addItem(etiqueta, fila["id"])
 
     def datos(self):
 
@@ -834,13 +834,13 @@ class ModuloBancoTareas(QWidget):
     #Pestaña: Catálogo de Tareas
     def _tab_tareas(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(12)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(12)
 
         self.cinta_alerta_tareas= CintaAlerta()
         self.cinta_alerta_tareas.clicada.connect(self._al_clic_alerta_tareas)
-        l.addWidget(self.cinta_alerta_tareas)
+        disposicion.addWidget(self.cinta_alerta_tareas)
 
         fila_resumen= QHBoxLayout()
         fila_resumen.setSpacing(16)
@@ -857,7 +857,7 @@ class ModuloBancoTareas(QWidget):
             leyenda.addWidget(lbl)
             self.etiquetas_leyenda_tareas[clave]= lbl
         fila_resumen.addLayout(leyenda, 3)
-        l.addLayout(fila_resumen)
+        disposicion.addLayout(fila_resumen)
 
         tarjeta_form= TarjetaSeccion(icono="📋", titulo="Nueva tarea")
         form= QGridLayout()
@@ -1065,7 +1065,7 @@ class ModuloBancoTareas(QWidget):
 
         self.panel_form_tarea= PanelDesplegable("Nueva tarea")
         self.panel_form_tarea.cuerpo_layout().addWidget(tarjeta_form)
-        l.addWidget(self.panel_form_tarea)
+        disposicion.addWidget(self.panel_form_tarea)
 
         fila_busqueda_tareas= QHBoxLayout()
         marco_busqueda_tareas, self.in_buscar_tareas= self._crear_barra_busqueda(
@@ -1079,7 +1079,7 @@ class ModuloBancoTareas(QWidget):
             "Filtrar las tareas listadas por curso, sección, área técnica/carrera y materia")
         self.btn_filtros_tareas.clicked.connect(self._abrir_dialogo_filtros_tareas)
         fila_busqueda_tareas.addWidget(self.btn_filtros_tareas)
-        l.addLayout(fila_busqueda_tareas)
+        disposicion.addLayout(fila_busqueda_tareas)
 
 
         self.tabla_tareas= QTableWidget(0, 9)
@@ -1107,11 +1107,11 @@ class ModuloBancoTareas(QWidget):
         self.tabla_tareas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.tabla_tareas.verticalHeader().setVisible(False)
         self.tabla_tareas.verticalHeader().setDefaultSectionSize(ALTURA_FILA)
-        l.addWidget(self.tabla_tareas, 1)
+        disposicion.addWidget(self.tabla_tareas, 1)
 
         self.paginacion_tareas= ControlPaginacion()
         self.paginacion_tareas.cambio.connect(self._cargar_tareas)
-        l.addWidget(self.paginacion_tareas)
+        disposicion.addWidget(self.paginacion_tareas)
 
         #Botón ⛶ que abre la tabla + paginación (los mismos widgets, no una copia) dentro de un diálogo maximizado
         #-mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-.
@@ -1137,8 +1137,8 @@ class ModuloBancoTareas(QWidget):
             proveedor_extra_botones= self._boton_ver_descripcion_tarea)
         self.tabla_tareas.doubleClicked.connect(lambda *_: btn_detalle_tareas.click())
         fila_botones.addStretch()
-        l.addLayout(fila_botones)
-        l.addStretch()        #Combos del diálogo de filtros del CATÁLOGO (distintos de los del
+        disposicion.addLayout(fila_botones)
+        disposicion.addStretch()        #Combos del diálogo de filtros del CATÁLOGO (distintos de los del
         #formulario "Nueva tarea"): filtran qué tareas YA CREADAS se listan en la tabla, todos opcionales, mismo patrón
         #que calendario.py.
         self.combo_filtro_cat_curso= QComboBox()
@@ -1160,7 +1160,7 @@ class ModuloBancoTareas(QWidget):
         self.combo_filtro_cat_materia.currentIndexChanged.connect(lambda _: self._filtro_cat_cambio())
         self._construir_dialogo_filtros_tareas()
 
-        return w
+        return contenedor
 
     #Ventanita (no modal) con los filtros del CATÁLOGO de tareas — Curso,
     #Sección, Área Técnica, Carrera y Materia, todos opcionales. Mismo
@@ -1294,8 +1294,8 @@ class ModuloBancoTareas(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_cat_especialidad.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_cat_especialidad.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_cat_especialidad.findData(actual)
             self.combo_filtro_cat_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1312,8 +1312,8 @@ class ModuloBancoTareas(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_cat_carrera.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_cat_carrera.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_cat_carrera.findData(actual)
             self.combo_filtro_cat_carrera.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1343,8 +1343,8 @@ class ModuloBancoTareas(QWidget):
                          WHERE estado='Activa' AND especialidad_id=? ORDER BY nombre""", (especialidad_id,))
         else:
             c.execute("SELECT id, nombre FROM materias WHERE estado='Activa' ORDER BY nombre")
-        for f in c.fetchall():
-            self.combo_filtro_cat_materia.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.combo_filtro_cat_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= self.combo_filtro_cat_materia.findData(actual)
         self.combo_filtro_cat_materia.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1378,7 +1378,7 @@ class ModuloBancoTareas(QWidget):
                 c= conn.cursor()
                 c.execute("""SELECT DISTINCT seccion_id FROM estudiantes
                              WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
-                secciones_carrera= {f["seccion_id"] for f in c.fetchall()}
+                secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
                 conn.close()
             actual= self.combo_filtro_cat_seccion.currentData()
             for i in range(self.combo_filtro_cat_seccion.count() - 1, 0, -1):
@@ -1497,8 +1497,8 @@ class ModuloBancoTareas(QWidget):
                               (tarea_id_guardada, ra_id))
             conn.commit()
             conn.close()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar la tarea:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar la tarea:\n{error}", self)
             return
         registrar_auditoria("Banco de Tareas", accion, self.main_window.usuario_actual, self.in_titulo.text().strip())
         mostrar_mensaje("exito", "Guardado", "La tarea se guardó correctamente.", self)
@@ -1516,13 +1516,13 @@ class ModuloBancoTareas(QWidget):
 
     def _actualizar_boton_competencias(self):
 
-        n= len(self._competencias_tarea_seleccionadas)
-        if n == 0:
+        cantidad= len(self._competencias_tarea_seleccionadas)
+        if cantidad == 0:
             self.btn_competencias_tarea.setText("Seleccionar competencias")
-        elif n == 1:
+        elif cantidad == 1:
             self.btn_competencias_tarea.setText(f"🎯 {self._competencias_tarea_seleccionadas[0]}")
         else:
-            self.btn_competencias_tarea.setText(f"🎯 {n} competencias seleccionadas")
+            self.btn_competencias_tarea.setText(f"🎯 {cantidad} competencias seleccionadas")
 
     def _elegir_ce_tarea(self):
 
@@ -1537,13 +1537,13 @@ class ModuloBancoTareas(QWidget):
 
     def _actualizar_boton_ce_tarea(self):
 
-        n= len(self._ce_tarea_seleccionadas)
-        if n == 0:
+        cantidad= len(self._ce_tarea_seleccionadas)
+        if cantidad == 0:
             self.btn_ce_tarea.setText("Vincular a Competencias Específicas")
-        elif n == 1:
+        elif cantidad == 1:
             self.btn_ce_tarea.setText("1 Competencia Específica vinculada")
         else:
-            self.btn_ce_tarea.setText(f"🧩 {n} Competencias Específicas vinculadas")
+            self.btn_ce_tarea.setText(f"🧩 {cantidad} Competencias Específicas vinculadas")
 
     #True si la institución es de tipo Politécnico (o Personalizado con el
     #módulo Politécnico activo). Mismo criterio usado en estudiantes.py.
@@ -1566,9 +1566,9 @@ class ModuloBancoTareas(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT modelo_evaluacion FROM materias WHERE id=?", (materia_id,))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return bool(f) and f["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA
+        return bool(fila) and fila["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA
 
     #Ajusta labels, tooltips y encabezados que mencionan 'Materia' para que
     #también reflejen 'Módulo Técnico' cuando la institución es Politécnico —
@@ -1653,13 +1653,13 @@ class ModuloBancoTareas(QWidget):
 
     def _actualizar_boton_ra_tarea(self):
 
-        n= len(self._ra_tarea_seleccionadas)
-        if n == 0:
+        cantidad= len(self._ra_tarea_seleccionadas)
+        if cantidad == 0:
             self.btn_ra_tarea.setText("Vincular a Resultados de Aprendizaje (RA)")
-        elif n == 1:
+        elif cantidad == 1:
             self.btn_ra_tarea.setText("1 Resultado de Aprendizaje vinculado")
         else:
-            self.btn_ra_tarea.setText(f"📐 {n} Resultados de Aprendizaje vinculados")
+            self.btn_ra_tarea.setText(f"📐 {cantidad} Resultados de Aprendizaje vinculados")
 
     def _limpiar_tarea(self):
 
@@ -1796,13 +1796,13 @@ class ModuloBancoTareas(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, codigo, nombre, modelo_evaluacion FROM materias WHERE estado='Activa' ORDER BY nombre")
-        for f in c.fetchall():
-            if permitidas is not None and f["id"] not in permitidas:
+        for fila in c.fetchall():
+            if permitidas is not None and fila["id"] not in permitidas:
                 continue
-            etiqueta= f["nombre"] + (f" ({f['codigo']})" if f["codigo"] else "")
-            if f["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA:
+            etiqueta= fila["nombre"] + (f" ({fila['codigo']})" if fila["codigo"] else "")
+            if fila["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA:
                 etiqueta= f"🛠 {etiqueta}"
-            self.combo_materia.addItem(etiqueta, f["id"])
+            self.combo_materia.addItem(etiqueta, fila["id"])
         conn.close()
 
     def _cargar_combo_periodos(self):
@@ -1813,8 +1813,8 @@ class ModuloBancoTareas(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM periodos ORDER BY orden")
-        for f in c.fetchall():
-            self.combo_periodo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.combo_periodo.addItem(fila["nombre"], fila["id"])
         conn.close()
 
     #Clasifica una tarea en vencida / por_vencer (≤7 días) / vigente /
@@ -1852,13 +1852,13 @@ class ModuloBancoTareas(QWidget):
         #Nombres para la columna "Alcance" (curso/sección/área técnica/carrera que cada tarea tiene restringidos, si
         #tiene alguno). Se cargan una sola vez por refresco de tabla, no por fila, para no golpear la BD.
         c.execute("SELECT id, nombre FROM grados")
-        self._nombres_grado_tarea= {r["id"]: r["nombre"] for r in c.fetchall()}
+        self._nombres_grado_tarea= {fila["id"]: fila["nombre"] for fila in c.fetchall()}
         c.execute("SELECT id, nombre FROM secciones")
-        self._nombres_seccion_tarea= {r["id"]: r["nombre"] for r in c.fetchall()}
+        self._nombres_seccion_tarea= {fila["id"]: fila["nombre"] for fila in c.fetchall()}
         c.execute("SELECT id, nombre FROM especialidades")
-        self._nombres_especialidad_tarea= {r["id"]: r["nombre"] for r in c.fetchall()}
+        self._nombres_especialidad_tarea= {fila["id"]: fila["nombre"] for fila in c.fetchall()}
         c.execute("SELECT id, nombre FROM carreras")
-        self._nombres_carrera_tarea= {r["id"]: r["nombre"] for r in c.fetchall()}
+        self._nombres_carrera_tarea= {fila["id"]: fila["nombre"] for fila in c.fetchall()}
         #RA vinculados por tarea (solo aplica a materias con modelo técnico), para mostrarlos en la columna
         #"Competencia(s) / RA" igual que se hace con las CE.
         c.execute("""SELECT tarea_ra.tarea_id, resultados_aprendizaje.codigo
@@ -1866,22 +1866,22 @@ class ModuloBancoTareas(QWidget):
                           ON tarea_ra.resultado_aprendizaje_id = resultados_aprendizaje.id
                      ORDER BY resultados_aprendizaje.orden, resultados_aprendizaje.codigo""")
         ra_por_tarea= {}
-        for r in c.fetchall():
-            ra_por_tarea.setdefault(r["tarea_id"], []).append(r["codigo"])
+        for fila in c.fetchall():
+            ra_por_tarea.setdefault(fila["tarea_id"], []).append(fila["codigo"])
         conn.close()
         #Conjunto permitido por rol, ANTES del texto de búsqueda: sirve tanto para paginar el resultado filtrado como
         #para el resumen (barra + leyenda + alertas), que muestra el panorama general sin depender de lo que se esté
         #buscando en ese momento.
-        permitidas_lista= [f for f in filas if permitidas is None or f["materia_id"] in permitidas]
+        permitidas_lista= [fila for fila in filas if permitidas is None or fila["materia_id"] in permitidas]
         self._actualizar_resumen_tareas(permitidas_lista)
 
         filtradas= permitidas_lista
         if texto:
-            filtradas= [f for f in filtradas if texto in _normalizar_texto(
-                        f"{f['titulo'] or ''} {f['materia_nombre'] or ''} {f['categoria'] or ''} "
-                        f"{self._valor_columna(f, 'competencias') or ''}")]
+            filtradas= [filtrada for filtrada in filtradas if texto in _normalizar_texto(
+                        f"{filtrada['titulo'] or ''} {filtrada['materia_nombre'] or ''} {filtrada['categoria'] or ''} "
+                        f"{self._valor_columna(filtrada, 'competencias') or ''}")]
         if self._filtro_tareas:
-            filtradas= [f for f in filtradas if self._clasificar_tarea(f) == self._filtro_tareas]
+            filtradas= [filtrada for filtrada in filtradas if self._clasificar_tarea(filtrada) == self._filtro_tareas]
 
         #Filtros de Curso/Sección/Área Técnica/Carrera/Materia (diálogo "☰ Filtros"):
         #una tarea sin ese dato restringido (None) siempre pasa el filtro, porque significa que su alcance es "Todos"
@@ -1918,7 +1918,7 @@ class ModuloBancoTareas(QWidget):
 
         if curso_id_f is not None or seccion_id_f is not None or especialidad_id_f is not None\
                 or carrera_id_f is not None or materia_id_f is not None:
-            filtradas= [f for f in filtradas if _pasa_filtro_alcance(f)]
+            filtradas= [filtrada for filtrada in filtradas if _pasa_filtro_alcance(filtrada)]
 
         self.paginacion_tareas.establecer_total(len(filtradas))
         inicio, fin= self.paginacion_tareas.rango_actual()
@@ -1988,13 +1988,13 @@ class ModuloBancoTareas(QWidget):
             partes.append("Sin carrera")
         elif carrera_id is not None:
             partes.append(self._nombres_carrera_tarea.get(carrera_id, ""))
-        return " · ".join(p for p in partes if p) or "Todas las secciones"
+        return " · ".join(parte for parte in partes if parte) or "Todas las secciones"
 
     def _actualizar_resumen_tareas(self, tareas):
 
         conteo= {"vencida": 0, "por_vencer": 0, "vigente": 0, "archivada": 0}
-        for t in tareas:
-            conteo[self._clasificar_tarea(t)] += 1
+        for tarea in tareas:
+            conteo[self._clasificar_tarea(tarea)] += 1
         self._conteo_tareas_actual= conteo
         total_tareas= sum(conteo.values())
         #Icono de portapapeles dibujado con QPainter (mismo dibujo que ya usa el resto de la app), insertado como <img>
@@ -2043,13 +2043,13 @@ class ModuloBancoTareas(QWidget):
     #Pestaña: Entregas
     def _tab_entregas(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(12)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(12)
 
         self.cinta_alerta_entregas= CintaAlerta()
         self.cinta_alerta_entregas.clicada.connect(lambda: self._alternar_filtro_entregas("atrasadas_no_entregadas"))
-        l.addWidget(self.cinta_alerta_entregas)
+        disposicion.addWidget(self.cinta_alerta_entregas)
 
         fila_resumen= QHBoxLayout()
         fila_resumen.setSpacing(16)
@@ -2066,7 +2066,7 @@ class ModuloBancoTareas(QWidget):
             leyenda.addWidget(lbl)
             self.etiquetas_leyenda_entregas[clave]= lbl
         fila_resumen.addLayout(leyenda, 3)
-        l.addLayout(fila_resumen)
+        disposicion.addLayout(fila_resumen)
 
         tarjeta_top= TarjetaSeccion(
             icono= "📥", titulo="Tarea a revisar",
@@ -2146,11 +2146,11 @@ class ModuloBancoTareas(QWidget):
         self.btn_generar_entregas.clicked.connect(self._generar_entregas_faltantes)
         fila.addWidget(self.btn_generar_entregas)
         tarjeta_top.contenido.addLayout(fila)
-        l.addWidget(tarjeta_top)
+        disposicion.addWidget(tarjeta_top)
 
         self.lbl_resumen_filtros_entregas= QLabel("")
         self.lbl_resumen_filtros_entregas.setWordWrap(True)
-        l.addWidget(self.lbl_resumen_filtros_entregas)
+        disposicion.addWidget(self.lbl_resumen_filtros_entregas)
 
         marco_busqueda_entregas, self.in_buscar_entregas= self._crear_barra_busqueda(
             "Buscar por estudiante o estado de entrega…", self._filtro_entregas_cambio)
@@ -2162,7 +2162,7 @@ class ModuloBancoTareas(QWidget):
         self.btn_filtros_entregas.setObjectName("BtnAccionNeutro")
         self.btn_filtros_entregas.clicked.connect(self._abrir_dialogo_filtros_entregas)
         fila_busqueda_entregas.addWidget(self.btn_filtros_entregas)
-        l.addLayout(fila_busqueda_entregas)
+        disposicion.addLayout(fila_busqueda_entregas)
 
 
         self.tabla_entregas= QTableWidget(0, 6)
@@ -2186,11 +2186,11 @@ class ModuloBancoTareas(QWidget):
         self.tabla_entregas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.tabla_entregas.verticalHeader().setVisible(False)
         self.tabla_entregas.verticalHeader().setDefaultSectionSize(ALTURA_FILA)
-        l.addWidget(self.tabla_entregas, 1)
+        disposicion.addWidget(self.tabla_entregas, 1)
 
         self.paginacion_entregas= ControlPaginacion()
         self.paginacion_entregas.cambio.connect(self._cargar_entregas)
-        l.addWidget(self.paginacion_entregas)
+        disposicion.addWidget(self.paginacion_entregas)
 
         #Botón ⛶ que abre la tabla + paginación (los mismos widgets, no una copia) dentro de un diálogo maximizado
         #-mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-.
@@ -2214,12 +2214,12 @@ class ModuloBancoTareas(QWidget):
         btn_detalle_entregas= agregar_boton_detalle(fila_acciones, self.tabla_entregas, self, titulo="Detalle de la Entrega")
         self.tabla_entregas.doubleClicked.connect(lambda *_: btn_detalle_entregas.click())
         fila_acciones.addStretch()
-        l.addLayout(fila_acciones)
-        l.addStretch()
+        disposicion.addLayout(fila_acciones)
+        disposicion.addStretch()
 
         self._construir_dialogo_filtros_entregas()
 
-        return w
+        return contenedor
 
     #Ventanita (no modal) con TODOS los filtros de la pestaña
     #"Entregas": Nivel Educativo, Área Técnica/Carrera, Curso/Sección,
@@ -2408,8 +2408,8 @@ class ModuloBancoTareas(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_tarea.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_tarea.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_especialidad_tarea, "No Área Técnica")
             idx= self.combo_filtro_especialidad_tarea.findData(actual)
@@ -2427,8 +2427,8 @@ class ModuloBancoTareas(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_tarea.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_tarea.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_carrera_tarea, "No Carrera")
             idx= self.combo_filtro_carrera_tarea.findData(actual)
@@ -2480,16 +2480,16 @@ class ModuloBancoTareas(QWidget):
         c.execute("""SELECT DISTINCT materias.id, materias.codigo, materias.nombre, materias.modelo_evaluacion
                      FROM materias JOIN tareas ON tareas.materia_id = materias.id
                      WHERE tareas.estado='Activa' ORDER BY materias.nombre""")
-        for f in c.fetchall():
-            if permitidas is not None and f["id"] not in permitidas:
+        for fila in c.fetchall():
+            if permitidas is not None and fila["id"] not in permitidas:
                 continue
-            es_tecnica= f["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA
+            es_tecnica= fila["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA
             if solo_tecnicos and not es_tecnica:
                 continue
-            etiqueta= f["nombre"] + (f" ({f['codigo']})" if f["codigo"] else "")
+            etiqueta= fila["nombre"] + (f" ({fila['codigo']})" if fila["codigo"] else "")
             if es_tecnica:
                 etiqueta= f"🛠 {etiqueta}"
-            self.combo_materia_filtro_entrega.addItem(etiqueta, f["id"])
+            self.combo_materia_filtro_entrega.addItem(etiqueta, fila["id"])
         conn.close()
         idx= self.combo_materia_filtro_entrega.findData(sel)
         self.combo_materia_filtro_entrega.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2549,16 +2549,16 @@ class ModuloBancoTareas(QWidget):
                      materias.modelo_evaluacion
                      FROM tareas LEFT JOIN materias ON tareas.materia_id = materias.id
                      WHERE tareas.estado='Activa' ORDER BY tareas.fecha_entrega DESC""")
-        for f in c.fetchall():
-            if permitidas is not None and f["materia_id"] not in permitidas:
+        for fila in c.fetchall():
+            if permitidas is not None and fila["materia_id"] not in permitidas:
                 continue
-            if materia_filtro is not None and f["materia_id"] != materia_filtro:
+            if materia_filtro is not None and fila["materia_id"] != materia_filtro:
                 continue
-            es_tecnica= f["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA
+            es_tecnica= fila["modelo_evaluacion"] == MODELO_EVALUACION_TECNICA
             if solo_tecnicos and not es_tecnica:
                 continue
             prefijo= "🛠 " if es_tecnica else ""
-            self.combo_tarea_entrega.addItem(f"{prefijo}{f['titulo']} — {f['materia_nombre'] or ''}", f["id"])
+            self.combo_tarea_entrega.addItem(f"{prefijo}{fila['titulo']} — {fila['materia_nombre'] or ''}", fila["id"])
         conn.close()
         idx= self.combo_tarea_entrega.findData(actual)
         self.combo_tarea_entrega.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2635,8 +2635,8 @@ class ModuloBancoTareas(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_entrega.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_entrega.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_especialidad_entrega, "No Área Técnica")
             idx= self.combo_filtro_especialidad_entrega.findData(actual)
@@ -2654,8 +2654,8 @@ class ModuloBancoTareas(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_entrega.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_entrega.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_carrera_entrega, "No Carrera")
             idx= self.combo_filtro_carrera_entrega.findData(actual)
@@ -2708,9 +2708,9 @@ class ModuloBancoTareas(QWidget):
         c= conn.cursor()
         c.execute("SELECT materia_id, curso_id, seccion_id, especialidad_id, carrera_id FROM tareas WHERE id=?",
                   (tarea_id,))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if not f:
+        if not fila:
             return
         #Si la tarea ya tiene su propio alcance (curso/sección/área técnica/ carrera), ese manda sobre los filtros de
         #esta pestaña — la tarea ya "sabe" a quién aplica. Si la tarea quedó sin alcance ("Todos"), se usan los filtros
@@ -2720,27 +2720,27 @@ class ModuloBancoTareas(QWidget):
         #Técnica/Carrera son OBLIGATORIOS si la institución es puramente Politécnico/Universidad (mismo criterio que al
         #guardar la tarea; ver _guardar_tarea)-.
         ambos_activos= self._ambos_modulos_tecnicos_activos()
-        if f["especialidad_id"] is None and self._es_politecnico() and not ambos_activos\
+        if fila["especialidad_id"] is None and self._es_politecnico() and not ambos_activos\
                 and self.combo_filtro_especialidad_entrega.currentData() is None:
             mostrar_mensaje("advertencia", "Datos incompletos",
                            "Esta institución es un Politécnico: selecciona el Área Técnica antes de generar "
                            "las entregas.", self)
             return
-        if f["carrera_id"] is None and self._es_universidad() and not ambos_activos\
+        if fila["carrera_id"] is None and self._es_universidad() and not ambos_activos\
                 and self.combo_filtro_carrera_entrega.currentData() is None:
             mostrar_mensaje("advertencia", "Datos incompletos",
                            "Esta institución es una Universidad: selecciona la Carrera antes de generar "
                            "las entregas.", self)
             return
-        seccion_id= f["seccion_id"] if f["seccion_id"] is not None else (
+        seccion_id= fila["seccion_id"] if fila["seccion_id"] is not None else (
             self.combo_seccion_entrega.currentData() if hasattr(self, "combo_seccion_entrega") else None)
-        curso_id= f["curso_id"] if f["curso_id"] is not None else (
+        curso_id= fila["curso_id"] if fila["curso_id"] is not None else (
             self.combo_curso_entrega.currentData() if hasattr(self, "combo_curso_entrega") else None)
-        especialidad_id= f["especialidad_id"] if f["especialidad_id"] is not None else (
+        especialidad_id= fila["especialidad_id"] if fila["especialidad_id"] is not None else (
             self.combo_filtro_especialidad_entrega.currentData() if self._es_politecnico() else None)
-        carrera_id= f["carrera_id"] if f["carrera_id"] is not None else (
+        carrera_id= fila["carrera_id"] if fila["carrera_id"] is not None else (
             self.combo_filtro_carrera_entrega.currentData() if self._es_universidad() else None)
-        estudiantes= self._estudiantes_de_la_materia(f["materia_id"], seccion_id, curso_id,
+        estudiantes= self._estudiantes_de_la_materia(fila["materia_id"], seccion_id, curso_id,
                                                         especialidad_id, carrera_id)
         if not estudiantes:
             mostrar_mensaje("advertencia", "Sin estudiantes",
@@ -2819,12 +2819,12 @@ class ModuloBancoTareas(QWidget):
 
         filas= todas
         if texto:
-            filas= [f for f in filas if texto in _normalizar_texto(
-                    f"{f['nombre_est'] or ''} {f['estado_entrega'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar_texto(
+                    f"{fila['nombre_est'] or ''} {fila['estado_entrega'] or ''}")]
         if self._filtro_entregas == "atrasadas_no_entregadas":
-            filas= [f for f in filas if f["estado_entrega"] in ("Atrasada", "No entregada")]
+            filas= [fila for fila in filas if fila["estado_entrega"] in ("Atrasada", "No entregada")]
         elif self._filtro_entregas:
-            filas= [f for f in filas if f["estado_entrega"] == self._filtro_entregas]
+            filas= [fila for fila in filas if fila["estado_entrega"] == self._filtro_entregas]
 
         #Filtros de Curso/Sección/Área Técnica/Carrera (misma fila de combos que se usa para "Generar/Actualizar
         #Lista"): acotan también qué entregas YA GENERADAS se muestran en la tabla, según el curso/ sección/área
@@ -2837,17 +2837,17 @@ class ModuloBancoTareas(QWidget):
         carrera_id_f= (self.combo_filtro_carrera_entrega.currentData()
                         if hasattr(self, "combo_filtro_carrera_entrega") and self._es_universidad() else None)
         if seccion_id_f is not None:
-            filas= [f for f in filas if self._valor_columna(f, "seccion_id_est") == seccion_id_f]
+            filas= [fila for fila in filas if self._valor_columna(fila, "seccion_id_est") == seccion_id_f]
         elif curso_id_f is not None:
-            filas= [f for f in filas if self._valor_columna(f, "grado_id_est") == curso_id_f]
+            filas= [fila for fila in filas if self._valor_columna(fila, "grado_id_est") == curso_id_f]
         if especialidad_id_f == 0:
-            filas= [f for f in filas if self._valor_columna(f, "especialidad_id_est") is None]
+            filas= [fila for fila in filas if self._valor_columna(fila, "especialidad_id_est") is None]
         elif especialidad_id_f is not None:
-            filas= [f for f in filas if self._valor_columna(f, "especialidad_id_est") == especialidad_id_f]
+            filas= [fila for fila in filas if self._valor_columna(fila, "especialidad_id_est") == especialidad_id_f]
         if carrera_id_f == 0:
-            filas= [f for f in filas if self._valor_columna(f, "carrera_id_est") is None]
+            filas= [fila for fila in filas if self._valor_columna(fila, "carrera_id_est") is None]
         elif carrera_id_f is not None:
-            filas= [f for f in filas if self._valor_columna(f, "carrera_id_est") == carrera_id_f]
+            filas= [fila for fila in filas if self._valor_columna(fila, "carrera_id_est") == carrera_id_f]
 
         #El Número de Lista solo tiene sentido cuando se ve UNA sección concreta a la vez (es un número "1..n dentro de
         #esa sección"): si el filtro está en "Todos los cursos/secciones" o en un curso
@@ -2898,8 +2898,8 @@ class ModuloBancoTareas(QWidget):
     def _actualizar_resumen_entregas(self, entregas):
 
         conteo= {"Entregada": 0, "Pendiente": 0, "Atrasada": 0, "No entregada": 0}
-        for e in entregas:
-            estado= e["estado_entrega"] or "Pendiente"
+        for entrega in entregas:
+            estado= entrega["estado_entrega"] or "Pendiente"
             if estado in conteo:
                 conteo[estado] += 1
         self._conteo_entregas_actual= conteo

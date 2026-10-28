@@ -46,7 +46,7 @@ def _observaciones_por_periodo(estudiante_id, periodos):
             continue
         c.execute("""SELECT texto FROM observaciones WHERE estudiante_id=? AND fecha BETWEEN ? AND ?
                      ORDER BY fecha""", (estudiante_id, periodo["fecha_inicio"], periodo["fecha_fin"]))
-        textos= [r["texto"] for r in c.fetchall()]
+        textos= [fila["texto"] for fila in c.fetchall()]
         resultado[periodo["id"]]= " / ".join(textos)
     conn.close()
     return resultado
@@ -130,10 +130,10 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
     fila2_y= y - 26
     alto_doble= 40
 
-    def rect_relleno(x, y_top, w, h):
+    def rect_relleno(pos_x, y_top, w, h):
 
         cvs.setFillColorRGB(*rgb_banda)
-        cvs.rect(x, y_top - h, w, h, fill=1, stroke=1)
+        cvs.rect(pos_x, y_top - h, w, h, fill=1, stroke=1)
         cvs.setFillColorRGB(*rgb_texto_banda)
 
     x= x0

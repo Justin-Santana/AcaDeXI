@@ -38,7 +38,7 @@ def _listar_secciones_destino(main_window):
         conn= bd_single_teacher.obtener_conexion(main_window)
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM secciones ORDER BY nombre")
-        filas= [(f["id"], f["nombre"]) for f in c.fetchall()]
+        filas= [(fila["id"], fila["nombre"]) for fila in c.fetchall()]
         conn.close()
         return filas
     from src.nucleo.bd import obtener_conexion
@@ -47,7 +47,7 @@ def _listar_secciones_destino(main_window):
     c.execute("""SELECT secciones.id, (grados.nombre || ' - ' || secciones.nombre) as etiqueta
                  FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id
                  ORDER BY grados.orden, secciones.nombre""")
-    filas= [(f["id"], f["etiqueta"]) for f in c.fetchall()]
+    filas= [(fila["id"], fila["etiqueta"]) for fila in c.fetchall()]
     conn.close()
     return filas
 
@@ -115,8 +115,8 @@ class DialogoExportarEstudiantes(_DialogoBase):
             mostrar_mensaje("exito", "Exportado",
                              f"Se exportaron {n} estudiante(s) a:\n{ruta}", self)
             self.accept()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo exportar", str(e), self)
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo exportar", str(error), self)
 
 
 class DialogoImportarEstudiantes(_DialogoBase):
@@ -186,8 +186,8 @@ class DialogoImportarEstudiantes(_DialogoBase):
             mostrar_mensaje("exito", "Importado",
                              f"Creados: {resultado['creados']}\nActualizados: {resultado['actualizados']}", self)
             self.accept()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo importar", str(e), self)
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo importar", str(error), self)
 
 
 #CALIFICACIONES
@@ -242,8 +242,8 @@ class DialogoExportarCalificaciones(_DialogoBase):
             mostrar_mensaje("exito", "Exportado",
                              f"Se exportaron {n} calificación(es) a:\n{ruta}", self)
             self.accept()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo exportar", str(e), self)
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo exportar", str(error), self)
 
 
 #A diferencia de Estudiantes, aquí SIEMPRE se pide Materia y Periodo
@@ -326,5 +326,5 @@ class DialogoImportarCalificaciones(_DialogoBase):
             mostrar_mensaje("exito" if not resultado["estudiantes_faltantes"] else "advertencia",
                              "Importación completada", texto, self)
             self.accept()
-        except Exception as e:
-            mostrar_mensaje("error", "No se pudo importar", str(e), self)
+        except Exception as error:
+            mostrar_mensaje("error", "No se pudo importar", str(error), self)

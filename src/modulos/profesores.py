@@ -71,9 +71,9 @@ def _redondear_pixmap(pixmap, tamano):
     ruta= QPainterPath()
     ruta.addEllipse(0, 0, tamano, tamano)
     pintor.setClipPath(ruta)
-    x= (tamano - fuente.width()) // 2
-    y= (tamano - fuente.height()) // 2
-    pintor.drawPixmap(x, y, fuente)
+    pos_x= (tamano - fuente.width()) // 2
+    pos_y= (tamano - fuente.height()) // 2
+    pintor.drawPixmap(pos_x, pos_y, fuente)
     pintor.end()
     return resultado
 
@@ -573,9 +573,9 @@ class ModuloProfesores(QWidget):
                          SELECT usuario_id FROM profesores WHERE usuario_id IS NOT NULL
                          AND (?='' OR id != ?)
                      ) ORDER BY usuarios.username""", (self.id_edicion or "", self.id_edicion or -1))
-        for f in c.fetchall():
-            etiqueta= f["nombre_completo"] or f["username"]
-            self.combo_usuario.addItem(f"{etiqueta} ({f['username']})", f["id"])
+        for fila in c.fetchall():
+            etiqueta= fila["nombre_completo"] or fila["username"]
+            self.combo_usuario.addItem(f"{etiqueta} ({fila['username']})", fila["id"])
         conn.close()
 
     #True si la institución es de tipo Politécnico (o Personalizado con el
@@ -773,9 +773,9 @@ class ModuloProfesores(QWidget):
                 accion= "Editó profesor"
             conn.commit()
             conn.close()
-        except Exception as e:
+        except Exception as error:
             self._destello("#EF4444")
-            mostrar_mensaje("error", "Error", f"No se pudo guardar el profesor:\n{e}", self)
+            mostrar_mensaje("error", "Error", f"No se pudo guardar el profesor:\n{error}", self)
             return
         registrar_auditoria("Profesores", accion, self.main_window.usuario_actual, self.in_nombre.text().strip())
         self._destello("#22C55E")
@@ -891,11 +891,11 @@ class ModuloProfesores(QWidget):
                        datos["foto"], datos["usuario_id"], datos.get("imparte_tecnico") or 0,
                        datos.get("especialidad_tecnica_id")))
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
             mostrar_mensaje("error", "No se pudo deshacer",
                              f"No fue posible restaurar al profesor (puede que ya exista un registro con "
-                             f"algún conflicto): {e}", self)
+                             f"algún conflicto): {error}", self)
             conn.close()
             return
         conn.close()

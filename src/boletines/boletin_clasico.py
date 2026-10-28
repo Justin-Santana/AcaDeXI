@@ -455,7 +455,7 @@ def _dibujar_seccion_firma_padres(cvs, margen, ancho, y_inicio, periodos, rgb_ba
         col_periodo= 95
         col_firma= ancho_izq - col_periodo
 
-        filas= [p["nombre"] for p in periodos] if periodos else []
+        filas= [periodo["nombre"] for periodo in periodos] if periodos else []
         filas= filas + ["Fin de Año Escolar"]
 
         #--- Columna izquierda: PERIODO | FIRMA DEL PADRE, MADRE O TUTOR ---
@@ -889,7 +889,7 @@ def _observaciones_por_periodo(estudiante_id, periodos):
             continue
         c.execute("""SELECT texto FROM observaciones WHERE estudiante_id=? AND fecha BETWEEN ? AND ?
                      ORDER BY fecha""", (estudiante_id, periodo["fecha_inicio"], periodo["fecha_fin"]))
-        textos= [r["texto"] for r in c.fetchall()]
+        textos= [fila["texto"] for fila in c.fetchall()]
         resultado[periodo["id"]]= " / ".join(textos)
     conn.close()
     return resultado

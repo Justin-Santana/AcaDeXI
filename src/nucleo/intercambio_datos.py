@@ -73,7 +73,7 @@ def exportar_estudiantes(main_window, ruta_archivo, seccion_id=None):
     else:
         c.execute("SELECT * FROM estudiantes")
 
-    filas= [dict(f) for f in c.fetchall()]
+    filas= [dict(fila) for fila in c.fetchall()]
     conn.close()
 
     if edicion == "docentes":
@@ -81,7 +81,7 @@ def exportar_estudiantes(main_window, ruta_archivo, seccion_id=None):
         from src.nucleo.datos_locales_docente import listar_overrides_estudiantes, aplicar_override
 
         overrides= listar_overrides_estudiantes(main_window)
-        filas= [aplicar_override(f, overrides.get(f["id"])) for f in filas]
+        filas= [aplicar_override(fila, overrides.get(fila["id"])) for fila in filas]
 
     registros= [{campo: f.get(campo, "") for campo in CAMPOS_CANONICOS_ESTUDIANTE} for f in filas]
     _escribir_paquete(ruta_archivo, "estudiantes", edicion, registros)

@@ -129,7 +129,7 @@ def asegurar_tonos_predeterminados():
             try:
 
                 #"0" en frecs = silencio breve (pausa entre notas del tono "clásico").
-                _generar_tono_wav(ruta, [f if f else 0.0001 for f in frecs], durs, forma=forma)
+                _generar_tono_wav(ruta, [frec if frec else 0.0001 for frec in frecs], durs, forma=forma)
             except Exception:
                 pass
     return rutas
@@ -219,7 +219,7 @@ def listar_recordatorios(main_window):
     conn= _conexion_local(main_window)
     filas= conn.execute("SELECT * FROM recordatorios ORDER BY fecha, hora").fetchall()
     conn.close()
-    return [dict(f) for f in filas]
+    return [dict(fila) for fila in filas]
 
 
 def guardar_recordatorio(main_window, id_edicion, titulo, fecha, hora, repetir, tono, tono_ruta, activo=1):
@@ -746,17 +746,17 @@ class OverlayEfectoAlarma(QWidget):
 
         if not self._activo and self._intensidad <= 0:
             return
-        p= QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pintor= QPainter(self)
+        pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         color= self._color_acento()
         grosor= 3 + 10 * self._intensidad
         alpha= int(40 + 130 * self._intensidad)
         color.setAlpha(alpha)
         pluma= QPen(color)
         pluma.setWidth(int(grosor))
-        p.setPen(pluma)
+        pintor.setPen(pluma)
         margen= grosor / 2
-        p.drawRoundedRect(self.rect().adjusted(int(margen), int(margen), -int(margen), -int(margen)), 18, 18)
+        pintor.drawRoundedRect(self.rect().adjusted(int(margen), int(margen), -int(margen), -int(margen)), 18, 18)
 
 
 #Botón flotante para detener la alarma
@@ -811,9 +811,9 @@ class BotonDetenerAlarma(QWidget):
         if contenedor is None:
             return
         margen= 28
-        x= contenedor.width() - self.width() - margen
-        y= contenedor.height() - self.height() - margen
-        self.move(max(0, x), max(0, y))
+        pos_x= contenedor.width() - self.width() - margen
+        pos_y= contenedor.height() - self.height() - margen
+        self.move(max(0, pos_x), max(0, pos_y))
         self.raise_()
 
     def mostrar_para_alarma(self, titulo, subtitulo):
@@ -866,54 +866,54 @@ class BotonDetenerAlarma(QWidget):
 
         if self._opacidad <= 0.01:
             return
-        p= QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pintor= QPainter(self)
+        pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         color= self._color_acento()
 
         fondo= QColor(20, 22, 30, int(210 * self._opacidad))
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QBrush(fondo))
-        p.drawRoundedRect(self.rect(), 20, 20)
+        pintor.setPen(Qt.PenStyle.NoPen)
+        pintor.setBrush(QBrush(fondo))
+        pintor.drawRoundedRect(self.rect(), 20, 20)
 
         borde= QColor(color)
         borde.setAlpha(int(220 * self._opacidad))
-        p.setPen(QPen(borde, 2))
-        p.setBrush(Qt.BrushStyle.NoBrush)
-        p.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 20, 20)
+        pintor.setPen(QPen(borde, 2))
+        pintor.setBrush(Qt.BrushStyle.NoBrush)
+        pintor.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 20, 20)
 
         circulo_rect= QRect(16, 16, 60, 60)
         relleno_circulo= QColor(color)
         relleno_circulo.setAlpha(int(200 * self._opacidad))
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QBrush(relleno_circulo))
-        p.drawEllipse(circulo_rect)
-        p.setPen(QColor(255, 255, 255, int(255 * self._opacidad)))
+        pintor.setPen(Qt.PenStyle.NoPen)
+        pintor.setBrush(QBrush(relleno_circulo))
+        pintor.drawEllipse(circulo_rect)
+        pintor.setPen(QColor(255, 255, 255, int(255 * self._opacidad)))
         fuente= QFont()
         fuente.setPointSize(16)
-        p.setFont(fuente)
-        p.drawText(circulo_rect, Qt.AlignmentFlag.AlignCenter, "⏹")
+        pintor.setFont(fuente)
+        pintor.drawText(circulo_rect, Qt.AlignmentFlag.AlignCenter, "⏹")
 
         texto_rect= QRect(88, 14, self.width() - 100, self.height() - 28)
-        p.setPen(QColor(255, 255, 255, int(255 * self._opacidad)))
+        pintor.setPen(QColor(255, 255, 255, int(255 * self._opacidad)))
         fuente_t= QFont()
         fuente_t.setPointSize(10)
         fuente_t.setBold(True)
-        p.setFont(fuente_t)
-        p.drawText(QRect(texto_rect.x(), texto_rect.y(), texto_rect.width(), 22),
+        pintor.setFont(fuente_t)
+        pintor.drawText(QRect(texto_rect.x(), texto_rect.y(), texto_rect.width(), 22),
                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                    self._elidir(self._titulo, 24))
         fuente_s= QFont()
         fuente_s.setPointSize(9)
-        p.setFont(fuente_s)
-        p.setPen(QColor(230, 230, 240, int(230 * self._opacidad)))
-        p.drawText(QRect(texto_rect.x(), texto_rect.y() + 22, texto_rect.width(), 20),
+        pintor.setFont(fuente_s)
+        pintor.setPen(QColor(230, 230, 240, int(230 * self._opacidad)))
+        pintor.drawText(QRect(texto_rect.x(), texto_rect.y() + 22, texto_rect.width(), 20),
                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                    self._elidir(self._subtitulo, 30))
-        p.setPen(QColor(210, 214, 230, int(200 * self._opacidad)))
+        pintor.setPen(QColor(210, 214, 230, int(200 * self._opacidad)))
         fuente_toque= QFont()
         fuente_toque.setPointSize(8)
-        p.setFont(fuente_toque)
-        p.drawText(QRect(texto_rect.x(), texto_rect.y() + 42, texto_rect.width(), 18),
+        pintor.setFont(fuente_toque)
+        pintor.drawText(QRect(texto_rect.x(), texto_rect.y() + 42, texto_rect.width(), 18),
                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, "Toca para detener")
 
     @staticmethod
@@ -953,8 +953,8 @@ class PanelAlarmas(QWidget):
     #---------------- pestaña General ----------------
     def _tab_general(self):
 
-        w= QWidget()
-        form= QFormLayout(w)
+        contenedor= QWidget()
+        form= QFormLayout(contenedor)
 
         self.combo_tono= QComboBox()
         self.combo_tono.addItems(list(TONOS_PREDETERMINADOS.keys()))
@@ -1018,7 +1018,7 @@ class PanelAlarmas(QWidget):
             señal= widget.valueChanged if hasattr(widget, "valueChanged") else (
                 widget.toggled if hasattr(widget, "toggled") else widget.currentIndexChanged)
             señal.connect(self._guardar_general)
-        return w
+        return contenedor
 
     def _elegir_tono_personalizado(self):
 
@@ -1091,8 +1091,8 @@ class PanelAlarmas(QWidget):
     #---------------- pestaña Recordatorios ----------------
     def _tab_recordatorios(self):
 
-        w= QWidget()
-        layout= QVBoxLayout(w)
+        contenedor= QWidget()
+        layout= QVBoxLayout(contenedor)
 
         form= QFormLayout()
         self.in_titulo_rec= QLineEdit()
@@ -1142,7 +1142,7 @@ class PanelAlarmas(QWidget):
         self.tabla_rec.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tabla_rec.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         layout.addWidget(self.tabla_rec, 1)
-        return w
+        return contenedor
 
     def _guardar_recordatorio(self):
 

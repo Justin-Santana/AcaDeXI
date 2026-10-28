@@ -69,43 +69,43 @@ def _cat_rendimiento(p, size, color):
 
 
 #Portapapeles con una tarea marcada.
-def _cat_tareas(p, size, color):
+def _cat_tareas(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawRoundedRect(_r(size, 0.24, 0.16, 0.76, 0.86), 0.06 * size, 0.06 * size)
-    _rect_redondeado(p, size, 0.40, 0.10, 0.60, 0.20, color, radio=0.03)
-    _check(p, size, color, x0=0.34, y0=0.52, x1=0.45, y1=0.62, x2=0.64, y2=0.40, ancho=2.0)
-    _linea(p, size, 0.34, 0.72, 0.66, 0.72, color, 2.0)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawRoundedRect(_r(size, 0.24, 0.16, 0.76, 0.86), 0.06 * size, 0.06 * size)
+    _rect_redondeado(pintor, size, 0.40, 0.10, 0.60, 0.20, color, radio=0.03)
+    _check(pintor, size, color, x0=0.34, y0=0.52, x1=0.45, y1=0.62, x2=0.64, y2=0.40, ancho=2.0)
+    _linea(pintor, size, 0.34, 0.72, 0.66, 0.72, color, 2.0)
 
 
 #Persona con el brazo en alto: participar / levantar la mano en clase.
-def _cat_participacion(p, size, color):
+def _cat_participacion(pintor, size, color):
 
-    p.setBrush(QBrush(QColor(color)))
-    p.setPen(_sin_pluma())
-    p.drawEllipse(_r(size, 0.38, 0.12, 0.58, 0.32))  #cabeza
-    _rect_redondeado(p, size, 0.32, 0.38, 0.60, 0.82, color, radio=0.16)  #cuerpo
-    p.setPen(_pluma(color, 3.2))
-    p.drawLine(QPointF(0.56 * size, 0.44 * size), QPointF(0.82 * size, 0.14 * size))  #brazo
-    p.setPen(_sin_pluma())
-    _disco(p, size, 0.76, 0.06, 0.90, 0.20, color)  #mano en la punta
+    pintor.setBrush(QBrush(QColor(color)))
+    pintor.setPen(_sin_pluma())
+    pintor.drawEllipse(_r(size, 0.38, 0.12, 0.58, 0.32))  #cabeza
+    _rect_redondeado(pintor, size, 0.32, 0.38, 0.60, 0.82, color, radio=0.16)  #cuerpo
+    pintor.setPen(_pluma(color, 3.2))
+    pintor.drawLine(QPointF(0.56 * size, 0.44 * size), QPointF(0.82 * size, 0.14 * size))  #brazo
+    pintor.setPen(_sin_pluma())
+    _disco(pintor, size, 0.76, 0.06, 0.90, 0.20, color)  #mano en la punta
 
 
 #Bombilla: comprensión / entendimiento del tema.
-def _cat_comprension(p, size, color):
+def _cat_comprension(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawEllipse(_r(size, 0.28, 0.12, 0.72, 0.56))
-    _linea(p, size, 0.40, 0.54, 0.40, 0.70, color, 2.0)
-    _linea(p, size, 0.60, 0.54, 0.60, 0.70, color, 2.0)
-    _rect_redondeado(p, size, 0.40, 0.70, 0.60, 0.80, color, radio=0.04)
-    _linea(p, size, 0.42, 0.86, 0.58, 0.86, color, 2.0)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawEllipse(_r(size, 0.28, 0.12, 0.72, 0.56))
+    _linea(pintor, size, 0.40, 0.54, 0.40, 0.70, color, 2.0)
+    _linea(pintor, size, 0.60, 0.54, 0.60, 0.70, color, 2.0)
+    _rect_redondeado(pintor, size, 0.40, 0.70, 0.60, 0.80, color, radio=0.04)
+    _linea(pintor, size, 0.42, 0.86, 0.58, 0.86, color, 2.0)
 
 
 #Llama: esfuerzo y energía invertida.
-def _cat_esfuerzo(p, size, color):
+def _cat_esfuerzo(pintor, size, color):
 
     path= QPainterPath()
     s= size
@@ -116,9 +116,9 @@ def _cat_esfuerzo(p, size, color):
     path.cubicTo(0.38 * s, 0.78 * s, 0.28 * s, 0.72 * s, 0.30 * s, 0.56 * s)
     path.cubicTo(0.18 * s, 0.66 * s, 0.22 * s, 0.28 * s, 0.50 * s, 0.10 * s)
     path.closeSubpath()
-    p.setBrush(QBrush(QColor(color)))
-    p.setPen(_sin_pluma())
-    p.drawPath(path)
+    pintor.setBrush(QBrush(QColor(color)))
+    pintor.setPen(_sin_pluma())
+    pintor.drawPath(path)
 
 
 #Dos personas lado a lado (cabeza + torso): trabajo en equipo. Antes
@@ -142,36 +142,36 @@ def _cat_buena_conducta(p, size, color):
 
 
 #Triángulo de aviso con exclamación: conducta inadecuada.
-def _cat_conducta(p, size, color):
+def _cat_conducta(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.2))
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.2))
     tri= QPolygonF([QPointF(0.5 * size, 0.14 * size), QPointF(0.88 * size, 0.82 * size),
                       QPointF(0.12 * size, 0.82 * size)])
-    p.drawPolygon(tri)
-    _linea(p, size, 0.5, 0.40, 0.5, 0.62, color, 2.4)
-    _disco(p, size, 0.465, 0.68, 0.535, 0.75, color)
+    pintor.drawPolygon(tri)
+    _linea(pintor, size, 0.5, 0.40, 0.5, 0.62, color, 2.4)
+    _disco(pintor, size, 0.465, 0.68, 0.535, 0.75, color)
 
 
 #Dos flechas grandes enfrentadas: choque / conflicto entre estudiantes.
-def _cat_conflicto(p, size, color):
+def _cat_conflicto(pintor, size, color):
 
-    p.setPen(_pluma(color, 3.2))
-    p.drawLine(QPointF(0.12 * size, 0.5 * size), QPointF(0.40 * size, 0.5 * size))
-    p.drawLine(QPointF(0.60 * size, 0.5 * size), QPointF(0.88 * size, 0.5 * size))
-    p.setPen(_sin_pluma())
-    _poligono(p, size, [(0.12, 0.36), (0.12, 0.64), (0.40, 0.50)], color)
-    _poligono(p, size, [(0.88, 0.36), (0.88, 0.64), (0.60, 0.50)], color)
+    pintor.setPen(_pluma(color, 3.2))
+    pintor.drawLine(QPointF(0.12 * size, 0.5 * size), QPointF(0.40 * size, 0.5 * size))
+    pintor.drawLine(QPointF(0.60 * size, 0.5 * size), QPointF(0.88 * size, 0.5 * size))
+    pintor.setPen(_sin_pluma())
+    _poligono(pintor, size, [(0.12, 0.36), (0.12, 0.64), (0.40, 0.50)], color)
+    _poligono(pintor, size, [(0.88, 0.36), (0.88, 0.64), (0.60, 0.50)], color)
 
 
 #Reloj: llegar a tiempo.
-def _cat_puntualidad(p, size, color):
+def _cat_puntualidad(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
-    _linea(p, size, 0.5, 0.5, 0.5, 0.28, color, 2.0)
-    _linea(p, size, 0.5, 0.5, 0.68, 0.56, color, 2.0)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
+    _linea(pintor, size, 0.5, 0.5, 0.5, 0.28, color, 2.0)
+    _linea(pintor, size, 0.5, 0.5, 0.68, 0.56, color, 2.0)
 
 
 #Calendario con un día marcado: registro de asistencia en general.
@@ -181,24 +181,24 @@ def _cat_puntualidad(p, size, color):
 #categoría ('asistencia' cubre presencia, tardanza y ausencia, no solo
 #lo positivo). Un calendario no afirma nada sobre el resultado, solo
 #que se trata de un registro de asistencia.
-def _cat_asistencia(p, size, color):
+def _cat_asistencia(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawRoundedRect(_r(size, 0.14, 0.22, 0.86, 0.88), 0.08 * size, 0.08 * size)
-    _linea(p, size, 0.14, 0.40, 0.86, 0.40, color, 2.0)
-    _linea(p, size, 0.32, 0.12, 0.32, 0.28, color, 2.2)
-    _linea(p, size, 0.68, 0.12, 0.68, 0.28, color, 2.2)
-    _disco(p, size, 0.42, 0.56, 0.58, 0.72, color)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawRoundedRect(_r(size, 0.14, 0.22, 0.86, 0.88), 0.08 * size, 0.08 * size)
+    _linea(pintor, size, 0.14, 0.40, 0.86, 0.40, color, 2.0)
+    _linea(pintor, size, 0.32, 0.12, 0.32, 0.28, color, 2.2)
+    _linea(pintor, size, 0.68, 0.12, 0.68, 0.28, color, 2.2)
+    _disco(pintor, size, 0.42, 0.56, 0.58, 0.72, color)
 
 
 #Diana: motivación, apuntar a una meta.
-def _cat_actitud(p, size, color):
+def _cat_actitud(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 1.8))
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 1.8))
     for radio in (0.42, 0.28, 0.14):
-        p.drawEllipse(_r(size, 0.5 - radio, 0.5 - radio, 0.5 + radio, 0.5 + radio))
+        pintor.drawEllipse(_r(size, 0.5 - radio, 0.5 - radio, 0.5 + radio, 0.5 + radio))
 
 
 #Corazón: bienestar emocional.
@@ -214,36 +214,36 @@ def _cat_mejora(p, size, color):
 
 
 #Medalla: reconocimiento / logro.
-def _cat_reconocimiento(p, size, color):
+def _cat_reconocimiento(pintor, size, color):
 
-    _linea(p, size, 0.36, 0.10, 0.50, 0.46, color, 2.2)
-    _linea(p, size, 0.64, 0.10, 0.50, 0.46, color, 2.2)
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.2))
-    p.drawEllipse(_r(size, 0.26, 0.42, 0.74, 0.90))
-    _estrella(p, size, 0.40, 0.56, 0.60, 0.76, color)
+    _linea(pintor, size, 0.36, 0.10, 0.50, 0.46, color, 2.2)
+    _linea(pintor, size, 0.64, 0.10, 0.50, 0.46, color, 2.2)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.2))
+    pintor.drawEllipse(_r(size, 0.26, 0.42, 0.74, 0.90))
+    _estrella(pintor, size, 0.40, 0.56, 0.60, 0.76, color)
 
 
 #Globo de mensaje: comunicación con la familia.
-def _cat_comunicacion_padres(p, size, color):
+def _cat_comunicacion_padres(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawRoundedRect(_r(size, 0.14, 0.18, 0.86, 0.68), 0.10 * size, 0.10 * size)
-    _poligono(p, size, [(0.30, 0.66), (0.30, 0.84), (0.48, 0.66)], color)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawRoundedRect(_r(size, 0.14, 0.18, 0.86, 0.68), 0.10 * size, 0.10 * size)
+    _poligono(pintor, size, [(0.30, 0.66), (0.30, 0.84), (0.48, 0.66)], color)
 
 
 #Lupa: requiere seguimiento / observar de cerca.
-def _cat_seguimiento(p, size, color):
+def _cat_seguimiento(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.2))
-    p.drawEllipse(_r(size, 0.16, 0.16, 0.62, 0.62))
-    _linea(p, size, 0.58, 0.58, 0.86, 0.86, color, 2.6)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.2))
+    pintor.drawEllipse(_r(size, 0.16, 0.16, 0.62, 0.62))
+    _linea(pintor, size, 0.58, 0.58, 0.86, 0.86, color, 2.6)
 
 
 #Escudo con exclamación: problema disciplinario grave.
-def _cat_disciplinario(p, size, color):
+def _cat_disciplinario(pintor, size, color):
 
     path= QPainterPath()
     s= size
@@ -254,11 +254,11 @@ def _cat_disciplinario(p, size, color):
     path.cubicTo(0.32 * s, 0.86 * s, 0.18 * s, 0.74 * s, 0.18 * s, 0.52 * s)
     path.lineTo(0.18 * s, 0.22 * s)
     path.closeSubpath()
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawPath(path)
-    _linea(p, size, 0.5, 0.34, 0.5, 0.56, color, 2.2)
-    _disco(p, size, 0.465, 0.62, 0.535, 0.69, color)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawPath(path)
+    _linea(pintor, size, 0.5, 0.34, 0.5, 0.56, color, 2.2)
+    _disco(pintor, size, 0.465, 0.62, 0.535, 0.69, color)
 
 
 #Cuadrícula 2x2: "todas las categorías", sin filtrar.
@@ -282,41 +282,41 @@ def _cat_generico(p, size, color):
 
 #NATURALEZAS (Positiva / Informativa / Negativa)
 #Carita sonriente: observación de naturaleza positiva.
-def _nat_positiva(p, size, color):
+def _nat_positiva(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
-    _disco(p, size, 0.33, 0.38, 0.41, 0.46, color)
-    _disco(p, size, 0.59, 0.38, 0.67, 0.46, color)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
+    _disco(pintor, size, 0.33, 0.38, 0.41, 0.46, color)
+    _disco(pintor, size, 0.59, 0.38, 0.67, 0.46, color)
     path= QPainterPath()
     path.moveTo(0.30 * size, 0.60 * size)
     path.quadTo(0.5 * size, 0.78 * size, 0.70 * size, 0.60 * size)
-    p.drawPath(path)
+    pintor.drawPath(path)
 
 
 #"i" dentro de un círculo: observación informativa.
-def _nat_informativa(p, size, color):
+def _nat_informativa(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
-    _disco(p, size, 0.465, 0.28, 0.535, 0.36, color)
-    _linea(p, size, 0.5, 0.44, 0.5, 0.72, color, 2.4)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
+    _disco(pintor, size, 0.465, 0.28, 0.535, 0.36, color)
+    _linea(pintor, size, 0.5, 0.44, 0.5, 0.72, color, 2.4)
 
 
 #Carita seria: observación de naturaleza negativa.
-def _nat_negativa(p, size, color):
+def _nat_negativa(pintor, size, color):
 
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.setPen(_pluma(color, 2.0))
-    p.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
-    _disco(p, size, 0.33, 0.38, 0.41, 0.46, color)
-    _disco(p, size, 0.59, 0.38, 0.67, 0.46, color)
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.setPen(_pluma(color, 2.0))
+    pintor.drawEllipse(_r(size, 0.14, 0.14, 0.86, 0.86))
+    _disco(pintor, size, 0.33, 0.38, 0.41, 0.46, color)
+    _disco(pintor, size, 0.59, 0.38, 0.67, 0.46, color)
     path= QPainterPath()
     path.moveTo(0.30 * size, 0.72 * size)
     path.quadTo(0.5 * size, 0.56 * size, 0.70 * size, 0.72 * size)
-    p.drawPath(path)
+    pintor.drawPath(path)
 
 
 _DISPATCH= {
@@ -397,7 +397,7 @@ def _catc_comprension(p, size):
 
 #Llama en degradado naranja/amarillo -mismo trazo que la versión
 #monocromo (_cat_esfuerzo), pero con dos tonos en vez de un solo color.
-def _catc_esfuerzo(p, size):
+def _catc_esfuerzo(pintor, size):
 
     path= QPainterPath()
     s= size
@@ -408,16 +408,16 @@ def _catc_esfuerzo(p, size):
     path.cubicTo(0.38 * s, 0.78 * s, 0.28 * s, 0.72 * s, 0.30 * s, 0.56 * s)
     path.cubicTo(0.18 * s, 0.66 * s, 0.22 * s, 0.28 * s, 0.50 * s, 0.10 * s)
     path.closeSubpath()
-    p.setBrush(QBrush(QColor("#F97316")))
-    p.setPen(_sin_pluma())
-    p.drawPath(path)
+    pintor.setBrush(QBrush(QColor("#F97316")))
+    pintor.setPen(_sin_pluma())
+    pintor.drawPath(path)
     nucleo= QPainterPath()
     nucleo.moveTo(0.50 * s, 0.32 * s)
     nucleo.cubicTo(0.60 * s, 0.44 * s, 0.56 * s, 0.58 * s, 0.48 * s, 0.66 * s)
     nucleo.cubicTo(0.42 * s, 0.58 * s, 0.40 * s, 0.46 * s, 0.50 * s, 0.32 * s)
     nucleo.closeSubpath()
-    p.setBrush(QBrush(QColor("#FDE047")))
-    p.drawPath(nucleo)
+    pintor.setBrush(QBrush(QColor("#FDE047")))
+    pintor.drawPath(nucleo)
 
 
 def _catc_equipo(p, size):
@@ -438,15 +438,15 @@ def _catc_conducta(p, size):
 #Dos flechas enfrentadas en rojo/naranja -misma composición que la
 #versión monocromo, con un tono distinto por lado para que se lea como
 #un choque entre dos partes, no una sola figura repetida.
-def _catc_conflicto(p, size):
+def _catc_conflicto(pintor, size):
 
-    p.setPen(_pluma("#EF4444", 3.2))
-    p.drawLine(QPointF(0.12 * size, 0.5 * size), QPointF(0.40 * size, 0.5 * size))
-    p.setPen(_pluma("#F97316", 3.2))
-    p.drawLine(QPointF(0.60 * size, 0.5 * size), QPointF(0.88 * size, 0.5 * size))
-    p.setPen(_sin_pluma())
-    _poligono(p, size, [(0.12, 0.36), (0.12, 0.64), (0.40, 0.50)], "#EF4444")
-    _poligono(p, size, [(0.88, 0.36), (0.88, 0.64), (0.60, 0.50)], "#F97316")
+    pintor.setPen(_pluma("#EF4444", 3.2))
+    pintor.drawLine(QPointF(0.12 * size, 0.5 * size), QPointF(0.40 * size, 0.5 * size))
+    pintor.setPen(_pluma("#F97316", 3.2))
+    pintor.drawLine(QPointF(0.60 * size, 0.5 * size), QPointF(0.88 * size, 0.5 * size))
+    pintor.setPen(_sin_pluma())
+    _poligono(pintor, size, [(0.12, 0.36), (0.12, 0.64), (0.40, 0.50)], "#EF4444")
+    _poligono(pintor, size, [(0.88, 0.36), (0.88, 0.64), (0.60, 0.50)], "#F97316")
 
 
 def _catc_puntualidad(p, size):
@@ -525,27 +525,27 @@ def _catc_positiva(p, size):
 
 #"i" blanca sobre un disco azul -la variante multicolor del aro con
 #la "i" trazada, para que se distinga a simple vista del resto.
-def _catc_informativa(p, size):
+def _catc_informativa(pintor, size):
 
-    _disco(p, size, 0.12, 0.12, 0.88, 0.88, "#3B82F6", borde="#1D4ED8")
-    _disco(p, size, 0.44, 0.22, 0.56, 0.34, "white")
-    p.setPen(_pluma("white", 3.0))
-    p.drawLine(QPointF(0.5 * size, 0.44 * size), QPointF(0.5 * size, 0.72 * size))
+    _disco(pintor, size, 0.12, 0.12, 0.88, 0.88, "#3B82F6", borde="#1D4ED8")
+    _disco(pintor, size, 0.44, 0.22, 0.56, 0.34, "white")
+    pintor.setPen(_pluma("white", 3.0))
+    pintor.drawLine(QPointF(0.5 * size, 0.44 * size), QPointF(0.5 * size, 0.72 * size))
 
 
 #Carita seria en rojo -mismo gesto que la versión monocromo, sobre un
 #disco de color en vez de solo el trazo del aro.
-def _catc_negativa(p, size):
+def _catc_negativa(pintor, size):
 
-    _disco(p, size, 0.12, 0.12, 0.88, 0.88, "#EF4444", borde="#B91C1C")
-    _disco(p, size, 0.33, 0.38, 0.41, 0.46, "white")
-    _disco(p, size, 0.59, 0.38, 0.67, 0.46, "white")
-    p.setPen(_pluma("white", 2.4))
-    p.setBrush(Qt.BrushStyle.NoBrush)
+    _disco(pintor, size, 0.12, 0.12, 0.88, 0.88, "#EF4444", borde="#B91C1C")
+    _disco(pintor, size, 0.33, 0.38, 0.41, 0.46, "white")
+    _disco(pintor, size, 0.59, 0.38, 0.67, 0.46, "white")
+    pintor.setPen(_pluma("white", 2.4))
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
     path= QPainterPath()
     path.moveTo(0.30 * size, 0.68 * size)
     path.quadTo(0.5 * size, 0.54 * size, 0.70 * size, 0.68 * size)
-    p.drawPath(path)
+    pintor.drawPath(path)
 
 
 _DISPATCH_COLOR= {
@@ -614,34 +614,34 @@ def icono_categoria_color(clave, size=20):
 #Los que no tenían un emoji "de verdad" ya dibujado en iconos_emoji.py se crean aquí mismo, con las mismas
 #primitivas (_disco, _linea, _poligono...).
 #Balón: disco naranja con costuras curvas -material deportivo.
-def _matc_deportivo(p, size):
+def _matc_deportivo(pintor, size):
 
-    _disco(p, size, 0.12, 0.12, 0.88, 0.88, "#F97316", borde="#9A3412")
-    p.setPen(_pluma("#9A3412", 1.6))
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.drawLine(QPointF(0.5 * size, 0.14 * size), QPointF(0.5 * size, 0.86 * size))
+    _disco(pintor, size, 0.12, 0.12, 0.88, 0.88, "#F97316", borde="#9A3412")
+    pintor.setPen(_pluma("#9A3412", 1.6))
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.drawLine(QPointF(0.5 * size, 0.14 * size), QPointF(0.5 * size, 0.86 * size))
     arco= _r(size, 0.12, 0.12, 0.88, 0.88)
-    p.drawArc(arco, 55 * 16, 70 * 16)
-    p.drawArc(arco, 235 * 16, 70 * 16)
+    pintor.drawArc(arco, 55 * 16, 70 * 16)
+    pintor.drawArc(arco, 235 * 16, 70 * 16)
 
 
 #Corchea (nota musical): cabeza + plica + bandera -instrumentos/música.
-def _matc_musica(p, size):
+def _matc_musica(pintor, size):
 
     color= "#EC4899"
-    _disco(p, size, 0.24, 0.62, 0.44, 0.80, color)
-    p.setPen(_pluma(color, 3.0))
-    p.setBrush(Qt.BrushStyle.NoBrush)
-    p.drawLine(QPointF(0.43 * size, 0.71 * size), QPointF(0.43 * size, 0.18 * size))
+    _disco(pintor, size, 0.24, 0.62, 0.44, 0.80, color)
+    pintor.setPen(_pluma(color, 3.0))
+    pintor.setBrush(Qt.BrushStyle.NoBrush)
+    pintor.drawLine(QPointF(0.43 * size, 0.71 * size), QPointF(0.43 * size, 0.18 * size))
     bandera= QPainterPath()
     s= size
     bandera.moveTo(0.43 * s, 0.18 * s)
     bandera.cubicTo(0.62 * s, 0.24 * s, 0.66 * s, 0.38 * s, 0.54 * s, 0.48 * s)
-    p.drawPath(bandera)
+    pintor.drawPath(bandera)
 
 
 #Silueta simple de camiseta -uniformes y vestuario.
-def _matc_uniforme(p, size):
+def _matc_uniforme(pintor, size):
 
     s= size
     color, borde= "#06B6D4", "#0E7490"
@@ -658,34 +658,34 @@ def _matc_uniforme(p, size):
     path.lineTo(0.64 * s, 0.14 * s)
     path.cubicTo(0.60 * s, 0.24 * s, 0.40 * s, 0.24 * s, 0.36 * s, 0.14 * s)
     path.closeSubpath()
-    p.setBrush(QBrush(QColor(color)))
-    p.setPen(_pluma(borde, 1.4))
-    p.drawPath(path)
+    pintor.setBrush(QBrush(QColor(color)))
+    pintor.setPen(_pluma(borde, 1.4))
+    pintor.drawPath(path)
 
 
 #Silla simple -mobiliario y equipamiento.
-def _matc_mobiliario(p, size):
+def _matc_mobiliario(pintor, size):
 
     color= "#78716C"
-    _rect_redondeado(p, size, 0.30, 0.12, 0.70, 0.48, color, radio=0.06)
-    _rect_redondeado(p, size, 0.22, 0.48, 0.78, 0.62, color, radio=0.05)
-    p.setPen(_pluma(color, 3.0))
-    p.drawLine(QPointF(0.26 * size, 0.62 * size), QPointF(0.20 * size, 0.90 * size))
-    p.drawLine(QPointF(0.74 * size, 0.62 * size), QPointF(0.80 * size, 0.90 * size))
+    _rect_redondeado(pintor, size, 0.30, 0.12, 0.70, 0.48, color, radio=0.06)
+    _rect_redondeado(pintor, size, 0.22, 0.48, 0.78, 0.62, color, radio=0.05)
+    pintor.setPen(_pluma(color, 3.0))
+    pintor.drawLine(QPointF(0.26 * size, 0.62 * size), QPointF(0.20 * size, 0.90 * size))
+    pintor.drawLine(QPointF(0.74 * size, 0.62 * size), QPointF(0.80 * size, 0.90 * size))
 
 
 #Libreta con espiral + lápiz diagonal -papelería y útiles de oficina.
-def _matc_papeleria(p, size):
+def _matc_papeleria(pintor, size):
 
-    _rect_redondeado(p, size, 0.16, 0.14, 0.72, 0.88, "#FFFFFF", radio=0.05, borde="#94A3B8")
+    _rect_redondeado(pintor, size, 0.16, 0.14, 0.72, 0.88, "#FFFFFF", radio=0.05, borde="#94A3B8")
     for y in (0.28, 0.40, 0.52, 0.64, 0.76):
-        _linea(p, size, 0.24, y, 0.64, y, "#CBD5E1", 1.4)
+        _linea(pintor, size, 0.24, y, 0.64, y, "#CBD5E1", 1.4)
     for x in (0.22, 0.30, 0.38):
-        _disco(p, size, x - 0.02, 0.10, x + 0.02, 0.18, "#94A3B8")
-    p.setPen(_pluma("#FDE047", 5.0))
-    p.drawLine(QPointF(0.62 * size, 0.90 * size), QPointF(0.86 * size, 0.66 * size))
-    p.setPen(_pluma("#78350F", 2.2))
-    p.drawLine(QPointF(0.855 * size, 0.655 * size), QPointF(0.90 * size, 0.62 * size))
+        _disco(pintor, size, x - 0.02, 0.10, x + 0.02, 0.18, "#94A3B8")
+    pintor.setPen(_pluma("#FDE047", 5.0))
+    pintor.drawLine(QPointF(0.62 * size, 0.90 * size), QPointF(0.86 * size, 0.66 * size))
+    pintor.setPen(_pluma("#78350F", 2.2))
+    pintor.drawLine(QPointF(0.855 * size, 0.655 * size), QPointF(0.90 * size, 0.62 * size))
 
 
 #Maletín blanco con cruz roja -salud / primeros auxilios.

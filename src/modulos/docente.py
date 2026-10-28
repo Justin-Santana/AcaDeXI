@@ -186,10 +186,10 @@ class PastillaContador(QFrame):
         lbl_icono.setStyleSheet("background: transparent;")
         fila.addWidget(lbl_icono)
         self.lbl_valor= QLabel("0")
-        f= self.lbl_valor.font()
-        f.setBold(True)
-        f.setPointSize(13)
-        self.lbl_valor.setFont(f)
+        fuente= self.lbl_valor.font()
+        fuente.setBold(True)
+        fuente.setPointSize(13)
+        self.lbl_valor.setFont(fuente)
         fila.addWidget(self.lbl_valor)
         self.lbl_texto= QLabel("")
         fila.addWidget(self.lbl_texto)
@@ -429,17 +429,17 @@ class ChipClaseHorario(QFrame):
         #se resuelve con QSS aclarando el color de fondo, que es prácticamente gratis.
         self._aplicar_color(color)
 
-        l= QVBoxLayout(self)
-        l.setContentsMargins(8, 5, 5, 5)
-        l.setSpacing(1)
+        disposicion= QVBoxLayout(self)
+        disposicion.setContentsMargins(8, 5, 5, 5)
+        disposicion.setSpacing(1)
         lbl_materia= QLabel(materia)
         lbl_materia.setWordWrap(True)
-        f= lbl_materia.font()
-        f.setPointSize(9)
-        f.setBold(True)
-        lbl_materia.setFont(f)
+        fuente= lbl_materia.font()
+        fuente.setPointSize(9)
+        fuente.setBold(True)
+        lbl_materia.setFont(fuente)
         lbl_materia.setStyleSheet("color: white; background: transparent;")
-        l.addWidget(lbl_materia)
+        disposicion.addWidget(lbl_materia)
         texto_detalle= seccion or ""
         if aula:
             texto_detalle= f"{texto_detalle} · {aula}" if texto_detalle else aula
@@ -449,8 +449,8 @@ class ChipClaseHorario(QFrame):
         f2.setPointSize(8)
         lbl_detalle.setFont(f2)
         lbl_detalle.setStyleSheet("color: rgba(255,255,255,0.90); background: transparent;")
-        l.addWidget(lbl_detalle)
-        l.addStretch()
+        disposicion.addWidget(lbl_detalle)
+        disposicion.addStretch()
 
     def _aplicar_color(self, color):
 
@@ -540,13 +540,13 @@ class PanelHorarioSemanal(QWidget):
     def poner_entradas(self, entradas):
 
         self._entradas= entradas
-        dias_con_clase= {e["dia"] for e in entradas if e["dia"] in DIAS_SEMANA}
+        dias_con_clase= {entrada["dia"] for entrada in entradas if entrada["dia"] in DIAS_SEMANA}
         self._dias_visibles= [d for d in DIAS_SEMANA if d in dias_con_clase] or DIAS_SEMANA[:5]
 
         minutos= []
-        for e in entradas:
-            ini= _minutos_desde_texto(e["hora_inicio"])
-            fin= _minutos_desde_texto(e["hora_fin"])
+        for entrada in entradas:
+            ini= _minutos_desde_texto(entrada["hora_inicio"])
+            fin= _minutos_desde_texto(entrada["hora_fin"])
             if ini is not None:
                 minutos.append(ini)
             if fin is not None:
@@ -566,16 +566,16 @@ class PanelHorarioSemanal(QWidget):
         for _, chip in self._pares:
             chip.deleteLater()
         self._pares= []
-        for e in self._entradas:
-            if e["dia"] not in self._dias_visibles:
+        for entrada in self._entradas:
+            if entrada["dia"] not in self._dias_visibles:
                 continue
-            color= self._resolver_color(e["materia"]) if self._resolver_color else _color_para_materia(e["materia"])
-            chip= ChipClaseHorario(e["materia"], e["seccion"], e["aula"],
-                                     e["hora_inicio"], e["hora_fin"], color, self,
-                                     clave= e["materia"], on_cambiar_color=self._on_color_cambiada,
+            color= self._resolver_color(entrada["materia"]) if self._resolver_color else _color_para_materia(entrada["materia"])
+            chip= ChipClaseHorario(entrada["materia"], entrada["seccion"], entrada["aula"],
+                                     entrada["hora_inicio"], entrada["hora_fin"], color, self,
+                                     clave= entrada["materia"], on_cambiar_color=self._on_color_cambiada,
                                      main_window= self.main_window)
             chip.show()
-            self._pares.append((e, chip))
+            self._pares.append((entrada, chip))
         self._reflow()
         for i, (_, chip) in enumerate(self._pares):
             _animar_entrada_geometria(chip, offset_y=14, duracion=260, retraso=min(i, 12) * 25)
@@ -591,8 +591,8 @@ class PanelHorarioSemanal(QWidget):
         if not self._dias_visibles or self.width() <= 0:
             return
         ancho_disponible= max(60, self.width() - self.ANCHO_COL_HORA - 8)
-        n= len(self._dias_visibles)
-        ancho_col= ancho_disponible / n
+        cantidad= len(self._dias_visibles)
+        ancho_col= ancho_disponible / cantidad
         for e, chip in self._pares:
             try:
 
@@ -605,10 +605,10 @@ class PanelHorarioSemanal(QWidget):
                 ini= self._hora_min
             if fin is None or fin <= ini:
                 fin= ini + 45
-            y= self.MARGEN_SUP + int((ini - self._hora_min) / 60 * self.ALTO_POR_HORA)
+            pos_y= self.MARGEN_SUP + int((ini - self._hora_min) / 60 * self.ALTO_POR_HORA)
             h= max(34, int((fin - ini) / 60 * self.ALTO_POR_HORA) - 3)
-            x= self.ANCHO_COL_HORA + 8 + dia_idx * ancho_col
-            chip.setGeometry(int(x) + 2, y, max(10, int(ancho_col) - 8), h)
+            pos_x= self.ANCHO_COL_HORA + 8 + dia_idx * ancho_col
+            chip.setGeometry(int(pos_x) + 2, pos_y, max(10, int(ancho_col) - 8), h)
 
     def paintEvent(self, event):
 
@@ -622,17 +622,17 @@ class PanelHorarioSemanal(QWidget):
             return
 
         ancho_disponible= max(60, self.width() - self.ANCHO_COL_HORA - 8)
-        n= len(self._dias_visibles)
-        ancho_col= ancho_disponible / n
+        cantidad= len(self._dias_visibles)
+        ancho_col= ancho_disponible / cantidad
 
         f_dia= painter.font()
         f_dia.setPointSize(9)
         f_dia.setBold(True)
         painter.setFont(f_dia)
         for i, dia in enumerate(self._dias_visibles):
-            x= self.ANCHO_COL_HORA + 8 + i * ancho_col
+            pos_x= self.ANCHO_COL_HORA + 8 + i * ancho_col
             painter.setPen(self._color_texto)
-            painter.drawText(QRectF(x, 4, ancho_col - 4, 20), Qt.AlignmentFlag.AlignCenter, dia[:3].upper())
+            painter.drawText(QRectF(pos_x, 4, ancho_col - 4, 20), Qt.AlignmentFlag.AlignCenter, dia[:3].upper())
 
         pen_linea= QPen(self._color_linea)
         pen_linea.setWidth(1)
@@ -643,19 +643,19 @@ class PanelHorarioSemanal(QWidget):
         hora= self._hora_min
         alto_total= int((self._hora_max - self._hora_min) / 60 * self.ALTO_POR_HORA)
         while hora <= self._hora_max:
-            y= self.MARGEN_SUP + int((hora - self._hora_min) / 60 * self.ALTO_POR_HORA)
+            pos_y= self.MARGEN_SUP + int((hora - self._hora_min) / 60 * self.ALTO_POR_HORA)
             painter.setPen(pen_linea)
-            painter.drawLine(self.ANCHO_COL_HORA, y, self.width(), y)
+            painter.drawLine(self.ANCHO_COL_HORA, pos_y, self.width(), pos_y)
             painter.setPen(self._color_texto)
             etiqueta= f"{hora // 60:02d}:{hora % 60:02d}"
-            painter.drawText(QRectF(0, y - 7, self.ANCHO_COL_HORA - 4, 14),
+            painter.drawText(QRectF(0, pos_y - 7, self.ANCHO_COL_HORA - 4, 14),
                               Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, etiqueta)
             hora += 60
 
         painter.setPen(pen_linea)
-        for i in range(n + 1):
-            x= self.ANCHO_COL_HORA + 8 + i * ancho_col
-            painter.drawLine(int(x), self.MARGEN_SUP - 6, int(x), self.MARGEN_SUP + alto_total)
+        for i in range(cantidad + 1):
+            pos_x= self.ANCHO_COL_HORA + 8 + i * ancho_col
+            painter.drawLine(int(pos_x), self.MARGEN_SUP - 6, int(pos_x), self.MARGEN_SUP + alto_total)
 
 
 #Mis materias (solo lectura, filtrado por profesor)
@@ -873,7 +873,7 @@ class ModuloMisMaterias(QWidget):
         #vez. La mayoría de esas veces los datos no cambiaron desde la última visita, así que comparamos una "firma"
         #liviana antes de reconstruir tarjetas/horario — si nada cambió, no se recrea ni un solo widget (ni se repiten
         #las animaciones de entrada).
-        firma_materias= tuple((f["codigo"], f["nombre"], f["creditos"], f["estado"]) for f in filas)
+        firma_materias= tuple((fila["codigo"], fila["nombre"], fila["creditos"], fila["estado"]) for fila in filas)
         if firma_materias != self._firma_materias:
             self._firma_materias= firma_materias
             self._poblar_materias(filas)
@@ -883,7 +883,7 @@ class ModuloMisMaterias(QWidget):
             "materia": f["materia_nombre"] or "Clase", "seccion": f["seccion_nombre"] or "",
             "aula": f["aula_nombre"] or "",
         } for f in filas_h]
-        firma_horario= tuple(tuple(e.values()) for e in entradas)
+        firma_horario= tuple(tuple(entrada.values()) for entrada in entradas)
         if firma_horario != self._firma_horario:
             self._firma_horario= firma_horario
             self.panel_horario.poner_entradas(entradas)
@@ -903,9 +903,9 @@ class ModuloMisMaterias(QWidget):
         self.lbl_vacio_materias.setVisible(not hay_datos)
         self.contenedor_materias.setVisible(hay_datos)
 
-        for f in filas:
-            color= self._color_efectiva(f["nombre"])
-            tarjeta= TarjetaMateria(f["codigo"], f["nombre"], f["creditos"] or 0, f["estado"], color,
+        for fila in filas:
+            color= self._color_efectiva(fila["nombre"])
+            tarjeta= TarjetaMateria(fila["codigo"], fila["nombre"], fila["creditos"] or 0, fila["estado"], color,
                                       self.contenedor_materias, on_cambiar_color=self._cambiar_color_materia)
             flow.addWidget(tarjeta)
             tarjeta.show()
@@ -1096,8 +1096,8 @@ class ModuloCopiasSeguridadDocente(QWidget):
             registrar_auditoria("Seguridad", "Creó backup (Modo Docente)", self.main_window.usuario_actual, ruta)
             mostrar_mensaje("exito", "Backup creado", f"Copia de seguridad guardada en:\n{ruta}", self)
             self.refrescar()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo crear el backup:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo crear el backup:\n{error}", self)
     def refrescar(self):
 
         cfg= obtener_config_backup()

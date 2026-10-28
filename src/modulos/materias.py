@@ -53,9 +53,9 @@ _COLORES_TIPO_ASIGNACION= {"Auxiliar": "#3B82F6", "Suplente": "#F59E0B",
 def _colorear_texto(item, color_hex):
 
     item.setForeground(QColor(color_hex))
-    f= item.font()
-    f.setBold(True)
-    item.setFont(f)
+    fuente= item.font()
+    fuente.setBold(True)
+    item.setFont(fuente)
 
 
 def _minutos(hora_txt):
@@ -142,14 +142,14 @@ class GraficoOcupacionSemanal(QWidget):
         for dia, cantidad in self._datos:
             proporcion= cantidad / maximo
             h= alto_disponible * proporcion * self._progreso
-            y= margen_sup + (alto_disponible - h)
+            pos_y= margen_sup + (alto_disponible - h)
 
-            gradiente= QLinearGradient(0, y, 0, y + max(h, 2))
+            gradiente= QLinearGradient(0, pos_y, 0, pos_y + max(h, 2))
             gradiente.setColorAt(0, self._color_barra.lighter(130))
             gradiente.setColorAt(1, self._color_barra)
             path= QPainterPath()
             radio= min(7, ancho_barra / 2)
-            path.addRoundedRect(QRectF(x, y, ancho_barra, max(h, 3)), radio, radio)
+            path.addRoundedRect(QRectF(x, pos_y, ancho_barra, max(h, 3)), radio, radio)
             painter.fillPath(path, QBrush(gradiente))
 
             if cantidad > 0 and self._progreso > 0.85:
@@ -158,7 +158,7 @@ class GraficoOcupacionSemanal(QWidget):
                 f_valor.setPointSize(8)
                 f_valor.setBold(True)
                 painter.setFont(f_valor)
-                y_texto= max(2, y - 16)
+                y_texto= max(2, pos_y - 16)
                 painter.drawText(QRectF(x - 4, y_texto, ancho_barra + 8, 14),
                                   Qt.AlignmentFlag.AlignCenter, str(cantidad))
 
@@ -217,10 +217,10 @@ class ModuloMaterias(QWidget):
         filas= c.fetchall()
         conn.close()
         objetivo= _normalizar(nombre or "")
-        for f in filas:
-            if id_excluir is not None and f["id"] == id_excluir:
+        for fila in filas:
+            if id_excluir is not None and fila["id"] == id_excluir:
                 continue
-            if _normalizar(f["nombre"] or "") == objetivo:
+            if _normalizar(fila["nombre"] or "") == objetivo:
                 return True
         return False
 
@@ -294,9 +294,9 @@ class ModuloMaterias(QWidget):
     def _construir_resumen(self):
 
         fila= QWidget()
-        l= QHBoxLayout(fila)
-        l.setContentsMargins(0, 0, 0, 0)
-        l.setSpacing(14)
+        disposicion= QHBoxLayout(fila)
+        disposicion.setContentsMargins(0, 0, 0, 0)
+        disposicion.setSpacing(14)
         self.tarjeta_kpi_materias= TarjetaIndicador("📘", "Materias registradas", "#8B5CF6")
         self.tarjeta_kpi_activas= TarjetaIndicador("✅", "Materias activas", "#10B981")
         self.tarjeta_kpi_secciones= TarjetaIndicador(EMOJI_SECCIONES_GRUPOS, "Secciones", "#F59E0B")
@@ -304,7 +304,7 @@ class ModuloMaterias(QWidget):
         self._tarjetas_kpi= [self.tarjeta_kpi_materias, self.tarjeta_kpi_activas,
                                self.tarjeta_kpi_secciones, self.tarjeta_kpi_horarios]
         for tarjeta in self._tarjetas_kpi:
-            l.addWidget(tarjeta, 1)
+            disposicion.addWidget(tarjeta, 1)
 
         contenedor_anillo= QFrame()
         contenedor_anillo.setObjectName("TarjetaFormulario")
@@ -325,7 +325,7 @@ class ModuloMaterias(QWidget):
         lbl_anillo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lbl_anillo.setObjectName("DescModulo")
         lay_anillo.addWidget(lbl_anillo)
-        l.addWidget(contenedor_anillo)
+        disposicion.addWidget(contenedor_anillo)
 
         return fila
 
@@ -354,10 +354,10 @@ class ModuloMaterias(QWidget):
         contenedor.setSpacing(10)
         if titulo_seccion:
             lbl= QLabel(titulo_seccion)
-            f= lbl.font()
-            f.setBold(True)
-            f.setPointSize(11)
-            lbl.setFont(f)
+            fuente= lbl.font()
+            fuente.setBold(True)
+            fuente.setPointSize(11)
+            lbl.setFont(fuente)
             lbl.setStyleSheet("background: transparent;")
             contenedor.addWidget(lbl)
         grid= QGridLayout()
@@ -704,10 +704,10 @@ class ModuloMaterias(QWidget):
 
     def _tab_materias(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(4, 12, 4, 4)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(4, 12, 4, 4)
+        disposicion.setSpacing(14)
         frame_form, form= self._tarjeta_formulario("Datos de la Materia")
         self.lbl_nota_tecnicos= QLabel(
             "ℹ Esta pestaña es solo para materias académicas normales. Los módulos técnicos"
@@ -715,7 +715,7 @@ class ModuloMaterias(QWidget):
             "desde el módulo Politécnico.")
         self.lbl_nota_tecnicos.setWordWrap(True)
         self.lbl_nota_tecnicos.setObjectName("DescModulo")
-        l.addWidget(self.lbl_nota_tecnicos)
+        disposicion.addWidget(self.lbl_nota_tecnicos)
         self.m_codigo= QLineEdit()
         limitar_campo_texto(self.m_codigo, 300)
         self.m_codigo.setPlaceholderText("Código (autogenerado)")
@@ -778,7 +778,7 @@ class ModuloMaterias(QWidget):
             "importe en su Modo Docente.")
         btn_exportar_profesor.clicked.connect(self._exportar_paquete_profesor_seleccionado)
         form.addWidget(btn_exportar_profesor, 3, 2, 1, 2)
-        self._envolver_en_panel(l, "Añadir Materia", frame_form)
+        self._envolver_en_panel(disposicion, "Añadir Materia", frame_form)
 
         frame_resultados, lr= self._tarjeta_resultados()
         barra_busqueda, self.busq_materias= self._barra_busqueda(
@@ -858,8 +858,8 @@ class ModuloMaterias(QWidget):
         fila_botones.addStretch()
         lr.addLayout(fila_botones)
         lr.addStretch()
-        l.addWidget(frame_resultados, 1)
-        return w
+        disposicion.addWidget(frame_resultados, 1)
+        return contenedor
 
     def _exportar_paquete_profesor_seleccionado(self):
 
@@ -909,7 +909,7 @@ class ModuloMaterias(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT codigo FROM materias WHERE codigo LIKE ?", (f"{base}-%",))
-        existentes= {f["codigo"] for f in c.fetchall()}
+        existentes= {fila["codigo"] for fila in c.fetchall()}
         conn.close()
         n= 1
         while f"{base}-{n:03d}" in existentes:
@@ -949,9 +949,9 @@ class ModuloMaterias(QWidget):
                              estado= ?, modelo_evaluacion=?, grado_id=? WHERE id=?""", datos + (self.id_edicion_materia,))
                 accion= "Editó materia"
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar la materia:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar la materia:\n{error}", self)
             return
         finally:
             conn.close()
@@ -1080,9 +1080,9 @@ class ModuloMaterias(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT tipo_institucion FROM configuracion WHERE id=1")
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return (f["tipo_institucion"] if f else None) or "Escuela"
+        return (fila["tipo_institucion"] if fila else None) or "Escuela"
 
     def _cargar_materia_seleccionada(self):
 
@@ -1150,14 +1150,14 @@ class ModuloMaterias(QWidget):
         conn.close()
         profesor_filtro= self.filtro_materias_profesor.currentData() if hasattr(self, "filtro_materias_profesor") else None
         if profesor_filtro is not None:
-            filas= [f for f in filas if f["profesor_id"] == profesor_filtro]
+            filas= [fila for fila in filas if fila["profesor_id"] == profesor_filtro]
         estado_filtro= self.filtro_materias_estado.currentData() if hasattr(self, "filtro_materias_estado") else None
         if estado_filtro:
-            filas= [f for f in filas if (f["estado"] or "Activa") == estado_filtro]
+            filas= [fila for fila in filas if (fila["estado"] or "Activa") == estado_filtro]
         texto= _normalizar(self.busq_materias.text().strip())
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['codigo']} {f['nombre']} {f['prof_nombre']}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['codigo']} {fila['nombre']} {fila['prof_nombre']}")]
         self.paginacion_materias.establecer_total(len(filas))
         inicio, fin= self.paginacion_materias.rango_actual()
         pagina= filas[inicio:fin]
@@ -1176,10 +1176,10 @@ class ModuloMaterias(QWidget):
 
     def _tab_secciones(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(4, 12, 4, 4)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(4, 12, 4, 4)
+        disposicion.setSpacing(14)
         frame_form, form= self._tarjeta_formulario("Datos de la Sección")
         self.s_grado= QLineEdit()
         limitar_campo_texto(self.s_grado, 300)
@@ -1249,7 +1249,7 @@ class ModuloMaterias(QWidget):
         btn_limpiar.setObjectName("BtnAccionNeutro")
         btn_limpiar.clicked.connect(self._limpiar_seccion)
         form.addWidget(btn_limpiar, 3, 1)
-        self._envolver_en_panel(l, "Añadir Sección", frame_form)
+        self._envolver_en_panel(disposicion, "Añadir Sección", frame_form)
 
         frame_resultados, lr= self._tarjeta_resultados()
         barra_busqueda, self.busq_secciones= self._barra_busqueda(
@@ -1327,8 +1327,8 @@ class ModuloMaterias(QWidget):
         fila_botones.addStretch()
         lr.addLayout(fila_botones)
         lr.addStretch()
-        l.addWidget(frame_resultados, 1)
-        return w
+        disposicion.addWidget(frame_resultados, 1)
+        return contenedor
 
     def _guardar_seccion(self):
 
@@ -1496,15 +1496,15 @@ class ModuloMaterias(QWidget):
         nivel_filtro= self.combo_filtro_nivel_seccion.currentData() if hasattr(self, "combo_filtro_nivel_seccion") else None
         if nivel_filtro:
             ids_nivel= secciones_del_nivel_educativo(nivel_filtro)
-            filas= [f for f in filas if f["id"] in ids_nivel]
+            filas= [fila for fila in filas if fila["id"] in ids_nivel]
         turno_filtro= self.combo_filtro_turno_seccion.currentData() if hasattr(self, "combo_filtro_turno_seccion") else None
         if turno_filtro:
-            filas= [f for f in filas if f["turno"] == turno_filtro]
+            filas= [fila for fila in filas if fila["turno"] == turno_filtro]
         texto= _normalizar(self.busq_secciones.text().strip())
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['grado_nombre']} {f['nombre']} {f['turno']} {f['aula_nombre']} "
-                f"{f['especialidad_nombre']} {f['carrera_nombre']} {f['prof_nombre']}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['grado_nombre']} {fila['nombre']} {fila['turno']} {fila['aula_nombre']} "
+                f"{fila['especialidad_nombre']} {fila['carrera_nombre']} {fila['prof_nombre']}")]
         self.paginacion_secciones.establecer_total(len(filas))
         inicio, fin= self.paginacion_secciones.rango_actual()
         pagina= filas[inicio:fin]
@@ -1525,10 +1525,10 @@ class ModuloMaterias(QWidget):
 
     def _tab_aulas(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(4, 12, 4, 4)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(4, 12, 4, 4)
+        disposicion.setSpacing(14)
         frame_form, form= self._tarjeta_formulario("Datos del Espacio Físico")
         self.a_nombre= QLineEdit()
         limitar_campo_texto(self.a_nombre, 300)
@@ -1555,7 +1555,7 @@ class ModuloMaterias(QWidget):
         btn_limpiar_aula.setObjectName("BtnAccionNeutro")
         btn_limpiar_aula.clicked.connect(self._limpiar_aula)
         form.addWidget(btn_limpiar_aula, 1, 1)
-        self._envolver_en_panel(l, "Añadir Aula", frame_form)
+        self._envolver_en_panel(disposicion, "Añadir Aula", frame_form)
 
         frame_resultados, lr= self._tarjeta_resultados()
         barra_busqueda, self.busq_aulas= self._barra_busqueda(
@@ -1626,8 +1626,8 @@ class ModuloMaterias(QWidget):
         fila_acciones_aulas.addStretch()
         lr.addLayout(fila_acciones_aulas)
         lr.addStretch()
-        l.addWidget(frame_resultados, 1)
-        return w
+        disposicion.addWidget(frame_resultados, 1)
+        return contenedor
 
     def _limpiar_aula(self):
 
@@ -1708,10 +1708,10 @@ class ModuloMaterias(QWidget):
         conn.close()
         tipo_filtro= self.combo_filtro_tipo_aula.currentData() if hasattr(self, "combo_filtro_tipo_aula") else None
         if tipo_filtro:
-            filas= [f for f in filas if f["tipo"] == tipo_filtro]
+            filas= [fila for fila in filas if fila["tipo"] == tipo_filtro]
         texto= _normalizar(self.busq_aulas.text().strip())
         if texto:
-            filas= [f for f in filas if texto in _normalizar(f"{f['nombre']} {f['tipo']}")]
+            filas= [fila for fila in filas if texto in _normalizar(f"{fila['nombre']} {fila['tipo']}")]
         self.paginacion_aulas.establecer_total(len(filas))
         inicio, fin= self.paginacion_aulas.rango_actual()
         pagina= filas[inicio:fin]
@@ -1726,10 +1726,10 @@ class ModuloMaterias(QWidget):
 
     def _tab_horarios(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(4, 12, 4, 4)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(4, 12, 4, 4)
+        disposicion.setSpacing(14)
 
         frame_grafico, lg= self._tarjeta_resultados()
         lbl_grafico= QLabel("Clases programadas por día")
@@ -1741,7 +1741,7 @@ class ModuloMaterias(QWidget):
         lg.addWidget(lbl_grafico)
         self.grafico_ocupacion= GraficoOcupacionSemanal()
         lg.addWidget(self.grafico_ocupacion)
-        l.addWidget(frame_grafico)
+        disposicion.addWidget(frame_grafico)
 
         frame_form, form= self._tarjeta_formulario("Asignar Clase")
         #Curso/Grado va PRIMERO y es obligatorio: acota de una vez la lista de Secciones a las de ese curso (antes se
@@ -1822,7 +1822,7 @@ class ModuloMaterias(QWidget):
         fila_filtro_tecnico_horario.addWidget(self.lbl_filtro_carrera_horario)
         fila_filtro_tecnico_horario.addWidget(self.h_filtro_carrera)
         fila_filtro_tecnico_horario.addStretch()
-        self._envolver_en_panel(l, "Asignar Clase", frame_filtro_tecnico_horario, frame_form)
+        self._envolver_en_panel(disposicion, "Asignar Clase", frame_filtro_tecnico_horario, frame_form)
 
         frame_resultados, lr= self._tarjeta_resultados()
         barra_busqueda, self.busq_horarios= self._barra_busqueda(
@@ -1905,8 +1905,8 @@ class ModuloMaterias(QWidget):
         fila_acciones_horarios.addStretch()
         lr.addLayout(fila_acciones_horarios)
         lr.addStretch()
-        l.addWidget(frame_resultados, 1)
-        return w
+        disposicion.addWidget(frame_resultados, 1)
+        return contenedor
 
     #Repuebla 'Sección' con solo las secciones del curso/grado elegido en
     #'Curso/Grado'. Mientras no se elija un curso, 'Sección' queda vacía
@@ -1931,7 +1931,7 @@ class ModuloMaterias(QWidget):
                 c= conn.cursor()
                 c.execute("""SELECT DISTINCT seccion_id FROM estudiantes
                              WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
-                secciones_carrera= {f["seccion_id"] for f in c.fetchall()}
+                secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
                 conn.close()
             actual= self.h_seccion.currentData()
             for i in range(self.h_seccion.count() - 1, 0, -1):
@@ -1972,8 +1972,8 @@ class ModuloMaterias(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.h_filtro_especialidad.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.h_filtro_especialidad.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.h_filtro_especialidad.findData(actual)
             self.h_filtro_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1990,8 +1990,8 @@ class ModuloMaterias(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.h_filtro_carrera.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.h_filtro_carrera.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.h_filtro_carrera.findData(actual)
             self.h_filtro_carrera.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2018,8 +2018,8 @@ class ModuloMaterias(QWidget):
                          WHERE estado='Activa' AND especialidad_id=? ORDER BY nombre""", (especialidad_id,))
         else:
             c.execute("SELECT id, nombre FROM materias WHERE estado='Activa' ORDER BY nombre")
-        for f in c.fetchall():
-            self.h_materia.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.h_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= self.h_materia.findData(actual)
         self.h_materia.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2140,27 +2140,27 @@ class ModuloMaterias(QWidget):
         fila_prof= c2.fetchone()
         conn2.close()
         nuevo_profesor_id= fila_prof["profesor_id"] if fila_prof else None
-        for f in filas:
-            if excluir_id is not None and f["id"] == excluir_id:
+        for fila in filas:
+            if excluir_id is not None and fila["id"] == excluir_id:
                 continue
             try:
 
-                existente_inicio= _minutos(f["hora_inicio"])
-                existente_fin= _minutos(f["hora_fin"])
+                existente_inicio= _minutos(fila["hora_inicio"])
+                existente_fin= _minutos(fila["hora_fin"])
             except (ValueError, TypeError, AttributeError):
                 continue
             if not _se_solapan(nuevo_inicio, nuevo_fin, existente_inicio, existente_fin):
                 continue
-            if nuevo_profesor_id is not None and f["profesor_id"] == nuevo_profesor_id:
-                return (f"El profesor '{f['profesor_nombre'].strip()}' ya tiene clase de "
-                        f"'{f['materia_nombre']}' en {f['seccion_nombre']} el {dia} de "
-                        f"{formatear_hora(f['hora_inicio'], self.main_window)} a "
-                        f"{formatear_hora(f['hora_fin'], self.main_window)}.")
-            if aula_id is not None and f["aula_id"] == aula_id:
-                return (f"El aula '{f['aula_nombre']}' ya está ocupada el {dia} de "
-                        f"{formatear_hora(f['hora_inicio'], self.main_window)} a "
-                        f"{formatear_hora(f['hora_fin'], self.main_window)} por '{f['materia_nombre']}' "
-                        f"en {f['seccion_nombre']}.")
+            if nuevo_profesor_id is not None and fila["profesor_id"] == nuevo_profesor_id:
+                return (f"El profesor '{fila['profesor_nombre'].strip()}' ya tiene clase de "
+                        f"'{fila['materia_nombre']}' en {fila['seccion_nombre']} el {dia} de "
+                        f"{formatear_hora(fila['hora_inicio'], self.main_window)} a "
+                        f"{formatear_hora(fila['hora_fin'], self.main_window)}.")
+            if aula_id is not None and fila["aula_id"] == aula_id:
+                return (f"El aula '{fila['aula_nombre']}' ya está ocupada el {dia} de "
+                        f"{formatear_hora(fila['hora_inicio'], self.main_window)} a "
+                        f"{formatear_hora(fila['hora_fin'], self.main_window)} por '{fila['materia_nombre']}' "
+                        f"en {fila['seccion_nombre']}.")
         return None
 
     def _eliminar_horario(self):
@@ -2213,14 +2213,14 @@ class ModuloMaterias(QWidget):
 
         seccion_filtro= self.filtro_horarios_seccion.currentData() if hasattr(self, "filtro_horarios_seccion") else None
         if seccion_filtro is not None:
-            filas= [f for f in filas if f["seccion_id"] == seccion_filtro]
+            filas= [fila for fila in filas if fila["seccion_id"] == seccion_filtro]
         dia_filtro= self.filtro_horarios_dia.currentData() if hasattr(self, "filtro_horarios_dia") else None
         if dia_filtro:
-            filas= [f for f in filas if f["dia"] == dia_filtro]
+            filas= [fila for fila in filas if fila["dia"] == dia_filtro]
         texto= _normalizar(self.busq_horarios.text().strip())
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['grado_nombre']} {f['seccion_nombre']} {f['materia_nombre']} {f['dia']} {f['aula_nombre']}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['grado_nombre']} {fila['seccion_nombre']} {fila['materia_nombre']} {fila['dia']} {fila['aula_nombre']}")]
 
         self.paginacion_horarios.establecer_total(len(filas))
         inicio, fin= self.paginacion_horarios.rango_actual()
@@ -2241,10 +2241,10 @@ class ModuloMaterias(QWidget):
 
     def _tab_asignaciones(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setContentsMargins(4, 12, 4, 4)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setContentsMargins(4, 12, 4, 4)
+        disposicion.setSpacing(14)
         desc= QLabel("Asigna co-docentes a una materia académica (además del profesor titular definido en "
                        "la pestaña 'Materias'): auxiliares, suplentes, etc. Estos profesores también verán la "
                        "materia, sus estudiantes y su horario en su Modo Docente, y pueden recibir su propio "
@@ -2253,7 +2253,7 @@ class ModuloMaterias(QWidget):
                        "Politécnico.")
         desc.setObjectName("DescModulo")
         desc.setWordWrap(True)
-        l.addWidget(desc)
+        disposicion.addWidget(desc)
         frame_form, form= self._tarjeta_formulario("Nueva Asignación")
         self.ap_materia= QComboBox()
         conectar_tooltip_seleccion(self.ap_materia, "Materia académica a la que se asigna este co-docente")
@@ -2323,7 +2323,7 @@ class ModuloMaterias(QWidget):
         fila_filtro_tecnico_asignacion.addWidget(self.lbl_filtro_carrera_asignacion)
         fila_filtro_tecnico_asignacion.addWidget(self.ap_filtro_carrera)
         fila_filtro_tecnico_asignacion.addStretch()
-        self._envolver_en_panel(l, "Nueva Asignación", frame_filtro_tecnico_asignacion, frame_form)
+        self._envolver_en_panel(disposicion, "Nueva Asignación", frame_filtro_tecnico_asignacion, frame_form)
 
         frame_resultados, lr= self._tarjeta_resultados()
         barra_busqueda, self.busq_asignaciones= self._barra_busqueda(
@@ -2396,8 +2396,8 @@ class ModuloMaterias(QWidget):
         fila_botones.addStretch()
         lr.addLayout(fila_botones)
         lr.addStretch()
-        l.addWidget(frame_resultados, 1)
-        return w
+        disposicion.addWidget(frame_resultados, 1)
+        return contenedor
 
     def _al_cambiar_curso_asignacion(self, _indice=None, seccion_id_preseleccionar=None):
 
@@ -2412,7 +2412,7 @@ class ModuloMaterias(QWidget):
                 c= conn.cursor()
                 c.execute("""SELECT DISTINCT seccion_id FROM estudiantes
                              WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
-                secciones_carrera= {f["seccion_id"] for f in c.fetchall()}
+                secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
                 conn.close()
             actual= self.ap_seccion.currentData()
             for i in range(self.ap_seccion.count() - 1, 0, -1):
@@ -2453,8 +2453,8 @@ class ModuloMaterias(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.ap_filtro_especialidad.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.ap_filtro_especialidad.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.ap_filtro_especialidad.findData(actual)
             self.ap_filtro_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2471,8 +2471,8 @@ class ModuloMaterias(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.ap_filtro_carrera.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.ap_filtro_carrera.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.ap_filtro_carrera.findData(actual)
             self.ap_filtro_carrera.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2625,12 +2625,12 @@ class ModuloMaterias(QWidget):
         conn.close()
         tipo_filtro= self.filtro_asignaciones_tipo.currentData() if hasattr(self, "filtro_asignaciones_tipo") else None
         if tipo_filtro:
-            filas= [f for f in filas if f["tipo_asignacion"] == tipo_filtro]
+            filas= [fila for fila in filas if fila["tipo_asignacion"] == tipo_filtro]
         texto= _normalizar(self.busq_asignaciones.text().strip())
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['materia_nombre']} {f['grado_nombre'] or ''} {f['seccion_nombre'] or 'Todas sus secciones'} "
-                f"{f['profesor_nombre']} {f['tipo_asignacion']}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['materia_nombre']} {fila['grado_nombre'] or ''} {fila['seccion_nombre'] or 'Todas sus secciones'} "
+                f"{fila['profesor_nombre']} {fila['tipo_asignacion']}")]
         self.paginacion_asignaciones.establecer_total(len(filas))
         inicio, fin= self.paginacion_asignaciones.rango_actual()
         pagina= filas[inicio:fin]
@@ -2654,29 +2654,29 @@ class ModuloMaterias(QWidget):
         self.s_especialidad.clear()
         self.s_especialidad.addItem("— Selecciona un área técnica —" if self._es_politecnico() else "Sin área técnica", None)
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            self.s_especialidad.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.s_especialidad.addItem(fila["nombre"], fila["id"])
         self.s_carrera.clear()
         self.s_carrera.addItem("Sin carrera", None)
         c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-        for f in c.fetchall():
-            self.s_carrera.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.s_carrera.addItem(fila["nombre"], fila["id"])
         for combo in (self.m_profesor, self.s_profesor_guia):
             combo.clear()
             combo.addItem("Sin asignar", None)
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
-        for f in c.fetchall():
-            texto= f"{f['nombre']} {f['apellidos'] or ''}".strip()
-            self.m_profesor.addItem(texto, f["id"])
-            self.s_profesor_guia.addItem(texto, f["id"])
+        for fila in c.fetchall():
+            texto= f"{fila['nombre']} {fila['apellidos'] or ''}".strip()
+            self.m_profesor.addItem(texto, fila["id"])
+            self.s_profesor_guia.addItem(texto, fila["id"])
         if hasattr(self, "filtro_materias_profesor"):
             seleccion_previa= self.filtro_materias_profesor.currentData()
             self.filtro_materias_profesor.blockSignals(True)
             self.filtro_materias_profesor.clear()
             self.filtro_materias_profesor.addItem("Todos los profesores", None)
             c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
-            for f in c.fetchall():
-                self.filtro_materias_profesor.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
+            for fila in c.fetchall():
+                self.filtro_materias_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
             idx_fp= self.filtro_materias_profesor.findData(seleccion_previa)
             self.filtro_materias_profesor.setCurrentIndex(idx_fp if idx_fp >= 0 else 0)
             self.filtro_materias_profesor.blockSignals(False)
@@ -2684,9 +2684,9 @@ class ModuloMaterias(QWidget):
             combo.clear()
             combo.addItem("Sin asignar", None)
         c.execute("SELECT id, nombre FROM aulas ORDER BY nombre")
-        for f in c.fetchall():
-            self.s_aula.addItem(f["nombre"], f["id"])
-            self.h_aula.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.s_aula.addItem(fila["nombre"], fila["id"])
+            self.h_aula.addItem(fila["nombre"], fila["id"])
         curso_previo= self.h_curso.currentData()
         poblar_combo_curso(self.h_curso, incluir_todos=False, seleccion_previa=curso_previo)
         self._cargar_filtro_tecnico_horario()
@@ -2702,16 +2702,16 @@ class ModuloMaterias(QWidget):
         c.execute("""SELECT id, nombre FROM materias
                      WHERE modelo_evaluacion IS NULL OR modelo_evaluacion != 'Técnica (RA)'
                      ORDER BY nombre""")
-        for f in c.fetchall():
-            self.ap_materia.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.ap_materia.addItem(fila["nombre"], fila["id"])
         curso_previo_ap= self.ap_curso.currentData()
         poblar_combo_curso(self.ap_curso, incluir_todos=False, seleccion_previa=curso_previo_ap)
         self._cargar_filtro_tecnico_asignacion()
         self._al_cambiar_curso_asignacion()
         self.ap_profesor.clear()
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
-        for f in c.fetchall():
-            self.ap_profesor.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
+        for fila in c.fetchall():
+            self.ap_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
     def refrescar(self):

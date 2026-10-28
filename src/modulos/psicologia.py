@@ -502,10 +502,10 @@ class Chip(QFrame):
         lay.addWidget(self.lbl_punto)
         self.lbl= QLabel()
         self.lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        f= self.lbl.font()
-        f.setPointSize(10)
-        f.setBold(True)
-        self.lbl.setFont(f)
+        fuente= self.lbl.font()
+        fuente.setPointSize(10)
+        fuente.setBold(True)
+        self.lbl.setFont(fuente)
         lay.addWidget(self.lbl)
         self._actualizar_texto()
 
@@ -2061,8 +2061,8 @@ class ModuloPsicologia(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            combo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            combo.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= combo.findData(actual)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2085,8 +2085,8 @@ class ModuloPsicologia(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-        for f in c.fetchall():
-            combo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            combo.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= combo.findData(actual)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2232,8 +2232,8 @@ class ModuloPsicologia(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            combo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            combo.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= combo.findData(actual)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2256,8 +2256,8 @@ class ModuloPsicologia(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-        for f in c.fetchall():
-            combo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            combo.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= combo.findData(actual)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2292,8 +2292,8 @@ class ModuloPsicologia(QWidget):
         conn.close()
         if not filas:
             self.combo_estudiante_form.addItem("Sin estudiantes activos en esta sección", None)
-        for f in filas:
-            self.combo_estudiante_form.addItem(f"{f['nombre']} {f['apellidos']}", f["id"])
+        for fila in filas:
+            self.combo_estudiante_form.addItem(f"{fila['nombre']} {fila['apellidos']}", fila["id"])
 
     #Resetea los campos a un estado 'nuevo, en blanco', SIN decidir si
     #el panel debe quedar expandido o colapsado -eso lo decide quien
@@ -2339,35 +2339,35 @@ class ModuloPsicologia(QWidget):
         c.execute("""SELECT psicologia.*, estudiantes.seccion_id as seccion_id
                      FROM psicologia JOIN estudiantes ON psicologia.estudiante_id = estudiantes.id
                      WHERE psicologia.id=?""", (id_reg,))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if not f:
+        if not fila:
             return
         self.registro_en_edicion= id_reg
         conn= obtener_conexion()
         c= conn.cursor()
-        c.execute("SELECT grado_id FROM secciones WHERE id=?", (f["seccion_id"],))
+        c.execute("SELECT grado_id FROM secciones WHERE id=?", (fila["seccion_id"],))
         fila_sec= c.fetchone()
         conn.close()
         idx_curso= self.combo_curso_form.findData(fila_sec["grado_id"] if fila_sec else None)
         self.combo_curso_form.setCurrentIndex(idx_curso if idx_curso >= 0 else 0)
         cascada_seccion_por_curso(self.combo_curso_form, self.combo_seccion_form, incluir_todas=False)
-        idx_sec= self.combo_seccion_form.findData(f["seccion_id"])
+        idx_sec= self.combo_seccion_form.findData(fila["seccion_id"])
         self.combo_seccion_form.setCurrentIndex(idx_sec if idx_sec >= 0 else 0)
         self._poblar_estudiantes_form()
-        idx_est= self.combo_estudiante_form.findData(f["estudiante_id"])
+        idx_est= self.combo_estudiante_form.findData(fila["estudiante_id"])
         self.combo_estudiante_form.setCurrentIndex(idx_est if idx_est >= 0 else 0)
-        self.segmentado_naturaleza.establecer_valor(f["naturaleza"] or "Informativa", animar=False)
-        self.segmentado_estado.establecer_valor(f["estado_caso"] or "Abierto", animar=False)
-        if f["proxima_cita"]:
-            self.fecha_proxima_cita_form.setDate(QDate.fromString(f["proxima_cita"], "yyyy-MM-dd"))
+        self.segmentado_naturaleza.establecer_valor(fila["naturaleza"] or "Informativa", animar=False)
+        self.segmentado_estado.establecer_valor(fila["estado_caso"] or "Abierto", animar=False)
+        if fila["proxima_cita"]:
+            self.fecha_proxima_cita_form.setDate(QDate.fromString(fila["proxima_cita"], "yyyy-MM-dd"))
         else:
             self.fecha_proxima_cita_form.setDate(self.fecha_proxima_cita_form.minimumDate())
-        self.chk_destacada_form.setChecked(bool(f["destacada"]))
-        claves_activas= set((f["categorias"] or "").split(","))
+        self.chk_destacada_form.setChecked(bool(fila["destacada"]))
+        claves_activas= set((fila["categorias"] or "").split(","))
         for clave, chip in self._chips_categorias.items():
             chip.establecer_marcado(clave in claves_activas, animar=False, emitir=False)
-        self.txt_descripcion_form.setPlainText(f["texto"] or "")
+        self.txt_descripcion_form.setPlainText(fila["texto"] or "")
         #activar_modo_edicion se encarga de: (1) expandir este panel si estaba colapsado -ver
         #PanelDesplegable.expandir/_expandido más arriba-, (2) mostrar el banner "Editando: ..." y (3) desplazar la
         #vista hasta el formulario. Es la misma infraestructura compartida que ya usan Observaciones/Profesores/etc.
@@ -2451,29 +2451,29 @@ class ModuloPsicologia(QWidget):
                      LEFT JOIN especialidades ON estudiantes.especialidad_id = especialidades.id
                      LEFT JOIN carreras ON estudiantes.carrera_id = carreras.id
                      WHERE psicologia.id=?""", (id_reg,))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if not f:
+        if not fila:
             return
         campos= [
-            ("Estudiante", f"{f['est_nombre']} {f['est_apellidos']}"),
-            ("Curso", _texto_curso_completo(f)),
-            ("Fecha", formatear_fecha(f["fecha"], self.main_window)),
-            ("Naturaleza", f["naturaleza"] or "—"),
-            ("Categorías", _texto_categorias(f["categorias"])),
-            ("Estado del caso", f["estado_caso"] or "—"),
-            ("Próxima cita", formatear_fecha(f["proxima_cita"], self.main_window)
-                if f["proxima_cita"] else "Sin próxima cita"),
-            ("Destacado", "Sí" if f["destacada"] else "No"),
+            ("Estudiante", f"{fila['est_nombre']} {fila['est_apellidos']}"),
+            ("Curso", _texto_curso_completo(fila)),
+            ("Fecha", formatear_fecha(fila["fecha"], self.main_window)),
+            ("Naturaleza", fila["naturaleza"] or "—"),
+            ("Categorías", _texto_categorias(fila["categorias"])),
+            ("Estado del caso", fila["estado_caso"] or "—"),
+            ("Próxima cita", formatear_fecha(fila["proxima_cita"], self.main_window)
+                if fila["proxima_cita"] else "Sin próxima cita"),
+            ("Destacado", "Sí" if fila["destacada"] else "No"),
         ]
-        titulo= f"{f['est_nombre']} {f['est_apellidos']} — Expediente de Psicología"
-        texto_completo= (f["texto"] or "").strip()
+        titulo= f"{fila['est_nombre']} {fila['est_apellidos']} — Expediente de Psicología"
+        texto_completo= (fila["texto"] or "").strip()
         extra_botones= [("Ver nota completa",
                            lambda: mostrar_texto_largo(self, "Nota / descripción del caso", texto_completo))]
         #Misma fotografía del estudiante que muestra Estudiantes.py -en grande, arriba del detalle-, para reconocerlo
         #de un vistazo al revisar el expediente (ver DialogoDetalleRegistro.foto_path en paginacion.py, que ya sabe
         #recortarla en círculo con anillo de acento y no dibuja nada si el estudiante no tiene foto cargada).
-        mostrar_detalle_campos(self, titulo, campos, extra_botones=extra_botones, foto_path=f["est_foto"])
+        mostrar_detalle_campos(self, titulo, campos, extra_botones=extra_botones, foto_path=fila["est_foto"])
 
     def _eliminar_seleccionada(self):
 
@@ -2522,12 +2522,12 @@ class ModuloPsicologia(QWidget):
             c.execute(f"INSERT INTO psicologia ({','.join(columnas)}) VALUES ({marcadores})",
                       [datos[col] for col in columnas])
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
             conn.close()
             mostrar_mensaje("error", "No se pudo deshacer",
                              f"No fue posible restaurar el registro (puede que ya exista uno con "
-                             f"algún conflicto): {e}", self)
+                             f"algún conflicto): {error}", self)
             return
         conn.close()
         registrar_auditoria("Psicología", "Deshizo eliminación de un registro de Psicología",

@@ -356,8 +356,8 @@ class CargaSemanalWidget(QWidget):
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         ancho, alto= self.width(), self.height()
-        n= len(self._valores_animados)
-        if n == 0:
+        cantidad= len(self._valores_animados)
+        if cantidad == 0:
             return
 
         #Tipografías proporcionales al alto disponible: con más espacio se ven más grandes (aprovechan el lugar); con
@@ -383,7 +383,7 @@ class CargaSemanalWidget(QWidget):
         pad_inf= max(16, round(alto * 0.18))
         alto_disp= max(alto - pad_sup - pad_inf, 10)
         maximo= max(max(self._valores) if self._valores else 0, 1)
-        espacio= ancho / n
+        espacio= ancho / cantidad
         #El ancho de barra ya no tiene un tope fijo de 24px: escala con el espacio real por columna, así con pocas
         #columnas las barras se ven más gruesas y con muchas no se aplastan más de lo necesario.
         ancho_barra= max(6, min(espacio * 0.6, 44))
@@ -486,10 +486,10 @@ class AnilloProporcionWidget(QWidget):
         if span:
             painter.drawArc(rect, 90 * 16, -span)
 
-        f= QFont(self.font())
-        f.setPointSize(13)
-        f.setBold(True)
-        painter.setFont(f)
+        fuente= QFont(self.font())
+        fuente.setPointSize(13)
+        fuente.setBold(True)
+        painter.setFont(fuente)
         painter.setPen(QColor(self._colores["texto"]))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self._texto_centro)
 
@@ -610,7 +610,7 @@ class VistaSemanalHorario(QWidget):
             celdas.setdefault((franja, col), []).append(c)
 
         for fila_idx, franja in enumerate(self._franjas):
-            y= self.ALTO_CABECERA + fila_idx * (self.ALTO_FILA + self.ESPACIO_FILA)
+            pos_y= self.ALTO_CABECERA + fila_idx * (self.ALTO_FILA + self.ESPACIO_FILA)
             for col in range(len(DIAS)):
                 items= celdas.get((franja, col), [])
                 if not items:
@@ -632,11 +632,11 @@ class VistaSemanalHorario(QWidget):
                     self._celda_hitboxes.setdefault((fila_idx, col), []).append((idx, rect, item))
 
                 for i, item in enumerate(mostrados):
-                    x= x0 + margen + i * (ancho_chip + margen)
-                    _agregar(QRectF(x, y, ancho_chip, self.ALTO_FILA), item)
+                    pos_x= x0 + margen + i * (ancho_chip + margen)
+                    _agregar(QRectF(pos_x, pos_y, ancho_chip, self.ALTO_FILA), item)
                 if resto:
-                    x= x0 + margen + len(mostrados) * (ancho_chip + margen)
-                    _agregar(QRectF(x, y, ancho_chip, self.ALTO_FILA), {"_overflow": resto})
+                    pos_x= x0 + margen + len(mostrados) * (ancho_chip + margen)
+                    _agregar(QRectF(pos_x, pos_y, ancho_chip, self.ALTO_FILA), {"_overflow": resto})
 
     def _fila_y(self, indice):
 
@@ -675,13 +675,13 @@ class VistaSemanalHorario(QWidget):
         pen_separador= QPen(_con_alfa(self._colores["borde"], 90), 1)
         painter.setPen(pen_separador)
         for i in range(max(primera_fila, 0), min(ultima_fila, len(self._franjas) - 1) + 2):
-            y= self._fila_y(i) - self.ESPACIO_FILA / 2
-            painter.drawLine(QPointF(self.ANCHO_GUTTER - 10, y), QPointF(ancho - 10, y))
+            pos_y= self._fila_y(i) - self.ESPACIO_FILA / 2
+            painter.drawLine(QPointF(self.ANCHO_GUTTER - 10, pos_y), QPointF(ancho - 10, pos_y))
         if clip.top() <= self.ALTO_CABECERA:
             for col in range(len(DIAS) + 1):
-                x= self.ANCHO_GUTTER + col * ancho_col
-                painter.drawLine(QPointF(x, self.ALTO_CABECERA - 4),
-                                  QPointF(x, self._fila_y(len(self._franjas)) - self.ESPACIO_FILA / 2))
+                pos_x= self.ANCHO_GUTTER + col * ancho_col
+                painter.drawLine(QPointF(pos_x, self.ALTO_CABECERA - 4),
+                                  QPointF(pos_x, self._fila_y(len(self._franjas)) - self.ESPACIO_FILA / 2))
 
         #Cabecera de días (solo si el área dañada la incluye)
         if clip.top() <= self.ALTO_CABECERA:
@@ -689,8 +689,8 @@ class VistaSemanalHorario(QWidget):
             f_dia.setPointSize(10)
             f_dia.setBold(True)
             for col, nombre in enumerate(DIAS):
-                x= self.ANCHO_GUTTER + col * ancho_col
-                rect= QRectF(x + 5, 6, ancho_col - 10, self.ALTO_CABECERA - 12)
+                pos_x= self.ANCHO_GUTTER + col * ancho_col
+                rect= QRectF(pos_x + 5, 6, ancho_col - 10, self.ALTO_CABECERA - 12)
                 if col == self._hoy_idx:
                     grad= QLinearGradient(rect.topLeft(), rect.topRight())
                     grad.setColorAt(0, QColor(self._colores["acento"]))
@@ -712,8 +712,8 @@ class VistaSemanalHorario(QWidget):
         painter.setPen(QColor(self._colores["texto_sec"]))
         for i in range(max(primera_fila, 0), min(ultima_fila, len(self._franjas) - 1) + 1):
             ini, fin= self._franjas[i]
-            y= self._fila_y(i)
-            rect= QRectF(4, y, self.ANCHO_GUTTER - 8, self.ALTO_FILA)
+            pos_y= self._fila_y(i)
+            rect= QRectF(4, pos_y, self.ANCHO_GUTTER - 8, self.ALTO_FILA)
             ini_fmt= formatear_hora(ini, self.main_window)
             fin_fmt= formatear_hora(fin, self.main_window)
             painter.drawText(rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
@@ -1805,8 +1805,8 @@ class ModuloHorario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_hor.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_hor.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_especialidad_hor.findData(actual)
             self.combo_filtro_especialidad_hor.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1823,8 +1823,8 @@ class ModuloHorario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_hor.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_hor.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_carrera_hor.findData(actual)
             self.combo_filtro_carrera_hor.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1842,7 +1842,7 @@ class ModuloHorario(QWidget):
         c= conn.cursor()
         c.execute("""SELECT DISTINCT seccion_id FROM estudiantes
                      WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
-        secciones= {f["seccion_id"] for f in c.fetchall()}
+        secciones= {fila["seccion_id"] for fila in c.fetchall()}
         conn.close()
         return secciones
 
@@ -2055,12 +2055,12 @@ class ModuloHorario(QWidget):
                 marcadores= ",".join("?" * len(materias_permitidas))
                 c.execute(f"SELECT id, nombre FROM materias WHERE id IN ({marcadores}) ORDER BY nombre",
                           tuple(materias_permitidas))
-                for f in c.fetchall():
-                    self.combo_filtro_materia.addItem(f["nombre"], f["id"])
+                for fila in c.fetchall():
+                    self.combo_filtro_materia.addItem(fila["nombre"], fila["id"])
         else:
             c.execute("SELECT id, nombre FROM materias ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_materia.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
 
         secciones_permitidas= self._secciones_permitidas_con_nivel()
@@ -2084,8 +2084,8 @@ class ModuloHorario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_local.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_local.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_especialidad_local.findData(actual)
             self.combo_filtro_especialidad_local.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2102,8 +2102,8 @@ class ModuloHorario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_local.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_local.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_carrera_local.findData(actual)
             self.combo_filtro_carrera_local.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2124,7 +2124,7 @@ class ModuloHorario(QWidget):
                 c= conn.cursor()
                 c.execute("SELECT id FROM secciones WHERE especialidad_id=?", (especialidad_id,))
                 secciones_permitidas= interseccion_opcional(secciones_permitidas,
-                                                               {f["id"] for f in c.fetchall()})
+                                                               {fila["id"] for fila in c.fetchall()})
                 conn.close()
             if carrera_id is not None:
                 secciones_permitidas= interseccion_opcional(
@@ -2140,12 +2140,12 @@ class ModuloHorario(QWidget):
                 marcadores= ",".join("?" * len(materias_permitidas))
                 c.execute(f"SELECT id, nombre FROM materias WHERE id IN ({marcadores}) ORDER BY nombre",
                           tuple(materias_permitidas))
-                for f in c.fetchall():
-                    self.combo_materia_local.addItem(f["nombre"], f["id"])
+                for fila in c.fetchall():
+                    self.combo_materia_local.addItem(fila["nombre"], fila["id"])
         else:
             c.execute("SELECT id, nombre FROM materias ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_materia_local.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_materia_local.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx_m= self.combo_materia_local.findData(seleccion_materia)
         self.combo_materia_local.setCurrentIndex(idx_m if idx_m >= 0 else 0)
@@ -2292,17 +2292,17 @@ class ModuloHorario(QWidget):
                      LEFT JOIN aulas ON horarios.aula_id = aulas.id
                      LEFT JOIN especialidades ON secciones.especialidad_id = especialidades.id
                      ORDER BY horarios.hora_inicio""")
-        institucionales= [dict(f, es_local=False, notas="") for f in c.fetchall()]
+        institucionales= [dict(fila, es_local=False, notas="") for fila in c.fetchall()]
 
         if self.restringido:
             materias_permitidas= obtener_materias_permitidas(self.main_window) or set()
-            institucionales= [f for f in institucionales if f["materia_id"] in materias_permitidas]
+            institucionales= [institucionale for institucionale in institucionales if institucionale["materia_id"] in materias_permitidas]
 
         #Carrera(s) por sección (solo si aplica Universidad): la carrera es un
         #dato del estudiante, no de la sección, así que se resuelve aparte agrupando las carreras de los estudiantes
         #activos de cada sección.
         if self._es_universidad():
-            seccion_ids_uni= {f["seccion_id"] for f in institucionales if f.get("seccion_id")}
+            seccion_ids_uni= {institucionale["seccion_id"] for institucionale in institucionales if institucionale.get("seccion_id")}
             carreras_por_seccion= {}
             if seccion_ids_uni:
                 marcadores= ",".join("?" * len(seccion_ids_uni))
@@ -2311,23 +2311,23 @@ class ModuloHorario(QWidget):
                               JOIN carreras ON estudiantes.carrera_id = carreras.id
                               WHERE estudiantes.estado='Activo' AND estudiantes.seccion_id IN ({marcadores})
                               ORDER BY carreras.nombre""", tuple(seccion_ids_uni))
-                for r in c.fetchall():
-                    carreras_por_seccion.setdefault(r["seccion_id"], []).append(r["carrera_nombre"])
-            for f in institucionales:
-                nombres= carreras_por_seccion.get(f.get("seccion_id")) or []
-                f["carreras_nombres"]= ", ".join(nombres)
+                for fila in c.fetchall():
+                    carreras_por_seccion.setdefault(fila["seccion_id"], []).append(fila["carrera_nombre"])
+            for institucionale in institucionales:
+                nombres= carreras_por_seccion.get(institucionale.get("seccion_id")) or []
+                institucionale["carreras_nombres"]= ", ".join(nombres)
 
         self._entradas_locales= []
         if self.restringido:
             entradas= listar_horario_local(self.main_window)
             if entradas:
-                materia_ids= {e["materia_id"] for e in entradas if e["materia_id"]}
-                seccion_ids= {e["seccion_id"] for e in entradas if e["seccion_id"]}
+                materia_ids= {entrada["materia_id"] for entrada in entradas if entrada["materia_id"]}
+                seccion_ids= {entrada["seccion_id"] for entrada in entradas if entrada["seccion_id"]}
                 nombres_materia= {}
                 if materia_ids:
                     marcadores= ",".join("?" * len(materia_ids))
                     c.execute(f"SELECT id, nombre FROM materias WHERE id IN ({marcadores})", tuple(materia_ids))
-                    nombres_materia= {r["id"]: r["nombre"] for r in c.fetchall()}
+                    nombres_materia= {fila["id"]: fila["nombre"] for fila in c.fetchall()}
                 etiquetas_seccion= {}
                 grados_nombre_seccion= {}
                 secciones_nombre_sola= {}
@@ -2341,12 +2341,12 @@ class ModuloHorario(QWidget):
                                   FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id
                                   LEFT JOIN especialidades ON secciones.especialidad_id = especialidades.id
                                   WHERE secciones.id IN ({marcadores})""", tuple(seccion_ids))
-                    for r in c.fetchall():
-                        etiquetas_seccion[r["id"]]= f"{r['grado_nombre'] or ''} - {r['seccion_nombre'] or ''}"
-                        secciones_nombre_sola[r["id"]]= r["seccion_nombre"]
-                        grados_nombre_seccion[r["id"]]= r["grado_nombre"]
-                        grados_seccion[r["id"]]= r["grado_id"]
-                        especialidad_nombre_seccion[r["id"]]= r["especialidad_nombre"]
+                    for fila in c.fetchall():
+                        etiquetas_seccion[fila["id"]]= f"{fila['grado_nombre'] or ''} - {fila['seccion_nombre'] or ''}"
+                        secciones_nombre_sola[fila["id"]]= fila["seccion_nombre"]
+                        grados_nombre_seccion[fila["id"]]= fila["grado_nombre"]
+                        grados_seccion[fila["id"]]= fila["grado_id"]
+                        especialidad_nombre_seccion[fila["id"]]= fila["especialidad_nombre"]
                 carreras_por_seccion_local= {}
                 if seccion_ids and self._es_universidad():
                     marcadores= ",".join("?" * len(seccion_ids))
@@ -2355,23 +2355,23 @@ class ModuloHorario(QWidget):
                                   JOIN carreras ON estudiantes.carrera_id = carreras.id
                                   WHERE estudiantes.estado='Activo' AND estudiantes.seccion_id IN ({marcadores})
                                   ORDER BY carreras.nombre""", tuple(seccion_ids))
-                    for r in c.fetchall():
-                        carreras_por_seccion_local.setdefault(r["seccion_id"], []).append(r["carrera_nombre"])
-                for e in entradas:
+                    for fila in c.fetchall():
+                        carreras_por_seccion_local.setdefault(fila["seccion_id"], []).append(fila["carrera_nombre"])
+                for entrada in entradas:
                     self._entradas_locales.append({
-                        "id": e["id"], "dia": e["dia"], "hora_inicio": e["hora_inicio"], "hora_fin": e["hora_fin"],
-                        "materia_id": e["materia_id"], "seccion_id": e["seccion_id"],
-                        "grado_id": grados_seccion.get(e["seccion_id"]),
-                        "materia_nombre": nombres_materia.get(e["materia_id"], "") or e["notas"] or "(sin materia)",
+                        "id": entrada["id"], "dia": entrada["dia"], "hora_inicio": entrada["hora_inicio"], "hora_fin": entrada["hora_fin"],
+                        "materia_id": entrada["materia_id"], "seccion_id": entrada["seccion_id"],
+                        "grado_id": grados_seccion.get(entrada["seccion_id"]),
+                        "materia_nombre": nombres_materia.get(entrada["materia_id"], "") or entrada["notas"] or "(sin materia)",
                         #"seccion_nombre" combinada (Curso - Sección): usada por el canvas/chips del calendario, igual que las clases
                         #institucionales, para que se vean igual.
-                        "seccion_nombre": etiquetas_seccion.get(e["seccion_id"], "") or "",
+                        "seccion_nombre": etiquetas_seccion.get(entrada["seccion_id"], "") or "",
                         #Campos separados: usados por la tabla "Clase Local" (Curso | Sección aparte).
-                        "grado_nombre": grados_nombre_seccion.get(e["seccion_id"], "") or "",
-                        "seccion_nombre_sola": secciones_nombre_sola.get(e["seccion_id"], "") or "",
-                        "especialidad_nombre": especialidad_nombre_seccion.get(e["seccion_id"]) or "",
-                        "carreras_nombres": ", ".join(carreras_por_seccion_local.get(e["seccion_id"], [])),
-                        "aula_nombre": e["aula_texto"], "notas": e["notas"], "es_local": True,
+                        "grado_nombre": grados_nombre_seccion.get(entrada["seccion_id"], "") or "",
+                        "seccion_nombre_sola": secciones_nombre_sola.get(entrada["seccion_id"], "") or "",
+                        "especialidad_nombre": especialidad_nombre_seccion.get(entrada["seccion_id"]) or "",
+                        "carreras_nombres": ", ".join(carreras_por_seccion_local.get(entrada["seccion_id"], [])),
+                        "aula_nombre": entrada["aula_texto"], "notas": entrada["notas"], "es_local": True,
                     })
         conn.close()
         self._todas_clases= institucionales + self._entradas_locales

@@ -36,8 +36,8 @@ def _combo_agregar_filas(combo, filas, campo_texto="nombre"):
 
     combo.clear()
     combo.addItem("Selecciona…", None)
-    for f in filas:
-        combo.addItem(f[campo_texto], f["id"])
+    for fila in filas:
+        combo.addItem(fila[campo_texto], fila["id"])
 
 
 def _tabla_solo_lectura(tabla):
@@ -580,7 +580,7 @@ class ModuloAsistenciaST(QWidget):
         estudiantes= c.fetchall()
         fecha= self.in_fecha.date().toString("yyyy-MM-dd")
         c.execute("SELECT estudiante_id, estado FROM asistencia WHERE seccion_id=? AND fecha=?", (seccion_id, fecha))
-        estados_previos= {f["estudiante_id"]: f["estado"] for f in c.fetchall()}
+        estados_previos= {fila["estudiante_id"]: fila["estado"] for fila in c.fetchall()}
         conn.close()
 
         self.tabla.setRowCount(len(estudiantes))
@@ -696,8 +696,8 @@ class ModuloCalificacionesST(QWidget):
             filas= c.fetchall()
             self.combo_estudiante.clear()
             self.combo_estudiante.addItem("Selecciona…", None)
-            for f in filas:
-                self.combo_estudiante.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
+            for fila in filas:
+                self.combo_estudiante.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
     def _guardar(self):
@@ -1007,8 +1007,8 @@ class ModuloObservacionesST(QWidget):
             c.execute("SELECT id, nombre, apellidos FROM estudiantes WHERE seccion_id=? ORDER BY apellidos",
                       (seccion_id,))
             self.combo_estudiante.addItem("Selecciona…", None)
-            for f in c.fetchall():
-                self.combo_estudiante.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
+            for fila in c.fetchall():
+                self.combo_estudiante.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
     def _guardar(self):
@@ -1122,8 +1122,8 @@ class ModuloReportesST(QWidget):
         c= conn.cursor()
         c.execute("""SELECT estudiantes.*, secciones.nombre as curso FROM estudiantes
                      LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id ORDER BY apellidos""")
-        for f in c.fetchall():
-            ws.append([f["nombre"], f["apellidos"], f["curso"], f["tutor"], f["telefono"], f["correo"]])
+        for fila in c.fetchall():
+            ws.append([fila["nombre"], fila["apellidos"], fila["curso"], fila["tutor"], fila["telefono"], fila["correo"]])
         conn.close()
         wb.save(ruta)
         mostrar_mensaje("exito", "Exportado", f"Se guardó en:\n{ruta}", self)
@@ -1146,8 +1146,8 @@ class ModuloReportesST(QWidget):
                      JOIN estudiantes ON calificaciones.estudiante_id = estudiantes.id
                      JOIN materias ON calificaciones.materia_id = materias.id
                      LEFT JOIN periodos ON calificaciones.periodo_id = periodos.id""")
-        for f in c.fetchall():
-            ws.append([f["est"], f["mat"], f["per"], f["descripcion"], f["valor"], f["peso"]])
+        for fila in c.fetchall():
+            ws.append([fila["est"], fila["mat"], fila["per"], fila["descripcion"], fila["valor"], fila["peso"]])
         conn.close()
         wb.save(ruta)
         mostrar_mensaje("exito", "Exportado", f"Se guardó en:\n{ruta}", self)
@@ -1219,12 +1219,12 @@ class ModuloConfiguracionST(QWidget):
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("SELECT * FROM configuracion WHERE id=1")
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if f:
-            self.in_nombre_docente.setText(f["nombre_docente"] or "")
-            self.spin_nota_min_primaria.setValue(f["nota_minima_primaria"] or 70)
-            self.spin_nota_min_secundaria.setValue(f["nota_minima_secundaria"] or 70)
+        if fila:
+            self.in_nombre_docente.setText(fila["nombre_docente"] or "")
+            self.spin_nota_min_primaria.setValue(fila["nota_minima_primaria"] or 70)
+            self.spin_nota_min_secundaria.setValue(fila["nota_minima_secundaria"] or 70)
 
     def _guardar(self):
 

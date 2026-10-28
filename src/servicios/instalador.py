@@ -347,14 +347,14 @@ def exportar_instalador_docentes(ruta_destino):
             return destino
         except shutil.SameFileError:
             return destino
-        except PermissionError as e:
-            ultimo_error= e
+        except PermissionError as error:
+            ultimo_error= error
             time.sleep(0.4)
-        except OSError as e:
+        except OSError as error:
             #WinError 32 llega como PermissionError en la mayoría de casos, pero por si acaso se cuela como OSError
             #genérico también se reintenta antes de rendirse.
-            if getattr(e, "winerror", None) == 32:
-                ultimo_error= e
+            if getattr(error, "winerror", None) == 32:
+                ultimo_error= error
                 time.sleep(0.4)
                 continue
             raise
@@ -396,12 +396,12 @@ def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
             return destino
         except shutil.SameFileError:
             return destino
-        except PermissionError as e:
-            ultimo_error= e
+        except PermissionError as error:
+            ultimo_error= error
             time.sleep(0.4)
-        except OSError as e:
-            if getattr(e, "winerror", None) == 32:
-                ultimo_error= e
+        except OSError as error:
+            if getattr(error, "winerror", None) == 32:
+                ultimo_error= error
                 time.sleep(0.4)
                 continue
             raise

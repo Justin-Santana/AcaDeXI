@@ -323,12 +323,12 @@ class _VentanaAyudaAtajos(QWidget):
 
         pantalla= QApplication.primaryScreen()
         geo= pantalla.availableGeometry() if pantalla else None
-        x= punto_referencia.x() if punto_referencia else 40
-        y= punto_referencia.y() if punto_referencia else 40
+        pos_x= punto_referencia.x() if punto_referencia else 40
+        pos_y= punto_referencia.y() if punto_referencia else 40
         if geo is not None:
-            x= min(max(geo.left() + 16, x), geo.right() - self.width() - 16)
-            y= min(max(geo.top() + 16, y), geo.bottom() - self.height() - 16)
-        self.move(QPoint(x, y))
+            pos_x= min(max(geo.left() + 16, pos_x), geo.right() - self.width() - 16)
+            pos_y= min(max(geo.top() + 16, pos_y), geo.bottom() - self.height() - 16)
+        self.move(QPoint(pos_x, pos_y))
 
     def ocultar_con_fundido(self):
 

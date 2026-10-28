@@ -213,23 +213,23 @@ def _icono_punto(color, diametro=9, base=None, tam_base=18):
     if base is None:
         pix= QPixmap(diametro, diametro)
         pix.fill(Qt.GlobalColor.transparent)
-        p= QPainter(pix)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(color))
-        p.drawEllipse(0, 0, diametro, diametro)
-        p.end()
+        pintor= QPainter(pix)
+        pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pintor.setPen(Qt.PenStyle.NoPen)
+        pintor.setBrush(QColor(color))
+        pintor.drawEllipse(0, 0, diametro, diametro)
+        pintor.end()
         return QIcon(pix)
     pix= QPixmap(tam_base, tam_base)
     pix.fill(Qt.GlobalColor.transparent)
-    p= QPainter(pix)
-    p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    p.drawPixmap(0, 0, pixmap_emoji(base, tam_base))
-    p.setPen(_pluma("white", 1.4))
-    p.setBrush(QColor(color))
+    pintor= QPainter(pix)
+    pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
+    pintor.drawPixmap(0, 0, pixmap_emoji(base, tam_base))
+    pintor.setPen(_pluma("white", 1.4))
+    pintor.setBrush(QColor(color))
     cx, cy, r= tam_base * 0.80, tam_base * 0.20, tam_base * 0.19
-    p.drawEllipse(QRectF(cx - r, cy - r, r * 2, r * 2))
-    p.end()
+    pintor.drawEllipse(QRectF(cx - r, cy - r, r * 2, r * 2))
+    pintor.end()
     return QIcon(pix)
 
 
@@ -581,10 +581,10 @@ class AnilloProgreso(QWidget):
             painter.drawEllipse(QPointF(px, py), self._grosor * 0.28, self._grosor * 0.28)
 
         painter.setPen(self._color)
-        f= QFont()
-        f.setPointSizeF(13)
-        f.setBold(True)
-        painter.setFont(f)
+        fuente= QFont()
+        fuente.setPointSizeF(13)
+        fuente.setBold(True)
+        painter.setFont(fuente)
         painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self._texto)
 
 
@@ -776,8 +776,8 @@ class GraficoDona(QWidget):
         else:
             #Pequeño espacio entre segmentos (estilo donut 'separado') para que cada categoría se distinga aunque los
             #colores sean parecidos.
-            n= len(self._segmentos_fin)
-            espacio= min(2.4 * 16, (360 * 16 / max(n, 1)) * 0.12) if n > 1 else 0
+            cantidad= len(self._segmentos_fin)
+            espacio= min(2.4 * 16, (360 * 16 / max(cantidad, 1)) * 0.12) if cantidad > 1 else 0
             angulo= 90 * 16
             for frac, color in self._interpolado():
                 extension= -int(360 * 16 * frac)
@@ -786,16 +786,16 @@ class GraficoDona(QWidget):
                 ext_dibujo= extension + espacio if extension < -espacio else extension / 2 or extension
                 pluma= QPen(QColor(color))
                 pluma.setWidthF(self._grosor)
-                pluma.setCapStyle(Qt.PenCapStyle.RoundCap if n > 1 else Qt.PenCapStyle.FlatCap)
+                pluma.setCapStyle(Qt.PenCapStyle.RoundCap if cantidad > 1 else Qt.PenCapStyle.FlatCap)
                 painter.setPen(pluma)
                 painter.drawArc(rect, int(angulo), int(ext_dibujo))
                 angulo += extension
 
         painter.setPen(self._color_texto)
-        f= QFont()
-        f.setPointSizeF(16)
-        f.setBold(True)
-        painter.setFont(f)
+        fuente= QFont()
+        fuente.setPointSizeF(16)
+        fuente.setBold(True)
+        painter.setFont(fuente)
         painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self._total_texto)
 
 
@@ -894,10 +894,10 @@ class MedidorGauge(QWidget):
             painter.drawEllipse(QPointF(px, py), 3.2, 3.2)
 
         painter.setPen(self._color_texto)
-        f= QFont()
-        f.setPointSizeF(18)
-        f.setBold(True)
-        painter.setFont(f)
+        fuente= QFont()
+        fuente.setPointSizeF(18)
+        fuente.setBold(True)
+        painter.setFont(fuente)
         painter.drawText(QRectF(0, centro.y() + 4, self.width(), 30), Qt.AlignmentFlag.AlignCenter, self._texto)
         if self._etiqueta:
             painter.setPen(self._color_etiqueta)
@@ -980,38 +980,38 @@ class TimelineEvaluacion(QWidget):
             #En vez de dejar el panel completamente en blanco (confuso: no se entiende qué es ese recuadro vacío), explica
             #qué va a mostrar y qué hacer para verlo.
             painter.setPen(QColor(148, 163, 184, 200))
-            f= QFont()
-            f.setPointSizeF(9.0)
-            painter.setFont(f)
+            fuente= QFont()
+            fuente.setPointSizeF(9.0)
+            painter.setFont(fuente)
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter,
                               "Selecciona estudiante y presiona \"Calcular\" para ver aquí\n"
                               "la cascada de evaluaciones (Año Completiva Extraordinaria Especial)")
             return
         radios= self._interpolado() if len(self._radios_fin) == n else [9.0] * n
         margen_h= 40.0
-        y= 32.0
+        pos_y= 32.0
         ancho_util= max(1.0, self.width() - 2 * margen_h)
         xs= [margen_h + (ancho_util * i / (n - 1) if n > 1 else ancho_util / 2) for i in range(n)]
 
         pluma_base= QPen(QColor(148, 163, 184, 90), 3)
         painter.setPen(pluma_base)
-        painter.drawLine(QPointF(xs[0], y), QPointF(xs[-1], y))
+        painter.drawLine(QPointF(xs[0], pos_y), QPointF(xs[-1], pos_y))
 
         for i in range(n - 1):
             _, color_a, conteo_a= self._etapas[i]
             _, color_b, conteo_b= self._etapas[i + 1]
             if conteo_a > 0 or conteo_b > 0:
-                grad= QLinearGradient(QPointF(xs[i], y), QPointF(xs[i + 1], y))
+                grad= QLinearGradient(QPointF(xs[i], pos_y), QPointF(xs[i + 1], pos_y))
                 ca, cb= QColor(color_a), QColor(color_b)
                 grad.setColorAt(0, ca)
                 grad.setColorAt(1, cb)
                 painter.setPen(QPen(QBrush(grad), 3))
-                painter.drawLine(QPointF(xs[i], y), QPointF(xs[i + 1], y))
+                painter.drawLine(QPointF(xs[i], pos_y), QPointF(xs[i + 1], pos_y))
 
         for i, (etiqueta, color_hex, conteo) in enumerate(self._etapas):
             color= QColor(color_hex)
             r= radios[i]
-            cx, cy= xs[i], y
+            cx, cy= xs[i], pos_y
             if conteo > 0:
                 halo= QColor(color)
                 halo.setAlphaF(0.20)
@@ -1023,10 +1023,10 @@ class TimelineEvaluacion(QWidget):
             painter.drawEllipse(QPointF(cx, cy), r, r)
             if conteo > 0:
                 painter.setPen(Qt.GlobalColor.white)
-                f= QFont()
-                f.setPointSizeF(8.3)
-                f.setBold(True)
-                painter.setFont(f)
+                fuente= QFont()
+                fuente.setPointSizeF(8.3)
+                fuente.setBold(True)
+                painter.setFont(fuente)
                 painter.drawText(QRectF(cx - r, cy - r, 2 * r, 2 * r),
                                   Qt.AlignmentFlag.AlignCenter, str(conteo))
             painter.setPen(self._color_texto)
@@ -1080,7 +1080,7 @@ class LineaTendencia(QWidget):
 
         if color:
             self._color= QColor(color)
-        self._valores= [v for v in valores if v is not None]
+        self._valores= [valor for valor in valores if valor is not None]
         self._umbral= umbral
         self._t= 0.0
         if self._anim:
@@ -1100,9 +1100,9 @@ class LineaTendencia(QWidget):
         rect= QRectF(self.rect()).adjusted(6, 8, -6, -8)
         if len(self._valores) < 2 or rect.width() <= 0:
             painter.setPen(self._color_vacio)
-            f= QFont()
-            f.setPointSizeF(8.5)
-            painter.setFont(f)
+            fuente= QFont()
+            fuente.setPointSizeF(8.5)
+            painter.setFont(fuente)
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter,
                               "Sin suficientes periodos con notas para mostrar tendencia")
             return
@@ -1320,7 +1320,7 @@ def competencias_de_materia_grado(materia_id, grado_id, solo_activas=True):
     c.execute(f"""SELECT * FROM competencias_especificas
                  WHERE materia_id=? AND grado_id=? {condicion_estado}
                  ORDER BY orden, codigo""", (materia_id, grado_id))
-    filas= [dict(f) for f in c.fetchall()]
+    filas= [dict(fila) for fila in c.fetchall()]
     conn.close()
     return filas
 
@@ -1334,9 +1334,9 @@ def grado_de_estudiante(estudiante_id):
     c.execute("""SELECT secciones.grado_id FROM estudiantes
                  LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
                  WHERE estudiantes.id=?""", (estudiante_id,))
-    f= c.fetchone()
+    fila= c.fetchone()
     conn.close()
-    return f["grado_id"] if f else None
+    return fila["grado_id"] if fila else None
 
 
 #Grados en los que se imparte una materia, según los horarios ya armados
@@ -1352,7 +1352,7 @@ def grados_de_materia(materia_id):
                  LEFT JOIN grados ON secciones.grado_id = grados.id
                  WHERE horarios.materia_id=? AND grados.id IS NOT NULL
                  ORDER BY grados.orden, grados.nombre""", (materia_id,))
-    filas= [dict(f) for f in c.fetchall()]
+    filas= [dict(fila) for fila in c.fetchall()]
     conn.close()
     return filas
 
@@ -1622,7 +1622,7 @@ class DialogoIndicadoresLogro(QDialog):
         c= conn.cursor()
         c.execute("SELECT * FROM indicadores_logro WHERE competencia_id=? ORDER BY orden, codigo",
                   (self.competencia_id,))
-        filas= [dict(f) for f in c.fetchall()]
+        filas= [dict(fila) for fila in c.fetchall()]
         conn.close()
         self.tabla.setRowCount(len(filas))
         with tabla_pausada(self.tabla):
@@ -1831,7 +1831,7 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM grados ORDER BY orden, nombre")
-            self._cache_grados= [(f["id"], f["nombre"]) for f in c.fetchall()]
+            self._cache_grados= [(fila["id"], fila["nombre"]) for fila in c.fetchall()]
             conn.close()
         return self._cache_grados
 
@@ -1845,7 +1845,7 @@ class ModuloCalificaciones(QWidget):
             c.execute("""SELECT secciones.id, secciones.grado_id, secciones.nombre as nombre_plano,
                          (grados.nombre || ' - ' || secciones.nombre) as etiqueta
                          FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id ORDER BY etiqueta""")
-            self._cache_secciones_con_grado= [dict(f) for f in c.fetchall()]
+            self._cache_secciones_con_grado= [dict(fila) for fila in c.fetchall()]
             conn.close()
         return self._cache_secciones_con_grado
 
@@ -1903,7 +1903,7 @@ class ModuloCalificaciones(QWidget):
             c= conn.cursor()
             c.execute("""SELECT secciones.id, (grados.nombre || ' - ' || secciones.nombre) as etiqueta
                          FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id ORDER BY etiqueta""")
-            self._cache_secciones_etiquetadas= [(f["id"], f["etiqueta"]) for f in c.fetchall()]
+            self._cache_secciones_etiquetadas= [(fila["id"], fila["etiqueta"]) for fila in c.fetchall()]
             conn.close()
         return self._cache_secciones_etiquetadas
 
@@ -1916,7 +1916,7 @@ class ModuloCalificaciones(QWidget):
                          WHERE estado='Activa' AND especialidad_id IS NULL
                            AND (modelo_evaluacion IS NULL OR modelo_evaluacion != ?)
                          ORDER BY nombre""", (MODELO_EVALUACION_TECNICA,))
-            self._cache_materias_activas= [(f["id"], f["nombre"]) for f in c.fetchall()]
+            self._cache_materias_activas= [(fila["id"], fila["nombre"]) for fila in c.fetchall()]
             conn.close()
         return self._cache_materias_activas
 
@@ -1926,7 +1926,7 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM periodos ORDER BY orden")
-            self._cache_periodos= [(f["id"], f["nombre"]) for f in c.fetchall()]
+            self._cache_periodos= [(fila["id"], fila["nombre"]) for fila in c.fetchall()]
             conn.close()
         return self._cache_periodos
 
@@ -1941,7 +1941,7 @@ class ModuloCalificaciones(QWidget):
             c= conn.cursor()
             c.execute("""SELECT id, nombre, apellidos, seccion_id, especialidad_id, carrera_id FROM estudiantes
                          WHERE estado='Activo' ORDER BY apellidos, nombre""")
-            self._cache_estudiantes_activos= [dict(f) for f in c.fetchall()]
+            self._cache_estudiantes_activos= [dict(fila) for fila in c.fetchall()]
             conn.close()
         return self._cache_estudiantes_activos
 
@@ -1952,7 +1952,7 @@ class ModuloCalificaciones(QWidget):
             c= conn.cursor()
             c.execute("""SELECT id, nombre, apellidos, seccion_id, especialidad_id, carrera_id
                          FROM estudiantes ORDER BY apellidos, nombre""")
-            self._cache_estudiantes_todos= [dict(f) for f in c.fetchall()]
+            self._cache_estudiantes_todos= [dict(fila) for fila in c.fetchall()]
             conn.close()
         return self._cache_estudiantes_todos
 
@@ -2061,8 +2061,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                combo_especialidad.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                combo_especialidad.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(combo_especialidad, "No Área Técnica")
             idx= combo_especialidad.findData(actual)
@@ -2080,8 +2080,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                combo_carrera.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                combo_carrera.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(combo_carrera, "No Carrera")
             idx= combo_carrera.findData(actual)
@@ -2098,16 +2098,16 @@ class ModuloCalificaciones(QWidget):
         if especialidad_id is None and carrera_id is None:
             return filas
         resultado= []
-        for f in filas:
-            if especialidad_id == 0 and f.get(campo_especialidad) is not None:
+        for fila in filas:
+            if especialidad_id == 0 and fila.get(campo_especialidad) is not None:
                 continue
-            if especialidad_id not in (None, 0) and f.get(campo_especialidad) != especialidad_id:
+            if especialidad_id not in (None, 0) and fila.get(campo_especialidad) != especialidad_id:
                 continue
-            if carrera_id == 0 and f.get(campo_carrera) is not None:
+            if carrera_id == 0 and fila.get(campo_carrera) is not None:
                 continue
-            if carrera_id not in (None, 0) and f.get(campo_carrera) != carrera_id:
+            if carrera_id not in (None, 0) and fila.get(campo_carrera) != carrera_id:
                 continue
-            resultado.append(f)
+            resultado.append(fila)
         return resultado
 
     #True si la institución es de tipo Politécnico (o Personalizado con el
@@ -2586,9 +2586,9 @@ class ModuloCalificaciones(QWidget):
 
     def _tab_registro(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(18)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(18)
         form= QGridLayout()
         form.setHorizontalSpacing(16)
         form.setVerticalSpacing(14)
@@ -2782,22 +2782,22 @@ class ModuloCalificaciones(QWidget):
         lay_frame_form_registro= QVBoxLayout(frame_form_registro)
         lay_frame_form_registro.setContentsMargins(0, 0, 0, 0)
         lay_frame_form_registro.addLayout(form)
-        self._envolver_en_panel(l, "Registrar / Editar Calificación", frame_form_registro)
+        self._envolver_en_panel(disposicion, "Registrar / Editar Calificación", frame_form_registro)
 
         self.combo_materia.currentIndexChanged.connect(self._actualizar_boton_competencias_registro)
         self.combo_estudiante.currentIndexChanged.connect(self._actualizar_boton_competencias_registro)
         #Búsqueda flexible: no distingue mayúsculas/minúsculas ni acentos (mismo diseño visual que la searchbar de
         #configuracion.py)
-        l.addSpacing(10)
+        disposicion.addSpacing(10)
         titulo_tabla_registro= QLabel("Calificaciones registradas")
         titulo_tabla_registro.setObjectName("DescModulo")
-        l.addWidget(titulo_tabla_registro)
+        disposicion.addWidget(titulo_tabla_registro)
         self.in_buscar_registro= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_registro.setPlaceholderText(
             "Buscar por materia, periodo, categoría o descripción (ignora tildes y mayúsculas)...")
         self.in_buscar_registro.texto_buscado.connect(self._aplicar_busqueda_registro)
-        l.addWidget(self.in_buscar_registro)
-        l.addSpacing(6)
+        disposicion.addWidget(self.in_buscar_registro)
+        disposicion.addSpacing(6)
 
 
         #Tabla estilo Omega POS (registro de calificaciones)
@@ -2819,12 +2819,12 @@ class ModuloCalificaciones(QWidget):
         self.tabla_registro.setWordWrap(True)
         self.tabla_registro.setMinimumHeight(220)
         self.tabla_registro.verticalHeader().setVisible(False)
-        l.addWidget(self.tabla_registro, 1)
+        disposicion.addWidget(self.tabla_registro, 1)
 
         self.paginacion_registro= ControlPaginacion(tamano_inicial=25)
         self.paginacion_registro.cambio.connect(self._cargar_registro_estudiante)
-        l.addWidget(self.paginacion_registro)
-        l.addSpacing(8)
+        disposicion.addWidget(self.paginacion_registro)
+        disposicion.addSpacing(8)
 
         agregar_boton_pantalla_completa(
             None,
@@ -2855,11 +2855,11 @@ class ModuloCalificaciones(QWidget):
         self.tabla_registro.doubleClicked.connect(lambda *_: btn_detalle.click())
         
         fila_acciones.addStretch()
-        l.addLayout(fila_acciones)
+        disposicion.addLayout(fila_acciones)
         
         self.combo_estudiante.currentIndexChanged.connect(self._cargar_registro_estudiante)
-        l.addStretch(1)
-        return w
+        disposicion.addStretch(1)
+        return contenedor
 
     #Botón extra del diálogo 'Detalle de la Calificación', igual que en
     #Banco de Tareas: la descripción se consulta aparte y se muestra
@@ -2946,8 +2946,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_registro.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_registro.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_especialidad_registro, "No Área Técnica")
             idx= self.combo_filtro_especialidad_registro.findData(actual)
@@ -2965,8 +2965,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_registro.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_registro.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_carrera_registro, "No Carrera")
             idx= self.combo_filtro_carrera_registro.findData(actual)
@@ -3092,9 +3092,9 @@ class ModuloCalificaciones(QWidget):
         c= conn.cursor()
         c.execute("SELECT bloqueado FROM periodo_bloqueo WHERE periodo_id=? AND anio_academico=?",
                   (periodo_id, anio))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return bool(f and f["bloqueado"])
+        return bool(fila and fila["bloqueado"])
 
     def _actualizar_estado_bloqueo_periodo(self):
 
@@ -3172,13 +3172,13 @@ class ModuloCalificaciones(QWidget):
 
         if not hasattr(self, "btn_vincular_competencias"):
             return
-        n= len(self._ce_vinculadas_registro)
-        if n == 0:
+        cantidad= len(self._ce_vinculadas_registro)
+        if cantidad == 0:
             self.btn_vincular_competencias.setText("Vincular a Competencias Específicas")
-        elif n == 1:
+        elif cantidad == 1:
             self.btn_vincular_competencias.setText("1 Competencia Específica vinculada")
         else:
-            self.btn_vincular_competencias.setText(f"{n} Competencias Específicas vinculadas")
+            self.btn_vincular_competencias.setText(f"{cantidad} Competencias Específicas vinculadas")
 
     def _abrir_exportar_intercambio_calificaciones(self):
 
@@ -3347,8 +3347,8 @@ class ModuloCalificaciones(QWidget):
     def _tab_boletin(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(16)
         #Área Técnica/Carrera van PRIMERO, en su propia fila: se eligen antes que Curso/Sección (mismo orden que en las
         #demás pestañas). Están en su propia fila -no a la derecha de nada- para que la pestaña crezca en ALTO y no en
         #ANCHO cuando ambos combos están visibles a la vez (institución "Personalizado").
@@ -3389,7 +3389,7 @@ class ModuloCalificaciones(QWidget):
         self.btn_filtros_boletin= self._crear_boton_filtros("Filtrar por curso, sección, área técnica/carrera")
         self.btn_filtros_boletin.clicked.connect(lambda: self._abrir_dialogo_filtros(self.dialogo_filtros_boletin))
         fila_filtro_tecnico_boletin.addWidget(self.btn_filtros_boletin)
-        l.addLayout(fila_filtro_tecnico_boletin)
+        disposicion.addLayout(fila_filtro_tecnico_boletin)
         self.combo_curso_boletin.currentIndexChanged.connect(self._actualizar_resumen_filtros_boletin)
         self.combo_seccion_boletin.currentIndexChanged.connect(self._actualizar_resumen_filtros_boletin)
         self.combo_filtro_especialidad_boletin.currentIndexChanged.connect(self._actualizar_resumen_filtros_boletin)
@@ -3431,8 +3431,8 @@ class ModuloCalificaciones(QWidget):
         fila_filtros.addWidget(self.btn_bloqueo_periodo)
         self.combo_periodo_boletin.currentIndexChanged.connect(self._actualizar_estado_bloqueo_periodo)
         fila_filtros.addStretch()
-        l.addLayout(fila_filtros)
-        l.addSpacing(10)
+        disposicion.addLayout(fila_filtros)
+        disposicion.addSpacing(10)
 
 
         #Tabla estilo Omega POS (boletín)
@@ -3460,11 +3460,11 @@ class ModuloCalificaciones(QWidget):
         self.tabla_boletin.setWordWrap(True)
         self.tabla_boletin.setMinimumHeight(340)
         self.tabla_boletin.verticalHeader().setVisible(False)
-        l.addWidget(self.tabla_boletin, 1)
+        disposicion.addWidget(self.tabla_boletin, 1)
         self.paginacion_boletin= ControlPaginacion(tamano_inicial=25)
         self.paginacion_boletin.cambio.connect(self._generar_boletin)
-        l.addWidget(self.paginacion_boletin)
-        l.addSpacing(10)
+        disposicion.addWidget(self.paginacion_boletin)
+        disposicion.addSpacing(10)
 
         agregar_boton_pantalla_completa(
             None, [self.tabla_boletin, self.paginacion_boletin],
@@ -3490,7 +3490,7 @@ class ModuloCalificaciones(QWidget):
         columna_promedio.addWidget(self.lbl_promedio_general)
         columna_promedio.addStretch()
         fila_promedio.addLayout(columna_promedio, 1)
-        l.addWidget(panel_resumen_boletin)
+        disposicion.addWidget(panel_resumen_boletin)
         fila_acciones_boletin= QHBoxLayout()
         btn_pdf= QPushButton("Exportar Boletín a PDF")
         btn_pdf.setIcon(icono_emoji("\uE002"))
@@ -3509,11 +3509,11 @@ class ModuloCalificaciones(QWidget):
                                                  titulo= "Detalle de la Nota")
         self.tabla_boletin.doubleClicked.connect(lambda *_: btn_detalle_bol.click())
         fila_acciones_boletin.addStretch()
-        l.addLayout(fila_acciones_boletin)
+        disposicion.addLayout(fila_acciones_boletin)
         #--- Exportación masiva por Curso (todas sus secciones a la vez) ---
         linea= QLabel("Exportación Masiva de Boletines (todo un curso, incluye todas sus secciones):")
         linea.setObjectName("DescModulo")
-        l.addWidget(linea)
+        disposicion.addWidget(linea)
         fila_masiva= QHBoxLayout()
         self.combo_curso_masivo= QComboBox()
         fila_masiva.addWidget(QLabel("Curso:"))
@@ -3536,8 +3536,8 @@ class ModuloCalificaciones(QWidget):
         btn_masivo.clicked.connect(self._exportar_boletines_masivo)
         fila_masiva.addWidget(btn_masivo)
         fila_masiva.addStretch()
-        l.addLayout(fila_masiva)
-        l.addStretch(1)
+        disposicion.addLayout(fila_masiva)
+        disposicion.addStretch(1)
         return w
     def _cargar_estudiantes_boletin(self):
 
@@ -3591,8 +3591,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_boletin.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_boletin.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_especialidad_boletin, "No Área Técnica")
             idx= self.combo_filtro_especialidad_boletin.findData(actual)
@@ -3610,8 +3610,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_boletin.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_boletin.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_carrera_boletin, "No Carrera")
             idx= self.combo_filtro_carrera_boletin.findData(actual)
@@ -3636,8 +3636,8 @@ class ModuloCalificaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            self.combo_especialidad_masivo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.combo_especialidad_masivo.addItem(fila["nombre"], fila["id"])
         conn.close()
         if seleccion_previa is not None:
             idx= self.combo_especialidad_masivo.findData(seleccion_previa)
@@ -3665,14 +3665,14 @@ class ModuloCalificaciones(QWidget):
                          LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
                          LEFT JOIN grados ON secciones.grado_id = grados.id WHERE estudiantes.id=?""",
                       (estudiante_id,))
-            f= c.fetchone()
-            nivel_educativo= f["nivel"] if f else None
+            fila= c.fetchone()
+            nivel_educativo= fila["nivel"] if fila else None
         elif seccion_id is not None:
             c.execute("""SELECT grados.nivel_educativo as nivel FROM secciones
                          LEFT JOIN grados ON secciones.grado_id = grados.id WHERE secciones.id=?""",
                       (seccion_id,))
-            f= c.fetchone()
-            nivel_educativo= f["nivel"] if f else None
+            fila= c.fetchone()
+            nivel_educativo= fila["nivel"] if fila else None
         conn.close()
         if not cfg:
             return "Promedio Ponderado", 70
@@ -3687,9 +3687,9 @@ class ModuloCalificaciones(QWidget):
         filas= c.fetchall()
         conn.close()
         por_materia= {}
-        for f in filas:
-            por_materia.setdefault(f["materia_nombre"] or "Sin materia", []).append(
-                {"valor": f["valor"], "peso": f["peso"]})
+        for fila in filas:
+            por_materia.setdefault(fila["materia_nombre"] or "Sin materia", []).append(
+                {"valor": fila["valor"], "peso": fila["peso"]})
         resultado= {}
         for materia, calif in por_materia.items():
             resultado[materia]= calcular_nota_final(calif, metodo)
@@ -3705,11 +3705,11 @@ class ModuloCalificaciones(QWidget):
         filas= c.fetchall()
         conn.close()
         por_materia= {}
-        for f in filas:
-            clave= f["materia_id"]
+        for fila in filas:
+            clave= fila["materia_id"]
             if clave not in por_materia:
-                por_materia[clave]= {"nombre": f["materia_nombre"] or "Sin materia", "notas": []}
-            por_materia[clave]["notas"].append({"valor": f["valor"], "peso": f["peso"]})
+                por_materia[clave]= {"nombre": fila["materia_nombre"] or "Sin materia", "notas": []}
+            por_materia[clave]["notas"].append({"valor": fila["valor"], "peso": fila["peso"]})
         resultado= []
         for materia_id, datos in por_materia.items():
             resultado.append({"materia_id": materia_id, "materia_nombre": datos["nombre"],
@@ -3724,9 +3724,9 @@ class ModuloCalificaciones(QWidget):
         c.execute("""SELECT nota_rp FROM recuperacion_pedagogica
                      WHERE estudiante_id=? AND materia_id=? AND periodo_id=?""",
                   (estudiante_id, materia_id, periodo_id))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return f["nota_rp"] if f else None
+        return fila["nota_rp"] if fila else None
     def _obtener_rp_completa(self, estudiante_id, materia_id, periodo_id):
 
         conn= obtener_conexion()
@@ -3734,9 +3734,9 @@ class ModuloCalificaciones(QWidget):
         c.execute("""SELECT * FROM recuperacion_pedagogica
                      WHERE estudiante_id=? AND materia_id=? AND periodo_id=?""",
                   (estudiante_id, materia_id, periodo_id))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return dict(f) if f else None
+        return dict(fila) if fila else None
     def _guardar_rp(self, estudiante_id, materia_id, periodo_id, nota_rp, observacion="",
                      actividades_realizadas= "", docente_responsable="", fecha=None):
 
@@ -3779,11 +3779,11 @@ class ModuloCalificaciones(QWidget):
 
         entradas= self._notas_por_materia_id(estudiante_id, periodo_id, metodo)
         filas= []
-        for e in entradas:
-            rp= self._obtener_rp(estudiante_id, e["materia_id"], periodo_id) if dominicano else None
-            estado, rp_txt= self._estado_materia_texto(e["nota_final"], nota_minima, rp, dominicano)
-            filas.append({"materia_id": e["materia_id"], "materia_nombre": e["materia_nombre"],
-                           "nota_final": e["nota_final"], "estado": estado, "rp_txt": rp_txt})
+        for entrada in entradas:
+            rp= self._obtener_rp(estudiante_id, entrada["materia_id"], periodo_id) if dominicano else None
+            estado, rp_txt= self._estado_materia_texto(entrada["nota_final"], nota_minima, rp, dominicano)
+            filas.append({"materia_id": entrada["materia_id"], "materia_nombre": entrada["materia_nombre"],
+                           "nota_final": entrada["nota_final"], "estado": estado, "rp_txt": rp_txt})
         return filas
     #Área Técnica/Carrera son OBLIGATORIOS antes de generar un boletín si
     #la institución es puramente Politécnico o puramente Universidad (o
@@ -4071,7 +4071,7 @@ class ModuloCalificaciones(QWidget):
         metodo, nota_minima= self._obtener_metodo_y_minima(estudiante_id=estudiante_id)
         dominicano= es_sistema_dominicano(_sistema_calificacion_actual())
         filas= self._construir_filas_boletin(estudiante_id, periodo_id, metodo, nota_minima, dominicano)
-        notas= [f["nota_final"] for f in filas]
+        notas= [fila["nota_final"] for fila in filas]
         promedio_general= sum(notas) / len(notas) if notas else 0
         estudiante_txt= self.combo_estudiante_boletin.currentText()
         periodo_txt= self.combo_periodo_boletin.currentText()
@@ -4227,7 +4227,7 @@ class ModuloCalificaciones(QWidget):
                         est["id"], periodo_id, metodo, nota_minima, dominicano)
                     if not filas:
                         continue
-                    notas= [f["nota_final"] for f in filas]
+                    notas= [fila["nota_final"] for fila in filas]
                     promedio_general= sum(notas) / len(notas) if notas else 0
                     self._dibujar_boletin_pagina(_cvs, _ancho, _alto, institucion,
                                                  estudiante_txt, periodo_txt,
@@ -4276,7 +4276,7 @@ class ModuloCalificaciones(QWidget):
                 filas= self._construir_filas_boletin(est["id"], periodo_id, metodo, nota_minima, dominicano)
                 if not filas:
                     continue
-                notas= [f["nota_final"] for f in filas]
+                notas= [fila["nota_final"] for fila in filas]
                 promedio_general= sum(notas) / len(notas) if notas else 0
                 self._dibujar_boletin_pagina(cvs, ancho, alto, institucion, estudiante_txt, periodo_txt,
                                              filas, promedio_general, metodo, mostrar_rp=dominicano,
@@ -4294,8 +4294,8 @@ class ModuloCalificaciones(QWidget):
     def _tab_historial(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(16)
         #Área Técnica/Carrera van PRIMERO, en su propia fila (mismo orden que en las demás pestañas): así se elige área
         #técnica/carrera antes que Curso/Sección, y la pestaña crece en ALTO -no en ANCHO- cuando ambos combos están
         #visibles a la vez (institución "Personalizado").
@@ -4334,7 +4334,7 @@ class ModuloCalificaciones(QWidget):
         self.btn_filtros_historial= self._crear_boton_filtros("Filtrar por curso, sección, área técnica/carrera")
         self.btn_filtros_historial.clicked.connect(lambda: self._abrir_dialogo_filtros(self.dialogo_filtros_historial))
         fila_filtro_tecnico_historial.addWidget(self.btn_filtros_historial)
-        l.addLayout(fila_filtro_tecnico_historial)
+        disposicion.addLayout(fila_filtro_tecnico_historial)
         self.combo_curso_historial.currentIndexChanged.connect(self._actualizar_resumen_filtros_historial)
         self.combo_seccion_historial.currentIndexChanged.connect(self._actualizar_resumen_filtros_historial)
         self.combo_filtro_especialidad_historial.currentIndexChanged.connect(self._actualizar_resumen_filtros_historial)
@@ -4357,16 +4357,16 @@ class ModuloCalificaciones(QWidget):
         btn_generar.clicked.connect(self._generar_historial_click)
         fila.addWidget(btn_generar)
         fila.addStretch()
-        l.addLayout(fila)
-        l.addSpacing(8)
+        disposicion.addLayout(fila)
+        disposicion.addSpacing(8)
         #Búsqueda flexible: no distingue mayúsculas/minúsculas ni acentos (mismo diseño visual que la searchbar de
         #configuracion.py)
         self.in_buscar_historial= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_historial.setPlaceholderText(
             "Buscar por periodo, materia o estado (ignora tildes y mayúsculas)...")
         self.in_buscar_historial.texto_buscado.connect(self._aplicar_busqueda_historial)
-        l.addWidget(self.in_buscar_historial)
-        l.addSpacing(6)
+        disposicion.addWidget(self.in_buscar_historial)
+        disposicion.addSpacing(6)
 
 
         #Tabla estilo Omega POS (historial)
@@ -4386,11 +4386,11 @@ class ModuloCalificaciones(QWidget):
         self.tabla_historial.setWordWrap(True)
         self.tabla_historial.setMinimumHeight(340)
         self.tabla_historial.verticalHeader().setVisible(False)
-        l.addWidget(self.tabla_historial, 1)
+        disposicion.addWidget(self.tabla_historial, 1)
         self.paginacion_historial= ControlPaginacion(tamano_inicial=25)
         self.paginacion_historial.cambio.connect(self._repaginar_historial)
-        l.addWidget(self.paginacion_historial)
-        l.addSpacing(10)
+        disposicion.addWidget(self.paginacion_historial)
+        disposicion.addSpacing(10)
 
         agregar_boton_pantalla_completa(
             None,
@@ -4399,7 +4399,7 @@ class ModuloCalificaciones(QWidget):
 
         self.lbl_promedio_acumulado= QLabel("Promedio Acumulado General: --")
         self.lbl_promedio_acumulado.setObjectName("DescModulo")
-        l.addWidget(self.lbl_promedio_acumulado)
+        disposicion.addWidget(self.lbl_promedio_acumulado)
         panel_tendencia= _crear_panel_dashboard()
         lay_tendencia= panel_tendencia.layout()
         lbl_tendencia= QLabel("Tendencia por periodo:")
@@ -4407,7 +4407,7 @@ class ModuloCalificaciones(QWidget):
         lay_tendencia.addWidget(lbl_tendencia)
         self.sparkline_historial= LineaTendencia()
         lay_tendencia.addWidget(self.sparkline_historial, 1)
-        l.addWidget(panel_tendencia)
+        disposicion.addWidget(panel_tendencia)
         fila_acciones_hist= QHBoxLayout()
         btn_pdf= QPushButton("Exportar Historial Académico a PDF")
         btn_pdf.setIcon(icono_emoji("\uE002"))
@@ -4419,8 +4419,8 @@ class ModuloCalificaciones(QWidget):
                                                   titulo= "Detalle del Historial")
         self.tabla_historial.doubleClicked.connect(lambda *_: btn_detalle_hist.click())
         fila_acciones_hist.addStretch()
-        l.addLayout(fila_acciones_hist)
-        l.addStretch(1)
+        disposicion.addLayout(fila_acciones_hist)
+        disposicion.addStretch(1)
         return w
     def _cargar_estudiantes_historial(self):
 
@@ -4474,8 +4474,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_historial.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_historial.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_especialidad_historial, "No Área Técnica")
             idx= self.combo_filtro_especialidad_historial.findData(actual)
@@ -4493,8 +4493,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_historial.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_historial.addItem(fila["nombre"], fila["id"])
             conn.close()
             self._agregar_opcion_ninguna(self.combo_filtro_carrera_historial, "No Carrera")
             idx= self.combo_filtro_carrera_historial.findData(actual)
@@ -4659,12 +4659,12 @@ class ModuloCalificaciones(QWidget):
     def _tab_desempeno_individual(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(14)
         aviso= QLabel("Calificación cualitativa por Competencias Fundamentales.")
         aviso.setWordWrap(True)
         aviso.setObjectName("DescModulo")
-        l.addWidget(aviso)
+        disposicion.addWidget(aviso)
         self.lbl_filtro_especialidad_desempeno, self.combo_filtro_especialidad_desempeno,\
             self.lbl_filtro_carrera_desempeno, self.combo_filtro_carrera_desempeno=\
             self._crear_combos_filtro_tecnico(self._cargar_estudiantes_desempeno)
@@ -4674,7 +4674,7 @@ class ModuloCalificaciones(QWidget):
                       self._cargar_estudiantes_desempeno()))
         self.combo_seccion_desempeno= QComboBox()
         self.combo_seccion_desempeno.currentIndexChanged.connect(self._cargar_estudiantes_desempeno)
-        self._reemplazar_por_filtros(l, "desempeno", "Filtros de Desempeño Individual",
+        self._reemplazar_por_filtros(disposicion, "desempeno", "Filtros de Desempeño Individual",
             [(self.lbl_filtro_especialidad_desempeno, self.combo_filtro_especialidad_desempeno),
              (self.lbl_filtro_carrera_desempeno, self.combo_filtro_carrera_desempeno),
              ("Curso:", self.combo_curso_desempeno),
@@ -4699,8 +4699,8 @@ class ModuloCalificaciones(QWidget):
         ajustar_combo_ancho_seguro(self.combo_seccion_desempeno, min_len=10)
         ajustar_combo_ancho_seguro(self.combo_estudiante_desempeno, min_len=13)
         ajustar_combo_ancho_seguro(self.combo_periodo_desempeno, min_len=6)
-        l.addLayout(fila)
-        l.addSpacing(8)
+        disposicion.addLayout(fila)
+        disposicion.addSpacing(8)
 
         self.tabla_desempeno= QTableWidget(len(COMPETENCIAS_FUNDAMENTALES_RD), 3)
         aplicar_estructura_tabla(self.tabla_desempeno)
@@ -4738,8 +4738,8 @@ class ModuloCalificaciones(QWidget):
             self.tabla_desempeno.setCellWidget(i, 2, in_obs)
             self._campos_observacion_desempeno.append(in_obs)
             self.tabla_desempeno.setRowHeight(i, 40)
-        l.addWidget(self.tabla_desempeno, 1)
-        l.addSpacing(10)
+        disposicion.addWidget(self.tabla_desempeno, 1)
+        disposicion.addSpacing(10)
 
         self.lbl_resumen_desempeno= QLabel("")
         self.lbl_resumen_desempeno.setObjectName("DescModulo")
@@ -4764,7 +4764,7 @@ class ModuloCalificaciones(QWidget):
         columna_resumen.addWidget(self.lbl_resumen_desempeno)
         columna_resumen.addStretch()
         fila_resumen.addLayout(columna_resumen, 1)
-        l.addWidget(panel_resumen_desempeno)
+        disposicion.addWidget(panel_resumen_desempeno)
         self._actualizar_resumen_desempeno()
 
         leyenda= QLabel(
@@ -4772,15 +4772,15 @@ class ModuloCalificaciones(QWidget):
             "'Sin Evaluar (NE)' significa que ese renglón aún no se ha calificado.")
         leyenda.setWordWrap(True)
         leyenda.setObjectName("DescModulo")
-        l.addWidget(leyenda)
+        disposicion.addWidget(leyenda)
 
         btn_guardar= QPushButton("Guardar Desempeño Individual")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
         btn_guardar.setObjectName("BtnAccionAgregar")
         btn_guardar.clicked.connect(self._guardar_desempeno)
-        l.addWidget(btn_guardar)
-        l.addStretch(1)
+        disposicion.addWidget(btn_guardar)
+        disposicion.addStretch(1)
         return w
 
     #Da un color distintivo a cada nivel para que las filas dejen de verse todas
@@ -4859,12 +4859,12 @@ class ModuloCalificaciones(QWidget):
         permitidas= self._permitidas_secciones()
         candidatos= self._filtrar_por_tecnico(self._estudiantes_activos(),
             self.combo_filtro_especialidad_desempeno, self.combo_filtro_carrera_desempeno)
-        for f in candidatos:
-            if seccion_id is not None and f["seccion_id"] != seccion_id:
+        for candidato in candidatos:
+            if seccion_id is not None and candidato["seccion_id"] != seccion_id:
                 continue
-            if permitidas is not None and f["seccion_id"] not in permitidas:
+            if permitidas is not None and candidato["seccion_id"] not in permitidas:
                 continue
-            self.combo_estudiante_desempeno.addItem(f"{f['nombre']} {f['apellidos'] or ''}", f["id"])
+            self.combo_estudiante_desempeno.addItem(f"{candidato['nombre']} {candidato['apellidos'] or ''}", candidato["id"])
         _actualizar_estado_combo_estudiante(self.combo_curso_desempeno, self.combo_seccion_desempeno,
                                              self.combo_estudiante_desempeno)
 
@@ -4894,7 +4894,7 @@ class ModuloCalificaciones(QWidget):
         c= conn.cursor()
         c.execute("""SELECT competencia, nivel, observacion FROM desempeno_individual
                      WHERE estudiante_id=? AND periodo_id=?""", (estudiante_id, periodo_id))
-        guardados= {f["competencia"]: (f["nivel"], f["observacion"]) for f in c.fetchall()}
+        guardados= {fila["competencia"]: (fila["nivel"], fila["observacion"]) for fila in c.fetchall()}
         conn.close()
         for i, competencia in enumerate(COMPETENCIAS_FUNDAMENTALES_RD):
             if competencia in guardados:
@@ -4959,13 +4959,13 @@ class ModuloCalificaciones(QWidget):
     def _tab_seguimiento_rd(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(16)
         aviso= QLabel("Identifica de un vistazo a quién le falta calificar, Recuperación Pedagógica "
                        "o Desempeño Individual.")
         aviso.setWordWrap(True)
         aviso.setObjectName("DescModulo")
-        l.addWidget(aviso)
+        disposicion.addWidget(aviso)
 
         self.lbl_filtro_especialidad_seguimiento, self.combo_filtro_especialidad_seguimiento,\
             self.lbl_filtro_carrera_seguimiento, self.combo_filtro_carrera_seguimiento=\
@@ -4982,7 +4982,7 @@ class ModuloCalificaciones(QWidget):
         self.combo_filtro_estado_seguimiento.addItems(self.ESTADOS_SEGUIMIENTO)
         conectar_tooltip_seleccion(self.combo_filtro_estado_seguimiento, "Filtrar por estado del plan de seguimiento")
 
-        self._reemplazar_por_filtros(l, "seguimiento", "Filtros de Seguimiento",
+        self._reemplazar_por_filtros(disposicion, "seguimiento", "Filtros de Seguimiento",
             [(self.lbl_filtro_especialidad_seguimiento, self.combo_filtro_especialidad_seguimiento),
              (self.lbl_filtro_carrera_seguimiento, self.combo_filtro_carrera_seguimiento),
              ("Nivel Educativo:", self.combo_filtro_nivel_seguimiento),
@@ -5014,7 +5014,7 @@ class ModuloCalificaciones(QWidget):
         btn_generar.clicked.connect(self._generar_seguimiento)
         fila.addWidget(btn_generar)
         fila.addStretch()
-        l.addLayout(fila)
+        disposicion.addLayout(fila)
 
         #--- Tarjetas de alerta dinámicas: un vistazo instantáneo de la sección ---
         self.tarjetas_seguimiento= {}
@@ -5049,25 +5049,25 @@ class ModuloCalificaciones(QWidget):
         scroll_tarjetas.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         scroll_tarjetas.setWidget(panel_tarjetas_seguimiento)
         scroll_tarjetas.setFixedHeight(panel_tarjetas_seguimiento.sizeHint().height() + 8)
-        l.addWidget(scroll_tarjetas)
+        disposicion.addWidget(scroll_tarjetas)
 
         #--- Barra proporcional: la 'forma' completa de la sección de un vistazo ---
         self.barra_seguimiento= BarraSegmentada()
-        l.addWidget(self.barra_seguimiento)
+        disposicion.addWidget(self.barra_seguimiento)
 
         self.lbl_resumen_seguimiento= QLabel("")
         self.lbl_resumen_seguimiento.setWordWrap(True)
         self.lbl_resumen_seguimiento.setObjectName("DescModulo")
-        l.addWidget(self.lbl_resumen_seguimiento)
-        l.addSpacing(8)
+        disposicion.addWidget(self.lbl_resumen_seguimiento)
+        disposicion.addSpacing(8)
 
         #--- Búsqueda flexible: no distingue mayúsculas/minúsculas ni acentos --- (mismo diseño visual que la searchbar
         #de configuracion.py)
         self.in_buscar_seguimiento= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_seguimiento.setPlaceholderText("Buscar estudiante o materia (ignora tildes y mayúsculas)...")
         self.in_buscar_seguimiento.texto_buscado.connect(self._aplicar_busqueda_seguimiento)
-        l.addWidget(self.in_buscar_seguimiento)
-        l.addSpacing(6)
+        disposicion.addWidget(self.in_buscar_seguimiento)
+        disposicion.addSpacing(6)
 
 
         self.tabla_seguimiento= QTableWidget(0, 6)
@@ -5086,12 +5086,12 @@ class ModuloCalificaciones(QWidget):
         self.tabla_seguimiento.setAlternatingRowColors(True)
         self.tabla_seguimiento.verticalHeader().setVisible(False)
         self.tabla_seguimiento.setMinimumHeight(220)
-        l.addWidget(self.tabla_seguimiento, 1)
+        disposicion.addWidget(self.tabla_seguimiento, 1)
 
         self.paginacion_seguimiento= ControlPaginacion(tamano_inicial=25)
         self.paginacion_seguimiento.cambio.connect(self._repaginar_seguimiento)
-        l.addWidget(self.paginacion_seguimiento)
-        l.addSpacing(14)
+        disposicion.addWidget(self.paginacion_seguimiento)
+        disposicion.addSpacing(14)
 
         agregar_boton_pantalla_completa(
             None,
@@ -5101,7 +5101,7 @@ class ModuloCalificaciones(QWidget):
 
         lbl_incompleto= QLabel("Desempeño Individual (Competencias Fundamentales) incompleto en este periodo:")
         lbl_incompleto.setObjectName("DescModulo")
-        l.addWidget(lbl_incompleto)
+        disposicion.addWidget(lbl_incompleto)
         self.tabla_desempeno_incompleto= QTableWidget(0, 2)
         aplicar_estructura_tabla(self.tabla_desempeno_incompleto)
         self.tabla_desempeno_incompleto.setHorizontalHeaderLabels(
@@ -5115,8 +5115,8 @@ class ModuloCalificaciones(QWidget):
         self.tabla_desempeno_incompleto.setAlternatingRowColors(True)
         self.tabla_desempeno_incompleto.verticalHeader().setVisible(False)
         self.tabla_desempeno_incompleto.setMinimumHeight(130)
-        l.addWidget(self.tabla_desempeno_incompleto, 1)
-        l.addStretch(1)
+        disposicion.addWidget(self.tabla_desempeno_incompleto, 1)
+        disposicion.addStretch(1)
 
         return w
 
@@ -5173,15 +5173,15 @@ class ModuloCalificaciones(QWidget):
                       AND estado_publicacion != 'Borrador'""",
                   (periodo_id, *estudiante_ids))
         agrupado= {}
-        for f in c.fetchall():
-            clave= (f["estudiante_id"], f["materia_id"])
-            agrupado.setdefault(clave, []).append({"valor": f["valor"], "peso": f["peso"]})
+        for fila in c.fetchall():
+            clave= (fila["estudiante_id"], fila["materia_id"])
+            agrupado.setdefault(clave, []).append({"valor": fila["valor"], "peso": fila["peso"]})
         notas= {clave: calcular_nota_final(calif, metodo) for clave, calif in agrupado.items()}
 
         c.execute(f"""SELECT estudiante_id, materia_id, nota_rp FROM recuperacion_pedagogica
                       WHERE periodo_id=? AND estudiante_id IN ({marcadores})""",
                   (periodo_id, *estudiante_ids))
-        rp= {(f["estudiante_id"], f["materia_id"]): f["nota_rp"] for f in c.fetchall()}
+        rp= {(fila["estudiante_id"], fila["materia_id"]): fila["nota_rp"] for fila in c.fetchall()}
         conn.close()
         return notas, rp
 
@@ -5209,12 +5209,12 @@ class ModuloCalificaciones(QWidget):
         c.execute("""SELECT id, nombre, apellidos, especialidad_id, carrera_id, numero_lista FROM estudiantes
                      WHERE seccion_id=? AND estado='Activo'
                      ORDER BY numero_lista IS NULL, numero_lista, apellidos, nombre""", (seccion_id,))
-        estudiantes= self._filtrar_por_tecnico([dict(f) for f in c.fetchall()],
+        estudiantes= self._filtrar_por_tecnico([dict(fila) for fila in c.fetchall()],
             self.combo_filtro_especialidad_seguimiento, self.combo_filtro_carrera_seguimiento)
         conn.close()
         materias= self._materias_de_seccion(seccion_id)
         if permitidas_materias is not None:
-            materias= [m for m in materias if m["id"] in permitidas_materias]
+            materias= [materia for materia in materias if materia["id"] in permitidas_materias]
 
         filtro_estado= self.combo_filtro_estado_seguimiento.currentText()
         contadores= {e: 0 for e in self.ESTADOS_SEGUIMIENTO if e != "Todos"}
@@ -5344,7 +5344,7 @@ class ModuloCalificaciones(QWidget):
                                 AND estudiante_id IN ({marcadores})
                           GROUP BY estudiante_id""",
                       (periodo_id, NIVEL_SIN_EVALUAR_RD, *estudiante_ids))
-            conteos= {f["estudiante_id"]: f["n"] for f in c.fetchall()}
+            conteos= {fila["estudiante_id"]: fila["n"] for fila in c.fetchall()}
             conn.close()
         filas= []
         for est in estudiantes:
@@ -5382,19 +5382,19 @@ class ModuloCalificaciones(QWidget):
     def _tab_evaluaciones_finales(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(16)
         aviso= QLabel("Cascada del año: Nota del Año Completiva Extraordinaria Especial. "
                        "AcaDeXI calcula cada etapa; tú decides si pasa a la siguiente y la decisión final.")
         aviso.setWordWrap(True)
         aviso.setObjectName("DescModulo")
-        l.addWidget(aviso)
+        disposicion.addWidget(aviso)
 
         panel_cascada= _crear_panel_dashboard()
         lay_cascada= panel_cascada.layout()
         self.timeline_finales= TimelineEvaluacion()
         lay_cascada.addWidget(self.timeline_finales, 1)
-        l.addWidget(panel_cascada)
+        disposicion.addWidget(panel_cascada)
 
         self.lbl_filtro_especialidad_finales, self.combo_filtro_especialidad_finales,\
             self.lbl_filtro_carrera_finales, self.combo_filtro_carrera_finales=\
@@ -5407,7 +5407,7 @@ class ModuloCalificaciones(QWidget):
         self.combo_seccion_finales= QComboBox()
         self.combo_seccion_finales.currentIndexChanged.connect(self._cargar_estudiantes_finales)
 
-        self._reemplazar_por_filtros(l, "finales", "Filtros de Evaluaciones Finales",
+        self._reemplazar_por_filtros(disposicion, "finales", "Filtros de Evaluaciones Finales",
             [(self.lbl_filtro_especialidad_finales, self.combo_filtro_especialidad_finales),
              (self.lbl_filtro_carrera_finales, self.combo_filtro_carrera_finales),
              ("Curso:", self.combo_curso_finales),
@@ -5436,16 +5436,16 @@ class ModuloCalificaciones(QWidget):
         btn_generar.setObjectName("BtnAccionAjustar")
         btn_generar.clicked.connect(self._generar_evaluaciones_finales)
         fila.addWidget(btn_generar)
-        l.addLayout(fila)
-        l.addSpacing(8)
+        disposicion.addLayout(fila)
+        disposicion.addSpacing(8)
 
         self.in_buscar_finales= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_finales.setPlaceholderText(
             "Buscar por materia, etapa o resultado (ignora tildes y mayúsculas)...")
         self.in_buscar_finales.texto_buscado.connect(
             lambda t: self._filtrar_tabla_texto(self.tabla_finales, t, (0, 2, 5)))
-        l.addWidget(self.in_buscar_finales)
-        l.addSpacing(6)
+        disposicion.addWidget(self.in_buscar_finales)
+        disposicion.addSpacing(6)
 
 
         self.tabla_finales= QTableWidget(0, 6)
@@ -5464,7 +5464,7 @@ class ModuloCalificaciones(QWidget):
         self.tabla_finales.setAlternatingRowColors(True)
         self.tabla_finales.verticalHeader().setVisible(False)
         self.tabla_finales.setMinimumHeight(200)
-        l.addWidget(self.tabla_finales, 1)
+        disposicion.addWidget(self.tabla_finales, 1)
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_finales, self.tabla_finales],
@@ -5488,7 +5488,7 @@ class ModuloCalificaciones(QWidget):
         btn_especial.clicked.connect(lambda: self._registrar_evaluacion_final("especial"))
         fila_botones.addWidget(btn_especial)
         fila_botones.addStretch()
-        l.addLayout(fila_botones)
+        disposicion.addLayout(fila_botones)
 
         self.lbl_resumen_finales= QLabel("")
         self.lbl_resumen_finales.setWordWrap(True)
@@ -5501,7 +5501,7 @@ class ModuloCalificaciones(QWidget):
         columna_resumen_finales.addWidget(self.lbl_resumen_finales)
         columna_resumen_finales.addStretch()
         fila_resumen_finales.addLayout(columna_resumen_finales, 1)
-        l.addLayout(fila_resumen_finales)
+        disposicion.addLayout(fila_resumen_finales)
 
         fila_decision= QHBoxLayout()
         fila_decision.addWidget(QLabel("Decisión final del año para este estudiante:"))
@@ -5530,8 +5530,8 @@ class ModuloCalificaciones(QWidget):
         lay_frame_form_decision.addLayout(fila_decision)
         lay_frame_form_decision.addWidget(self.in_observacion_decision)
         lay_frame_form_decision.addWidget(nota_decision)
-        self._envolver_en_panel(l, "Registrar Decisión Final de Promoción", frame_form_decision)
-        l.addStretch(1)
+        self._envolver_en_panel(disposicion, "Registrar Decisión Final de Promoción", frame_form_decision)
+        disposicion.addStretch(1)
         return w
 
     def _cargar_secciones_finales(self):
@@ -5563,9 +5563,9 @@ class ModuloCalificaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT anio_academico FROM configuracion WHERE id=1")
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return (f["anio_academico"] if f and f["anio_academico"] else "") or ""
+        return (fila["anio_academico"] if fila and fila["anio_academico"] else "") or ""
 
     def _periodos_del_anio(self, anio_academico):
 
@@ -5595,7 +5595,7 @@ class ModuloCalificaciones(QWidget):
                      WHERE estudiante_id=? AND materia_id=? AND periodo_id=?
                      AND estado_publicacion != 'Borrador'""",
                   (estudiante_id, materia_id, periodo_id))
-        calif= [{"valor": f["valor"], "peso": f["peso"]} for f in c.fetchall()]
+        calif= [{"valor": fila["valor"], "peso": fila["peso"]} for fila in c.fetchall()]
         conn.close()
         rp= self._obtener_rp(estudiante_id, materia_id, periodo_id)
         if rp is not None:
@@ -5610,8 +5610,8 @@ class ModuloCalificaciones(QWidget):
 
         periodos= self._periodos_del_anio(anio_academico)
         notas= []
-        for p in periodos:
-            n= self._nota_periodo_efectiva(estudiante_id, materia_id, p["id"], metodo)
+        for periodo in periodos:
+            n= self._nota_periodo_efectiva(estudiante_id, materia_id, periodo["id"], metodo)
             if n is not None:
                 notas.append(n)
         if not notas:
@@ -5625,9 +5625,9 @@ class ModuloCalificaciones(QWidget):
         c.execute(f"""SELECT {columna} FROM {tabla}
                      WHERE estudiante_id=? AND materia_id=? AND anio_academico=?""",
                   (estudiante_id, materia_id, anio_academico))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return f[columna] if f else None
+        return fila[columna] if fila else None
 
     def _obtener_evaluacion_final_completa(self, tabla, columna, estudiante_id, materia_id, anio_academico):
 
@@ -5635,11 +5635,11 @@ class ModuloCalificaciones(QWidget):
         c= conn.cursor()
         c.execute(f"SELECT * FROM {tabla} WHERE estudiante_id=? AND materia_id=? AND anio_academico=?",
                   (estudiante_id, materia_id, anio_academico))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if not f:
+        if not fila:
             return {}
-        d= dict(f)
+        d= dict(fila)
         d["nota"]= d.get(columna)
         return d
 
@@ -5745,7 +5745,7 @@ class ModuloCalificaciones(QWidget):
         materias= self._materias_de_seccion(seccion_id)
         permitidas_materias= obtener_materias_permitidas(self.main_window)
         if permitidas_materias is not None:
-            materias= [m for m in materias if m["id"] in permitidas_materias]
+            materias= [materia for materia in materias if materia["id"] in permitidas_materias]
 
         self._resultados_finales_actuales= []
         pendientes= []
@@ -5871,11 +5871,11 @@ class ModuloCalificaciones(QWidget):
         c= conn.cursor()
         c.execute("""SELECT decision, observacion FROM decision_promocion
                      WHERE estudiante_id=? AND anio_academico=?""", (estudiante_id, anio))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        idx= self.combo_decision_final.findText(f["decision"] if f else "Pendiente")
+        idx= self.combo_decision_final.findText(fila["decision"] if fila else "Pendiente")
         self.combo_decision_final.setCurrentIndex(idx if idx >= 0 else 0)
-        self.in_observacion_decision.setText((f["observacion"] if f else "") or "")
+        self.in_observacion_decision.setText((fila["observacion"] if fila else "") or "")
 
     def _guardar_decision_promocion(self):
 
@@ -5893,7 +5893,7 @@ class ModuloCalificaciones(QWidget):
         #su etapa actual, tomada de la última vez que se pulsó "🔄 Calcular" en esta pestaña para este estudiante/año.
         pendientes_actuales= getattr(self, "_resultados_finales_actuales", None) or []
         materias_pendientes= ", ".join(
-            r["materia_nombre"] for r in pendientes_actuales if r.get("aprobado") is False)
+            pendientes_actuale["materia_nombre"] for pendientes_actuale in pendientes_actuales if pendientes_actuale.get("aprobado") is False)
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("""INSERT INTO decision_promocion
@@ -5916,20 +5916,20 @@ class ModuloCalificaciones(QWidget):
     def _tab_curriculo_rd(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(16)
         aviso= QLabel("Define aquí las Competencias Específicas de cada materia+grado, con sus "
                        "Indicadores de Logro. Aparecerán al registrar evidencias y en Notas por Competencia.")
         aviso.setWordWrap(True)
         aviso.setObjectName("DescModulo")
-        l.addWidget(aviso)
+        disposicion.addWidget(aviso)
 
         self._puede_editar_curriculo= tiene_acceso_gerencial(self.main_window)
         if not self._puede_editar_curriculo:
             solo_lectura= QLabel("Tu rol solo puede consultar el currículo.")
             solo_lectura.setWordWrap(True)
             solo_lectura.setObjectName("DescModulo")
-            l.addWidget(solo_lectura)
+            disposicion.addWidget(solo_lectura)
 
         fila_filtro= QHBoxLayout()
         self.combo_materia_curriculo= QComboBox()
@@ -5944,16 +5944,16 @@ class ModuloCalificaciones(QWidget):
         fila_filtro.addWidget(self.combo_grado_curriculo)
         ajustar_combo_ancho_seguro(self.combo_materia_curriculo, self.combo_grado_curriculo)
         fila_filtro.addStretch()
-        l.addLayout(fila_filtro)
-        l.addSpacing(8)
+        disposicion.addLayout(fila_filtro)
+        disposicion.addSpacing(8)
 
         self.in_buscar_curriculo= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_curriculo.setPlaceholderText(
             "Buscar por código, descripción o competencia fundamental (ignora tildes y mayúsculas)...")
         self.in_buscar_curriculo.texto_buscado.connect(
             lambda t: self._filtrar_tabla_texto(self.tabla_curriculo, t, (0, 1, 2)))
-        l.addWidget(self.in_buscar_curriculo)
-        l.addSpacing(6)
+        disposicion.addWidget(self.in_buscar_curriculo)
+        disposicion.addSpacing(6)
 
 
         self.tabla_curriculo= QTableWidget(0, 5)
@@ -5972,8 +5972,8 @@ class ModuloCalificaciones(QWidget):
         self.tabla_curriculo.setAlternatingRowColors(True)
         self.tabla_curriculo.verticalHeader().setVisible(False)
         self.tabla_curriculo.setMinimumHeight(340)
-        l.addWidget(self.tabla_curriculo, 1)
-        l.addSpacing(12)
+        disposicion.addWidget(self.tabla_curriculo, 1)
+        disposicion.addSpacing(12)
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_curriculo, self.tabla_curriculo],
@@ -6042,8 +6042,8 @@ class ModuloCalificaciones(QWidget):
         lay_frame_form_ce.setSpacing(10)
         lay_frame_form_ce.addLayout(fila_form)
         lay_frame_form_ce.addLayout(fila_botones_ce)
-        self._envolver_en_panel(l, "Añadir Competencia Específica", frame_form_ce)
-        l.addStretch(1)
+        self._envolver_en_panel(disposicion, "Añadir Competencia Específica", frame_form_ce)
+        disposicion.addStretch(1)
         return w
 
     def _cargar_materias_curriculo(self):
@@ -6064,8 +6064,8 @@ class ModuloCalificaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM grados ORDER BY orden, nombre")
-            for f in c.fetchall():
-                self.combo_grado_curriculo.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_grado_curriculo.addItem(fila["nombre"], fila["id"])
             conn.close()
 
     def _cargar_competencias_curriculo(self):
@@ -6212,15 +6212,15 @@ class ModuloCalificaciones(QWidget):
     def _tab_competencias_especificas(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(16)
         aviso= QLabel("Notas por Competencia Específica: se calculan automáticamente promediando (según "
                        "el método de cálculo configurado) las evidencias que vinculaste a cada CE en la "
                        "pestaña Registrar Calificación. Puedes agregar una observación por competencia; "
                        "la nota se recalcula con el botón .")
         aviso.setWordWrap(True)
         aviso.setObjectName("DescModulo")
-        l.addWidget(aviso)
+        disposicion.addWidget(aviso)
 
         self.lbl_filtro_especialidad_competencias, self.combo_filtro_especialidad_competencias,\
             self.lbl_filtro_carrera_competencias, self.combo_filtro_carrera_competencias=\
@@ -6234,7 +6234,7 @@ class ModuloCalificaciones(QWidget):
         self.combo_seccion_competencias= QComboBox()
         self.combo_seccion_competencias.currentIndexChanged.connect(self._cargar_estudiantes_competencias)
 
-        self._reemplazar_por_filtros(l, "competencias", "Filtros de Notas por Competencia",
+        self._reemplazar_por_filtros(disposicion, "competencias", "Filtros de Notas por Competencia",
             [(self.lbl_filtro_especialidad_competencias, self.combo_filtro_especialidad_competencias),
              (self.lbl_filtro_carrera_competencias, self.combo_filtro_carrera_competencias),
              ("Curso:", self.combo_curso_competencias),
@@ -6270,16 +6270,16 @@ class ModuloCalificaciones(QWidget):
         btn_calcular.setObjectName("BtnAccionAjustar")
         btn_calcular.clicked.connect(self._generar_notas_competencias)
         fila_filtro.addWidget(btn_calcular, 1, 2, 1, 2)
-        l.addLayout(fila_filtro)
-        l.addSpacing(8)
+        disposicion.addLayout(fila_filtro)
+        disposicion.addSpacing(8)
 
         self.in_buscar_competencias= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_competencias.setPlaceholderText(
             "Buscar por competencia, nivel u observación (ignora tildes y mayúsculas)...")
         self.in_buscar_competencias.texto_buscado.connect(
             lambda t: self._filtrar_tabla_texto(self.tabla_competencias, t, (0, 2, 5)))
-        l.addWidget(self.in_buscar_competencias)
-        l.addSpacing(6)
+        disposicion.addWidget(self.in_buscar_competencias)
+        disposicion.addSpacing(6)
 
 
         self.tabla_competencias= QTableWidget(0, 6)
@@ -6296,7 +6296,7 @@ class ModuloCalificaciones(QWidget):
         self.tabla_competencias.setAlternatingRowColors(True)
         self.tabla_competencias.verticalHeader().setVisible(False)
         self.tabla_competencias.setMinimumHeight(340)
-        l.addWidget(self.tabla_competencias, 1)
+        disposicion.addWidget(self.tabla_competencias, 1)
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_competencias, self.tabla_competencias],
@@ -6319,14 +6319,14 @@ class ModuloCalificaciones(QWidget):
         lay_frame_form_obs_competencia= QVBoxLayout(frame_form_obs_competencia)
         lay_frame_form_obs_competencia.setContentsMargins(0, 0, 0, 0)
         lay_frame_form_obs_competencia.addLayout(fila_obs)
-        self._envolver_en_panel(l, "Registrar Observación de Competencia", frame_form_obs_competencia)
+        self._envolver_en_panel(disposicion, "Registrar Observación de Competencia", frame_form_obs_competencia)
         self.tabla_competencias.itemSelectionChanged.connect(self._al_seleccionar_fila_competencia)
 
         self.lbl_alerta_curricular= QLabel("")
         self.lbl_alerta_curricular.setWordWrap(True)
         self.lbl_alerta_curricular.setObjectName("DescModulo")
-        l.addWidget(self.lbl_alerta_curricular)
-        l.addStretch(1)
+        disposicion.addWidget(self.lbl_alerta_curricular)
+        disposicion.addStretch(1)
         return w
 
     def _cargar_secciones_competencias(self):
@@ -6386,7 +6386,7 @@ class ModuloCalificaciones(QWidget):
                              WHERE calificacion_competencia.competencia_id=? AND calificaciones.estudiante_id=?
                              AND calificaciones.periodo_id=? AND calificaciones.estado_publicacion != 'Borrador'
                              ORDER BY calificaciones.id""", (comp["id"], estudiante_id, periodo_id))
-                evidencias= [dict(f) for f in c.fetchall()]
+                evidencias= [dict(fila) for fila in c.fetchall()]
                 nota= calcular_nota_final(evidencias, metodo) if evidencias else None
 
                 c.execute("""SELECT observacion, modo_nota, fecha_evaluacion FROM competencia_periodo
@@ -6482,15 +6482,15 @@ class ModuloCalificaciones(QWidget):
     def _tab_compartir_calificaciones(self, w=None):
 
         w= w if w is not None else QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        disposicion= QVBoxLayout(w)
+        disposicion.setSpacing(14)
         aviso= QLabel("Comparte calificaciones entre docentes: si tú impartes una materia, expórtala "
                        "aquí para dársela al profesor titular de la sección. Si eres titular, importa el "
                        "archivo que te compartieron para completar el boletín de tus estudiantes con "
                        "materias que no impartes tú. Las notas importadas quedan de solo lectura.")
         aviso.setWordWrap(True)
         aviso.setObjectName("DescModulo")
-        l.addWidget(aviso)
+        disposicion.addWidget(aviso)
 
         self.lbl_filtro_especialidad_compartir, self.combo_filtro_especialidad_compartir,\
             self.lbl_filtro_carrera_compartir, self.combo_filtro_carrera_compartir=\
@@ -6504,7 +6504,7 @@ class ModuloCalificaciones(QWidget):
             lambda: self._filtrar_seccion_por_curso_corto(self.combo_curso_compartir, self.combo_seccion_compartir))
         self.combo_seccion_compartir= QComboBox()
 
-        self._reemplazar_por_filtros(l, "compartir", "Filtros de Compartir Calificaciones",
+        self._reemplazar_por_filtros(disposicion, "compartir", "Filtros de Compartir Calificaciones",
             [(self.lbl_filtro_especialidad_compartir, self.combo_filtro_especialidad_compartir),
              (self.lbl_filtro_carrera_compartir, self.combo_filtro_carrera_compartir),
              ("Curso:", self.combo_curso_compartir),
@@ -6537,7 +6537,7 @@ class ModuloCalificaciones(QWidget):
         lay_frame_form_exportar.setContentsMargins(0, 0, 0, 0)
         lay_frame_form_exportar.addLayout(fila_exp)
         lay_frame_form_exportar.addWidget(btn_exportar)
-        self._envolver_en_panel(l, "Exportar mis calificaciones", frame_form_exportar)
+        self._envolver_en_panel(disposicion, "Exportar mis calificaciones", frame_form_exportar)
 
         #--- Importar ---
         info_imp= QLabel("Los estudiantes se emparejan por matrícula (el dato oficial), no por nombre, "
@@ -6554,18 +6554,18 @@ class ModuloCalificaciones(QWidget):
         lay_frame_form_importar.setContentsMargins(0, 0, 0, 0)
         lay_frame_form_importar.addWidget(info_imp)
         lay_frame_form_importar.addWidget(btn_importar)
-        self._envolver_en_panel(l, "Importar calificaciones que me compartieron", frame_form_importar)
+        self._envolver_en_panel(disposicion, "Importar calificaciones que me compartieron", frame_form_importar)
 
         lbl_hist= QLabel("Paquetes ya importados en este equipo")
         lbl_hist.setStyleSheet("font-weight: 600; margin-top: 6px;")
-        l.addWidget(lbl_hist)
+        disposicion.addWidget(lbl_hist)
         self.in_buscar_paquetes= SearchBarCalificaciones(self, delay_ms=200)
         self.in_buscar_paquetes.setPlaceholderText(
             "Buscar por materia, sección, periodo o docente (ignora tildes y mayúsculas)...")
         self.in_buscar_paquetes.texto_buscado.connect(
             lambda t: self._filtrar_tabla_texto(self.tabla_paquetes, t, (0, 1, 2, 3)))
-        l.addWidget(self.in_buscar_paquetes)
-        l.addSpacing(6)
+        disposicion.addWidget(self.in_buscar_paquetes)
+        disposicion.addSpacing(6)
 
 
         self.tabla_paquetes= QTableWidget(0, 6)
@@ -6579,8 +6579,8 @@ class ModuloCalificaciones(QWidget):
         self.tabla_paquetes.setAlternatingRowColors(True)
         self.tabla_paquetes.verticalHeader().setVisible(False)
         self.tabla_paquetes.setMinimumHeight(180)
-        l.addWidget(self.tabla_paquetes, 1)
-        l.addSpacing(8)
+        disposicion.addWidget(self.tabla_paquetes, 1)
+        disposicion.addSpacing(8)
 
         agregar_boton_pantalla_completa(
             None, [self.in_buscar_paquetes, self.tabla_paquetes],
@@ -6593,7 +6593,7 @@ class ModuloCalificaciones(QWidget):
         btn_deshacer.setToolTip("Elimina TODAS las notas que entraron con el paquete seleccionado "
                                  "(por si se importó el archivo equivocado).")
         btn_deshacer.clicked.connect(self._deshacer_paquete_importado)
-        l.addWidget(btn_deshacer)
+        disposicion.addWidget(btn_deshacer)
         return w
 
     def _cargar_secciones_compartir(self):
@@ -6627,7 +6627,7 @@ class ModuloCalificaciones(QWidget):
                      WHERE estudiantes.seccion_id=? AND calificaciones.materia_id=?
                      AND calificaciones.periodo_id=? AND calificaciones.estado_publicacion != 'Borrador'""",
                   (seccion_id, materia_id, periodo_id))
-        filas_calif= self._filtrar_por_tecnico([dict(f) for f in c.fetchall()],
+        filas_calif= self._filtrar_por_tecnico([dict(fila) for fila in c.fetchall()],
             self.combo_filtro_especialidad_compartir, self.combo_filtro_carrera_compartir,
             campo_especialidad= "_est_especialidad_id", campo_carrera="_est_carrera_id")
         if not filas_calif:
@@ -6644,7 +6644,7 @@ class ModuloCalificaciones(QWidget):
                          JOIN competencias_especificas
                             ON calificacion_competencia.competencia_id = competencias_especificas.id
                          WHERE calificacion_competencia.calificacion_id=?""", (f["id"],))
-            f["competencias"]= [dict(r) for r in c.fetchall()]
+            f["competencias"]= [dict(fila) for fila in c.fetchall()]
         c.execute("SELECT nombre FROM materias WHERE id=?", (materia_id,))
         materia_nombre= (c.fetchone() or {"nombre": "Materia"})["nombre"]
         c.execute("""SELECT (grados.nombre || ' - ' || secciones.nombre) as etiqueta
@@ -6686,8 +6686,8 @@ class ModuloCalificaciones(QWidget):
 
             with open(ruta, "w", encoding="utf-8") as archivo:
                 json.dump(paquete, archivo, ensure_ascii=False, indent=2)
-        except OSError as e:
-            mostrar_mensaje("error", "Error al guardar", f"No se pudo escribir el archivo:\n{e}", self)
+        except OSError as error:
+            mostrar_mensaje("error", "Error al guardar", f"No se pudo escribir el archivo:\n{error}", self)
             return
         registrar_auditoria("Calificaciones", "Exportó paquete de calificaciones", self.main_window.usuario_actual,
                             f"{materia_nombre} - {seccion_txt} - {periodo_txt} ({len(paquete['notas'])} notas)")
@@ -6707,8 +6707,8 @@ class ModuloCalificaciones(QWidget):
 
             with open(ruta, "r", encoding="utf-8") as archivo:
                 paquete= json.load(archivo)
-        except (OSError, json.JSONDecodeError) as e:
-            mostrar_mensaje("error", "Archivo inválido", f"No se pudo leer el archivo:\n{e}", self)
+        except (OSError, json.JSONDecodeError) as error:
+            mostrar_mensaje("error", "Archivo inválido", f"No se pudo leer el archivo:\n{error}", self)
             return
         notas= paquete.get("notas") or []
         if not notas:
@@ -6728,7 +6728,7 @@ class ModuloCalificaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, matricula FROM estudiantes WHERE seccion_id=?", (seccion_id,))
-        matricula_a_id= {f["matricula"]: f["id"] for f in c.fetchall() if f["matricula"]}
+        matricula_a_id= {fila["matricula"]: fila["id"] for fila in c.fetchall() if fila["matricula"]}
 
         insertadas, sin_emparejar, duplicadas= 0, 0, 0
         ahora= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -6805,7 +6805,7 @@ class ModuloCalificaciones(QWidget):
                      LEFT JOIN grados ON secciones.grado_id = grados.id
                      LEFT JOIN periodos ON paquetes_calificaciones.periodo_id = periodos.id
                      ORDER BY paquetes_calificaciones.fecha_importacion DESC""")
-        filas= [dict(f) for f in c.fetchall()]
+        filas= [dict(fila) for fila in c.fetchall()]
         conn.close()
         self.tabla_paquetes.setRowCount(len(filas))
         with tabla_pausada(self.tabla_paquetes):

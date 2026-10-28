@@ -66,10 +66,10 @@ def _hex_a_rgba(hex_color, alpha):
 #(1-alpha)*fondo) evita ese acumulado por completo, sin cambiar cómo se ve.
 def _aplanar_color_sobre(color_rgba, hex_fondo):
 
-    m= re.match(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)", color_rgba or "")
-    if not m:
+    coincidencia= re.match(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)", color_rgba or "")
+    if not coincidencia:
         return color_rgba
-    r, g, b, a= int(m.group(1)), int(m.group(2)), int(m.group(3)), float(m.group(4))
+    r, g, b, a= int(coincidencia.group(1)), int(coincidencia.group(2)), int(coincidencia.group(3)), float(coincidencia.group(4))
     hex_fondo= (hex_fondo or "#000000").lstrip("#")
     if len(hex_fondo) < 6:
         hex_fondo= "000000"
@@ -534,17 +534,17 @@ def _centrar_y_al_frente(dialogo, parent):
     if referencia is not None:
         geo_padre= referencia.frameGeometry()
         dialogo.adjustSize()
-        x= geo_padre.x() + (geo_padre.width() - dialogo.width()) // 2
-        y= geo_padre.y() + (geo_padre.height() - dialogo.height()) // 2
-        dialogo.move(max(0, x), max(0, y))
+        pos_x= geo_padre.x() + (geo_padre.width() - dialogo.width()) // 2
+        pos_y= geo_padre.y() + (geo_padre.height() - dialogo.height()) // 2
+        dialogo.move(max(0, pos_x), max(0, pos_y))
     else:
         pantalla= dialogo.screen() if hasattr(dialogo, "screen") and dialogo.screen() else None
         if pantalla is not None:
             geo= pantalla.availableGeometry()
             dialogo.adjustSize()
-            x= geo.x() + (geo.width() - dialogo.width()) // 2
-            y= geo.y() + (geo.height() - dialogo.height()) // 2
-            dialogo.move(max(0, x), max(0, y))
+            pos_x= geo.x() + (geo.width() - dialogo.width()) // 2
+            pos_y= geo.y() + (geo.height() - dialogo.height()) // 2
+            dialogo.move(max(0, pos_x), max(0, pos_y))
     dialogo.raise_()
     dialogo.activateWindow()
 
@@ -719,7 +719,7 @@ def niveles_academicos_habilitados(cfg):
         #CICLOS_SECUNDARIA). Se filtra aquí también -no solo en la UI de Configuración- para que ningún otro punto del
         #sistema (filtros, validaciones, etc.) pueda llegar a ofrecerlo por una vía distinta a la pantalla de
         #Configuración.
-        guardados= [n for n in guardados if n != "Preparatoria"]
+        guardados= [guardado for guardado in guardados if guardado != "Preparatoria"]
     if tipo == "Universidad":
         return ["Universidad"]
     if tipo == "Politécnico":
@@ -771,7 +771,7 @@ def secciones_con_componente_tecnico_valido():
     c= conn.cursor()
     c.execute("SELECT secciones.id as id, grados.nivel_educativo as nivel, grados.ciclo_secundaria as ciclo "
               "FROM secciones LEFT JOIN grados ON secciones.grado_id = grados.id")
-    ids= {f["id"] for f in c.fetchall() if puede_tener_componente_tecnico(f["nivel"], f["ciclo"], None)}
+    ids= {fila["id"] for fila in c.fetchall() if puede_tener_componente_tecnico(fila["nivel"], fila["ciclo"], None)}
     conn.close()
     return ids
 
@@ -856,20 +856,20 @@ class WizardStepper(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         radio= 9.0
         margen= radio + 3
-        y= self.height() / 2
+        pos_y= self.height() / 2
         ancho_util= max(1.0, self.width() - margen * 2)
         paso_x= ancho_util / (self._total - 1)
 
         pen_base= QPen(QColor(self._color_muted), 2.4)
         pen_base.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen_base)
-        painter.drawLine(QPointF(margen, y), QPointF(margen + ancho_util, y))
+        painter.drawLine(QPointF(margen, pos_y), QPointF(margen + ancho_util, pos_y))
 
         progreso_x= margen + paso_x * min(self._progreso_visual, self._total - 1)
         pen_progreso= QPen(QColor(self._color_accent), 2.4)
         pen_progreso.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen_progreso)
-        painter.drawLine(QPointF(margen, y), QPointF(progreso_x, y))
+        painter.drawLine(QPointF(margen, pos_y), QPointF(progreso_x, pos_y))
 
         fuente= painter.font()
         fuente.setPixelSize(10)
@@ -883,31 +883,31 @@ class WizardStepper(QWidget):
             if completado:
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(QColor(self._color_accent))
-                painter.drawEllipse(QPointF(cx, y), radio, radio)
+                painter.drawEllipse(QPointF(cx, pos_y), radio, radio)
                 pluma= QPen(QColor("#FFFFFF"), 1.8)
                 pluma.setCapStyle(Qt.PenCapStyle.RoundCap)
                 pluma.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
                 painter.setPen(pluma)
-                painter.drawLine(QPointF(cx - 3.2, y + 0.3), QPointF(cx - 0.7, y + 2.8))
-                painter.drawLine(QPointF(cx - 0.7, y + 2.8), QPointF(cx + 3.8, y - 3.2))
+                painter.drawLine(QPointF(cx - 3.2, pos_y + 0.3), QPointF(cx - 0.7, pos_y + 2.8))
+                painter.drawLine(QPointF(cx - 0.7, pos_y + 2.8), QPointF(cx + 3.8, pos_y - 3.2))
             elif actual:
                 halo= QColor(self._color_accent)
                 halo.setAlpha(45)
                 painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(halo)
-                painter.drawEllipse(QPointF(cx, y), radio + 5, radio + 5)
+                painter.drawEllipse(QPointF(cx, pos_y), radio + 5, radio + 5)
                 painter.setPen(QPen(QColor(self._color_accent), 2.2))
                 painter.setBrush(QColor(self._color_fondo_circulo))
-                painter.drawEllipse(QPointF(cx, y), radio, radio)
+                painter.drawEllipse(QPointF(cx, pos_y), radio, radio)
                 painter.setPen(QColor(self._color_accent))
-                painter.drawText(QRectF(cx - radio, y - radio, radio * 2, radio * 2),
+                painter.drawText(QRectF(cx - radio, pos_y - radio, radio * 2, radio * 2),
                                   Qt.AlignmentFlag.AlignCenter, str(i + 1))
             else:
                 painter.setPen(QPen(QColor(self._color_muted), 1.6))
                 painter.setBrush(QColor(self._color_fondo_circulo))
-                painter.drawEllipse(QPointF(cx, y), radio, radio)
+                painter.drawEllipse(QPointF(cx, pos_y), radio, radio)
                 painter.setPen(QColor(self._color_texto_muted))
-                painter.drawText(QRectF(cx - radio, y - radio, radio * 2, radio * 2),
+                painter.drawText(QRectF(cx - radio, pos_y - radio, radio * 2, radio * 2),
                                   Qt.AlignmentFlag.AlignCenter, str(i + 1))
 
 
@@ -1098,8 +1098,8 @@ class WizardConfiguracion(QDialog):
         try:
 
             datos= leer_perfil_archivo(ruta)
-        except Exception as e:
-            mostrar_mensaje("error", "Perfil inválido", str(e), self)
+        except Exception as error:
+            mostrar_mensaje("error", "Perfil inválido", str(error), self)
             return
 
         if not perfil_incluye_bd_base(datos):
@@ -1120,9 +1120,9 @@ class WizardConfiguracion(QDialog):
         try:
 
             aplicar_bd_base(datos)
-        except Exception as e:
+        except Exception as error:
             mostrar_mensaje("error", "Error",
-                            f"No se pudo aplicar la base de datos incluida en el perfil:\n{e}", self)
+                            f"No se pudo aplicar la base de datos incluida en el perfil:\n{error}", self)
             return
         aplicar_perfil(self.main_window, datos)
         mostrar_mensaje("exito", "Perfil importado",
@@ -1436,10 +1436,10 @@ class WizardConfiguracion(QDialog):
         sombra.setBlurRadius(24)
         tarjeta.setGraphicsEffect(sombra)
         externo.addWidget(tarjeta)
-        l= QVBoxLayout(tarjeta)
-        l.setContentsMargins(46, 36, 46, 32)
-        l.setSpacing(12)
-        return contenedor, l
+        disposicion= QVBoxLayout(tarjeta)
+        disposicion.setContentsMargins(46, 36, 46, 32)
+        disposicion.setSpacing(12)
+        return contenedor, disposicion
 
     #Cambia de página con una transición corta de deslizamiento +
     #fundido (~220ms), en el sentido del avance -desde la derecha al
@@ -1557,8 +1557,8 @@ class WizardConfiguracion(QDialog):
                        datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             conn.commit()
             conn.close()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo completar la configuración:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo completar la configuración:\n{error}", self)
             return
         registrar_auditoria("Configuración", "Asistente inicial completado", self.in_admin_user.text().strip(),
                             f"Institución: {self.in_nombre.text().strip()} | Tipo: {self.combo_tipo.currentText()}")
@@ -1727,9 +1727,9 @@ class ModuloConfiguracion(QWidget):
     def _tab_institucion(self):
 
         contenido= QWidget()
-        l= QVBoxLayout(contenido)
-        l.setContentsMargins(4, 10, 10, 10)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(4, 10, 10, 10)
+        disposicion.setSpacing(16)
         self._tarjetas_institucion= []
 
         t_datos= TarjetaSeccion("🏛", "Datos Generales")
@@ -1751,7 +1751,7 @@ class ModuloConfiguracion(QWidget):
         form.addRow("Correo Institucional:", self.in_correo)
         form.addRow("Sitio Web:", self.in_sitio_web)
         t_datos.contenido.addLayout(form)
-        l.addWidget(t_datos)
+        disposicion.addWidget(t_datos)
         self._tarjetas_institucion.append(t_datos)
 
         t_imagen= TarjetaSeccion("🖼", "Logotipo y Firma Digital",
@@ -1809,7 +1809,7 @@ class ModuloConfiguracion(QWidget):
         fila_firma.addWidget(btn_quitar_firma)
         fila_firma.addStretch()
         t_imagen.contenido.addLayout(fila_firma)
-        l.addWidget(t_imagen)
+        disposicion.addWidget(t_imagen)
         self._tarjetas_institucion.append(t_imagen)
 
         t_pie= TarjetaSeccion("📄", "Pie de Página de Reportes")
@@ -1823,10 +1823,10 @@ class ModuloConfiguracion(QWidget):
         btn_guardar.setObjectName("BtnAccionEditar")
         btn_guardar.clicked.connect(self._guardar_institucion)
         t_pie.contenido.addWidget(btn_guardar)
-        l.addWidget(t_pie)
+        disposicion.addWidget(t_pie)
         self._tarjetas_institucion.append(t_pie)
 
-        l.addStretch()
+        disposicion.addStretch()
         scroll= QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -1848,8 +1848,8 @@ class ModuloConfiguracion(QWidget):
             conn.close()
             self._cargar_logo(destino)
             mostrar_mensaje("exito", "Logotipo actualizado", "El logotipo se actualizó correctamente.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo actualizar el logotipo:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo actualizar el logotipo:\n{error}", self)
 
     def _ver_logo_ampliado(self):
 
@@ -1858,9 +1858,9 @@ class ModuloConfiguracion(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT logo_path FROM configuracion WHERE id=1")
-            f= c.fetchone()
+            fila= c.fetchone()
             conn.close()
-            ruta= f["logo_path"] if f else None
+            ruta= fila["logo_path"] if fila else None
         if not ruta or not os.path.exists(ruta):
             mostrar_mensaje("advertencia", "Sin logotipo", "Aún no se ha cargado un logotipo.", self)
             return
@@ -1890,8 +1890,8 @@ class ModuloConfiguracion(QWidget):
             conn.close()
             self._cargar_firma(destino)
             mostrar_mensaje("exito", "Firma actualizada", "La firma digital se actualizó correctamente.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo actualizar la firma:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo actualizar la firma:\n{error}", self)
 
     def _quitar_firma(self):
 
@@ -1910,9 +1910,9 @@ class ModuloConfiguracion(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT firma_path FROM configuracion WHERE id=1")
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        ruta= f["firma_path"] if f else None
+        ruta= fila["firma_path"] if fila else None
         if not ruta or not os.path.exists(ruta):
             mostrar_mensaje("advertencia", "Sin firma", "Aún no se ha cargado una firma digital.", self)
             return
@@ -1943,16 +1943,16 @@ class ModuloConfiguracion(QWidget):
             registrar_auditoria("Configuración", "Actualizó datos institucionales",
                                self.main_window.usuario_actual)
             mostrar_mensaje("exito", "Guardado", "Los datos institucionales se guardaron correctamente.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar:\n{error}", self)
 
     #---------------- ACADÉMICO (sin cambios) ----------------
     def _tab_academico(self):
 
         contenido= QWidget()
-        l= QVBoxLayout(contenido)
-        l.setContentsMargins(4, 10, 10, 10)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(4, 10, 10, 10)
+        disposicion.setSpacing(16)
         self._tarjetas_academico= []
 
         #Icono propio de la pestaña (el mismo dibujo del birrete+libro de la tab bar), en vez del ⚙ genérico que no
@@ -2052,7 +2052,7 @@ class ModuloConfiguracion(QWidget):
         aviso.setWordWrap(True)
         aviso.setObjectName("DescModulo")
         t_config.contenido.addWidget(aviso)
-        l.addWidget(t_config)
+        disposicion.addWidget(t_config)
         self._tarjetas_academico.append(t_config)
 
         self.grupo_modulos_personalizados= TarjetaSeccion(
@@ -2062,7 +2062,7 @@ class ModuloConfiguracion(QWidget):
         self.chk_mod_universidad= QCheckBox("Universidad (Facultades, Carreras, Pensum)")
         self.grupo_modulos_personalizados.contenido.addWidget(self.chk_mod_politecnico)
         self.grupo_modulos_personalizados.contenido.addWidget(self.chk_mod_universidad)
-        l.addWidget(self.grupo_modulos_personalizados)
+        disposicion.addWidget(self.grupo_modulos_personalizados)
         self._tarjetas_academico.append(self.grupo_modulos_personalizados)
         self.combo_tipo.currentTextChanged.connect(self._actualizar_visibilidad_modulos_personalizados)
 
@@ -2079,7 +2079,7 @@ class ModuloConfiguracion(QWidget):
             chk= QCheckBox(nivel)
             self.chk_nivel[nivel]= chk
             self.grupo_niveles_educativos.contenido.addWidget(chk)
-        l.addWidget(self.grupo_niveles_educativos)
+        disposicion.addWidget(self.grupo_niveles_educativos)
         self._tarjetas_academico.append(self.grupo_niveles_educativos)
         self.combo_tipo.currentTextChanged.connect(self._actualizar_visibilidad_niveles_educativos)
         self.combo_sistema_calificacion.currentTextChanged.connect(self._actualizar_visibilidad_niveles_educativos)
@@ -2115,7 +2115,7 @@ class ModuloConfiguracion(QWidget):
             "de arriba. Útil, por ejemplo, después de importar un lote grande de estudiantes.")
         btn_recalcular_lista.clicked.connect(self._recalcular_numeros_lista_manual)
         self.grupo_numero_lista.contenido.addWidget(btn_recalcular_lista)
-        l.addWidget(self.grupo_numero_lista)
+        disposicion.addWidget(self.grupo_numero_lista)
         self._tarjetas_academico.append(self.grupo_numero_lista)
 
         btn_guardar= QPushButton("Guardar Configuración Académica")
@@ -2123,9 +2123,9 @@ class ModuloConfiguracion(QWidget):
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
         btn_guardar.setObjectName("BtnAccionEditar")
         btn_guardar.clicked.connect(self._guardar_academico)
-        l.addWidget(btn_guardar)
+        disposicion.addWidget(btn_guardar)
 
-        l.addStretch()
+        disposicion.addStretch()
         scroll= QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -2352,7 +2352,7 @@ class ModuloConfiguracion(QWidget):
             if es_sistema_dominicano(sistema_texto):
                 anio= self.in_anio.text().strip()
                 c.execute("SELECT nombre FROM periodos WHERE anio_academico=?", (anio,))
-                existentes= {f["nombre"] for f in c.fetchall()}
+                existentes= {fila["nombre"] for fila in c.fetchall()}
                 for i, nombre_p in enumerate(NOMBRES_PERIODOS_RD):
                     if nombre_p not in existentes:
                         c.execute("INSERT INTO periodos (nombre, anio_academico, orden) VALUES (?, ?, ?)",
@@ -2369,16 +2369,16 @@ class ModuloConfiguracion(QWidget):
             self.main_window.recargar_modulos_dinamicos()
             mostrar_mensaje("exito", "Guardado", "Configuración académica actualizada. Los módulos "
                             "dinámicos se han actualizado en la barra lateral.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar:\n{error}", self)
 
     #---------------- APARIENCIA (sin cambios) ----------------
     def _tab_apariencia(self):
 
         contenido= QWidget()
-        l= QVBoxLayout(contenido)
-        l.setContentsMargins(4, 10, 10, 10)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(4, 10, 10, 10)
+        disposicion.setSpacing(16)
         self._tarjetas_apariencia= []
 
         t_tema= TarjetaSeccion("🎨", "Tema y Preferencias Visuales")
@@ -2447,7 +2447,7 @@ class ModuloConfiguracion(QWidget):
         btn_aplicar.setObjectName("BtnAccionEditar")
         btn_aplicar.clicked.connect(self._aplicar_apariencia)
         t_tema.contenido.addWidget(btn_aplicar)
-        l.addWidget(t_tema)
+        disposicion.addWidget(t_tema)
         self._tarjetas_apariencia.append(t_tema)
 
         #--- Accesibilidad visual ---
@@ -2476,10 +2476,10 @@ class ModuloConfiguracion(QWidget):
         btn_aplicar_accesibilidad.setObjectName("BtnAccionEditar")
         btn_aplicar_accesibilidad.clicked.connect(self._aplicar_accesibilidad)
         t_accesibilidad.contenido.addWidget(btn_aplicar_accesibilidad)
-        l.addWidget(t_accesibilidad)
+        disposicion.addWidget(t_accesibilidad)
         self._tarjetas_apariencia.append(t_accesibilidad)
 
-        l.addStretch()
+        disposicion.addStretch()
         return contenido
 
     def _aplicar_accesibilidad(self):
@@ -2524,8 +2524,8 @@ class ModuloConfiguracion(QWidget):
             conn.close()
             registrar_auditoria("Configuración", "Actualizó idioma", self.main_window.usuario_actual,
                                idioma_a_guardar)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar el idioma:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar el idioma:\n{error}", self)
             return
         if idioma_no_disponible:
             self.combo_idioma.setCurrentText("Español")
@@ -2551,9 +2551,9 @@ class ModuloConfiguracion(QWidget):
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         contenido= QWidget()
-        l= QVBoxLayout(contenido)
-        l.setContentsMargins(4, 10, 10, 10)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(4, 10, 10, 10)
+        disposicion.setSpacing(16)
         self._tarjetas_usuarios= []
 
         t_form= TarjetaSeccion("👤", "Crear / Editar Usuario")
@@ -2588,7 +2588,7 @@ class ModuloConfiguracion(QWidget):
         btn_crear.clicked.connect(self._crear_usuario)
         form.addWidget(btn_crear, 1, 2)
         t_form.contenido.addLayout(form)
-        l.addWidget(t_form)
+        disposicion.addWidget(t_form)
         self._tarjetas_usuarios.append(t_form)
 
         t_tabla= TarjetaSeccion("👥", "Usuarios Registrados")
@@ -2717,7 +2717,7 @@ class ModuloConfiguracion(QWidget):
 
         fila_botones.addStretch()
         t_tabla.contenido.addLayout(fila_botones)
-        l.addWidget(t_tabla)
+        disposicion.addWidget(t_tabla)
         self._tarjetas_usuarios.append(t_tabla)
 
         #------------------------------------------------------------------
@@ -2738,7 +2738,7 @@ class ModuloConfiguracion(QWidget):
         self.chk_psicologia_admin= QCheckBox("Habilitar Psicología para el rol Administrador")
         self.chk_psicologia_admin.toggled.connect(self._guardar_psicologia_admin)
         t_psicologia.contenido.addWidget(self.chk_psicologia_admin)
-        l.addWidget(t_psicologia)
+        disposicion.addWidget(t_psicologia)
         self._tarjetas_usuarios.append(t_psicologia)
 
         scroll.setWidget(contenido)
@@ -2826,8 +2826,8 @@ class ModuloConfiguracion(QWidget):
             self.in_u_correo.clear()
             self._cargar_usuarios()
             mostrar_mensaje("exito", "Usuario creado", f"Se creó la cuenta '{user}'.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo crear el usuario:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo crear el usuario:\n{error}", self)
 
     def _guardar_psicologia_admin(self, activo):
 
@@ -2874,8 +2874,8 @@ class ModuloConfiguracion(QWidget):
         conn.close()
 
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['username']} {f['nombre_completo'] or ''} {f['rol']} {f['correo'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['username']} {fila['nombre_completo'] or ''} {fila['rol']} {fila['correo'] or ''}")]
 
         self.paginacion_usuarios.establecer_total(len(filas))
         inicio, fin= self.paginacion_usuarios.rango_actual()
@@ -2974,8 +2974,8 @@ class ModuloConfiguracion(QWidget):
                           (user, nombre, rol, correo, id_usuario))
             conn.commit()
             conn.close()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar los cambios del usuario:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar los cambios del usuario:\n{error}", self)
             return
 
         accion= "Actualizó usuario (con cambio de contraseña)" if pw else "Actualizó usuario"
@@ -3028,16 +3028,16 @@ class ModuloConfiguracion(QWidget):
     def _tab_mi_cuenta(self):
 
         contenido= QWidget()
-        l= QVBoxLayout(contenido)
-        l.setContentsMargins(4, 10, 10, 10)
-        l.setSpacing(14)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(4, 10, 10, 10)
+        disposicion.setSpacing(14)
 
         desc= QLabel("Gestiona tu propia cuenta: cambia tu contraseña o exporta tu Perfil Institucional "
                       "(.acdx) actualizado para importarlo en otro equipo. Desde aquí solo puedes ver y "
                       "modificar tu propia cuenta, nunca la de otro usuario.")
         desc.setObjectName("DescModulo")
         desc.setWordWrap(True)
-        l.addWidget(desc)
+        disposicion.addWidget(desc)
 
         self._tarjetas_mi_cuenta= []
 
@@ -3066,7 +3066,7 @@ class ModuloConfiguracion(QWidget):
         btn_cambiar_pass.setObjectName("BtnAccionAgregar")
         btn_cambiar_pass.clicked.connect(self._cambiar_mi_password)
         t_pass.contenido.addWidget(btn_cambiar_pass)
-        l.addWidget(t_pass)
+        disposicion.addWidget(t_pass)
         self._tarjetas_mi_cuenta.append(t_pass)
 
         t_perfil= TarjetaSeccion(
@@ -3084,7 +3084,7 @@ class ModuloConfiguracion(QWidget):
         btn_exportar_mi_perfil.setObjectName("BtnAccionEditar")
         btn_exportar_mi_perfil.clicked.connect(self._exportar_mi_perfil)
         t_perfil.contenido.addWidget(btn_exportar_mi_perfil)
-        l.addWidget(t_perfil)
+        disposicion.addWidget(t_perfil)
         self._tarjetas_mi_cuenta.append(t_perfil)
 
         #---------------- Preferencias de la aplicación en este equipo ---------------- Es una preferencia por
@@ -3141,7 +3141,7 @@ class ModuloConfiguracion(QWidget):
         btn_guardar_app.setObjectName("BtnAccionEditar")
         btn_guardar_app.clicked.connect(self._guardar_preferencias_app)
         t_app.contenido.addWidget(btn_guardar_app)
-        l.addWidget(t_app)
+        disposicion.addWidget(t_app)
         self._tarjetas_mi_cuenta.append(t_app)
 
         #---------------- Alarmas y Recordatorios ---------------- Igual que el resto de esta pestaña: es una
@@ -3155,7 +3155,7 @@ class ModuloConfiguracion(QWidget):
             "recordatorio que crees tú mismo aquí abajo.")
         self.panel_alarmas= PanelAlarmas(self.main_window)
         t_alarmas.contenido.addWidget(self.panel_alarmas)
-        l.addWidget(t_alarmas)
+        disposicion.addWidget(t_alarmas)
         self._tarjetas_mi_cuenta.append(t_alarmas)
 
         #---------------- "Calificaciones Técnicas" en mi menú (solo Profesor) ---------------- Decisión manual del
@@ -3186,7 +3186,7 @@ class ModuloConfiguracion(QWidget):
             self.btn_guardar_calif_tecnicas.setObjectName("BtnAccionEditar")
             self.btn_guardar_calif_tecnicas.clicked.connect(self._guardar_preferencia_calif_tecnicas)
             t_calif.contenido.addWidget(self.btn_guardar_calif_tecnicas)
-            l.addWidget(t_calif)
+            disposicion.addWidget(t_calif)
             self._tarjetas_mi_cuenta.append(t_calif)
             self.t_calif_tecnicas= t_calif
             self._actualizar_estado_calif_tecnicas()
@@ -3235,10 +3235,10 @@ class ModuloConfiguracion(QWidget):
             btn_tutorial_general.setObjectName("BtnAccionEditar")
             btn_tutorial_general.clicked.connect(self._ver_tutorial_general_de_nuevo)
             t_tutorial.contenido.addWidget(btn_tutorial_general)
-        l.addWidget(t_tutorial)
+        disposicion.addWidget(t_tutorial)
         self._tarjetas_mi_cuenta.append(t_tutorial)
 
-        l.addStretch()
+        disposicion.addStretch()
         scroll= QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -3289,16 +3289,16 @@ class ModuloConfiguracion(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT password FROM usuarios WHERE id=?", (id_usuario,))
-            f= c.fetchone()
-            if not f or not verificar_contrasena(actual, f["password"]):
+            fila= c.fetchone()
+            if not fila or not verificar_contrasena(actual, fila["password"]):
                 conn.close()
                 mostrar_mensaje("error", "Contraseña incorrecta", "Tu contraseña actual no es correcta.", self)
                 return
             c.execute("UPDATE usuarios SET password=? WHERE id=?", (hash_password(nueva), id_usuario))
             conn.commit()
             conn.close()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo cambiar la contraseña:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo cambiar la contraseña:\n{error}", self)
             return
         registrar_auditoria("Seguridad", "Cambió su propia contraseña", self.main_window.usuario_actual)
         self.in_mi_pass_actual.clear()
@@ -3376,9 +3376,9 @@ class ModuloConfiguracion(QWidget):
     def _tab_seguridad(self):
 
         contenido= QWidget()
-        l= QVBoxLayout(contenido)
-        l.setContentsMargins(4, 10, 10, 10)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(4, 10, 10, 10)
+        disposicion.setSpacing(16)
         self._tarjetas_seguridad= []
 
         #---------------- Inicio de sesión ----------------
@@ -3394,7 +3394,7 @@ class ModuloConfiguracion(QWidget):
         btn_guardar_seg.setObjectName("BtnAccionEditar")
         btn_guardar_seg.clicked.connect(self._guardar_seguridad)
         t_login.contenido.addWidget(btn_guardar_seg)
-        l.addWidget(t_login)
+        disposicion.addWidget(t_login)
         self._tarjetas_seguridad.append(t_login)
 
         #---------------- Correo (SMTP) ----------------
@@ -3444,7 +3444,7 @@ class ModuloConfiguracion(QWidget):
         fila_smtp_btn.addWidget(btn_probar_smtp)
         fila_smtp_btn.addStretch()
         t_smtp.contenido.addLayout(fila_smtp_btn)
-        l.addWidget(t_smtp)
+        disposicion.addWidget(t_smtp)
         self._tarjetas_seguridad.append(t_smtp)
 
         #---------------- Copias de Seguridad (Backup) ----------------
@@ -3503,7 +3503,7 @@ class ModuloConfiguracion(QWidget):
         fila_backup.addWidget(btn_restaurar)
         fila_backup.addStretch()
         t_backup.contenido.addLayout(fila_backup)
-        l.addWidget(t_backup)
+        disposicion.addWidget(t_backup)
         self._tarjetas_seguridad.append(t_backup)
 
         #---------------- Estudiantes y Cursos para Modo Docente ----------------
@@ -3531,7 +3531,7 @@ class ModuloConfiguracion(QWidget):
         fila_export_docente.addWidget(btn_exportar_docente)
         fila_export_docente.addStretch()
         t_docente.contenido.addLayout(fila_export_docente)
-        l.addWidget(t_docente)
+        disposicion.addWidget(t_docente)
         self._tarjetas_seguridad.append(t_docente)
 
         #---------------- Historial de Copias de Seguridad ----------------
@@ -3572,7 +3572,7 @@ class ModuloConfiguracion(QWidget):
         agregar_boton_pantalla_completa(
             fila_hist_backup, [self.tabla_backups], titulo="Historial de Copias de Seguridad", parent=self)
 
-        l.addWidget(t_historial)
+        disposicion.addWidget(t_historial)
         self._tarjetas_seguridad.append(t_historial)
 
         #---------------- BD Base Institucional ----------------
@@ -3601,7 +3601,7 @@ class ModuloConfiguracion(QWidget):
         fila_bd_base.addWidget(self.btn_quitar_bd_base)
         fila_bd_base.addStretch()
         t_bd_base.contenido.addLayout(fila_bd_base)
-        l.addWidget(t_bd_base)
+        disposicion.addWidget(t_bd_base)
         self._tarjetas_seguridad.append(t_bd_base)
 
         #---------------- Perfil Institucional (.acdx) para un Usuario ----------------
@@ -3619,7 +3619,7 @@ class ModuloConfiguracion(QWidget):
         fila_perfil.addWidget(self.btn_generar_perfil_usuario)
         fila_perfil.addStretch()
         t_perfil.contenido.addLayout(fila_perfil)
-        l.addWidget(t_perfil)
+        disposicion.addWidget(t_perfil)
         self._tarjetas_seguridad.append(t_perfil)
 
         #---------------- Instalador para Docentes/Personal (.exe) ----------------
@@ -3642,7 +3642,7 @@ class ModuloConfiguracion(QWidget):
         fila_instalador.addWidget(self.btn_exportar_instalador_docentes)
         fila_instalador.addStretch()
         t_instalador.contenido.addLayout(fila_instalador)
-        l.addWidget(t_instalador)
+        disposicion.addWidget(t_instalador)
         self._tarjetas_seguridad.append(t_instalador)
 
         #---------------- Exportar Side Stepper (roles no-docentes) ----------------
@@ -3679,7 +3679,7 @@ class ModuloConfiguracion(QWidget):
         fila_ss_2.addWidget(self.btn_exportar_instalador_side_stepper)
         fila_ss_2.addStretch()
         t_side_stepper.contenido.addLayout(fila_ss_2)
-        l.addWidget(t_side_stepper)
+        disposicion.addWidget(t_side_stepper)
         self._tarjetas_seguridad.append(t_side_stepper)
 
         #---------------- Sincronización ----------------
@@ -3713,10 +3713,10 @@ class ModuloConfiguracion(QWidget):
         fila_sync.addWidget(btn_verificar_sync)
         fila_sync.addStretch()
         t_sync.contenido.addLayout(fila_sync)
-        l.addWidget(t_sync)
+        disposicion.addWidget(t_sync)
         self._tarjetas_seguridad.append(t_sync)
 
-        l.addStretch()
+        disposicion.addStretch()
         scroll= QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -3755,8 +3755,8 @@ class ModuloConfiguracion(QWidget):
         try:
 
             ruta= guardar_bd_base_desde_actual()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar la BD Base:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar la BD Base:\n{error}", self)
             return
         registrar_auditoria("Seguridad", "Guardó/actualizó la BD Base Institucional",
                             self.main_window.usuario_actual)
@@ -3824,11 +3824,11 @@ class ModuloConfiguracion(QWidget):
                 origen= self._localizar_instalador_docentes()
                 destino= os.path.join(ruta, os.path.basename(origen))
                 shutil.copy2(origen, destino)
-        except FileNotFoundError as e:
-            mostrar_mensaje("advertencia", "Instalador no encontrado", str(e), self)
+        except FileNotFoundError as error:
+            mostrar_mensaje("advertencia", "Instalador no encontrado", str(error), self)
             return
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo exportar el instalador:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo exportar el instalador:\n{error}", self)
             return
         registrar_auditoria("Seguridad", "Exportó instalador para Docentes/Personal",
                             self.main_window.usuario_actual, destino)
@@ -3859,11 +3859,11 @@ class ModuloConfiguracion(QWidget):
 
             from src.servicios.instalador import exportar_paquete_permisos_side_stepper
             destino= exportar_paquete_permisos_side_stepper(ruta)
-        except ValueError as e:
-            mostrar_mensaje("advertencia", "Nada que exportar", str(e), self)
+        except ValueError as error:
+            mostrar_mensaje("advertencia", "Nada que exportar", str(error), self)
             return
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo exportar el paquete de permisos:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo exportar el paquete de permisos:\n{error}", self)
             return
         registrar_auditoria("Seguridad", "Exportó paquete de permisos para Side Stepper",
                             self.main_window.usuario_actual, destino)
@@ -3885,11 +3885,11 @@ class ModuloConfiguracion(QWidget):
 
             from src.servicios.instalador import exportar_instalador_side_stepper
             destino= exportar_instalador_side_stepper(ruta)
-        except FileNotFoundError as e:
-            mostrar_mensaje("advertencia", "Instalador no encontrado", str(e), self)
+        except FileNotFoundError as error:
+            mostrar_mensaje("advertencia", "Instalador no encontrado", str(error), self)
             return
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo exportar el instalador:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo exportar el instalador:\n{error}", self)
             return
         registrar_auditoria("Seguridad", "Exportó instalador para Side Stepper",
                             self.main_window.usuario_actual, destino)
@@ -3959,8 +3959,8 @@ class ModuloConfiguracion(QWidget):
             conn.close()
             registrar_auditoria("Configuración", "Actualizó configuración SMTP", self.main_window.usuario_actual)
             mostrar_mensaje("exito", "Guardado", "La configuración de correo (SMTP) se guardó correctamente.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar la configuración SMTP:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar la configuración SMTP:\n{error}", self)
 
     def _probar_smtp(self):
 
@@ -3975,8 +3975,8 @@ class ModuloConfiguracion(QWidget):
                           "Este es un correo de prueba de la configuración SMTP de AcaDeXI.\n"
                           "Si lo recibiste, la configuración es correcta.")
             mostrar_mensaje("exito", "Enviado", f"Se envió un correo de prueba a {destino}.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error al enviar", str(e), self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error al enviar", str(error), self)
 
     def _guardar_seguridad(self):
 
@@ -4041,9 +4041,9 @@ class ModuloConfiguracion(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre, apellidos")
-        for f in c.fetchall():
-            etiqueta= f"👤 Solo: {f['nombre']} {f['apellidos'] or ''}".strip()
-            combo.addItem(etiqueta, f["id"])
+        for fila in c.fetchall():
+            etiqueta= f"👤 Solo: {fila['nombre']} {fila['apellidos'] or ''}".strip()
+            combo.addItem(etiqueta, fila["id"])
         conn.close()
         idx= combo.findData(seleccion_previa)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -4066,8 +4066,8 @@ class ModuloConfiguracion(QWidget):
             registrar_auditoria("Seguridad", "Creó backup", self.main_window.usuario_actual, ruta)
             mostrar_mensaje("exito", "Backup creado", f"Copia de seguridad guardada en:\n{ruta}", self)
             self._cargar_config_backup()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo crear el backup:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo crear el backup:\n{error}", self)
 
     def _restaurar_backup(self):
 
@@ -4083,8 +4083,8 @@ class ModuloConfiguracion(QWidget):
             restaurar_backup(ruta)
             registrar_auditoria("Seguridad", "Restauró backup", self.main_window.usuario_actual, ruta)
             mostrar_mensaje("exito", "Restaurado", "La base de datos fue restaurada. Reinicia la aplicación.", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo restaurar el backup:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo restaurar el backup:\n{error}", self)
 
     #---------------- SINCRONIZACIÓN ----------------
     def _refrescar_estado_sync(self):
@@ -4113,8 +4113,8 @@ class ModuloConfiguracion(QWidget):
             destino= subir_cambios(self.main_window)
             registrar_auditoria("Sistema", "Subió cambios a carpeta sincronizada", self.main_window.usuario_actual, destino)
             mostrar_mensaje("exito", "Subido", f"Cambios subidos a:\n{destino}", self)
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo subir:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo subir:\n{error}", self)
         self._refrescar_estado_sync()
 
     def _descargar_novedades_sync(self):
@@ -4133,24 +4133,24 @@ class ModuloConfiguracion(QWidget):
             mostrar_mensaje("exito", "Actualizado", f"Novedades descargadas. Respaldo previo en:\n{respaldo}\n\n"
                            "Reinicia la aplicación.", self)
             self._cargar_config_backup()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo descargar:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo descargar:\n{error}", self)
         self._refrescar_estado_sync()
 
     #---------------- AUDITORÍA (sin cambios) ----------------
     def _tab_auditoria(self):
 
         contenido= QWidget()
-        l= QVBoxLayout(contenido)
-        l.setContentsMargins(4, 10, 10, 10)
-        l.setSpacing(16)
+        disposicion= QVBoxLayout(contenido)
+        disposicion.setContentsMargins(4, 10, 10, 10)
+        disposicion.setSpacing(16)
         self._tarjetas_auditoria= []
 
         desc_intro= QLabel("Captura detallada de las acciones del sistema: creación, "
                              "modificación y eliminación de registros, inicios y cierres de sesión.")
         desc_intro.setObjectName("DescModulo")
         desc_intro.setWordWrap(True)
-        l.addWidget(desc_intro)
+        disposicion.addWidget(desc_intro)
 
         t_interruptor= TarjetaSeccion(
             "", "Preferencia de Auditoría",
@@ -4171,7 +4171,7 @@ class ModuloConfiguracion(QWidget):
         btn_guardar_auditoria.setObjectName("BtnAccionEditar")
         btn_guardar_auditoria.clicked.connect(self._guardar_auditoria_activa)
         t_interruptor.contenido.addWidget(btn_guardar_auditoria)
-        l.addWidget(t_interruptor)
+        disposicion.addWidget(t_interruptor)
         self._tarjetas_auditoria.append(t_interruptor)
 
         t_bitacora= TarjetaSeccion(EMOJI_AUDITORIA, "Bitácora de Actividad")
@@ -4249,7 +4249,7 @@ class ModuloConfiguracion(QWidget):
         fila_botones_auditoria.addStretch()
         t_bitacora.contenido.addLayout(fila_botones_auditoria)
 
-        l.addWidget(t_bitacora)
+        disposicion.addWidget(t_bitacora)
         self._tarjetas_auditoria.append(t_bitacora)
 
         scroll= QScrollArea()
@@ -4273,8 +4273,8 @@ class ModuloConfiguracion(QWidget):
             c.execute("UPDATE configuracion SET auditoria_activa=? WHERE id=1", (1 if activar else 0,))
             conn.commit()
             conn.close()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar la preferencia de auditoría:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar la preferencia de auditoría:\n{error}", self)
             return
         accion= "Activó el registro de auditoría" if activar else "Desactivó el registro de auditoría"
         registrar_auditoria("Configuración", accion, self.main_window.usuario_actual)
@@ -4314,13 +4314,13 @@ class ModuloConfiguracion(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT DISTINCT modulo FROM auditoria ORDER BY modulo")
-        for f in c.fetchall():
-            if f["modulo"]:
-                self.combo_auditoria_modulo.addItem(f["modulo"], f["modulo"])
+        for fila in c.fetchall():
+            if fila["modulo"]:
+                self.combo_auditoria_modulo.addItem(fila["modulo"], fila["modulo"])
         c.execute("SELECT DISTINCT usuario FROM auditoria ORDER BY usuario")
-        for f in c.fetchall():
-            if f["usuario"]:
-                self.combo_auditoria_usuario.addItem(f["usuario"], f["usuario"])
+        for fila in c.fetchall():
+            if fila["usuario"]:
+                self.combo_auditoria_usuario.addItem(fila["usuario"], fila["usuario"])
         conn.close()
         if modulo_sel:
             idx= self.combo_auditoria_modulo.findData(modulo_sel)

@@ -404,10 +404,10 @@ class DialogoValoresAsistencia(QDialog):
         layout.setSpacing(12)
 
         encabezado= QLabel("Valores de Asistencia")
-        f= encabezado.font()
-        f.setBold(True)
-        f.setPointSize(13)
-        encabezado.setFont(f)
+        fuente= encabezado.font()
+        fuente.setBold(True)
+        fuente.setPointSize(13)
+        encabezado.setFont(fuente)
         layout.addWidget(encabezado)
 
         info= QLabel(
@@ -568,24 +568,24 @@ class FlowLayout(QLayout):
 
         margenes= self.contentsMargins()
         ancho_disponible= rect.width() - margenes.left() - margenes.right()
-        x= rect.x() + margenes.left()
-        y= rect.y() + margenes.top()
+        pos_x= rect.x() + margenes.left()
+        pos_y= rect.y() + margenes.top()
         line_height= 0
 
         for item in self._items:
             tam= item.sizeHint()
-            siguiente_x= x + tam.width() + self._spacing_h
+            siguiente_x= pos_x + tam.width() + self._spacing_h
             if siguiente_x - self._spacing_h > rect.x() + margenes.left() + ancho_disponible and line_height > 0:
-                x= rect.x() + margenes.left()
-                y= y + line_height + self._spacing_v
-                siguiente_x= x + tam.width() + self._spacing_h
+                pos_x= rect.x() + margenes.left()
+                pos_y= pos_y + line_height + self._spacing_v
+                siguiente_x= pos_x + tam.width() + self._spacing_h
                 line_height= 0
             if not probar:
-                item.setGeometry(QRect(QPoint(x, y), tam))
-            x= siguiente_x
+                item.setGeometry(QRect(QPoint(pos_x, pos_y), tam))
+            pos_x= siguiente_x
             line_height= max(line_height, tam.height())
 
-        return y + line_height - rect.y() + margenes.bottom()
+        return pos_y + line_height - rect.y() + margenes.bottom()
 
 
 class ModuloAsistencia(QWidget):
@@ -825,8 +825,8 @@ class ModuloAsistencia(QWidget):
 
     def _tab_registro(self):
 
-        w= QWidget()
-        layout= QVBoxLayout(w)
+        contenedor= QWidget()
+        layout= QVBoxLayout(contenedor)
         layout.setSpacing(14)
 
         #--- Filtros --- Los combos de filtro (Nivel, Curso, Sección, Materia, Fecha, y los técnicos de Área/Carrera)
@@ -1083,12 +1083,12 @@ class ModuloAsistencia(QWidget):
              self.marco_paginacion_registro, self._btn_guardar],
             titulo= "Asistencia", parent=self)
 
-        return w
+        return contenedor
 
     def _tab_alertas(self):
 
-        w= QWidget()
-        layout= QVBoxLayout(w)
+        contenedor= QWidget()
+        layout= QVBoxLayout(contenedor)
         layout.setSpacing(14)
         info= QLabel("El sistema calcula automáticamente el % de inasistencia (Ausente + Tardanza) "
                       "por estudiante y marca en alerta a quienes superen el umbral configurado.")
@@ -1220,7 +1220,7 @@ class ModuloAsistencia(QWidget):
         fila_exportar.addStretch()
         layout.addLayout(fila_exportar)
 
-        return w
+        return contenedor
 
     #Ventanas de filtrado (una por pestaña: Registro Diario y Alertas)
     #Crea (una sola vez) la ventanita con los filtros de Registro
@@ -1498,8 +1498,8 @@ class ModuloAsistencia(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_alerta.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_alerta.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_especialidad_alerta.findData(actual)
             self.combo_filtro_especialidad_alerta.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1516,8 +1516,8 @@ class ModuloAsistencia(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_alerta.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_alerta.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_carrera_alerta.findData(actual)
             self.combo_filtro_carrera_alerta.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1623,7 +1623,7 @@ class ModuloAsistencia(QWidget):
                             SUM(CASE WHEN {cond_presente} THEN 1 ELSE 0 END) as presentes,
                             SUM(CASE WHEN {cond_inasistencia} THEN 1 ELSE 0 END) as inasistencias
                      FROM asistencia GROUP BY estudiante_id""", params_presente + params_inasistencia)
-        agregados= {r["estudiante_id"]: r for r in c.fetchall()}
+        agregados= {fila["estudiante_id"]: fila for fila in c.fetchall()}
         conn.close()
 
         resultado= []
@@ -1835,12 +1835,12 @@ class ModuloAsistencia(QWidget):
                          WHERE estado='Activa' AND especialidad_id=? ORDER BY nombre""", (especialidad_id,))
         else:
             c.execute("SELECT id, nombre, modelo_evaluacion FROM materias WHERE estado='Activa' ORDER BY nombre")
-        for f in c.fetchall():
-            if permitidas_materias is not None and f["id"] not in permitidas_materias:
+        for fila in c.fetchall():
+            if permitidas_materias is not None and fila["id"] not in permitidas_materias:
                 continue
-            if (f["modelo_evaluacion"] or "") == "Técnica (RA)":
-                self._materias_tecnicas_asis.add(f["id"])
-            self.combo_materia.addItem(f["nombre"], f["id"])
+            if (fila["modelo_evaluacion"] or "") == "Técnica (RA)":
+                self._materias_tecnicas_asis.add(fila["id"])
+            self.combo_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= self.combo_materia.findData(actual)
         #Si la materia que estaba elegida ya no aparece (por ejemplo, era de otra área técnica y se acaba de acotar el
@@ -1903,8 +1903,8 @@ class ModuloAsistencia(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_asis.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_asis.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_especialidad_asis.findData(actual)
             self.combo_filtro_especialidad_asis.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1921,8 +1921,8 @@ class ModuloAsistencia(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_asis.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_asis.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_carrera_asis.findData(actual)
             self.combo_filtro_carrera_asis.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1979,7 +1979,7 @@ class ModuloAsistencia(QWidget):
         c.execute("""SELECT estudiante_id, estado FROM asistencia
                      WHERE seccion_id=? AND fecha=? AND (materia_id=? OR (? IS NULL AND materia_id IS NULL))""",
                   (seccion_id, fecha, materia_id, materia_id))
-        self._registros_asistencia= {r["estudiante_id"]: r["estado"] for r in c.fetchall()}
+        self._registros_asistencia= {fila["estudiante_id"]: fila["estado"] for fila in c.fetchall()}
         conn.close()
         self.paginacion_registro.reiniciar()
         self._renderizar_pagina()

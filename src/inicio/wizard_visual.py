@@ -197,11 +197,11 @@ class WizardEstilizado(QDialog):
         sombra.setBlurRadius(24)
         tarjeta.setGraphicsEffect(sombra)
         externo.addWidget(tarjeta)
-        l= QVBoxLayout(tarjeta)
-        l.setContentsMargins(46, 36, 46, 32)
-        l.setSpacing(12)
+        disposicion= QVBoxLayout(tarjeta)
+        disposicion.setContentsMargins(46, 36, 46, 32)
+        disposicion.setSpacing(12)
         self.stack.addWidget(contenedor)
-        return contenedor, l
+        return contenedor, disposicion
 
     #Título grande de paso (mismo objectName/QSS que el wizard Full).
     def titulo_paso(self, texto):

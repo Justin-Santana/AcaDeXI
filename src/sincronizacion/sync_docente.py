@@ -80,46 +80,46 @@ def _calcular_alcance_profesor(conn, profesor_id):
     grado_ids, aula_ids, especialidad_ids= set(), set(), set()
 
     c.execute("SELECT id, especialidad_id FROM materias WHERE profesor_id=?", (profesor_id,))
-    for r in c.fetchall():
-        materia_ids.add(r["id"])
-        if r["especialidad_id"] is not None:
-            especialidad_ids.add(r["especialidad_id"])
+    for fila in c.fetchall():
+        materia_ids.add(fila["id"])
+        if fila["especialidad_id"] is not None:
+            especialidad_ids.add(fila["especialidad_id"])
 
     c.execute("SELECT materia_id, seccion_id FROM materia_profesores WHERE profesor_id=?", (profesor_id,))
-    for r in c.fetchall():
-        if r["materia_id"] is not None:
-            materia_ids.add(r["materia_id"])
-        if r["seccion_id"] is not None:
-            seccion_ids.add(r["seccion_id"])
+    for fila in c.fetchall():
+        if fila["materia_id"] is not None:
+            materia_ids.add(fila["materia_id"])
+        if fila["seccion_id"] is not None:
+            seccion_ids.add(fila["seccion_id"])
 
     c.execute("SELECT id, aula_id, especialidad_id FROM secciones WHERE profesor_guia_id=?", (profesor_id,))
-    for r in c.fetchall():
-        seccion_ids.add(r["id"])
-        if r["aula_id"] is not None:
-            aula_ids.add(r["aula_id"])
-        if r["especialidad_id"] is not None:
-            especialidad_ids.add(r["especialidad_id"])
+    for fila in c.fetchall():
+        seccion_ids.add(fila["id"])
+        if fila["aula_id"] is not None:
+            aula_ids.add(fila["aula_id"])
+        if fila["especialidad_id"] is not None:
+            especialidad_ids.add(fila["especialidad_id"])
 
     if materia_ids:
         c.execute("SELECT materia_id, seccion_id, aula_id FROM horarios")
-        for r in c.fetchall():
-            if r["materia_id"] in materia_ids:
-                if r["seccion_id"] is not None:
-                    seccion_ids.add(r["seccion_id"])
-                if r["aula_id"] is not None:
-                    aula_ids.add(r["aula_id"])
+        for fila in c.fetchall():
+            if fila["materia_id"] in materia_ids:
+                if fila["seccion_id"] is not None:
+                    seccion_ids.add(fila["seccion_id"])
+                if fila["aula_id"] is not None:
+                    aula_ids.add(fila["aula_id"])
 
     if seccion_ids:
         marcadores= ", ".join(["?"] * len(seccion_ids))
         c.execute(f"""SELECT id, grado_id, aula_id, especialidad_id FROM secciones
                       WHERE id IN ({marcadores})""", tuple(seccion_ids))
-        for r in c.fetchall():
-            if r["grado_id"] is not None:
-                grado_ids.add(r["grado_id"])
-            if r["aula_id"] is not None:
-                aula_ids.add(r["aula_id"])
-            if r["especialidad_id"] is not None:
-                especialidad_ids.add(r["especialidad_id"])
+        for fila in c.fetchall():
+            if fila["grado_id"] is not None:
+                grado_ids.add(fila["grado_id"])
+            if fila["aula_id"] is not None:
+                aula_ids.add(fila["aula_id"])
+            if fila["especialidad_id"] is not None:
+                especialidad_ids.add(fila["especialidad_id"])
 
     return {
         "materias": materia_ids, "secciones": seccion_ids, "grados": grado_ids,
@@ -235,9 +235,9 @@ def exportar_paquete_docente(main_window, parent=None, profesor_id=None, profeso
                 hoja.append([fila[col] for col in columnas])
                 total_filas += 1
         wb.save(ruta)
-    except Exception as e:
+    except Exception as error:
         conn.close()
-        mostrar_mensaje("error", "Error", f"No se pudo guardar el archivo:\n{e}", parent)
+        mostrar_mensaje("error", "Error", f"No se pudo guardar el archivo:\n{error}", parent)
         return
     conn.close()
 
@@ -276,11 +276,11 @@ def importar_paquete_docente(main_window, parent=None):
             tablas= _leer_paquete_json(ruta)
         else:
             tablas= _leer_paquete_xlsx(ruta)
-    except _PaqueteInvalido as e:
-        mostrar_mensaje("advertencia", "Archivo inválido", str(e), parent)
+    except _PaqueteInvalido as error:
+        mostrar_mensaje("advertencia", "Archivo inválido", str(error), parent)
         return
-    except Exception as e:
-        mostrar_mensaje("error", "Error", f"No se pudo leer el archivo:\n{e}", parent)
+    except Exception as error:
+        mostrar_mensaje("error", "Error", f"No se pudo leer el archivo:\n{error}", parent)
         return
 
     conn= obtener_conexion()
@@ -307,10 +307,10 @@ def importar_paquete_docente(main_window, parent=None):
                     #Se omite el registro puntual si no calza con el esquema local, sin abortar el resto de la importación.
                     continue
         conn.commit()
-    except Exception as e:
+    except Exception as error:
         conn.rollback()
         conn.close()
-        mostrar_mensaje("error", "Error al importar", f"No se pudo completar la importación:\n{e}", parent)
+        mostrar_mensaje("error", "Error al importar", f"No se pudo completar la importación:\n{error}", parent)
         return
     conn.close()
     registrar_auditoria("Sincronización", "Importó paquete de estudiantes/cursos (Modo Docente)",
@@ -364,7 +364,7 @@ def _leer_paquete_xlsx(ruta):
         if not encabezados:
             tablas[tabla]= []
             continue
-        claves= [str(e or "").strip() for e in encabezados]
+        claves= [str(encabezado or "").strip() for encabezado in encabezados]
         registros= []
         for cruda in filas_iter:
             if not any(v not in (None, "") for v in cruda):

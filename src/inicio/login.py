@@ -35,17 +35,17 @@ def _centrar_y_al_frente(dialogo, parent):
     if referencia is not None:
         geo_padre= referencia.frameGeometry()
         dialogo.adjustSize()
-        x= geo_padre.x() + (geo_padre.width() - dialogo.width()) // 2
-        y= geo_padre.y() + (geo_padre.height() - dialogo.height()) // 2
-        dialogo.move(max(0, x), max(0, y))
+        pos_x= geo_padre.x() + (geo_padre.width() - dialogo.width()) // 2
+        pos_y= geo_padre.y() + (geo_padre.height() - dialogo.height()) // 2
+        dialogo.move(max(0, pos_x), max(0, pos_y))
     else:
         pantalla= dialogo.screen() if hasattr(dialogo, "screen") and dialogo.screen() else None
         if pantalla is not None:
             geo= pantalla.availableGeometry()
             dialogo.adjustSize()
-            x= geo.x() + (geo.width() - dialogo.width()) // 2
-            y= geo.y() + (geo.height() - dialogo.height()) // 2
-            dialogo.move(max(0, x), max(0, y))
+            pos_x= geo.x() + (geo.width() - dialogo.width()) // 2
+            pos_y= geo.y() + (geo.height() - dialogo.height()) // 2
+            dialogo.move(max(0, pos_x), max(0, pos_y))
     dialogo.raise_()
     dialogo.activateWindow()
 
@@ -388,8 +388,8 @@ class LoginWindow(QDialog):
         try:
 
             datos= leer_perfil_archivo(ruta)
-        except Exception as e:
-            mostrar_mensaje("error", "Perfil inválido", str(e), self)
+        except Exception as error:
+            mostrar_mensaje("error", "Perfil inválido", str(error), self)
             return
 
         ruta_backup_bd= None
@@ -409,9 +409,9 @@ class LoginWindow(QDialog):
                 try:
 
                     ruta_backup_bd= aplicar_bd_base(datos)
-                except Exception as e:
+                except Exception as error:
                     mostrar_mensaje("error", "Error",
-                                    f"No se pudo aplicar la base de datos incluida en el perfil:\n{e}", self)
+                                    f"No se pudo aplicar la base de datos incluida en el perfil:\n{error}", self)
 
         existe= aplicar_perfil(self.main_window, datos)
         self.input_usuario.setText(datos.get("usuario", ""))
@@ -541,9 +541,9 @@ class LoginWindow(QDialog):
                 c.execute("SELECT * FROM usuarios WHERE username = ?", (usuario,))
                 fila= c.fetchone()
                 conn.close()
-            except Exception as e:
+            except Exception as error:
                 _msg(self.main_window, self, QMessageBox.Icon.Critical, "Error",
-                     f"No se pudo consultar la base de datos:\n{e}")
+                     f"No se pudo consultar la base de datos:\n{error}")
                 return
 
             if not fila or not verificar_contrasena(password, fila["password"]):
@@ -774,8 +774,8 @@ class RecuperarPasswordDialog(QDialog):
     #---------------- TAB: AUTORIZACIÓN DE ADMINISTRADOR ----------------
     def _tab_admin(self):
 
-        w= QWidget()
-        layout= QVBoxLayout(w)
+        contenedor= QWidget()
+        layout= QVBoxLayout(contenedor)
         layout.setContentsMargins(0, 8, 0, 0)
         layout.setSpacing(6)
 
@@ -806,13 +806,13 @@ class RecuperarPasswordDialog(QDialog):
         btn_restablecer.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_restablecer.clicked.connect(self._restablecer_por_admin)
         layout.addWidget(btn_restablecer)
-        return w
+        return contenedor
 
     #---------------- TAB: RECUPERACIÓN POR CORREO ----------------
     def _tab_correo(self):
 
-        w= QWidget()
-        layout= QVBoxLayout(w)
+        contenedor= QWidget()
+        layout= QVBoxLayout(contenedor)
         layout.setContentsMargins(0, 8, 0, 0)
         layout.setSpacing(6)
 
@@ -859,7 +859,7 @@ class RecuperarPasswordDialog(QDialog):
         btn_restablecer2.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_restablecer2.clicked.connect(self._restablecer_por_correo)
         layout.addWidget(btn_restablecer2)
-        return w
+        return contenedor
 
     def _apply_theme(self):
 
@@ -977,9 +977,9 @@ class RecuperarPasswordDialog(QDialog):
             c.execute("UPDATE usuarios SET password=? WHERE username=?", (nueva_hash, cuenta))
             conn.commit()
             conn.close()
-        except Exception as e:
+        except Exception as error:
             _msg(self.main_window, self, QMessageBox.Icon.Critical, "Error",
-                 f"No se pudo restablecer la contraseña:\n{e}")
+                 f"No se pudo restablecer la contraseña:\n{error}")
             return
 
         registrar_auditoria("Seguridad", "Restableció contraseña", admin_user, f"Cuenta afectada: {cuenta}")
@@ -1043,8 +1043,8 @@ class RecuperarPasswordDialog(QDialog):
                 f"    {token}\n\n"
                 f"Este código expira en 15 minutos. Si no solicitaste este cambio, ignora este mensaje."
             )
-        except Exception as e:
-            _msg(self.main_window, self, QMessageBox.Icon.Critical, "No se pudo enviar el código", str(e))
+        except Exception as error:
+            _msg(self.main_window, self, QMessageBox.Icon.Critical, "No se pudo enviar el código", str(error))
             return
 
         registrar_auditoria("Seguridad", "Solicitó código de recuperación por correo", cuenta)
@@ -1130,9 +1130,9 @@ class RecuperarPasswordDialog(QDialog):
             c.execute("UPDATE tokens_recuperacion SET usado=1 WHERE id=?", (token_fila["id"],))
             conn.commit()
             conn.close()
-        except Exception as e:
+        except Exception as error:
             _msg(self.main_window, self, QMessageBox.Icon.Critical, "Error",
-                 f"No se pudo restablecer la contraseña:\n{e}")
+                 f"No se pudo restablecer la contraseña:\n{error}")
             return
 
         registrar_auditoria("Seguridad", "Restableció contraseña por correo", cuenta)

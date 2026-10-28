@@ -232,9 +232,9 @@ def obtener_pixmap_circular_cacheado(ruta, tamano):
     ruta_circular= QPainterPath()
     ruta_circular.addEllipse(0, 0, tamano, tamano)
     pintor.setClipPath(ruta_circular)
-    x= (tamano - fuente.width()) // 2
-    y= (tamano - fuente.height()) // 2
-    pintor.drawPixmap(x, y, fuente)
+    pos_x= (tamano - fuente.width()) // 2
+    pos_y= (tamano - fuente.height()) // 2
+    pintor.drawPixmap(pos_x, pos_y, fuente)
     pintor.end()
 
     if len(_CACHE_PIXMAPS_CIRCULARES) >= _CACHE_PIXMAPS_LIMITE:
@@ -280,9 +280,9 @@ def pixmap_placeholder_foto_tabla(tamano=TAMANO_FOTO_TABLA):
     silueta= pixmap_emoji("\uE034", int(tamano * 0.62))
     pintor2= QPainter(resultado)
     pintor2.setRenderHint(QPainter.RenderHint.Antialiasing)
-    x= (tamano - silueta.width()) // 2
-    y= tamano - silueta.height() - int(tamano * 0.06)
-    pintor2.drawPixmap(x, y, silueta)
+    pos_x= (tamano - silueta.width()) // 2
+    pos_y= tamano - silueta.height() - int(tamano * 0.06)
+    pintor2.drawPixmap(pos_x, pos_y, silueta)
     pintor2.end()
     _CACHE_PLACEHOLDER_FOTO[tamano]= resultado
     return resultado
@@ -382,9 +382,9 @@ def _pixmap_circular_con_anillo(ruta, diametro, grosor_anillo=4, color_anillo="#
     ruta_circular= QPainterPath()
     ruta_circular.addEllipse(grosor_anillo, grosor_anillo, diametro_foto, diametro_foto)
     pintor.setClipPath(ruta_circular)
-    x= grosor_anillo + (diametro_foto - fuente.width()) // 2
-    y= grosor_anillo + (diametro_foto - fuente.height()) // 2
-    pintor.drawPixmap(x, y, fuente)
+    pos_x= grosor_anillo + (diametro_foto - fuente.width()) // 2
+    pos_y= grosor_anillo + (diametro_foto - fuente.height()) // 2
+    pintor.drawPixmap(pos_x, pos_y, fuente)
     pintor.end()
     return resultado
 
@@ -1138,15 +1138,15 @@ def agregar_boton_pantalla_completa(layout_cabecera, widgets, titulo="Tabla", pa
         #del control de paginación de la propia tabla (a su derecha), o -si el módulo no tiene paginación- en el primer
         #widget de la lista (típicamente la barra de búsqueda).
         destino= None
-        for w in widgets:
-            pag= w if isinstance(w, ControlPaginacion) else w.findChild(ControlPaginacion)
+        for widget in widgets:
+            pag= widget if isinstance(widget, ControlPaginacion) else widget.findChild(ControlPaginacion)
             if pag is not None:
                 destino= pag.layout()
                 break
         if destino is None:
-            for w in widgets:
-                if w.layout() is not None:
-                    destino= w.layout()
+            for widget in widgets:
+                if widget.layout() is not None:
+                    destino= widget.layout()
                     break
         if destino is not None:
             destino.addWidget(btn)

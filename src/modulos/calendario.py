@@ -433,8 +433,8 @@ class _ToastFlotante(QFrame):
         padre= self.parentWidget()
         if padre is None:
             return
-        x= padre.width() - self.width() - 26
-        self.move(max(x, 12), 16)
+        pos_x= padre.width() - self.width() - 26
+        self.move(max(pos_x, 12), 16)
 
     def _ocultar(self):
 
@@ -1137,8 +1137,8 @@ class ModuloCalendario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_evento.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_evento.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_especialidad_evento.findData(actual)
             self.combo_filtro_especialidad_evento.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1155,8 +1155,8 @@ class ModuloCalendario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_evento.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_evento.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_carrera_evento.findData(actual)
             self.combo_filtro_carrera_evento.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1191,8 +1191,8 @@ class ModuloCalendario(QWidget):
                          WHERE estado='Activa' AND especialidad_id=? ORDER BY nombre""", (especialidad_id,))
         else:
             c.execute("SELECT id, nombre FROM materias WHERE estado='Activa' ORDER BY nombre")
-        for f in c.fetchall():
-            self.combo_materia.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.combo_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= self.combo_materia.findData(actual)
         self.combo_materia.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1225,7 +1225,7 @@ class ModuloCalendario(QWidget):
                 c= conn.cursor()
                 c.execute("""SELECT DISTINCT seccion_id FROM estudiantes
                              WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
-                secciones_carrera= {f["seccion_id"] for f in c.fetchall()}
+                secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
                 conn.close()
             actual= self.combo_seccion.currentData()
             #Se recorre de atrás hacia adelante para poder remover ítems sin que los índices restantes se corran bajo los
@@ -1375,8 +1375,8 @@ class ModuloCalendario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_vista_especialidad.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_vista_especialidad.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_vista_especialidad.findData(actual)
             self.combo_filtro_vista_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1393,8 +1393,8 @@ class ModuloCalendario(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_vista_carrera.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_vista_carrera.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_vista_carrera.findData(actual)
             self.combo_filtro_vista_carrera.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1433,8 +1433,8 @@ class ModuloCalendario(QWidget):
                          WHERE estado='Activa' AND especialidad_id=? ORDER BY nombre""", (especialidad_id,))
         else:
             c.execute("SELECT id, nombre FROM materias WHERE estado='Activa' ORDER BY nombre")
-        for f in c.fetchall():
-            self.combo_filtro_vista_materia.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.combo_filtro_vista_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= self.combo_filtro_vista_materia.findData(actual)
         self.combo_filtro_vista_materia.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1471,7 +1471,7 @@ class ModuloCalendario(QWidget):
                 c= conn.cursor()
                 c.execute("""SELECT DISTINCT seccion_id FROM estudiantes
                              WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
-                secciones_carrera= {f["seccion_id"] for f in c.fetchall()}
+                secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
                 conn.close()
             actual= self.combo_filtro_vista_seccion.currentData()
             for i in range(self.combo_filtro_vista_seccion.count() - 1, 0, -1):
@@ -1515,10 +1515,10 @@ class ModuloCalendario(QWidget):
         filas= c.fetchall()
         conn.close()
         visibles= []
-        for f in filas:
-            if f["visibilidad"] == "Personal" and f["usuario_id"] != usuario_id:
+        for fila in filas:
+            if fila["visibilidad"] == "Personal" and fila["usuario_id"] != usuario_id:
                 continue
-            visibles.append(f)
+            visibles.append(fila)
         self._eventos_todos= visibles
         total= len(visibles)
         self.chip_contador.setText(f"{total} evento{'s' if total!= 1 else ''}")
@@ -1550,31 +1550,31 @@ class ModuloCalendario(QWidget):
             c= conn.cursor()
             c.execute("""SELECT DISTINCT seccion_id FROM estudiantes
                          WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
-            secciones_carrera= {f["seccion_id"] for f in c.fetchall()}
+            secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
             conn.close()
 
         filtrados= []
-        for f in self._eventos_todos:
-            if self.filtro_tipo_actual and f["tipo"] != self.filtro_tipo_actual:
+        for eventos_todo in self._eventos_todos:
+            if self.filtro_tipo_actual and eventos_todo["tipo"] != self.filtro_tipo_actual:
                 continue
-            if self.filtro_fecha_actual and f["fecha"] != self.filtro_fecha_actual:
+            if self.filtro_fecha_actual and eventos_todo["fecha"] != self.filtro_fecha_actual:
                 continue
-            if grado_id is not None and f["grado_id"] != grado_id:
+            if grado_id is not None and eventos_todo["grado_id"] != grado_id:
                 continue
-            if seccion_id is not None and f["seccion_id"] != seccion_id:
+            if seccion_id is not None and eventos_todo["seccion_id"] != seccion_id:
                 continue
-            if especialidad_id is not None and f["especialidad_id"] != especialidad_id:
+            if especialidad_id is not None and eventos_todo["especialidad_id"] != especialidad_id:
                 continue
-            if secciones_carrera is not None and f["seccion_id"] not in secciones_carrera:
+            if secciones_carrera is not None and eventos_todo["seccion_id"] not in secciones_carrera:
                 continue
-            if materia_id is not None and f["materia_id"] != materia_id:
+            if materia_id is not None and eventos_todo["materia_id"] != materia_id:
                 continue
             if termino:
                 texto_busqueda= _normalizar(
-                    f"{f['titulo'] or ''} {f['tipo'] or ''} {f['descripcion'] or ''}")
+                    f"{eventos_todo['titulo'] or ''} {eventos_todo['tipo'] or ''} {eventos_todo['descripcion'] or ''}")
                 if termino not in texto_busqueda:
                     continue
-            filtrados.append(f)
+            filtrados.append(eventos_todo)
         self.paginacion.establecer_total(len(filtrados))
         inicio, fin= self.paginacion.rango_actual()
         self._poblar_tabla(filtrados[inicio:fin])
@@ -1690,10 +1690,10 @@ class ModuloCalendario(QWidget):
     def _actualizar_franja_semana(self):
 
         eventos_por_dia= {}
-        for f in self._eventos_todos:
-            fecha_ev= self._parsear_fecha(f["fecha"])
+        for eventos_todo in self._eventos_todos:
+            fecha_ev= self._parsear_fecha(eventos_todo["fecha"])
             if fecha_ev:
-                eventos_por_dia.setdefault(fecha_ev, []).append(f["tipo"] or "Personal")
+                eventos_por_dia.setdefault(fecha_ev, []).append(eventos_todo["tipo"] or "Personal")
         for chip in self.chips_semana:
             chip.poner_eventos(eventos_por_dia.get(chip.fecha, []))
             chip.seleccionado= (chip.fecha_iso == self.filtro_fecha_actual)
@@ -1988,11 +1988,11 @@ class ModuloCalendario(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT usuario_id, visibilidad FROM eventos WHERE id=?", (id_evento,))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if not f:
+        if not fila:
             return False
-        return f["visibilidad"] == "Personal" and f["usuario_id"] == getattr(self.main_window, "id_usuario_actual", None)
+        return fila["visibilidad"] == "Personal" and fila["usuario_id"] == getattr(self.main_window, "id_usuario_actual", None)
 
     def _actualizar_estado_form(self, editando, titulo=""):
 

@@ -35,7 +35,7 @@ def estudiantes_de_seccion(seccion_id):
     c= conn.cursor()
     c.execute("""SELECT id FROM estudiantes WHERE seccion_id=? AND estado='Activo'
                  ORDER BY apellidos, nombre""", (seccion_id,))
-    ids= [r["id"] for r in c.fetchall()]
+    ids= [fila["id"] for fila in c.fetchall()]
     conn.close()
     return ids
 
@@ -56,7 +56,7 @@ def secciones_de_grado_o_todas(grado_id=None, anio_academico=None):
         parametros.append(anio_academico)
     where= f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
     c.execute(f"SELECT id, nombre, grado_id FROM secciones {where} ORDER BY grado_id, nombre", parametros)
-    filas= [dict(f) for f in c.fetchall()]
+    filas= [dict(fila) for fila in c.fetchall()]
     conn.close()
     return filas
 

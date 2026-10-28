@@ -168,8 +168,8 @@ class AnilloDonut(QWidget):
 
     def establecer_datos(self, segmentos):
 
-        self._segmentos= [s for s in segmentos if s["valor"] > 0]
-        self._total= sum(s["valor"] for s in self._segmentos)
+        self._segmentos= [segmento for segmento in segmentos if segmento["valor"] > 0]
+        self._total= sum(segmento["valor"] for segmento in self._segmentos)
         self._anim.stop()
         self._progreso= 0.0
         self._anim.start()
@@ -185,10 +185,10 @@ class AnilloDonut(QWidget):
         lado= min(self.width(), self.height()) - 16
         if lado <= 0:
             return
-        x= (self.width() - lado) / 2
-        y= (self.height() - lado) / 2
+        pos_x= (self.width() - lado) / 2
+        pos_y= (self.height() - lado) / 2
         grosor= max(11, int(lado * 0.15))
-        rect= QRectF(x + grosor / 2, y + grosor / 2, lado - grosor, lado - grosor)
+        rect= QRectF(pos_x + grosor / 2, pos_y + grosor / 2, lado - grosor, lado - grosor)
 
         pen_pista= QPen(QColor(self._color_pista))
         pen_pista.setWidth(grosor)
@@ -216,7 +216,7 @@ class AnilloDonut(QWidget):
         fuente.setPointSize(max(12, int(lado * 0.12)))
         fuente.setBold(True)
         painter.setFont(fuente)
-        rect_num= QRectF(x, y + lado * 0.30, lado, lado * 0.32)
+        rect_num= QRectF(pos_x, pos_y + lado * 0.30, lado, lado * 0.32)
         painter.drawText(rect_num, Qt.AlignmentFlag.AlignCenter, str(total_mostrado))
 
         if self._etiqueta_central:
@@ -224,7 +224,7 @@ class AnilloDonut(QWidget):
             fuente_sub= QFont()
             fuente_sub.setPointSize(max(8, int(lado * 0.065)))
             painter.setFont(fuente_sub)
-            rect_sub= QRectF(x, y + lado * 0.56, lado, lado * 0.18)
+            rect_sub= QRectF(pos_x, pos_y + lado * 0.56, lado, lado * 0.18)
             painter.drawText(rect_sub, Qt.AlignmentFlag.AlignCenter, self._etiqueta_central)
 
 
@@ -270,17 +270,17 @@ class BarraSegmentadaPill(QWidget):
     def establecer_datos(self, segmentos):
 
         self._segmentos= list(segmentos)
-        total= sum(s["valor"] for s in self._segmentos) or 1
+        total= sum(segmento["valor"] for segmento in self._segmentos) or 1
         self._fracciones_inicio= dict(self._fracciones)
-        self._fracciones_objetivo= {s["clave"]: s["valor"] / total for s in self._segmentos}
-        self._fracciones= {s["clave"]: self._fracciones.get(s["clave"], 0.0) for s in self._segmentos}
+        self._fracciones_objetivo= {segmento["clave"]: segmento["valor"] / total for segmento in self._segmentos}
+        self._fracciones= {segmento["clave"]: self._fracciones.get(segmento["clave"], 0.0) for segmento in self._segmentos}
         self._anim.stop()
         self._anim.start()
 
     def _en_paso(self, t):
 
-        for s in self._segmentos:
-            clave= s["clave"]
+        for segmento in self._segmentos:
+            clave= segmento["clave"]
             ini= self._fracciones_inicio.get(clave, 0.0)
             fin= self._fracciones_objetivo.get(clave, 0.0)
             self._fracciones[clave]= ini + (fin - ini) * float(t)
@@ -291,17 +291,17 @@ class BarraSegmentadaPill(QWidget):
         self._claves_activas= set(claves_activas) if claves_activas else None
         self.update()
 
-    def _segmento_en_x(self, x):
+    def _segmento_en_x(self, pos_x):
 
         if self.width() <= 0:
             return None
         acumulado= 0.0
-        for s in self._segmentos:
-            frac= self._fracciones.get(s["clave"], 0.0)
+        for segmento in self._segmentos:
+            frac= self._fracciones.get(segmento["clave"], 0.0)
             inicio_px= acumulado * self.width()
             fin_px= (acumulado + frac) * self.width()
-            if inicio_px <= x < fin_px:
-                return s["clave"]
+            if inicio_px <= pos_x < fin_px:
+                return segmento["clave"]
             acumulado += frac
         return None
 
@@ -310,7 +310,7 @@ class BarraSegmentadaPill(QWidget):
         clave= self._segmento_en_x(event.position().x())
         if clave != self._segmento_hover:
             self._segmento_hover= clave
-            seg= next((s for s in self._segmentos if s["clave"] == clave), None)
+            seg= next((segmento for segmento in self._segmentos if segmento["clave"] == clave), None)
             if seg:
                 sufijo= " — clic para filtrar" if self._interactiva else ""
                 self.setToolTip(f"{seg['etiqueta']}: {seg['valor']}{sufijo}")
@@ -343,15 +343,15 @@ class BarraSegmentadaPill(QWidget):
         painter.setClipPath(ruta)
         painter.fillRect(self.rect(), QColor(self._color_pista))
         x= 0.0
-        for s in self._segmentos:
-            frac= self._fracciones.get(s["clave"], 0.0)
+        for segmento in self._segmentos:
+            frac= self._fracciones.get(segmento["clave"], 0.0)
             if frac <= 0.0008:
                 continue
             ancho= frac * self.width()
-            color= QColor(s["color"])
-            if self._claves_activas is not None and s["clave"] not in self._claves_activas:
+            color= QColor(segmento["color"])
+            if self._claves_activas is not None and segmento["clave"] not in self._claves_activas:
                 color.setAlpha(70)
-            elif self._segmento_hover == s["clave"]:
+            elif self._segmento_hover == segmento["clave"]:
                 color= color.lighter(112)
             painter.fillRect(QRectF(x, 0, ancho + 1, self.height()), color)
             x += ancho
@@ -476,10 +476,10 @@ class ModuloPolitecnico(QWidget):
         filas= c.fetchall()
         conn.close()
         objetivo= _normalizar(nombre or "")
-        for f in filas:
-            if id_excluir is not None and f["id"] == id_excluir:
+        for fila in filas:
+            if id_excluir is not None and fila["id"] == id_excluir:
                 continue
-            if _normalizar(f["nombre"] or "") == objetivo:
+            if _normalizar(fila["nombre"] or "") == objetivo:
                 return True
         return False
 
@@ -748,9 +748,9 @@ class ModuloPolitecnico(QWidget):
     #---------------- ESPECIALIDADES ----------------
     def _tab_especialidades(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         t_donut= TarjetaSeccion(EMOJI_TALLERES_LABORATORIOS, "Talleres y laboratorios por área técnica",
             "Cada arco representa cuántos talleres/laboratorios están vinculados a cada "
@@ -765,7 +765,7 @@ class ModuloPolitecnico(QWidget):
         self.layout_leyenda_esp.setSpacing(6)
         fila_donut.addWidget(self.contenedor_leyenda_esp, 1, Qt.AlignmentFlag.AlignTop)
         t_donut.contenido.addLayout(fila_donut)
-        l.addWidget(t_donut)
+        disposicion.addWidget(t_donut)
 
         self.tarjeta_form_especialidad= TarjetaSeccion("✏", "Nueva Área Técnica")
         form= QGridLayout()
@@ -809,7 +809,7 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_especialidad.contenido.addLayout(form)
         self.panel_form_especialidad= PanelDesplegable("Nueva Área Técnica")
         self.panel_form_especialidad.cuerpo_layout().addWidget(self.tarjeta_form_especialidad)
-        l.addWidget(self.panel_form_especialidad)
+        disposicion.addWidget(self.panel_form_especialidad)
 
         self.tarjeta_tabla_especialidades= TarjetaSeccion(EMOJI_AREAS_TECNICAS, "Áreas Técnicas registradas")
         fila_cabecera_tabla_especialidades= QHBoxLayout()
@@ -876,9 +876,9 @@ class ModuloPolitecnico(QWidget):
         self.tabla_especialidades.doubleClicked.connect(lambda *_: btn_detalle_esp.click())
         fila_acciones_esp.addStretch()
         self.tarjeta_tabla_especialidades.contenido.addLayout(fila_acciones_esp)
-        l.addWidget(self.tarjeta_tabla_especialidades)
-        l.addStretch()
-        return w
+        disposicion.addWidget(self.tarjeta_tabla_especialidades)
+        disposicion.addStretch()
+        return contenedor
 
     def _limpiar_especialidad(self):
 
@@ -906,7 +906,7 @@ class ModuloPolitecnico(QWidget):
                       (f"{base}-%", excluir_id))
         else:
             c.execute("SELECT codigo FROM especialidades WHERE codigo LIKE ?", (f"{base}-%",))
-        existentes= {f["codigo"] for f in c.fetchall()}
+        existentes= {fila["codigo"] for fila in c.fetchall()}
         conn.close()
         n= 1
         while f"{base}-{n:03d}" in existentes:
@@ -981,9 +981,9 @@ class ModuloPolitecnico(QWidget):
                            self.id_edicion_especialidad))
                 accion= "Editó área técnica"
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar el área técnica:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar el área técnica:\n{error}", self)
             return
         finally:
             conn.close()
@@ -1065,7 +1065,7 @@ class ModuloPolitecnico(QWidget):
         filas= c.fetchall()
         conn.close()
         if texto:
-            filas= [f for f in filas if texto in _normalizar(f"{f['nombre'] or ''} {f['codigo'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(f"{fila['nombre'] or ''} {fila['codigo'] or ''}")]
         self.paginacion_especialidades.establecer_total(len(filas))
         inicio, fin= self.paginacion_especialidades.rango_actual()
         filas= filas[inicio:fin]
@@ -1091,8 +1091,8 @@ class ModuloPolitecnico(QWidget):
                      GROUP BY especialidades.id ORDER BY especialidades.nombre""")
         filas= c.fetchall()
         conn.close()
-        segmentos= [{"etiqueta": f["nombre"], "valor": f["total"], "color": f["color"] or "#6366F1"}
-                     for f in filas]
+        segmentos= [{"etiqueta": fila["nombre"], "valor": fila["total"], "color": fila["color"] or "#6366F1"}
+                     for fila in filas]
         if hasattr(self, "anillo_especialidades"):
             self.anillo_especialidades.establecer_datos(segmentos)
             self._actualizar_leyenda_esp(segmentos)
@@ -1104,7 +1104,7 @@ class ModuloPolitecnico(QWidget):
             wdg= item.widget()
             if wdg is not None:
                 wdg.deleteLater()
-        visibles= [s for s in segmentos if s["valor"] > 0]
+        visibles= [segmento for segmento in segmentos if segmento["valor"] > 0]
         if not visibles:
             lbl= QLabel("Aún no hay talleres/laboratorios vinculados a ninguna área técnica.")
             lbl.setObjectName("DescModulo")
@@ -1129,9 +1129,9 @@ class ModuloPolitecnico(QWidget):
     #---------------- MÓDULOS TÉCNICOS (materias RA por área técnica) ----------------
     def _tab_modulos_tecnicos(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         desc= TarjetaSeccion("🧰", "Módulos Técnicos",
             "Los módulos técnicos son las 'materias' propias del Politécnico: siempre "
@@ -1139,7 +1139,7 @@ class ModuloPolitecnico(QWidget):
             "ponderados en vez del currículo académico por competencias (eso se ve en "
             "Calificaciones Técnicas). Las materias académicas normales se administran en el "
             "módulo Materias, Cursos y Horarios.")
-        l.addWidget(desc)
+        disposicion.addWidget(desc)
 
         self.tarjeta_form_modulo= TarjetaSeccion("✏", "Nuevo Módulo Técnico")
         form= QGridLayout()
@@ -1195,7 +1195,7 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_modulo.contenido.addLayout(form)
         self.panel_form_modulo= PanelDesplegable("Nuevo Módulo Técnico")
         self.panel_form_modulo.cuerpo_layout().addWidget(self.tarjeta_form_modulo)
-        l.addWidget(self.panel_form_modulo)
+        disposicion.addWidget(self.panel_form_modulo)
 
         self.tarjeta_tabla_modulos= TarjetaSeccion("🧰", "Módulos Técnicos registrados")
         marco_busqueda, self.in_buscar_modulos= self._crear_barra_busqueda(
@@ -1278,9 +1278,9 @@ class ModuloPolitecnico(QWidget):
         self.tabla_modulos_tecnicos.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         self.tarjeta_tabla_modulos.contenido.addLayout(fila_acciones)
-        l.addWidget(self.tarjeta_tabla_modulos)
-        l.addStretch()
-        return w
+        disposicion.addWidget(self.tarjeta_tabla_modulos)
+        disposicion.addStretch()
+        return contenedor
 
     def _previsualizar_codigo_modulo(self, _texto=None):
 
@@ -1322,7 +1322,7 @@ class ModuloPolitecnico(QWidget):
             c.execute("SELECT codigo FROM materias WHERE codigo LIKE ? AND id != ?", (f"{base}-%", excluir_id))
         else:
             c.execute("SELECT codigo FROM materias WHERE codigo LIKE ?", (f"{base}-%",))
-        existentes= {f["codigo"] for f in c.fetchall()}
+        existentes= {fila["codigo"] for fila in c.fetchall()}
         conn.close()
         n= 1
         while f"{base}-{n:03d}" in existentes:
@@ -1384,9 +1384,9 @@ class ModuloPolitecnico(QWidget):
                              estado= ?, modelo_evaluacion=?, grado_id=? WHERE id=?""", datos + (self.id_edicion_modulo_tecnico,))
                 accion= "Editó módulo técnico"
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar el módulo técnico:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar el módulo técnico:\n{error}", self)
             return
         finally:
             conn.close()
@@ -1451,9 +1451,9 @@ class ModuloPolitecnico(QWidget):
             c= conn.cursor()
             c.execute("DELETE FROM materias WHERE id=?", (id_mod,))
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"No se pudo eliminar el módulo técnico:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"No se pudo eliminar el módulo técnico:\n{error}", self)
             return
         finally:
             conn.close()
@@ -1494,10 +1494,10 @@ class ModuloPolitecnico(QWidget):
             self.mt_filtro_especialidad.clear()
             self.mt_filtro_especialidad.addItem("Todas las áreas técnicas", None)
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            self.mt_especialidad.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.mt_especialidad.addItem(fila["nombre"], fila["id"])
             if hasattr(self, "mt_filtro_especialidad"):
-                self.mt_filtro_especialidad.addItem(f["nombre"], f["id"])
+                self.mt_filtro_especialidad.addItem(fila["nombre"], fila["id"])
         if hasattr(self, "mt_filtro_especialidad"):
             idx= self.mt_filtro_especialidad.findData(actual)
             self.mt_filtro_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1505,8 +1505,8 @@ class ModuloPolitecnico(QWidget):
         self.mt_profesor.clear()
         self.mt_profesor.addItem("Sin asignar", None)
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
-        for f in c.fetchall():
-            self.mt_profesor.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
+        for fila in c.fetchall():
+            self.mt_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
     def _cargar_modulos_tecnicos(self):
@@ -1526,14 +1526,14 @@ class ModuloPolitecnico(QWidget):
         filas= c.fetchall()
         conn.close()
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['codigo'] or ''} {f['nombre'] or ''} {f['especialidad_nombre'] or ''} {f['prof_nombre'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['codigo'] or ''} {fila['nombre'] or ''} {fila['especialidad_nombre'] or ''} {fila['prof_nombre'] or ''}")]
         especialidad_id_f= self.mt_filtro_especialidad.currentData() if hasattr(self, "mt_filtro_especialidad") else None
         if especialidad_id_f is not None:
-            filas= [f for f in filas if f["especialidad_id"] == especialidad_id_f]
+            filas= [fila for fila in filas if fila["especialidad_id"] == especialidad_id_f]
         estado_f= self.mt_filtro_estado.currentText() if hasattr(self, "mt_filtro_estado") else None
         if estado_f and self.mt_filtro_estado.currentIndex() != 0:
-            filas= [f for f in filas if f["estado"] == estado_f]
+            filas= [fila for fila in filas if fila["estado"] == estado_f]
         self.paginacion_modulos_tecnicos.establecer_total(len(filas))
         inicio, fin= self.paginacion_modulos_tecnicos.rango_actual()
         pagina= filas[inicio:fin]
@@ -1558,9 +1558,9 @@ class ModuloPolitecnico(QWidget):
     #a únicamente módulos técnicos, para no tener que salir del módulo Politécnico a asignar co-docentes.
     def _tab_asignaciones_tecnicas(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         #Icono de profesor de la app (docente frente a un pizarrón, el mismo de la tab bar de esta pestaña), en vez del
         #👥 genérico.
@@ -1571,7 +1571,7 @@ class ModuloPolitecnico(QWidget):
             "Técnicos'. Usa tipos como co-titular en otra sección, auxiliar, suplente o "
             "practicante según corresponda. (La asignación de co-docentes de materias "
             "académicas normales se hace aparte, en Materias ▸ Co-Docentes.)")
-        l.addWidget(desc)
+        disposicion.addWidget(desc)
 
         self.tarjeta_form_asig_tecnica= TarjetaSeccion("➕", "Nueva Asignación")
 
@@ -1630,7 +1630,7 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_asig_tecnica.contenido.addLayout(form)
         self.panel_form_asig_tecnica= PanelDesplegable("Nueva Asignación")
         self.panel_form_asig_tecnica.cuerpo_layout().addWidget(self.tarjeta_form_asig_tecnica)
-        l.addWidget(self.panel_form_asig_tecnica)
+        disposicion.addWidget(self.panel_form_asig_tecnica)
 
         self.tarjeta_tabla_asig_tecnica= TarjetaSeccion(EMOJI_PROFESOR, "Profesores asignados")
         marco_busqueda, self.in_buscar_asig_tecnica= self._crear_barra_busqueda(
@@ -1704,9 +1704,9 @@ class ModuloPolitecnico(QWidget):
         self.tabla_asig_tecnica.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         self.tarjeta_tabla_asig_tecnica.contenido.addLayout(fila_acciones)
-        l.addWidget(self.tarjeta_tabla_asig_tecnica)
-        l.addStretch()
-        return w
+        disposicion.addWidget(self.tarjeta_tabla_asig_tecnica)
+        disposicion.addStretch()
+        return contenedor
 
     #Set de `secciones.id` cuyo Grado tiene asignada la especialidad
     #elegida en `at_filtro_especialidad` (grados.especialidad_id). None si
@@ -1724,7 +1724,7 @@ class ModuloPolitecnico(QWidget):
         c.execute("""SELECT secciones.id FROM secciones
                      LEFT JOIN grados ON secciones.grado_id = grados.id
                      WHERE grados.especialidad_id=?""", (especialidad_id,))
-        ids= {f["id"] for f in c.fetchall()}
+        ids= {fila["id"] for fila in c.fetchall()}
         conn.close()
         return ids
 
@@ -1745,8 +1745,8 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            self.at_filtro_especialidad.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.at_filtro_especialidad.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= self.at_filtro_especialidad.findData(actual)
         self.at_filtro_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1848,9 +1848,9 @@ class ModuloPolitecnico(QWidget):
             c.execute("""INSERT INTO materia_profesores (materia_id, profesor_id, seccion_id, tipo_asignacion)
                          VALUES (?,?,?,?)""", (modulo_id, profesor_id, seccion_id, tipo))
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar la asignación:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"No se pudo guardar la asignación:\n{error}", self)
             return
         finally:
             conn.close()
@@ -1875,9 +1875,9 @@ class ModuloPolitecnico(QWidget):
             c= conn.cursor()
             c.execute("DELETE FROM materia_profesores WHERE id=?", (id_asig,))
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
-            mostrar_mensaje("error", "Error de base de datos", f"No se pudo eliminar la asignación:\n{e}", self)
+            mostrar_mensaje("error", "Error de base de datos", f"No se pudo eliminar la asignación:\n{error}", self)
             return
         finally:
             conn.close()
@@ -1911,8 +1911,8 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
-        for f in c.fetchall():
-            self.at_profesor.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
+        for fila in c.fetchall():
+            self.at_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
         self._cargar_modulos_tecnicos_combo_asignacion()
@@ -1951,17 +1951,17 @@ class ModuloPolitecnico(QWidget):
         filas= c.fetchall()
         conn.close()
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['modulo_nombre'] or ''} {f['grado_nombre'] or ''} "
-                f"{f['seccion_nombre'] or 'Todas sus secciones'} "
-                f"{f['profesor_nombre'] or ''} {f['tipo_asignacion'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['modulo_nombre'] or ''} {fila['grado_nombre'] or ''} "
+                f"{fila['seccion_nombre'] or 'Todas sus secciones'} "
+                f"{fila['profesor_nombre'] or ''} {fila['tipo_asignacion'] or ''}")]
         especialidad_id_f= (self.at_filtro_especialidad.currentData()
                               if hasattr(self, "at_filtro_especialidad") else None)
         if especialidad_id_f is not None:
-            filas= [f for f in filas if f["especialidad_id_modulo"] == especialidad_id_f]
+            filas= [fila for fila in filas if fila["especialidad_id_modulo"] == especialidad_id_f]
         if hasattr(self, "at_filtro_tipo") and self.at_filtro_tipo.currentIndex() != 0:
             tipo_f= self.at_filtro_tipo.currentText()
-            filas= [f for f in filas if f["tipo_asignacion"] == tipo_f]
+            filas= [fila for fila in filas if fila["tipo_asignacion"] == tipo_f]
         self.paginacion_asig_tecnica.establecer_total(len(filas))
         inicio, fin= self.paginacion_asig_tecnica.rango_actual()
         pagina= filas[inicio:fin]
@@ -1979,16 +1979,16 @@ class ModuloPolitecnico(QWidget):
     #---------------- TALLERES Y LABORATORIOS ----------------
     def _tab_talleres(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
 
-        l.setSpacing(14)
+        disposicion.setSpacing(14)
 
         info= QLabel("Vincula cada Taller/Laboratorio (definido en Materias Aulas y Laboratorios) "
                       "con el área técnica a la que pertenece.")
         info.setObjectName("DescModulo")
         info.setWordWrap(True)
-        l.addWidget(info)
+        disposicion.addWidget(info)
 
         fila_resumen= QHBoxLayout()
         fila_resumen.setSpacing(18)
@@ -2004,7 +2004,7 @@ class ModuloPolitecnico(QWidget):
             leyenda_t.addWidget(lbl)
             self.etiquetas_leyenda_talleres[clave]= lbl
         fila_resumen.addLayout(leyenda_t, 1)
-        l.addLayout(fila_resumen)
+        disposicion.addLayout(fila_resumen)
 
         self.tarjeta_form_taller= TarjetaSeccion("🔗", "Vincular Taller/Laboratorio")
         form= QGridLayout()
@@ -2032,7 +2032,7 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_taller.contenido.addLayout(form)
         self.panel_form_taller= PanelDesplegable("Vincular Taller/Laboratorio")
         self.panel_form_taller.cuerpo_layout().addWidget(self.tarjeta_form_taller)
-        l.addWidget(self.panel_form_taller)
+        disposicion.addWidget(self.panel_form_taller)
 
         self.tarjeta_tabla_talleres= TarjetaSeccion(EMOJI_TALLERES_LABORATORIOS, "Talleres y Laboratorios")
         fila_cabecera_tabla_talleres= QHBoxLayout()
@@ -2087,9 +2087,9 @@ class ModuloPolitecnico(QWidget):
                                                 titulo= "Detalle del Taller/Laboratorio"))
         fila_acciones_taller.addStretch()
         self.tarjeta_tabla_talleres.contenido.addLayout(fila_acciones_taller)
-        l.addWidget(self.tarjeta_tabla_talleres)
-        l.addStretch()
-        return w
+        disposicion.addWidget(self.tarjeta_tabla_talleres)
+        disposicion.addStretch()
+        return contenedor
 
     def _alternar_filtro_talleres(self, valor):
 
@@ -2129,11 +2129,11 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre, tipo FROM aulas WHERE tipo IN ('Taller', 'Laboratorio') ORDER BY nombre")
-        for f in c.fetchall():
-            self.t_espacio.addItem(f"{f['nombre']} ({f['tipo']})", f["id"])
+        for fila in c.fetchall():
+            self.t_espacio.addItem(f"{fila['nombre']} ({fila['tipo']})", fila["id"])
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            self.t_especialidad.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.t_especialidad.addItem(fila["nombre"], fila["id"])
         conn.close()
 
     def _vincular_taller(self):
@@ -2212,12 +2212,12 @@ class ModuloPolitecnico(QWidget):
         filas= c.fetchall()
         conn.close()
         if self._filtro_talleres_vinculo == "vinculado":
-            filas= [f for f in filas if f["especialidad_id"] is not None]
+            filas= [fila for fila in filas if fila["especialidad_id"] is not None]
         elif self._filtro_talleres_vinculo == "sin_vincular":
-            filas= [f for f in filas if f["especialidad_id"] is None]
+            filas= [fila for fila in filas if fila["especialidad_id"] is None]
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['nombre'] or ''} {f['tipo'] or ''} {f['especialidad_nombre'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['nombre'] or ''} {fila['tipo'] or ''} {fila['especialidad_nombre'] or ''}")]
         self.paginacion_talleres.establecer_total(len(filas))
         inicio, fin= self.paginacion_talleres.rango_actual()
         filas= filas[inicio:fin]
@@ -2234,14 +2234,14 @@ class ModuloPolitecnico(QWidget):
     #---------------- EMPRESAS DE PASANTÍA ----------------
     def _tab_empresas(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         info= QLabel("Catálogo de empresas aliadas para pasantías: rubro, ubicación, contacto y cupos disponibles.")
         info.setObjectName("DescModulo")
         info.setWordWrap(True)
-        l.addWidget(info)
+        disposicion.addWidget(info)
 
         self.tarjeta_barra_empresas= TarjetaSeccion(EMOJI_EMPRESA_PASANTIA, "Empresas aliadas por rubro")
         self.barra_empresas= BarraSegmentadaPill(interactiva=False)
@@ -2251,7 +2251,7 @@ class ModuloPolitecnico(QWidget):
         self.layout_leyenda_empresas.setContentsMargins(0, 6, 0, 0)
         self.layout_leyenda_empresas.setSpacing(4)
         self.tarjeta_barra_empresas.contenido.addWidget(self.contenedor_leyenda_empresas)
-        l.addWidget(self.tarjeta_barra_empresas)
+        disposicion.addWidget(self.tarjeta_barra_empresas)
 
         self.tarjeta_form_empresa= TarjetaSeccion("➕", "Nueva empresa")
         form= QGridLayout()
@@ -2296,7 +2296,7 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_empresa.contenido.addLayout(form)
         self.panel_form_empresa= PanelDesplegable("Nueva empresa")
         self.panel_form_empresa.cuerpo_layout().addWidget(self.tarjeta_form_empresa)
-        l.addWidget(self.panel_form_empresa)
+        disposicion.addWidget(self.panel_form_empresa)
 
         self.tarjeta_tabla_empresas= TarjetaSeccion(EMOJI_EMPRESA_PASANTIA, "Empresas registradas")
         fila_cabecera_tabla_empresas= QHBoxLayout()
@@ -2357,9 +2357,9 @@ class ModuloPolitecnico(QWidget):
                                                 titulo= "Detalle de la Empresa"))
         fila_acciones.addStretch()
         self.tarjeta_tabla_empresas.contenido.addLayout(fila_acciones)
-        l.addWidget(self.tarjeta_tabla_empresas)
-        l.addStretch()
-        return w
+        disposicion.addWidget(self.tarjeta_tabla_empresas)
+        disposicion.addStretch()
+        return contenedor
 
     def _guardar_empresa(self):
 
@@ -2461,8 +2461,8 @@ class ModuloPolitecnico(QWidget):
         filas= c.fetchall()
         conn.close()
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                f"{f['nombre'] or ''} {f['rubro'] or ''} {f['ubicacion'] or ''} {f['contacto'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                f"{fila['nombre'] or ''} {fila['rubro'] or ''} {fila['ubicacion'] or ''} {fila['contacto'] or ''}")]
         self.paginacion_empresas.establecer_total(len(filas))
         inicio, fin= self.paginacion_empresas.rango_actual()
         filas= filas[inicio:fin]
@@ -2529,9 +2529,9 @@ class ModuloPolitecnico(QWidget):
     #---------------- CONTROL DE PASANTÍAS ----------------
     def _tab_pasantias(self):
 
-        w= QWidget()
-        l= QVBoxLayout(w)
-        l.setSpacing(14)
+        contenedor= QWidget()
+        disposicion= QVBoxLayout(contenedor)
+        disposicion.setSpacing(14)
 
         fila_resumen= QHBoxLayout()
         fila_resumen.setSpacing(18)
@@ -2547,7 +2547,7 @@ class ModuloPolitecnico(QWidget):
             leyenda_p.addWidget(lbl)
             self.etiquetas_leyenda_pasantias[clave]= lbl
         fila_resumen.addLayout(leyenda_p, 1)
-        l.addLayout(fila_resumen)
+        disposicion.addLayout(fila_resumen)
 
         self.tarjeta_form_pasantia= TarjetaSeccion("➕", "Registrar pasantía")
 
@@ -2619,12 +2619,12 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_pasantia.contenido.addLayout(form)
         self.panel_form_pasantia= PanelDesplegable("Registrar pasantía")
         self.panel_form_pasantia.cuerpo_layout().addWidget(self.tarjeta_form_pasantia)
-        l.addWidget(self.panel_form_pasantia)
+        disposicion.addWidget(self.panel_form_pasantia)
 
         self.lbl_resumen_filtros_pasantias= QLabel("")
         self.lbl_resumen_filtros_pasantias.setWordWrap(True)
         self.lbl_resumen_filtros_pasantias.setTextFormat(Qt.TextFormat.RichText)
-        l.addWidget(self.lbl_resumen_filtros_pasantias)
+        disposicion.addWidget(self.lbl_resumen_filtros_pasantias)
 
         self.tarjeta_tabla_pasantias= TarjetaSeccion(EMOJI_CONTROL_PASANTIAS, "Pasantías registradas")
         marco_busqueda, self.in_buscar_pasantias= self._crear_barra_busqueda(
@@ -2691,9 +2691,9 @@ class ModuloPolitecnico(QWidget):
         self.tabla_pasantias.doubleClicked.connect(lambda *_: btn_detalle_pas.click())
         fila_acciones_pas.addStretch()
         self.tarjeta_tabla_pasantias.contenido.addLayout(fila_acciones_pas)
-        l.addWidget(self.tarjeta_tabla_pasantias)
-        l.addStretch()
-        return w
+        disposicion.addWidget(self.tarjeta_tabla_pasantias)
+        disposicion.addStretch()
+        return contenedor
 
     #Ventanita (no modal) con Área Técnica, Carrera, Curso, Sección y
     #el buscador de estudiante — mismo patrón que
@@ -2780,7 +2780,7 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT estado, COUNT(*) as n FROM pasantias GROUP BY estado")
-        conteo= {f["estado"]: f["n"] for f in c.fetchall()}
+        conteo= {fila["estado"]: fila["n"] for fila in c.fetchall()}
         conn.close()
         if hasattr(self, "barra_pasantias"):
             self.barra_pasantias.establecer_datos([
@@ -2857,10 +2857,10 @@ class ModuloPolitecnico(QWidget):
                      LEFT JOIN grados ON secciones.grado_id = grados.id
                      WHERE estudiantes.estado='Activo'
                      ORDER BY grados.orden, secciones.nombre, estudiantes.apellidos""")
-        self._estudiantes_pasantia= [dict(f) for f in c.fetchall()]
+        self._estudiantes_pasantia= [dict(fila) for fila in c.fetchall()]
         c.execute("SELECT id, nombre FROM empresas_pasantia ORDER BY nombre")
-        for f in c.fetchall():
-            self.p_empresa.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            self.p_empresa.addItem(fila["nombre"], fila["id"])
         conn.close()
 
         poblar_combo_curso(self.p_filtro_curso, incluir_todos=False)
@@ -2906,8 +2906,8 @@ class ModuloPolitecnico(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.p_filtro_especialidad.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.p_filtro_especialidad.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.p_filtro_especialidad.findData(actual)
             self.p_filtro_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2924,8 +2924,8 @@ class ModuloPolitecnico(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.p_filtro_carrera.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.p_filtro_carrera.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.p_filtro_carrera.findData(actual)
             self.p_filtro_carrera.setCurrentIndex(idx if idx >= 0 else 0)
@@ -3053,10 +3053,10 @@ class ModuloPolitecnico(QWidget):
         filas= c.fetchall()
         conn.close()
         if self._filtro_pasantias_estado:
-            filas= [f for f in filas if f["estado"] == self._filtro_pasantias_estado]
+            filas= [fila for fila in filas if fila["estado"] == self._filtro_pasantias_estado]
         if texto:
-            filas= [f for f in filas if texto in _normalizar(
-                    f"{f['est_nombre'] or ''} {f['emp_nombre'] or ''} {f['estado'] or ''}")]
+            filas= [fila for fila in filas if texto in _normalizar(
+                    f"{fila['est_nombre'] or ''} {fila['emp_nombre'] or ''} {fila['estado'] or ''}")]
 
         #Filtros de la ventana "☰ Filtros" (Área Técnica/Carrera/Curso/ Sección del estudiante de la pasantía) — mismo
         #criterio que Banco de Tareas ▸ Entregas: acotan también la tabla ya generada, no solo el combo "Estudiante"
@@ -3068,13 +3068,13 @@ class ModuloPolitecnico(QWidget):
         curso_id_f= self.p_filtro_curso.currentData() if hasattr(self, "p_filtro_curso") else None
         seccion_id_f= self.p_filtro_seccion.currentData() if hasattr(self, "p_filtro_seccion") else None
         if especialidad_id_f is not None:
-            filas= [f for f in filas if f["especialidad_id_est"] == especialidad_id_f]
+            filas= [fila for fila in filas if fila["especialidad_id_est"] == especialidad_id_f]
         if carrera_id_f is not None:
-            filas= [f for f in filas if f["carrera_id_est"] == carrera_id_f]
+            filas= [fila for fila in filas if fila["carrera_id_est"] == carrera_id_f]
         if seccion_id_f is not None:
-            filas= [f for f in filas if f["seccion_id_est"] == seccion_id_f]
+            filas= [fila for fila in filas if fila["seccion_id_est"] == seccion_id_f]
         elif curso_id_f is not None:
-            filas= [f for f in filas if f["grado_id_est"] == curso_id_f]
+            filas= [fila for fila in filas if fila["grado_id_est"] == curso_id_f]
 
         #Con una sección concreta seleccionada (y, si la institución lo exige, también Área Técnica/Carrera concretas
         #-ver bd.mostrar_columna_numero_lista-), se reordena por Número de Lista; en cualquier otro caso se deja el

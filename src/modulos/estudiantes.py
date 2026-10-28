@@ -82,9 +82,9 @@ def _redondear_pixmap(pixmap, tamano):
     ruta= QPainterPath()
     ruta.addEllipse(0, 0, tamano, tamano)
     pintor.setClipPath(ruta)
-    x= (tamano - fuente.width()) // 2
-    y= (tamano - fuente.height()) // 2
-    pintor.drawPixmap(x, y, fuente)
+    pos_x= (tamano - fuente.width()) // 2
+    pos_y= (tamano - fuente.height()) // 2
+    pintor.drawPixmap(pos_x, pos_y, fuente)
     pintor.end()
     return resultado
 
@@ -996,9 +996,9 @@ class ModuloEstudiantes(QWidget):
         c.execute("""SELECT (profesores.nombre || ' ' || IFNULL(profesores.apellidos,'')) as nombre
                      FROM secciones LEFT JOIN profesores ON secciones.profesor_guia_id = profesores.id
                      WHERE secciones.id=?""", (seccion_id,))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        nombre= (f["nombre"] or "").strip() if f else ""
+        nombre= (fila["nombre"] or "").strip() if fila else ""
         self.lbl_profesor_guia.setText(f"Profesor guía: {nombre if nombre else 'Sin asignar'}")
         self._actualizar_disponibilidad_especialidad_ficha(seccion_id)
 
@@ -1039,12 +1039,12 @@ class ModuloEstudiantes(QWidget):
         c= conn.cursor()
         c.execute("SELECT matricula FROM estudiantes WHERE matricula LIKE ? ORDER BY matricula DESC LIMIT 1",
                   (f"{anio}-%",))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if f and f["matricula"]:
+        if fila and fila["matricula"]:
             try:
 
-                consecutivo= int(f["matricula"].split("-")[-1]) + 1
+                consecutivo= int(fila["matricula"].split("-")[-1]) + 1
             except (ValueError, IndexError):
                 consecutivo= 1
         else:
@@ -1065,9 +1065,9 @@ class ModuloEstudiantes(QWidget):
             c.execute("SELECT id FROM estudiantes WHERE matricula=?", (matricula,))
         else:
             c.execute("SELECT id FROM estudiantes WHERE matricula=? AND id!=?", (matricula, excluyendo_id))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        return f is None
+        return fila is None
 
     ALIAS_COLUMNAS= {
         "matricula": "matricula", "matrícula": "matricula",
@@ -1112,8 +1112,8 @@ class ModuloEstudiantes(QWidget):
         try:
 
             filas_crudas= self._leer_filas_importacion(ruta)
-        except Exception as e:
-            mostrar_mensaje("error", "Error al leer el archivo", f"No se pudo leer el archivo:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error al leer el archivo", f"No se pudo leer el archivo:\n{error}", self)
             return
         if not filas_crudas:
             mostrar_mensaje("advertencia", "Archivo vacío",
@@ -1189,7 +1189,7 @@ class ModuloEstudiantes(QWidget):
             encabezados= next(filas_iter, None)
             if not encabezados:
                 return []
-            claves= self._normalizar_encabezados([str(e or "") for e in encabezados])
+            claves= self._normalizar_encabezados([str(encabezado or "") for encabezado in encabezados])
             for cruda in filas_iter:
                 if not any(v not in (None, "") for v in cruda):
                     continue
@@ -1204,7 +1204,7 @@ class ModuloEstudiantes(QWidget):
 
     def _normalizar_encabezados(self, encabezados):
 
-        return [self.ALIAS_COLUMNAS.get((e or "").strip().lower(), None) for e in encabezados]
+        return [self.ALIAS_COLUMNAS.get((encabezado or "").strip().lower(), None) for encabezado in encabezados]
 
     def _guardar(self):
 
@@ -1313,8 +1313,8 @@ class ModuloEstudiantes(QWidget):
                 accion= "Editó estudiante"
             conn.commit()
             conn.close()
-        except Exception as e:
-            mostrar_mensaje("error", "Error", f"No se pudo guardar el estudiante:\n{e}", self)
+        except Exception as error:
+            mostrar_mensaje("error", "Error", f"No se pudo guardar el estudiante:\n{error}", self)
             return
         #El Número de Lista es POR SECCIÓN: al registrar un estudiante nuevo, o al mover uno de sección, hay que
         #recalcular tanto la sección de
@@ -1546,11 +1546,11 @@ class ModuloEstudiantes(QWidget):
                        datos["correo"], datos["tutor"], datos["tutor2"], datos["foto"],
                        datos["seccion_id"], datos["estado"]))
             conn.commit()
-        except Exception as e:
+        except Exception as error:
             conn.rollback()
             mostrar_mensaje("error", "No se pudo deshacer",
                              f"No fue posible restaurar al estudiante (puede que ya exista un registro con la "
-                             f"misma matrícula u otro conflicto): {e}", self)
+                             f"misma matrícula u otro conflicto): {error}", self)
             conn.close()
             return
         conn.close()

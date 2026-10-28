@@ -526,7 +526,7 @@ class ModuloMateriales(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre, icono FROM categorias_material ORDER BY nombre")
-        todas= [(f["id"], f["nombre"], f["icono"]) for f in c.fetchall()]
+        todas= [(fila["id"], fila["nombre"], fila["icono"]) for fila in c.fetchall()]
         conn.close()
         if self.main_window is None:
             resultado= todas
@@ -718,25 +718,25 @@ class ModuloMateriales(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM materiales WHERE id=?", (material_id,))
-        f= c.fetchone()
+        fila= c.fetchone()
         conn.close()
-        if not f:
+        if not fila:
             return
         self.material_en_edicion= material_id
-        idx_cat= self.combo_categoria_form.findData(f["categoria_id"])
+        idx_cat= self.combo_categoria_form.findData(fila["categoria_id"])
         if idx_cat < 0:
             mostrar_mensaje("advertencia", "Categoría no editable",
                              "Esta categoría ya no está entre las que puedes editar.", self)
             return
         self.combo_categoria_form.setCurrentIndex(idx_cat)
-        self.in_codigo_form.setText(f["codigo"] or "")
-        self.in_nombre_form.setText(f["nombre"])
-        self.txt_descripcion_form.setPlainText(f["descripcion"] or "")
-        self.spin_total_form.setValue(f["cantidad_total"])
-        self.spin_disponible_form.setMaximum(max(0, f["cantidad_total"]))
-        self.spin_disponible_form.setValue(f["cantidad_disponible"])
-        self.in_ubicacion_form.setText(f["ubicacion"] or "")
-        idx_estado= self.combo_estado_form.findData(f["estado"])
+        self.in_codigo_form.setText(fila["codigo"] or "")
+        self.in_nombre_form.setText(fila["nombre"])
+        self.txt_descripcion_form.setPlainText(fila["descripcion"] or "")
+        self.spin_total_form.setValue(fila["cantidad_total"])
+        self.spin_disponible_form.setMaximum(max(0, fila["cantidad_total"]))
+        self.spin_disponible_form.setValue(fila["cantidad_disponible"])
+        self.in_ubicacion_form.setText(fila["ubicacion"] or "")
+        idx_estado= self.combo_estado_form.findData(fila["estado"])
         self.combo_estado_form.setCurrentIndex(idx_estado if idx_estado >= 0 else 0)
         #De golpe (sin animación) al editar, igual que observaciones.py: el despliegue "por descubrimiento" de
         #edicion_feedback ya lo abriría solo, pero abrirlo aquí explícito evita cualquier parpadeo previo al banner y
@@ -745,7 +745,7 @@ class ModuloMateriales(QWidget):
         self._hacer_visible_formulario()
         #Banner "Editando: ..." + despliegue/scroll automático hasta el formulario -mismo mecanismo que
         #estudiantes/materias/observaciones (ver edicion_feedback.py), del que este módulo carecía hasta ahora.
-        activar_modo_edicion(self.in_nombre_form, f"Editando material: {f['nombre'] or ''}")
+        activar_modo_edicion(self.in_nombre_form, f"Editando material: {fila['nombre'] or ''}")
 
     #Deja el formulario listo para una captura nueva: mismo papel que
     #el botón 'Limpiar' de banco_tareas.py/observaciones.py. NO colapsa
@@ -1308,8 +1308,8 @@ class DialogoPermisosMateriales(_DialogoCentrado):
         c.execute("SELECT id, nombre, icono FROM categorias_material ORDER BY nombre")
         self._categorias= c.fetchall()
         conn.close()
-        for u in self._usuarios:
-            self.combo_usuario.addItem(f"{u['nombre_completo']} ({u['rol']})", u["id"])
+        for usuario in self._usuarios:
+            self.combo_usuario.addItem(f"{usuario['nombre_completo']} ({usuario['rol']})", usuario["id"])
         self.combo_usuario.currentIndexChanged.connect(self._cargar_permisos_usuario)
         conectar_tooltip_seleccion(self.combo_usuario, "Usuario al que se le asignarán los permisos")
         layout.addWidget(self.combo_usuario)

@@ -541,10 +541,10 @@ class Chip(QFrame):
         lay.addWidget(self.lbl_icono)
         self.lbl= QLabel()
         self.lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        f= self.lbl.font()
-        f.setPointSize(10)
-        f.setBold(True)
-        self.lbl.setFont(f)
+        fuente= self.lbl.font()
+        fuente.setPointSize(10)
+        fuente.setBold(True)
+        self.lbl.setFont(fuente)
         lay.addWidget(self.lbl)
         self._actualizar_texto()
 
@@ -831,9 +831,9 @@ class BarraFrecuencia(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         margen_izq= 168
         alto_barra= 9
-        y= (self.height() - alto_barra) / 2
+        pos_y= (self.height() - alto_barra) / 2
         ancho_pista= max(10.0, self.width() - margen_izq - 40)
-        rect_pista= QRectF(margen_izq, y, ancho_pista, alto_barra)
+        rect_pista= QRectF(margen_izq, pos_y, ancho_pista, alto_barra)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(self._color_pista)
         painter.drawRoundedRect(rect_pista, alto_barra / 2, alto_barra / 2)
@@ -1166,10 +1166,10 @@ class DialogoAjusteCompetencia(QDialog):
                          JOIN materias ON competencias_especificas.materia_id = materias.id
                          WHERE competencias_especificas.grado_id=? ORDER BY materias.nombre""",
                       (self.grado_id,))
-            for f in c.fetchall():
-                self.combo_materia.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_materia.addItem(fila["nombre"], fila["id"])
         c.execute("SELECT id, nombre FROM periodos ORDER BY id")
-        periodos= [dict(f) for f in c.fetchall()]
+        periodos= [dict(fila) for fila in c.fetchall()]
         conn.close()
         self.combo_materia.currentIndexChanged.connect(self._cargar_competencias)
         conectar_tooltip_seleccion(self.combo_materia, "Materia de la observación")
@@ -1184,8 +1184,8 @@ class DialogoAjusteCompetencia(QDialog):
         form.addWidget(QLabel("Competencia:"), 1, 0)
         form.addWidget(self.combo_competencia, 1, 1)
         self.combo_periodo= QComboBox()
-        for p in periodos:
-            self.combo_periodo.addItem(p["nombre"], p["id"])
+        for periodo in periodos:
+            self.combo_periodo.addItem(periodo["nombre"], periodo["id"])
         conectar_tooltip_seleccion(self.combo_periodo, "Periodo académico de la observación")
         form.addWidget(QLabel("Periodo:"), 2, 0)
         form.addWidget(self.combo_periodo, 2, 1)
@@ -1798,8 +1798,8 @@ class ModuloObservaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-        for f in c.fetchall():
-            combo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            combo.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= combo.findData(actual)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1822,8 +1822,8 @@ class ModuloObservaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-        for f in c.fetchall():
-            combo.addItem(f["nombre"], f["id"])
+        for fila in c.fetchall():
+            combo.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= combo.findData(actual)
         combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2022,8 +2022,8 @@ class ModuloObservaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_especialidad_form.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_especialidad_form.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_especialidad_form.findData(actual)
             self.combo_filtro_especialidad_form.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2040,8 +2040,8 @@ class ModuloObservaciones(QWidget):
             conn= obtener_conexion()
             c= conn.cursor()
             c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
-            for f in c.fetchall():
-                self.combo_filtro_carrera_form.addItem(f["nombre"], f["id"])
+            for fila in c.fetchall():
+                self.combo_filtro_carrera_form.addItem(fila["nombre"], fila["id"])
             conn.close()
             idx= self.combo_filtro_carrera_form.findData(actual)
             self.combo_filtro_carrera_form.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2064,16 +2064,16 @@ class ModuloObservaciones(QWidget):
         c= conn.cursor()
         c.execute("""SELECT id, nombre, apellidos, seccion_id, especialidad_id, carrera_id FROM estudiantes
                      WHERE estado='Activo' ORDER BY apellidos, nombre""")
-        for f in c.fetchall():
-            if secciones_permitidas is not None and f["seccion_id"] not in secciones_permitidas:
+        for fila in c.fetchall():
+            if secciones_permitidas is not None and fila["seccion_id"] not in secciones_permitidas:
                 continue
-            if seccion_form is not None and f["seccion_id"] != seccion_form:
+            if seccion_form is not None and fila["seccion_id"] != seccion_form:
                 continue
-            if especialidad_id is not None and f["especialidad_id"] != especialidad_id:
+            if especialidad_id is not None and fila["especialidad_id"] != especialidad_id:
                 continue
-            if carrera_id is not None and f["carrera_id"] != carrera_id:
+            if carrera_id is not None and fila["carrera_id"] != carrera_id:
                 continue
-            self.combo_estudiante.addItem(f"{f['nombre']} {f['apellidos'] or ''}".strip(), f["id"])
+            self.combo_estudiante.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
     #Lista de materias/módulos elegibles para asociar a la observación
@@ -2090,10 +2090,10 @@ class ModuloObservaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM materias WHERE estado='Activa' ORDER BY nombre")
-        for f in c.fetchall():
-            if permitidas is not None and f["id"] not in permitidas:
+        for fila in c.fetchall():
+            if permitidas is not None and fila["id"] not in permitidas:
                 continue
-            self.combo_materia_obs.addItem(f["nombre"], f["id"])
+            self.combo_materia_obs.addItem(fila["nombre"], fila["id"])
         conn.close()
         idx= self.combo_materia_obs.findData(seleccion_previa)
         self.combo_materia_obs.setCurrentIndex(idx if idx >= 0 else 0)
@@ -2124,7 +2124,7 @@ class ModuloObservaciones(QWidget):
             for clave, etiqueta, palabras in CATEGORIAS:
                 if clave in seleccionadas:
                     continue
-                coincidencias= sum(1 for p in palabras if _contiene_palabra(texto, _normalizar(p)))
+                coincidencias= sum(1 for palabra in palabras if _contiene_palabra(texto, _normalizar(palabra)))
                 if coincidencias:
                     candidatas.append((coincidencias, clave, etiqueta))
         #Más palabras clave encontradas para una categoría = más señal de
@@ -2397,7 +2397,7 @@ class ModuloObservaciones(QWidget):
                      WHERE calificacion_competencia.competencia_id=? AND calificaciones.estudiante_id=?
                      AND calificaciones.periodo_id=? AND calificaciones.estado_publicacion != 'Borrador'""",
                   (d["competencia_id"], datos_previos["estudiante_id"], d["periodo_id"]))
-        evidencias= [dict(f) for f in c.fetchall()]
+        evidencias= [dict(fila) for fila in c.fetchall()]
         c.execute("""SELECT metodo_calculo, nota_minima, nota_minima_primaria, nota_minima_secundaria,
                      sistema_calificacion FROM configuracion WHERE id=1""")
         cfg= c.fetchone()
@@ -2597,32 +2597,32 @@ class ModuloObservaciones(QWidget):
         conn.close()
 
         visibles= []
-        for f in filas:
-            if secciones_permitidas is not None and f["seccion_id"] not in secciones_permitidas:
+        for fila in filas:
+            if secciones_permitidas is not None and fila["seccion_id"] not in secciones_permitidas:
                 continue
-            if grado_filtro is not None and f["grado_id"] != grado_filtro:
+            if grado_filtro is not None and fila["grado_id"] != grado_filtro:
                 continue
-            if seccion_filtro is not None and f["seccion_id"] != seccion_filtro:
+            if seccion_filtro is not None and fila["seccion_id"] != seccion_filtro:
                 continue
-            if especialidad_filtro is not None and f["especialidad_id"] != especialidad_filtro:
+            if especialidad_filtro is not None and fila["especialidad_id"] != especialidad_filtro:
                 continue
-            if carrera_filtro is not None and f["carrera_id"] != carrera_filtro:
+            if carrera_filtro is not None and fila["carrera_id"] != carrera_filtro:
                 continue
-            if self._filtro_naturaleza and (f["naturaleza"] or "Informativa") != self._filtro_naturaleza:
+            if self._filtro_naturaleza and (fila["naturaleza"] or "Informativa") != self._filtro_naturaleza:
                 continue
-            if solo_destacadas and not f["destacada"]:
+            if solo_destacadas and not fila["destacada"]:
                 continue
             if categorias_filtro:
-                claves_fila= set((f["categorias"] or "").split(","))
+                claves_fila= set((fila["categorias"] or "").split(","))
                 if not (claves_fila & categorias_filtro):
                     continue
             if texto_filtro:
                 objetivo= " ".join([
-                    f["nombre_est"] or "", f["grado_nombre"] or "", f["seccion_nombre"] or "", f["texto"] or "",
+                    fila["nombre_est"] or "", fila["grado_nombre"] or "", fila["seccion_nombre"] or "", fila["texto"] or "",
                 ])
                 if texto_filtro not in _normalizar(objetivo):
                     continue
-            visibles.append(f)
+            visibles.append(fila)
         return visibles
 
     def _cargar_tabla(self):
@@ -2777,8 +2777,8 @@ class ModuloObservaciones(QWidget):
         self.chip_contador.establecer(len(visibles))
 
         conteo_naturaleza= {"Positiva": 0, "Informativa": 0, "Negativa": 0}
-        for f in visibles:
-            clave= f["naturaleza"] or "Informativa"
+        for visible in visibles:
+            clave= visible["naturaleza"] or "Informativa"
             if clave in conteo_naturaleza:
                 conteo_naturaleza[clave] += 1
         self.chips_filtro_naturaleza["todas"].establecer_contador(len(visibles))
@@ -2786,7 +2786,7 @@ class ModuloObservaciones(QWidget):
             if clave != "todas":
                 chip.establecer_contador(conteo_naturaleza.get(clave, 0))
 
-        destacadas= [f for f in visibles if f["destacada"]]
+        destacadas= [visible for visible in visibles if visible["destacada"]]
         self.chip_destacadas.establecer_contador(len(destacadas))
         if destacadas:
             self.cinta_destacadas.mostrar_mensaje(
@@ -2795,8 +2795,8 @@ class ModuloObservaciones(QWidget):
             self.cinta_destacadas.ocultar()
 
         conteo= {}
-        for f in visibles:
-            for clave in (f["categorias"] or "").split(","):
+        for visible in visibles:
+            for clave in (visible["categorias"] or "").split(","):
                 if clave:
                     conteo[clave]= conteo.get(clave, 0) + 1
         top= sorted(conteo.items(), key=lambda kv: kv[1], reverse=True)[:5]

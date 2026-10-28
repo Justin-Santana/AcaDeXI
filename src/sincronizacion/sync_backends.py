@@ -108,11 +108,11 @@ def _hash_archivo(ruta):
 
     if not ruta or not os.path.exists(ruta):
         return None
-    h= hashlib.sha256()
+    huella= hashlib.sha256()
     with open(ruta, "rb") as f:
         for bloque in iter(lambda: f.read(65536), b""):
-            h.update(bloque)
-    return h.hexdigest()
+            huella.update(bloque)
+    return huella.hexdigest()
 
 
 #Google Drive
