@@ -818,7 +818,7 @@ class DialogoRA(QDialog):
 #rastro en su campo `observacion`.
 class DialogoAjusteRA(QDialog):
     def __init__(self, main_window, estudiante_id, texto_observacion, naturaleza, parent=None,
-                 materia_id_sugerida=None):
+                 materia_id_sugerida= None):
         super().__init__(parent)
         self.main_window= main_window
         self.estudiante_id= estudiante_id
@@ -962,8 +962,8 @@ def guardar_ajuste_ra(main_window, estudiante_id, ra_id, anio, ajuste, domina, t
                   usuario, actualizado)
                  VALUES (?,?,?,?,?,?,?,?)
                  ON CONFLICT(estudiante_id, resultado_aprendizaje_id, anio_academico) DO UPDATE SET
-                    nota=excluded.nota, domina=excluded.domina, observacion=excluded.observacion,
-                    usuario=excluded.usuario, actualizado=excluded.actualizado""",
+                    nota= excluded.nota, domina=excluded.domina, observacion=excluded.observacion,
+                    usuario= excluded.usuario, actualizado=excluded.actualizado""",
               (estudiante_id, ra_id, anio, nueva_nota, nuevo_domina, detalle, usuario, ahora))
     conn.commit()
     conn.close()
@@ -1193,7 +1193,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         botones.addWidget(btn_eliminar)
         botones.addStretch()
         btn_detalle_ra= agregar_boton_detalle(botones, self.tabla_ra, self, titulo="Detalle del RA",
-                               texto_boton="Ver Detalle")
+                               texto_boton= "Ver Detalle")
         self.tabla_ra.doubleClicked.connect(lambda *_: btn_detalle_ra.click())
         lr.addLayout(botones)
 
@@ -1213,7 +1213,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         lr.addWidget(self.paginacion_ra)
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_ra, [self.tabla_ra, self.paginacion_ra],
-            titulo="RA / Unidades", parent=self)
+            titulo= "RA / Unidades", parent=self)
         l.addWidget(frame_res)
         l.addStretch()
         return w
@@ -1319,7 +1319,7 @@ class ModuloCalificacionesTecnicas(QWidget):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no puede editar el currículo técnico.", self)
             return
         dialogo= DialogoRA(self, modo_simplificado=not self._dominicano,
-                             codigo_sugerido=self._siguiente_codigo_sugerido())
+                             codigo_sugerido= self._siguiente_codigo_sugerido())
         if dialogo.exec() == QDialog.DialogCode.Accepted:
             v= dialogo.valores()
             try:
@@ -1534,7 +1534,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self.paginacion_notas.cambio.connect(self._render_pagina_notas)
         lr.addWidget(self.paginacion_notas)
         btn_detalle_notas= agregar_boton_detalle(None, self.tabla_notas, self, titulo="Detalle de Notas Técnicas",
-                                                    texto_boton="Ver Detalle del Seleccionado")
+                                                    texto_boton= "Ver Detalle del Seleccionado")
         btn_detalle_notas.clicked.disconnect()
         btn_detalle_notas.clicked.connect(self._ver_detalle_estudiante_notas)
         self.tabla_notas.doubleClicked.connect(lambda *_: btn_detalle_notas.click())
@@ -1548,7 +1548,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         agregar_boton_pantalla_completa(
             None,
             [self.tabla_notas, self.paginacion_notas, btn_detalle_notas, self.btn_guardar_notas],
-            titulo="Registro de Notas Técnicas", parent=self)
+            titulo= "Registro de Notas Técnicas", parent=self)
         return w
 
     def _construir_dialogo_filtros_registro(self):
@@ -1985,7 +1985,7 @@ class ModuloCalificacionesTecnicas(QWidget):
                     no += 1
             promedio= sum(valores) / len(valores) if valores else 0
             self.anillo_promedio_grupo.poner_valor(promedio, _color_cf(promedio, self._nota_minima),
-                                                  con_datos=bool(valores))
+                                                  con_datos= bool(valores))
             self.donut_grupo.poner_valores(ok, no, pendiente)
         else:
             ok= no= pendiente= 0
@@ -2038,8 +2038,8 @@ class ModuloCalificacionesTecnicas(QWidget):
                               actualizado)
                              VALUES (?,?,?,?,?,?,?)
                              ON CONFLICT(estudiante_id, resultado_aprendizaje_id, anio_academico) DO UPDATE SET
-                                nota=excluded.nota, domina=excluded.domina, usuario=excluded.usuario,
-                                actualizado=excluded.actualizado""",
+                                nota= excluded.nota, domina=excluded.domina, usuario=excluded.usuario,
+                                actualizado= excluded.actualizado""",
                           (est["id"], ra["id"], anio, nota, domina, usuario, ahora))
                 guardadas += 1
         conn.commit()
@@ -2151,14 +2151,14 @@ class ModuloCalificacionesTecnicas(QWidget):
         fila_botones.addStretch()
         self.btn_detalle_boletin= agregar_boton_detalle(
             fila_botones, self.tabla_estudiantes_boletin, self,
-            titulo="Detalle del Estudiante", texto_boton="Ver Detalle")
+            titulo= "Detalle del Estudiante", texto_boton="Ver Detalle")
         self.tabla_estudiantes_boletin.cellDoubleClicked.connect(
             lambda _r, _c: self.btn_detalle_boletin.click())
         lt.addLayout(fila_botones)
         agregar_boton_pantalla_completa(
             None,
             [self.tabla_estudiantes_boletin, self.paginacion_boletin],
-            titulo="Boletín Técnico — Estudiantes", parent=self)
+            titulo= "Boletín Técnico — Estudiantes", parent=self)
         l.addWidget(frame_tabla)
 
         self.lbl_titulo_preview_boletin= QLabel("Vista previa del boletín")
@@ -2351,7 +2351,7 @@ class ModuloCalificacionesTecnicas(QWidget):
 
     def _cargar_secciones_filtro_boletin(self):
         cascada_seccion_por_curso(self.combo_grado_boletin, self.combo_seccion_boletin, incluir_todas=False,
-                                   secciones_permitidas=obtener_secciones_permitidas(self.main_window))
+                                   secciones_permitidas= obtener_secciones_permitidas(self.main_window))
         self._actualizar_resumen_filtros_boletin()
         self._cargar_tabla_estudiantes_boletin()
 
@@ -2773,8 +2773,8 @@ class ModuloCalificacionesTecnicas(QWidget):
         c.execute("""INSERT INTO decision_promocion (estudiante_id, anio_academico, decision, accion_no_promocion,
                      motivo_conducta, usuario, fecha) VALUES (?,?,'Pendiente',?,?,?,?)
                      ON CONFLICT(estudiante_id, anio_academico) DO UPDATE SET
-                        accion_no_promocion=excluded.accion_no_promocion, motivo_conducta=excluded.motivo_conducta,
-                        usuario=excluded.usuario, fecha=excluded.fecha""",
+                        accion_no_promocion= excluded.accion_no_promocion, motivo_conducta=excluded.motivo_conducta,
+                        usuario= excluded.usuario, fecha=excluded.fecha""",
                   (estudiante_id, anio, accion, motivo, self.main_window.usuario_actual,
                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         conn.commit()

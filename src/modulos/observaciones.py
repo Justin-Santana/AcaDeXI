@@ -1372,8 +1372,7 @@ class ModuloObservaciones(QWidget):
         #--- Registros (tabla) — va justo debajo de los filtros, arriba de "categorías frecuentes" y del formulario de
         #captura, para que lo que el docente/gerencia consulta con más frecuencia (el historial) esté visible sin tener
         #que bajar toda la pantalla.
-        #
-        #Se reemplaza la antigua lista de tarjetas apiladas (con animación de entrada por geometría, que se
+        #        #Se reemplaza la antigua lista de tarjetas apiladas (con animación de entrada por geometría, que se
         #desincronizaba con el layout y
         #producía el bugueo visual reportado) por una QTableWidget real:
         #escalable con muchos registros —con SU PROPIO scroll, sin estirar la página— pero conservando el mismo
@@ -1438,7 +1437,7 @@ class ModuloObservaciones(QWidget):
         #agrega recién aquí, junto al título "Registros", porque necesita self.paginacion ya construido.
         agregar_boton_pantalla_completa(
             None, [self.tarjeta_filtros, self.frame_tabla, self.paginacion],
-            titulo="Observaciones", parent=self)
+            titulo= "Observaciones", parent=self)
 
         fila_acciones_tabla= QHBoxLayout()
         self.btn_ver_detalle_tabla= QPushButton("Ver Detalle")
@@ -1883,18 +1882,18 @@ class ModuloObservaciones(QWidget):
         permitidas= self._secciones_permitidas_ids()
         poblar_combo_curso(self.combo_filtro_grado, incluir_todos=False, secciones_permitidas=permitidas)
         cascada_seccion_por_curso(self.combo_filtro_grado, self.combo_filtro_seccion,
-                                   incluir_todas=False, secciones_permitidas=permitidas)
+                                   incluir_todas= False, secciones_permitidas=permitidas)
 
     def _cargar_combos_form(self):
         permitidas= self._secciones_permitidas_ids()
         poblar_combo_curso(self.combo_grado_form, incluir_todos=False, secciones_permitidas=permitidas)
         cascada_seccion_por_curso(self.combo_grado_form, self.combo_seccion_form,
-                                   incluir_todas=False, secciones_permitidas=permitidas)
+                                   incluir_todas= False, secciones_permitidas=permitidas)
 
     def _grado_filtro_cambio(self):
         permitidas= self._secciones_permitidas_ids()
         cascada_seccion_por_curso(self.combo_filtro_grado, self.combo_filtro_seccion,
-                                   incluir_todas=False, secciones_permitidas=permitidas)
+                                   incluir_todas= False, secciones_permitidas=permitidas)
         self._actualizar_resumen_filtros_listado()
         self._filtro_cambio()
 
@@ -1905,7 +1904,7 @@ class ModuloObservaciones(QWidget):
     def _grado_form_cambio(self):
         permitidas= self._secciones_permitidas_ids()
         cascada_seccion_por_curso(self.combo_grado_form, self.combo_seccion_form,
-                                   incluir_todas=False, secciones_permitidas=permitidas)
+                                   incluir_todas= False, secciones_permitidas=permitidas)
         self._cargar_combo_estudiantes()
 
     def _cargar_filtro_tecnico_form(self):
@@ -2117,7 +2116,7 @@ class ModuloObservaciones(QWidget):
                 accion= "Registró observación"
             else:
                 c.execute("""UPDATE observaciones SET estudiante_id=?, tipo=?, texto=?, naturaleza=?, categorias=?,
-                             destacada=?, materia_id=? WHERE id=?""",
+                             destacada= ?, materia_id=? WHERE id=?""",
                           (estudiante_id, tipo_legado, texto, naturaleza, categorias_txt, destacada, materia_id,
                            self.id_edicion))
                 observacion_id_nueva= None
@@ -2185,11 +2184,11 @@ class ModuloObservaciones(QWidget):
                 if texto_principal:
                     self.cinta_ajuste.mostrar_para(
                         texto_principal, texto_boton=boton_principal,
-                        texto_boton_secundario="Marcar entrega" if ofrece_entrega else None)
+                        texto_boton_secundario= "Marcar entrega" if ofrece_entrega else None)
                 else:
                     self.cinta_ajuste.mostrar_para(
                         "¿Marcar el estado de esta entrega por esto? (opcional)",
-                        texto_boton="Marcar entrega")
+                        texto_boton= "Marcar entrega")
             else:
                 self.cinta_ajuste.ocultar()
         else:
@@ -2222,7 +2221,7 @@ class ModuloObservaciones(QWidget):
             return
         dialogo= DialogoAjusteRA(self.main_window, datos_previos["estudiante_id"], datos_previos["texto"],
                                    datos_previos["naturaleza"], self,
-                                   materia_id_sugerida=datos_previos.get("materia_id"))
+                                   materia_id_sugerida= datos_previos.get("materia_id"))
         if dialogo.exec() != QDialog.DialogCode.Accepted:
             return
         d= dialogo.datos()
@@ -2264,7 +2263,7 @@ class ModuloObservaciones(QWidget):
             return
         dialogo= DialogoAjusteCompetencia(datos_previos["estudiante_id"], datos_previos["texto"],
                                             datos_previos["naturaleza"], self,
-                                            materia_id_sugerida=datos_previos.get("materia_id"))
+                                            materia_id_sugerida= datos_previos.get("materia_id"))
         if dialogo.exec() != QDialog.DialogCode.Accepted:
             return
         d= dialogo.datos()
@@ -2616,7 +2615,7 @@ class ModuloObservaciones(QWidget):
         extra_botones= [("Ver descripción completa",
                            lambda: mostrar_texto_largo(self, "Descripción completa", texto_completo))]
         mostrar_detalle_campos(self, f"Observación · {fila['nombre_est'] or '—'}", campos,
-                                extra_botones=extra_botones)
+                                extra_botones= extra_botones)
 
     def _ver_detalle_seleccionada(self):
         indice= self.tabla.currentRow()

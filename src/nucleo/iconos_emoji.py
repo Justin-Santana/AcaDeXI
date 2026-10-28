@@ -16,7 +16,7 @@ Cómo se usa desde cualquier módulo
 -----------------------------------
     from iconos_emoji import icono_emoji, quitar_emojis_texto
 
-    btn_guardar = QPushButton(quitar_emojis_texto("💾 Guardar"))
+    btn_guardar= QPushButton(quitar_emojis_texto("💾 Guardar"))
     btn_guardar.setIcon(icono_emoji("💾"))
     btn_guardar.setIconSize(QSize(18, 18))
 
@@ -45,8 +45,7 @@ _cache_html= {}
 #oscuro, así que no necesitan saber nada del tema. Unos pocos (como el de "Filtros") usan un gris NEUTRO
 #pensado para fondos claros, y se vuelven casi invisibles sobre un fondo
 #oscuro. Para esos casos puntuales:
-#
-#1. main.py llama a `establecer_modo_oscuro(activo)` cada vez que la
+##1. main.py llama a `establecer_modo_oscuro(activo)` cada vez que la
 #persona cambia de tema (y una vez al iniciar la app).
 #2. Los pocos dibujos que lo necesitan preguntan `_modo_oscuro_activo`
 #para elegir su color neutro.
@@ -345,7 +344,7 @@ def _registro_notas_kpi(p, size, color="#10B981"):
         _linea(p, size, 0.24, y, 0.56, y, "#94A3B8", 2.0)
         _rect_redondeado(p, size, 0.62, y - 0.06, 0.76, y + 0.06, claro, radio=0.25, borde=color)
         _check(p, size, color=color, x0=0.645, y0=y, x1=0.685, y1=y + 0.045,
-               x2=0.745, y2=y - 0.055, ancho=1.6)
+               x2= 0.745, y2=y - 0.055, ancho=1.6)
     #Insignia grande de check en la esquina -"al día"-, mismo lenguaje visual que el resto de KPIs de esta pantalla
     #para "completo".
     _disco(p, size, 0.64, 0.66, 0.98, 1.00, "#22C55E", borde="#15803D")
@@ -847,7 +846,7 @@ def _puerta_salida(p, size):
     _disco(p, size, 0.50, 0.47, 0.58, 0.55, "#FDE68A", borde=color_marco)
     #Flecha saliendo del vano hacia afuera -indica la acción de salir-.
     _flecha(p, size, "#EF4444", angulo_deg=0, cx=0.80, cy=0.50, largo=0.16,
-            ancho_cabeza=0.11, grosor=3.0)
+            ancho_cabeza= 0.11, grosor=3.0)
 
 
 def _pieza_rompecabezas(p, size, color="#8B5CF6"):

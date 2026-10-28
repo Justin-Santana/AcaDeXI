@@ -512,7 +512,7 @@ class VistaSemanalHorario(QWidget):
     def establecer_clases(self, clases, animar=True):
         self._clases= clases
         self._franjas= sorted({(c["hora_inicio"], c["hora_fin"]) for c in clases},
-                                key=lambda t: _minutos(t[0]))
+                                key= lambda t: _minutos(t[0]))
         alto_total= self.ALTO_CABECERA + len(self._franjas) * (self.ALTO_FILA + self.ESPACIO_FILA) + 14
         self.setFixedHeight(max(alto_total, self.ALTO_CABECERA + 70))
         self._recalcular_geometria()
@@ -612,8 +612,7 @@ class VistaSemanalHorario(QWidget):
         #separación entre filas/columnas (inspirado, solo ligeramente, en el diseño de tabla clásica de aSc Horarios):
         #dan la misma sensación de orden y guían el ojo fila por fila, pero sin pelear visualmente con el color de cada
         #chip. El espacio entre filas también se agrandó (ESPACIO_FILA) para que respiren.
-        #
-        #Rendimiento: con horarios institucionales completos puede haber muchísimas franjas horarias distintas (grilla
+        #        #Rendimiento: con horarios institucionales completos puede haber muchísimas franjas horarias distintas (grilla
         #muy alta). En vez de dibujar TODAS las líneas/etiquetas de hora aunque el usuario solo esté viendo 8 filas por
         #la ventana/scroll, se calcula el rango de filas que realmente cae dentro de "clip" y solo esas se dibujan.
         fila_alto= self.ALTO_FILA + self.ESPACIO_FILA
@@ -1262,7 +1261,7 @@ class ModuloHorario(QWidget):
             #-mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-.
             agregar_boton_pantalla_completa(
                 fila_cabecera_tabla_local, [self.tabla_local, self.paginacion_local],
-                titulo="Mis clases locales", parent=self)
+                titulo= "Mis clases locales", parent=self)
 
             fila_acciones_local= QHBoxLayout()
             btn_cargar_local= QPushButton("Cargar Seleccionada")
@@ -1924,8 +1923,8 @@ class ModuloHorario(QWidget):
         """Recarga el combo de sección para que solo muestre las secciones
         del curso elegido (o todas, si no hay curso seleccionado)."""
         cascada_seccion_por_curso(self.combo_filtro_curso, self.combo_filtro_seccion,
-                                   incluir_todas=False,
-                                   secciones_permitidas=self._secciones_permitidas_con_nivel())
+                                   incluir_todas= False,
+                                   secciones_permitidas= self._secciones_permitidas_con_nivel())
 
     #--------------------------------------------------------
     def _cargar_combos_filtro(self):
@@ -2047,7 +2046,7 @@ class ModuloHorario(QWidget):
         TODOS los combos Curso->Sección de AcaDeXI: Curso obligatorio primero,
         sin excepciones."""
         cascada_seccion_por_curso(self.combo_curso_local, self.combo_seccion_local, incluir_todas=False,
-                                   secciones_permitidas=obtener_secciones_permitidas(self.main_window))
+                                   secciones_permitidas= obtener_secciones_permitidas(self.main_window))
 
     def _limpiar_form_local(self):
         self.id_edicion_local= None

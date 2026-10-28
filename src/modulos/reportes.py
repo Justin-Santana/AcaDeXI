@@ -3,8 +3,7 @@
 #y barra de filtros (búsqueda + curso + sección) con paginación de 25 resultados en cada tabla. También
 #incorpora una pestaña de "Vista previa y edición" (reportes_editor.py) para abrir, previsualizar y editar en
 #el momento los CSV/Excel/PDF que este módulo exporta.
-#
-#Toda la lógica de datos/exportación original se conserva; lo que cambia es la presentación, el
+##Toda la lógica de datos/exportación original se conserva; lo que cambia es la presentación, el
 #filtrado/paginación de las tablas y la aparición del visor de archivos.
 #============================================================
 import csv
@@ -717,7 +716,7 @@ class ModuloReportes(QWidget):
 
     #Barra de filtros reutilizable (búsqueda + curso + sección / búsqueda + especialidad, según la tabla)
     def _crear_barra_filtros(self, placeholder_busqueda, con_curso_seccion=True, con_especialidad=False,
-                              titulo_filtros="Filtros"):
+                              titulo_filtros= "Filtros"):
         """Crea la barra de filtros compartida por las pestañas de listado
         (Riesgo, Excelencia, Asistencia, Rendimiento Técnico): una sola fila
         SIEMPRE VISIBLE con buscador + "✖ Limpiar" + contador de resultados,
@@ -1254,7 +1253,7 @@ class ModuloReportes(QWidget):
             l.addWidget(QLabel("Estudiantes con promedio por debajo de la nota mínima aprobatoria:"))
 
         panel= self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
-                                           titulo_filtros="Filtros de Estudiantes en Riesgo")
+                                           titulo_filtros= "Filtros de Estudiantes en Riesgo")
         l.addWidget(panel["frame"])
 
         fila_cabecera_tabla_riesgo= QHBoxLayout()
@@ -1285,7 +1284,7 @@ class ModuloReportes(QWidget):
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_riesgo, [self.tabla_riesgo, panel["paginacion"]],
-            titulo="Estudiantes en Riesgo", parent=self)
+            titulo= "Estudiantes en Riesgo", parent=self)
         self._paneles["riesgo"]= panel
         self._conectar_filtros(panel, self._cargar_riesgo)
         self._cargar_combo_cursos(panel["combo_curso"], panel.get("combo_nivel"))
@@ -1368,7 +1367,7 @@ class ModuloReportes(QWidget):
             l.addWidget(QLabel("Ranking de Excelencia Académica (mejores promedios):"))
 
         panel= self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
-                                           titulo_filtros="Filtros del Cuadro de Honor")
+                                           titulo_filtros= "Filtros del Cuadro de Honor")
         l.addWidget(panel["frame"])
 
         fila_cabecera_tabla_excelencia= QHBoxLayout()
@@ -1400,7 +1399,7 @@ class ModuloReportes(QWidget):
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_excelencia, [self.tabla_excelencia, panel["paginacion"]],
-            titulo="Cuadro de Honor", parent=self)
+            titulo= "Cuadro de Honor", parent=self)
         self._paneles["excelencia"]= panel
         self._conectar_filtros(panel, self._cargar_excelencia)
         self._cargar_combo_cursos(panel["combo_curso"], panel.get("combo_nivel"))
@@ -1481,7 +1480,7 @@ class ModuloReportes(QWidget):
             l.addWidget(QLabel("Porcentaje de asistencia por estudiante:"))
 
         panel= self._crear_barra_filtros("Buscar por nombre, apellido o matrícula…",
-                                           titulo_filtros="Filtros de Asistencia")
+                                           titulo_filtros= "Filtros de Asistencia")
         l.addWidget(panel["frame"])
 
         fila_cabecera_tabla_asistencia_rep= QHBoxLayout()
@@ -1513,7 +1512,7 @@ class ModuloReportes(QWidget):
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_asistencia_rep, [self.tabla_asistencia, panel["paginacion"]],
-            titulo="Asistencia por Estudiante", parent=self)
+            titulo= "Asistencia por Estudiante", parent=self)
         self._paneles["asistencia"]= panel
         self._conectar_filtros(panel, self._cargar_asistencia)
         self._cargar_combo_cursos(panel["combo_curso"], panel.get("combo_nivel"))
@@ -1589,8 +1588,8 @@ class ModuloReportes(QWidget):
         l.addWidget(info)
 
         panel= self._crear_barra_filtros("Buscar por materia o especialidad…",
-                                          con_curso_seccion=False, con_especialidad=True,
-                                          titulo_filtros="Filtros de Rendimiento Técnico")
+                                          con_curso_seccion= False, con_especialidad=True,
+                                          titulo_filtros= "Filtros de Rendimiento Técnico")
         l.addWidget(panel["frame"])
 
         fila_cabecera_tabla_rend_tecnico= QHBoxLayout()
@@ -1622,7 +1621,7 @@ class ModuloReportes(QWidget):
         l.addWidget(panel["paginacion"])
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_rend_tecnico, [self.tabla_rendimiento_tecnico, panel["paginacion"]],
-            titulo="Rendimiento Técnico", parent=self)
+            titulo= "Rendimiento Técnico", parent=self)
         self._paneles["rendimiento_tecnico"]= panel
 
         def _recargar():

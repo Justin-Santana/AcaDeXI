@@ -807,7 +807,7 @@ class ModuloMaterias(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla_materias, self.paginacion_materias],
-            titulo="Materias", parent=self)
+            titulo= "Materias", parent=self)
 
         fila_botones= QHBoxLayout()
         btn_actualizar_mat= QPushButton("Actualizar")
@@ -915,7 +915,7 @@ class ModuloMaterias(QWidget):
                 accion= "Registró materia"
             else:
                 c.execute("""UPDATE materias SET codigo=?, nombre=?, creditos=?, especialidad_id=?, profesor_id=?,
-                             estado=?, modelo_evaluacion=?, grado_id=? WHERE id=?""", datos + (self.id_edicion_materia,))
+                             estado= ?, modelo_evaluacion=?, grado_id=? WHERE id=?""", datos + (self.id_edicion_materia,))
                 accion= "Editó materia"
             conn.commit()
         except Exception as e:
@@ -1256,7 +1256,7 @@ class ModuloMaterias(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla_secciones, self.paginacion_secciones],
-            titulo="Cursos y Secciones", parent=self)
+            titulo= "Cursos y Secciones", parent=self)
 
         fila_botones= QHBoxLayout()
         btn_actualizar_sec= QPushButton("Actualizar")
@@ -1345,7 +1345,7 @@ class ModuloMaterias(QWidget):
             accion= "Registró sección"
         else:
             c.execute("""UPDATE secciones SET grado_id=?, nombre=?, turno=?, aula_id=?, especialidad_id=?,
-                         carrera_id=?, profesor_guia_id=? WHERE id=?""", datos + (self.id_edicion_seccion,))
+                         carrera_id= ?, profesor_guia_id=? WHERE id=?""", datos + (self.id_edicion_seccion,))
             accion= "Editó sección"
         conn.commit()
         conn.close()
@@ -1548,7 +1548,7 @@ class ModuloMaterias(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla_aulas, self.paginacion_aulas],
-            titulo="Aulas y Laboratorios", parent=self)
+            titulo= "Aulas y Laboratorios", parent=self)
 
         fila_acciones_aulas= QHBoxLayout()
         btn_actualizar_aulas= QPushButton("Actualizar")
@@ -1820,7 +1820,7 @@ class ModuloMaterias(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla_horarios, self.paginacion_horarios],
-            titulo="Horarios", parent=self)
+            titulo= "Horarios", parent=self)
 
         fila_acciones_horarios= QHBoxLayout()
         btn_actualizar_horarios= QPushButton("Actualizar")
@@ -2026,7 +2026,7 @@ class ModuloMaterias(QWidget):
         materia_id= self.h_materia.currentData()
         aula_id= self.h_aula.currentData()
         conflicto= self._detectar_conflicto_horario(dia, nuevo_inicio, nuevo_fin, materia_id, aula_id,
-                                                       excluir_id=self.id_edicion_horario)
+                                                       excluir_id= self.id_edicion_horario)
         if conflicto:
             mostrar_mensaje("advertencia", "Cruce de horario detectado", conflicto, self)
             return
@@ -2039,7 +2039,7 @@ class ModuloMaterias(QWidget):
             accion= "Asignó horario"
         else:
             c.execute("""UPDATE horarios SET seccion_id=?, materia_id=?, dia=?, hora_inicio=?, hora_fin=?,
-                         aula_id=? WHERE id=?""",
+                         aula_id= ? WHERE id=?""",
                       (self.h_seccion.currentData(), materia_id, dia, hora_inicio_txt, hora_fin_txt, aula_id,
                        self.id_edicion_horario))
             accion= "Editó horario"
@@ -2294,7 +2294,7 @@ class ModuloMaterias(QWidget):
 
         agregar_boton_pantalla_completa(
             None, [self.tabla_asignaciones, self.paginacion_asignaciones],
-            titulo="Co-Docentes", parent=self)
+            titulo= "Co-Docentes", parent=self)
 
         fila_botones= QHBoxLayout()
         btn_actualizar= QPushButton("Actualizar")
@@ -2317,7 +2317,7 @@ class ModuloMaterias(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_asignacion)
         fila_botones.addWidget(btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_asignaciones, self,
-                                           titulo="Detalle de la Asignación")
+                                           titulo= "Detalle de la Asignación")
         self.tabla_asignaciones.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_botones.addStretch()
         lr.addLayout(fila_botones)

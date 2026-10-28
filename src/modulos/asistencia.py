@@ -1026,7 +1026,7 @@ class ModuloAsistencia(QWidget):
             None,
             [self.marco_busqueda_estudiantes, self.tabla,
              self.marco_paginacion_registro, self._btn_guardar],
-            titulo="Asistencia", parent=self)
+            titulo= "Asistencia", parent=self)
 
         return w
 
@@ -1476,7 +1476,7 @@ class ModuloAsistencia(QWidget):
     def _filtrar_secciones_alerta_por_curso(self):
         permitidas= self._secciones_permitidas_con_nivel_alerta()
         cascada_seccion_por_curso(self.combo_curso_alerta, self.combo_seccion_alerta,
-                                   incluir_todas=False, secciones_permitidas=permitidas)
+                                   incluir_todas= False, secciones_permitidas=permitidas)
         #Antes de elegir curso el placeholder es "Selecciona curso"; una vez elegido un curso/grado real,
         #cascada_seccion_por_curso repuebla combo_seccion_alerta con sus secciones y un nuevo placeholder propio, que
         #aquí se acorta a "Selecciona sección".
@@ -1714,7 +1714,7 @@ class ModuloAsistencia(QWidget):
     def _filtrar_secciones_registro_por_curso(self):
         permitidas= self._secciones_permitidas_con_nivel()
         cascada_seccion_por_curso(self.combo_curso, self.combo_seccion,
-                                   incluir_todas=False, secciones_permitidas=permitidas)
+                                   incluir_todas= False, secciones_permitidas=permitidas)
         #Solo se acorta el placeholder "sin curso elegido todavía". Una vez que el usuario elige un curso real,
         #combo_seccion se repuebla con sus secciones reales (y su propio placeholder de cascada_seccion_por_curso), que
         #aquí NO se debe tocar.

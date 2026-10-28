@@ -1038,7 +1038,7 @@ class ModuloPsicologia(QWidget):
         #maximizado -mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-.
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla, [self.frame_filtros, self.frame_tabla],
-            titulo="Psicología", parent=self)
+            titulo= "Psicología", parent=self)
         lay_tabla.addLayout(fila_cabecera_tabla)
 
         self.tabla= QTableWidget()
@@ -1080,7 +1080,7 @@ class ModuloPsicologia(QWidget):
         self.tabla.itemDoubleClicked.connect(lambda _i: self._ver_detalle())
         lay_tabla.addWidget(self.tabla, 1)
         self.estado_vacio= EstadoVacioFiltro(self.tabla, icono="🧠",
-                                               texto_sin_resultados="No hay registros con los filtros actuales")
+                                               texto_sin_resultados= "No hay registros con los filtros actuales")
         lay_tabla.addWidget(self.pagina)
         layout.addWidget(self.frame_tabla, stretch=1)
 
@@ -1512,8 +1512,7 @@ class ModuloPsicologia(QWidget):
         #caja bien delimitada (borde visible + fondo propio + esquinas redondeadas) y un borde de acento al enfocar, en
         #vez de depender solo del QSS genérico de QComboBox/QDateEdit que pone main.py -ese solo define un borde 1px
         #muy sutil del mismo gris del fondo, que aquí se perdía contra el resto de controles ya rediseñados.
-        #
-        #Dos detalles que se quedaron sueltos la primera vez que se armó
+        #        #Dos detalles que se quedaron sueltos la primera vez que se armó
         #este bloque:
         #1) Sin una regla "::down-arrow" propia, el triangulito nativo de Qt para abrir el calendario de "Próxima cita"
         #quedaba oscuro sobre fondo oscuro (o al revés) -invisible según el tema-, así que ahora se dibuja a mano con
@@ -1524,8 +1523,7 @@ class ModuloPsicologia(QWidget):
         #`self.setStyleSheet(...)`: Qt no combina el stylesheet de un widget con el de sus ancestros, usa el más
         #cercano nada más -mismo motivo por el que el diálogo de filtros necesita su propio QToolTip más abajo-. Por
         #eso el QToolTip también se repite aquí, dentro de este mismo bloque.
-        #
-        #El bloque "QComboBox QAbstractItemView { ... }" de aquí abajo es el que pinta la LISTA desplegable (lo que se
+        #        #El bloque "QComboBox QAbstractItemView { ... }" de aquí abajo es el que pinta la LISTA desplegable (lo que se
         #ve al abrir el combo), no la caja cerrada. Esa lista es una ventana emergente aparte -mismo caso que un
         #QDialog de nivel superior-, así que NO hereda ningún estilo puesto en un ancestro: si un combo no tiene este
         #bloque puesto DIRECTAMENTE en sí mismo, su desplegable cae al estilo nativo de Qt (fondo blanco, texto negro)
@@ -2119,7 +2117,7 @@ class ModuloPsicologia(QWidget):
         """Menú de clic derecho sobre el campo 'Próxima cita': su única
         opción de momento es volver a 'Sin próxima cita' (equivalente a
         dejar el campo en su valor mínimo, que es como se guarda un
-        proxima_cita=None). Se deja como menú -en vez de un botón "x" fijo
+        proxima_cita= None). Se deja como menú -en vez de un botón "x" fijo
         siempre visible- para no añadir otro elemento más a una fila que ya
         tiene bastante; si en el futuro se necesitan más acciones aquí, este
         es el lugar natural para sumarlas."""
@@ -2325,7 +2323,7 @@ class ModuloPsicologia(QWidget):
             accion= "Creó un registro de Psicología"
         else:
             c.execute("""UPDATE psicologia SET naturaleza=?, categorias=?, texto=?, destacada=?,
-                         proxima_cita=?, estado_caso=? WHERE id=?""",
+                         proxima_cita= ?, estado_caso=? WHERE id=?""",
                       (naturaleza, categorias, texto, destacada, proxima_cita, estado_caso,
                        self.registro_en_edicion))
             accion= "Editó un registro de Psicología"

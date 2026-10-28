@@ -476,7 +476,7 @@ class DialogoCompetenciasEspecificasTarea(QDialog):
 class DialogoResultadosAprendizajeTarea(QDialog):
     """Selector de Resultados de Aprendizaje (RA) para una tarea del Banco de
     Tareas, cuando la materia de la tarea usa el modelo técnico (Politécnico:
-    materias.modelo_evaluacion = MODELO_EVALUACION_TECNICA). A diferencia de las
+    materias.modelo_evaluacion= MODELO_EVALUACION_TECNICA). A diferencia de las
     Competencias Específicas, un RA se define directamente sobre la materia (no
     por grado), así que aquí no hace falta agrupar. Al calificar una entrega,
     estos RA se copian automáticamente hacia `calificacion_ra` — ver
@@ -626,8 +626,8 @@ def guardar_ajuste_entrega(main_window, estudiante_id, tarea_id, estado, texto_o
     c.execute("""INSERT INTO tarea_entregas (tarea_id, estudiante_id, estado_entrega, fecha_entrega_real, observacion)
                  VALUES (?,?,?,?,?)
                  ON CONFLICT(tarea_id, estudiante_id) DO UPDATE SET
-                    estado_entrega=excluded.estado_entrega, fecha_entrega_real=excluded.fecha_entrega_real,
-                    observacion=excluded.observacion""",
+                    estado_entrega= excluded.estado_entrega, fecha_entrega_real=excluded.fecha_entrega_real,
+                    observacion= excluded.observacion""",
               (tarea_id, estudiante_id, estado, fecha_real, f"Ajuste por observación: {texto_obs[:80]}"))
     conn.commit()
     conn.close()
@@ -1068,7 +1068,7 @@ class ModuloBancoTareas(QWidget):
         #-mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-.
         agregar_boton_pantalla_completa(
             None, [self.tabla_tareas, self.paginacion_tareas],
-            titulo="Tareas", parent=self)
+            titulo= "Tareas", parent=self)
 
         fila_botones= QHBoxLayout()
         btn_editar= QPushButton("Cargar Seleccionada")
@@ -1085,7 +1085,7 @@ class ModuloBancoTareas(QWidget):
         fila_botones.addWidget(btn_eliminar)
         btn_detalle_tareas= agregar_boton_detalle(
             fila_botones, self.tabla_tareas, self, titulo="Detalle de la Tarea",
-            proveedor_extra_botones=self._boton_ver_descripcion_tarea)
+            proveedor_extra_botones= self._boton_ver_descripcion_tarea)
         self.tabla_tareas.doubleClicked.connect(lambda *_: btn_detalle_tareas.click())
         fila_botones.addStretch()
         l.addLayout(fila_botones)
@@ -1411,8 +1411,8 @@ class ModuloBancoTareas(QWidget):
                 accion= "Creó tarea en Banco de Tareas"
             else:
                 c.execute("""UPDATE tareas SET materia_id=?, periodo_id=?, profesor_id=?, titulo=?, descripcion=?,
-                             categoria=?, fecha_asignacion=?, fecha_entrega=?, peso=?, valor_maximo=?, estado=?,
-                             competencias=?, curso_id=?, seccion_id=?, especialidad_id=?, carrera_id=?
+                             categoria= ?, fecha_asignacion=?, fecha_entrega=?, peso=?, valor_maximo=?, estado=?,
+                             competencias= ?, curso_id=?, seccion_id=?, especialidad_id=?, carrera_id=?
                              WHERE id=?""", datos + (self.id_edicion_tarea,))
                 tarea_id_guardada= self.id_edicion_tarea
                 accion= "Editó tarea en Banco de Tareas"
@@ -1972,8 +1972,8 @@ class ModuloBancoTareas(QWidget):
         l.addLayout(fila_resumen)
 
         tarjeta_top= TarjetaSeccion(
-            icono="📥", titulo="Tarea a revisar",
-            descripcion="Abre \" Filtros\" para elegir el nivel educativo, curso, sección, área técnica/carrera "
+            icono= "📥", titulo="Tarea a revisar",
+            descripcion= "Abre \" Filtros\" para elegir el nivel educativo, curso, sección, área técnica/carrera "
                        "y materia de donde deben salir los estudiantes; luego elige la Tarea/Módulo aquí y pulsa "
                        "\"Generar/Actualizar Lista\". Solo se toman estudiantes activos de secciones donde además "
                        "se imparte la materia de la tarea (según Horarios). Doble clic en una fila para ver el "
@@ -2099,7 +2099,7 @@ class ModuloBancoTareas(QWidget):
         #-mismo mecanismo que materiales.py, ver agregar_boton_pantalla_completa en paginacion.py-.
         agregar_boton_pantalla_completa(
             None, [self.tabla_entregas, self.paginacion_entregas],
-            titulo="Entregas", parent=self)
+            titulo= "Entregas", parent=self)
 
         fila_acciones= QHBoxLayout()
         self.btn_cambiar_estado_entrega= QPushButton("Cambiar Estado de Entrega")
@@ -2283,7 +2283,7 @@ class ModuloBancoTareas(QWidget):
         #Sección ("5to - A") es redundante -alcanza con el nombre corto ("A") como en el resto de combos de Sección de
         #la app-.
         cascada_seccion_por_curso(self.combo_curso_tarea, self.combo_seccion_tarea, incluir_todas=True,
-                                   etiquetas_cortas_sin_curso=True)
+                                   etiquetas_cortas_sin_curso= True)
 
     def _cargar_combos_alcance_tarea(self):
         """Alcance opcional de la tarea: Curso/Sección con 'Todos' de entrada
@@ -2291,7 +2291,7 @@ class ModuloBancoTareas(QWidget):
         y Área Técnica/Carrera igual que en el resto de la app."""
         poblar_combo_curso(self.combo_curso_tarea, incluir_todos=True)
         cascada_seccion_por_curso(self.combo_curso_tarea, self.combo_seccion_tarea, incluir_todas=True,
-                                   etiquetas_cortas_sin_curso=True)
+                                   etiquetas_cortas_sin_curso= True)
 
         es_poli= self._es_politecnico()
         self.lbl_filtro_especialidad_tarea.setVisible(es_poli)
@@ -2404,7 +2404,7 @@ class ModuloBancoTareas(QWidget):
     def _filtrar_secciones_entrega_por_curso(self):
         permitidas= self._secciones_permitidas_con_nivel_entrega()
         cascada_seccion_por_curso(self.combo_curso_entrega, self.combo_seccion_entrega,
-                                   incluir_todas=False, secciones_permitidas=permitidas)
+                                   incluir_todas= False, secciones_permitidas=permitidas)
         #Solo se acorta el placeholder "sin curso elegido todavía". Una vez elegido un curso real,
         #combo_seccion_entrega se repuebla con sus secciones reales (y su propio placeholder de
         #cascada_seccion_por_curso), que aquí NO se debe tocar.
@@ -2491,7 +2491,7 @@ class ModuloBancoTareas(QWidget):
 
     def _agregar_opcion_ninguna(self, combo, texto):
         """Añade al final del combo la opción "ninguna" (dato=0, distinto de
-        None='Todas/Todos') usada para restringir explícitamente una tarea a
+        None= 'Todas/Todos') usada para restringir explícitamente una tarea a
         estudiantes SIN área técnica o SIN carrera asignada. Solo se llama en
         modo Personalizado -ver _es_personalizado-, porque es el único caso en
         que puede haber estudiantes activos sin ese dato."""
@@ -2541,7 +2541,7 @@ class ModuloBancoTareas(QWidget):
             self.combo_filtro_carrera_entrega.blockSignals(False)
 
     def _estudiantes_de_la_materia(self, materia_id, seccion_id=None, curso_id=None,
-                                    especialidad_id=None, carrera_id=None):
+                                    especialidad_id= None, carrera_id=None):
         condiciones= ["horarios.materia_id=?", "estudiantes.estado='Activo'"]
         parametros= [materia_id]
         if seccion_id is not None:
@@ -2877,7 +2877,7 @@ class ModuloBancoTareas(QWidget):
                 c.execute("""INSERT INTO calificacion_ra (estudiante_id, resultado_aprendizaje_id, anio_academico,
                              nota, usuario, actualizado) VALUES (?,?,?,?,?,?)
                              ON CONFLICT(estudiante_id, resultado_aprendizaje_id, anio_academico) DO UPDATE SET
-                                nota=excluded.nota, usuario=excluded.usuario, actualizado=excluded.actualizado""",
+                                nota= excluded.nota, usuario=excluded.usuario, actualizado=excluded.actualizado""",
                           (entrega["estudiante_id"], ra_id, anio, valor, usuario, ahora))
             c.execute("UPDATE tarea_entregas SET estado_entrega=? WHERE id=?",
                       ("Entregada" if entrega["estado_entrega"] == "Pendiente" else entrega["estado_entrega"],

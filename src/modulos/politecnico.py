@@ -801,7 +801,7 @@ class ModuloPolitecnico(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_especialidades, [self.tabla_especialidades, self.paginacion_especialidades],
-            titulo="Áreas Técnicas", parent=self)
+            titulo= "Áreas Técnicas", parent=self)
 
         fila_acciones_esp= QHBoxLayout()
         btn_actualizar_esp= QPushButton("Actualizar")
@@ -1192,7 +1192,7 @@ class ModuloPolitecnico(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_busqueda_modulos, [self.tabla_modulos_tecnicos, self.paginacion_modulos_tecnicos],
-            titulo="Módulos Técnicos", parent=self)
+            titulo= "Módulos Técnicos", parent=self)
 
         fila_acciones= QHBoxLayout()
         btn_actualizar= QPushButton("Actualizar")
@@ -1214,7 +1214,7 @@ class ModuloPolitecnico(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_modulo_tecnico)
         fila_acciones.addWidget(btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla_modulos_tecnicos, self,
-                                             titulo="Detalle del Módulo Técnico")
+                                             titulo= "Detalle del Módulo Técnico")
         self.tabla_modulos_tecnicos.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         self.tarjeta_tabla_modulos.contenido.addLayout(fila_acciones)
@@ -1290,7 +1290,7 @@ class ModuloPolitecnico(QWidget):
                              "Todo Módulo Técnico debe tener un Área Técnica asignada.", self)
             return
         if self._nombre_duplicado("materias", nombre, self.id_edicion_modulo_tecnico,
-                                   filtro_extra=("modelo_evaluacion = ?", ["Técnica (RA)"])):
+                                   filtro_extra= ("modelo_evaluacion = ?", ["Técnica (RA)"])):
             mostrar_mensaje("advertencia", "Módulo duplicado",
                              f"Ya existe un módulo técnico llamado «{nombre}».", self)
             self._destello(self.tarjeta_form_modulo, "#EF4444")
@@ -1315,7 +1315,7 @@ class ModuloPolitecnico(QWidget):
                 accion= "Registró módulo técnico"
             else:
                 c.execute("""UPDATE materias SET codigo=?, nombre=?, creditos=?, especialidad_id=?, profesor_id=?,
-                             estado=?, modelo_evaluacion=?, grado_id=? WHERE id=?""", datos + (self.id_edicion_modulo_tecnico,))
+                             estado= ?, modelo_evaluacion=?, grado_id=? WHERE id=?""", datos + (self.id_edicion_modulo_tecnico,))
                 accion= "Editó módulo técnico"
             conn.commit()
         except Exception as e:
@@ -1610,7 +1610,7 @@ class ModuloPolitecnico(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_busqueda_asig, [self.tabla_asig_tecnica, self.paginacion_asig_tecnica],
-            titulo="Profesores Asignados", parent=self)
+            titulo= "Profesores Asignados", parent=self)
 
         fila_acciones= QHBoxLayout()
         btn_actualizar= QPushButton("Actualizar")
@@ -1626,7 +1626,7 @@ class ModuloPolitecnico(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_asignacion_tecnica)
         fila_acciones.addWidget(btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla_asig_tecnica, self,
-                                             titulo="Detalle de la Asignación")
+                                             titulo= "Detalle de la Asignación")
         self.tabla_asig_tecnica.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         self.tarjeta_tabla_asig_tecnica.contenido.addLayout(fila_acciones)
@@ -1684,7 +1684,7 @@ class ModuloPolitecnico(QWidget):
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
         poblar_combo_curso(self.at_curso, incluir_todos=False, seleccion_previa=curso_previo,
-                            secciones_permitidas=permitidas)
+                            secciones_permitidas= permitidas)
         self._al_cambiar_curso_asignacion_tecnica()
         self._cargar_modulos_tecnicos_combo_asignacion()
 
@@ -1707,7 +1707,7 @@ class ModuloPolitecnico(QWidget):
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
         cascada_seccion_por_curso(self.at_curso, self.at_seccion, incluir_todas=False,
-                                   secciones_permitidas=permitidas)
+                                   secciones_permitidas= permitidas)
         if seccion_id_preseleccionar is not None:
             idx= self.at_seccion.findData(seccion_id_preseleccionar)
             self.at_seccion.setCurrentIndex(idx if idx >= 0 else 0)
@@ -1838,7 +1838,7 @@ class ModuloPolitecnico(QWidget):
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
         poblar_combo_curso(self.at_curso, incluir_todos=False, seleccion_previa=curso_previo,
-                            secciones_permitidas=permitidas)
+                            secciones_permitidas= permitidas)
         self._al_cambiar_curso_asignacion_tecnica()
 
     def _cargar_asignaciones_tecnicas(self):
@@ -1977,7 +1977,7 @@ class ModuloPolitecnico(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_talleres, [self.tabla_talleres, self.paginacion_talleres],
-            titulo="Talleres y Laboratorios", parent=self)
+            titulo= "Talleres y Laboratorios", parent=self)
 
         fila_acciones_taller= QHBoxLayout()
         btn_actualizar_taller= QPushButton("Actualizar")
@@ -1995,7 +1995,7 @@ class ModuloPolitecnico(QWidget):
         agregar_boton_detalle(fila_acciones_taller, self.tabla_talleres, self, titulo="Detalle del Taller/Laboratorio")
         self.tabla_talleres.doubleClicked.connect(
             lambda indice: mostrar_detalle_fila(self, self.tabla_talleres, indice.row(),
-                                                titulo="Detalle del Taller/Laboratorio"))
+                                                titulo= "Detalle del Taller/Laboratorio"))
         fila_acciones_taller.addStretch()
         self.tarjeta_tabla_talleres.contenido.addLayout(fila_acciones_taller)
         l.addWidget(self.tarjeta_tabla_talleres)
@@ -2226,7 +2226,7 @@ class ModuloPolitecnico(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_cabecera_tabla_empresas, [self.tabla_empresas, self.paginacion_empresas],
-            titulo="Empresas Registradas", parent=self)
+            titulo= "Empresas Registradas", parent=self)
 
         fila_acciones= QHBoxLayout()
         btn_actualizar_emp= QPushButton("Actualizar")
@@ -2250,7 +2250,7 @@ class ModuloPolitecnico(QWidget):
         agregar_boton_detalle(fila_acciones, self.tabla_empresas, self, titulo="Detalle de la Empresa")
         self.tabla_empresas.doubleClicked.connect(
             lambda indice: mostrar_detalle_fila(self, self.tabla_empresas, indice.row(),
-                                                titulo="Detalle de la Empresa"))
+                                                titulo= "Detalle de la Empresa"))
         fila_acciones.addStretch()
         self.tarjeta_tabla_empresas.contenido.addLayout(fila_acciones)
         l.addWidget(self.tarjeta_tabla_empresas)
@@ -2272,7 +2272,7 @@ class ModuloPolitecnico(QWidget):
             accion= "Agregó empresa de pasantía"
         else:
             c.execute("""UPDATE empresas_pasantia SET nombre=?, rubro=?, ubicacion=?, contacto=?,
-                         telefono=?, cupos=? WHERE id=?""", datos + (self.id_edicion_empresa,))
+                         telefono= ?, cupos=? WHERE id=?""", datos + (self.id_edicion_empresa,))
             accion= "Editó empresa de pasantía"
         conn.commit()
         conn.close()
@@ -2547,7 +2547,7 @@ class ModuloPolitecnico(QWidget):
 
         agregar_boton_pantalla_completa(
             fila_busqueda_pasantias, [self.tabla_pasantias, self.paginacion_pasantias],
-            titulo="Pasantías Registradas", parent=self)
+            titulo= "Pasantías Registradas", parent=self)
 
         fila_acciones_pas= QHBoxLayout()
         btn_actualizar_pas= QPushButton("Actualizar")
@@ -2860,7 +2860,7 @@ class ModuloPolitecnico(QWidget):
             accion= "Registró pasantía"
         else:
             c.execute("""UPDATE pasantias SET estudiante_id=?, empresa_id=?, horas_acumuladas=?, estado=?,
-                         desempeno=? WHERE id=?""",
+                         desempeno= ? WHERE id=?""",
                       (est_id, emp_id, self.p_horas.value(), self.p_estado.currentText(),
                        self.p_desempeno.text().strip(), self.id_edicion_pasantia))
             accion= "Editó pasantía"
