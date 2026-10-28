@@ -8,10 +8,10 @@ RAIZ= Path(__file__).resolve().parents[1]
 SCRIPT= textwrap.dedent("""
     import sys
     from PySide6.QtWidgets import QApplication, QComboBox
-    app = QApplication(sys.argv)
+    app= QApplication(sys.argv)
     from src.nucleo.bd import inicializar_bd, obtener_conexion
     inicializar_bd()
-    conn = obtener_conexion(); c = conn.cursor()
+    conn= obtener_conexion(); c = conn.cursor()
     c.execute("INSERT INTO especialidades (nombre, codigo) VALUES ('Informática','IFC')"); a = c.lastrowid
     c.execute("INSERT INTO especialidades (nombre, codigo) VALUES ('Mecatrónica','MEC')"); m = c.lastrowid
     c.execute("INSERT INTO grados (nombre, nivel_educativo, ciclo_secundaria, orden) VALUES ('4to','Secundaria','Segundo Ciclo',4)"); g4 = c.lastrowid
@@ -23,13 +23,13 @@ SCRIPT= textwrap.dedent("""
     conn.commit(); conn.close()
     from src.interfaz.filtros_curso_seccion import (modulos_tecnicos_por_area_y_curso as mt,
         curso_admite_componente_tecnico, poblar_combo_curso_opcional)
-    n = lambda L: sorted(x for _, x in L)
+    n= lambda L: sorted(x for _, x in L)
     assert n(mt(a, g4)) == ["P4", "Redes"], n(mt(a, g4))
     assert n(mt(a, g5)) == ["R5", "Redes"], n(mt(a, g5))
     assert n(mt(a, None)) == ["P4", "R5", "Redes"], n(mt(a, None))
     assert n(mt(m, g4)) == ["Torno"], n(mt(m, g4))
     assert curso_admite_componente_tecnico(g4) and not curso_admite_componente_tecnico(g1)
-    cb = QComboBox(); poblar_combo_curso_opcional(cb, solo_con_componente_tecnico=True)
+    cb= QComboBox(); poblar_combo_curso_opcional(cb, solo_con_componente_tecnico=True)
     assert [cb.itemText(i) for i in range(cb.count())] == ["— Sin curso específico —", "4to", "5to"]
     print("OK")
 """)
