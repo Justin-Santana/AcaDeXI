@@ -25,8 +25,7 @@ El bundle conserva su diseño (`_internal/iconos`, documentos sueltos en `_inter
 Los `.iss` consumen el **resultado compilado** (`AcaDeXI.exe` + `_internal\`): cópialos junto al exe como antes.
 
 ## Problemas conocidos de las fuentes (no de la estructura)
-Marcados `xfail` en los tests:
-- `interfaz/deshacer_rehacer_ui.py` necesita `nucleo/deshacer_rehacer.py` y `nucleo/feedback.py` (faltan sus `.py`).
+Ninguno por ahora: ya no hay `xfail` en los tests.
 
 ## Materias y módulos técnicos por curso (opcional)
 - `materias.grado_id` es un curso/grado **opcional**. `NULL` = sin curso específico: el módulo o materia

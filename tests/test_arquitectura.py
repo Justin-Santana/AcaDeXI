@@ -8,7 +8,6 @@ PAQ= RAIZ / "src"
 MODULOS= sorted(p for p in PAQ.rglob("*.py") if p.name != "__init__.py")
 #Fallos conocidos de las fuentes (no de la estructura): ver docs/ARQUITECTURA.md
 CONOCIDOS= {
-    "src.interfaz.deshacer_rehacer_ui": "faltan los .py de nucleo.deshacer_rehacer / nucleo.feedback",
 }
 def nombre(p):
 
