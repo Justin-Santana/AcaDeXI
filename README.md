@@ -65,7 +65,8 @@ AcaDeXI/
 │   ├── modulos/            Pantallas funcionales (estudiantes, calificaciones, horario...)
 │   └── assets/             iconos/, términos y licencias de iconos
 ├── servidor/               Servidor institucional (script independiente + sus requisitos)
-├── empaquetado/            instaladores Inno Setup (*.iss) y version_info.txt
+├── empaquetado/            instaladores Inno Setup (*.iss)
+├── version_info.txt        datos de versión del .exe (lo lee PyInstaller)
 ├── docs/                   Arquitectura, cambios, guías y cartas (PDF)
 ├── tools/                  Scripts auxiliares de desarrollo
 └── tests/                  pytest (`python -m pytest tests`)

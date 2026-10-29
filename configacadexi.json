@@ -203,10 +203,6 @@
     },
     {
       "optionDest": "hiddenimports",
-      "value": "boletin_estilo"
-    },
-    {
-      "optionDest": "hiddenimports",
       "value": "docx"
     },
     {
@@ -252,6 +248,6 @@
   ],
   "nonPyinstallerOptions": {
     "increaseRecursionLimit": true,
-    "manualArguments": "--version-file=\"C:/Users/usuario/Desktop/AcaDeXI/empaquetado/version_info.txt\" --collect-all PySide6.QtMultimedia --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/plugins/multimedia;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avcodec-61.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avformat-61.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avutil-59.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/swresample-5.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/swscale-8.dll;PySide6/plugins/multimedia\" --collect-submodules src"
+    "manualArguments": "--version-file=\"C:/Users/usuario/Desktop/AcaDeXI/version_info.txt\" --collect-all PySide6.QtMultimedia --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/plugins/multimedia;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avcodec-61.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avformat-61.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/avutil-59.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/swresample-5.dll;PySide6/plugins/multimedia\" --add-binary \"C:/Users/usuario/Desktop/AcaDeXI/venv/Lib/site-packages/PySide6/swscale-8.dll;PySide6/plugins/multimedia\" --collect-submodules src"
   }
 }
