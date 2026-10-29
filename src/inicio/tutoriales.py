@@ -1969,6 +1969,7 @@ class AsistenteSpotlight(QWidget):
         #vista (si no, quedarían expandidos para siempre tras el paso).
         nuevos= self._expandir_paneles_desplegables(pagina)
         previos= getattr(self, "_paneles_expandidos_tutorial", None) or []
+        #p: cada panel de nuevos que aún no está en previos (se compara por identidad, no por valor).
         self._paneles_expandidos_tutorial= previos + [
             p for p in nuevos if not any(p is previo for previo in previos)]
         boton= self._buscar_boton_por_texto(pagina, texto_boton_objetivo)
@@ -2382,6 +2383,7 @@ def _filtrar_contenido(main_window, lista):
 
 def _filtrar_pasos(main_window, lista):
 
+    #p: cada paso (tupla) de la lista; p[1] es el nombre del módulo y se conserva solo si es visible.
     return [p for p in lista if _modulo_visible_ahora(main_window, p[1])]
 
 

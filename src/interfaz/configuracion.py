@@ -47,6 +47,7 @@ def _hex_a_rgba(hex_color, alpha):
     hex_color= (hex_color or "#000000").lstrip("#")
     if len(hex_color) < 6:
         hex_color= "000000"
+    #r, g, b: componentes rojo, verde y azul (0-255) del color hexadecimal de 6 dígitos.
     r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
@@ -68,6 +69,7 @@ def _aplanar_color_sobre(color_rgba, hex_fondo):
     coincidencia= re.match(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)", color_rgba or "")
     if not coincidencia:
         return color_rgba
+    #r, g, b: componentes del rgba() recibido; a: su opacidad (0-1) para mezclarlo con hex_fondo.
     r, g, b, a= int(coincidencia.group(1)), int(coincidencia.group(2)), int(coincidencia.group(3)), float(coincidencia.group(4))
     hex_fondo= (hex_fondo or "#000000").lstrip("#")
     if len(hex_fondo) < 6:
@@ -281,6 +283,7 @@ class TabWidgetNavegable(QTabWidget):
 
         super().__init__(parent)
         self.tabBar().setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        #Lambda: _i es el índice de la pestaña pulsada (no se usa); da el foco a la barra de pestañas.
         self.tabBarClicked.connect(lambda _i: self.tabBar().setFocus())
         #Mismo problema que QStackedWidget: por defecto, el tamaño mínimo de un QTabWidget se calcula tomando en cuenta
         #TODAS sus pestañas, no solo la que está visible. Si una pestaña que el usuario nunca
@@ -288,6 +291,7 @@ class TabWidgetNavegable(QTabWidget):
         #texto largo (títulos de tareas), su ancho mínimo se filtra igual y ensancha la pestaña visible ("Catálogo de
         #Tareas"), aunque esa pestaña por sí sola quepa perfecto. Esto hace que solo se considere la pestaña actual, y
         #se refresca al cambiar de pestaña.
+        #Lambda: _i es el índice de la pestaña nueva (no se usa); recalcula el tamaño al cambiar.
         self.currentChanged.connect(lambda _i: self.updateGeometry())
         #Ver _enganchar_botones_scroll: evita que las flechitas de scroll de la barra se vayan "manchando" con el uso
         #repetido.
@@ -1634,6 +1638,7 @@ class ModuloConfiguracion(QWidget):
         #ventanita de ayuda muestre "Ir a Institución" en vez de un genérico "Ir a la pestaña 1".
         for i in range(self.tabs.count()):
             titulo= self.tabs.tabText(i).split(" ", 1)[-1]  #sin el emoji
+            #Lambda: idx se fija por defecto con el índice i de esta pestaña; el atajo salta a ella.
             registrar_atajo(self, self.main_window, f"Ctrl+{i + 1}",
                              f"Ir a {titulo}", lambda idx=i: self._ir_a_pestana(idx))
 
@@ -1707,10 +1712,12 @@ class ModuloConfiguracion(QWidget):
         self.tabs.setTabIcon(5, icono_emoji(EMOJI_TAB_AUDITORIA))
 
         #Transición suave (fundido) al cambiar de pestaña, en vez de un salto brusco.
+        #Lambda: i es el índice de la pestaña activa; aplica el fundido de entrada a su página.
         self.tabs.currentChanged.connect(lambda i: _fundido_entrada(self.tabs.widget(i), 220))
         #Al volver a "Usuarios y Roles" se re-arma el combo de rol: si el Director acaba de configurar/borrar un cargo
         #personalizado en "Permisos de Side Stepper" (otra pestaña/pantalla) sin cerrar Configuración, este selector
         #debe reflejarlo sin pedir reabrir el módulo entero.
+        #Lambda: i es el índice de la pestaña activa; si es Usuarios, re-arma el combo de rol.
         self.tabs.currentChanged.connect(
             lambda i: self._poblar_combo_rol_usuarios() if self.tabs.widget(i) is self.tab_usuarios else None)
 
@@ -1761,6 +1768,7 @@ class ModuloConfiguracion(QWidget):
         self.lbl_logo_actual.setObjectName("PreviewLogo")
         self.lbl_logo_actual.setCursor(Qt.CursorShape.PointingHandCursor)
         self.lbl_logo_actual.setToolTip("Clic para elegir y recortar el logotipo")
+        #Lambda: evento es el evento de ratón (no se usa); el clic en el logo abre el cambio de logo.
         self.lbl_logo_actual.mousePressEvent= lambda evento: self._cambiar_logo()
         fila_logo.addWidget(self.lbl_logo_actual)
         btn_logo= QPushButton("Cambiar y Recortar Logotipo")
@@ -1786,6 +1794,7 @@ class ModuloConfiguracion(QWidget):
         self.lbl_firma_actual.setObjectName("PreviewLogo")
         self.lbl_firma_actual.setCursor(Qt.CursorShape.PointingHandCursor)
         self.lbl_firma_actual.setToolTip("Clic para elegir y recortar la firma")
+        #Lambda: evento es el evento de ratón (no se usa); el clic en la firma abre el cambio de firma.
         self.lbl_firma_actual.mousePressEvent= lambda evento: self._cambiar_firma()
         fila_firma.addWidget(self.lbl_firma_actual)
         btn_firma= QPushButton("Cambiar y Recortar Firma")
@@ -2616,6 +2625,7 @@ class ModuloConfiguracion(QWidget):
         self._temporizador_busqueda_usuarios.setSingleShot(True)
         self._temporizador_busqueda_usuarios.setInterval(150)
         self._temporizador_busqueda_usuarios.timeout.connect(self._filtro_usuarios_cambio)
+        #Lambda: _t es el texto escrito (no se usa); cada tecla reinicia el temporizador de búsqueda.
         self.in_buscar_usuarios.textChanged.connect(lambda _t: self._temporizador_busqueda_usuarios.start())
 
         #Tabla estilo Omega POS (usuarios)
@@ -2881,6 +2891,7 @@ class ModuloConfiguracion(QWidget):
 
         with tabla_pausada(self.tabla_usuarios):
             self.tabla_usuarios.setRowCount(len(pagina))
+            #i: número de fila de la tabla; f: usuario de la página actual que se dibuja ahí.
             for i, f in enumerate(pagina):
                 self.tabla_usuarios.setItem(i, 0, QTableWidgetItem(str(f["id"])))
                 self.tabla_usuarios.setItem(i, 1, QTableWidgetItem(f["username"]))
@@ -2924,6 +2935,7 @@ class ModuloConfiguracion(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM usuarios WHERE id=?", (id_usuario,))
+        #f: fila del usuario a editar (None si ya no existe); de ella se llenan los campos.
         f= c.fetchone()
         conn.close()
         if not f:
@@ -4021,6 +4033,7 @@ class ModuloConfiguracion(QWidget):
         filas= obtener_historial_backups(100)
         with tabla_pausada(self.tabla_backups):
             self.tabla_backups.setRowCount(len(filas))
+            #i: número de fila de la tabla; f: registro del historial de respaldos que se dibuja ahí.
             for i, f in enumerate(filas):
                 self.tabla_backups.setItem(i, 0, QTableWidgetItem(
                     formatear_fecha_hora(f["fecha"], self.main_window) if f["fecha"] else ""))
@@ -4373,6 +4386,7 @@ class ModuloConfiguracion(QWidget):
 
         with tabla_pausada(self.tabla_auditoria):
             self.tabla_auditoria.setRowCount(len(filas))
+            #i: número de fila de la tabla; f: registro de auditoría que se dibuja ahí.
             for i, f in enumerate(filas):
                 modulo= f["modulo"] or "Sistema"
                 item_modulo= QTableWidgetItem(f"●  {modulo}")

@@ -83,6 +83,7 @@ def exportar_estudiantes(main_window, ruta_archivo, seccion_id=None):
         overrides= listar_overrides_estudiantes(main_window)
         filas= [aplicar_override(fila, overrides.get(fila["id"])) for fila in filas]
 
+    #f: cada fila (dict) de estudiante; se queda solo con los campos canónicos, vacío si falta alguno.
     registros= [{campo: f.get(campo, "") for campo in CAMPOS_CANONICOS_ESTUDIANTE} for f in filas]
     _escribir_paquete(ruta_archivo, "estudiantes", edicion, registros)
 

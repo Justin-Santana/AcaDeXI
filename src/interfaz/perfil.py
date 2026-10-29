@@ -178,6 +178,7 @@ def guardar_perfil_archivo(ruta, usuario_id, modo_trabajo="Local", carpeta_sincr
             datos["bd_base"]= base64.b64encode(f_bd.read()).decode("ascii")
         _incrustar_logo_de_bd_base(ruta_bd_base, datos)
     token= _fernet.encrypt(json.dumps(datos, ensure_ascii=False).encode("utf-8"))
+    #f: archivo .acdx abierto en binario para escritura; recibe el token cifrado.
     with open(ruta, "wb") as f:
         f.write(token)
     return datos
@@ -208,6 +209,7 @@ def _incrustar_logo_de_bd_base(ruta_bd_base, datos):
 #Lee y descifra un archivo .acdx. Lanza ValueError si es inválido.
 def leer_perfil_archivo(ruta):
 
+    #f: archivo .acdx abierto en binario para lectura; su contenido cifrado se guarda en token.
     with open(ruta, "rb") as f:
         token= f.read()
     try:
@@ -289,6 +291,7 @@ def aplicar_bd_base(datos):
 
     contenido= base64.b64decode(datos["bd_base"])
     os.makedirs(os.path.dirname(RUTA_BD), exist_ok=True)
+    #f: archivo de la base de datos local abierto para escritura binaria; recibe la BD del perfil.
     with open(RUTA_BD, "wb") as f:
         f.write(contenido)
 

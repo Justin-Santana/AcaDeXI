@@ -152,6 +152,7 @@ class TarjetaKPITecnica(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.valueChanged.connect(self._al_animar)
 
+    #v: valor actual de la animación; se guarda como valor mostrado y se repinta.
     def _al_animar(self, v):
 
         self._valor_mostrado= v
@@ -172,6 +173,7 @@ class TarjetaKPITecnica(QWidget):
         self._texto_valor= texto
         self.update()
 
+    #cx, cy: centro del hexágono; r: su radio.
     def _hexagono(self, cx, cy, r):
 
         path= QPainterPath()
@@ -200,6 +202,7 @@ class TarjetaKPITecnica(QWidget):
         pintor.setBrush(Qt.BrushStyle.NoBrush)
         pintor.drawPath(fondo)
 
+        #cx, cy: centro del hexágono; r: su radio.
         cx, cy, r= 34.0, h / 2, 21.0
         hexa= self._hexagono(cx, cy, r)
         grad= QLinearGradient(cx, cy - r, cx, cy + r)
@@ -358,6 +361,7 @@ class BarraPesosRA(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.valueChanged.connect(self._al_animar)
 
+    #v: progreso actual de la animación (0 a 1); se guarda y se repinta.
     def _al_animar(self, v):
 
         self._progreso= v
@@ -374,6 +378,7 @@ class BarraPesosRA(QWidget):
 
     def suma_pesos(self):
 
+        #p: peso de cada segmento (el primer valor, el color, se ignora); se suman.
         return sum(p for _c, p in self._segmentos)
 
     def paintEvent(self, evento):
@@ -458,6 +463,7 @@ class ChipEstadoCompetencia(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutBack)
         self._anim.valueChanged.connect(self._al_animar)
 
+    #v: escala actual de la animación; se guarda y se repinta.
     def _al_animar(self, v):
 
         self._escala= v
@@ -487,6 +493,7 @@ class ChipEstadoCompetencia(QWidget):
         pintor.setBrush(Qt.BrushStyle.NoBrush)
         pintor.drawPath(fondo)
 
+        #cx, cy: centro del círculo indicador; r: su radio.
         cx, cy, r= 16.0, self.height() / 2, 6.0
         pintor.setPen(Qt.PenStyle.NoPen)
         pintor.setBrush(color)
@@ -546,6 +553,7 @@ class MedallonBoletin(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.valueChanged.connect(self._al_animar)
 
+    #v: valor actual de la animación; se guarda como valor mostrado y se repinta.
     def _al_animar(self, v):
 
         self._valor_mostrado= v
@@ -637,6 +645,7 @@ class DonutResumenGrupo(QWidget):
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anim.valueChanged.connect(self._al_animar)
 
+    #v: progreso actual de la animación; se guarda y se repinta.
     def _al_animar(self, v):
 
         self._progreso= v
@@ -1197,6 +1206,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self._temporizador_busqueda_ra.setSingleShot(True)
         self._temporizador_busqueda_ra.setInterval(150)
         self._temporizador_busqueda_ra.timeout.connect(self._filtrar_ra)
+        #_t: texto escrito (no se usa); cada cambio reinicia el temporizador que filtra la tabla.
         self.in_buscar_ra.textChanged.connect(lambda _t: self._temporizador_busqueda_ra.start())
         disposicion.addWidget(marco_busqueda)
 
@@ -1234,6 +1244,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         botones.addStretch()
         btn_detalle_ra= agregar_boton_detalle(botones, self.tabla_ra, self, titulo="Detalle del RA",
                                texto_boton= "Ver Detalle")
+        #*_: argumentos de la señal (no se usan); doble clic equivale a pulsar 'Ver Detalle'.
         self.tabla_ra.doubleClicked.connect(lambda *_: btn_detalle_ra.click())
         lr.addLayout(botones)
 
@@ -1341,6 +1352,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self.lbl_vacio_ra.setVisible(len(todos) > 0 and len(filtrados) == 0)
         with tabla_pausada(self.tabla_ra):
             self.tabla_ra.setRowCount(len(pagina))
+            #f: fila de datos del RA en esta página; con ella se llenan las celdas de la fila row.
             for row, f in enumerate(pagina):
                 item_codigo= QTableWidgetItem(f["codigo"])
                 item_codigo.setData(Qt.ItemDataRole.UserRole, f["id"])
@@ -1367,6 +1379,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         dialogo= DialogoRA(self, modo_simplificado=not self._dominicano,
                              codigo_sugerido= self._siguiente_codigo_sugerido())
         if dialogo.exec() == QDialog.DialogCode.Accepted:
+            #v: valores que el usuario capturó en el diálogo del RA.
             v= dialogo.valores()
             try:
 
@@ -1405,11 +1418,13 @@ class ModuloCalificacionesTecnicas(QWidget):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no puede editar el currículo técnico.", self)
             return
         ra_id= self.tabla_ra.item(row, 0).data(Qt.ItemDataRole.UserRole)
+        #f: cada RA cargado en el editor; se busca el que tiene el id seleccionado.
         datos= next((f for f in self._ra_actual_editor if f["id"] == ra_id), None)
         if datos is None:
             return
         dialogo= DialogoRA(self, modo_simplificado=not self._dominicano, datos_actuales=datos)
         if dialogo.exec() == QDialog.DialogCode.Accepted:
+            #v: valores que el usuario capturó en el diálogo del RA.
             v= dialogo.valores()
             conn= obtener_conexion()
             c= conn.cursor()
@@ -1539,6 +1554,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self._temporizador_busqueda_notas.setSingleShot(True)
         self._temporizador_busqueda_notas.setInterval(150)
         self._temporizador_busqueda_notas.timeout.connect(self._filtrar_grid_notas)
+        #_t: texto escrito (no se usa); cada cambio reinicia el temporizador que filtra la tabla.
         self.in_buscar_notas.textChanged.connect(lambda _t: self._temporizador_busqueda_notas.start())
         fila_busqueda.addWidget(marco_busqueda, 1)
         self.btn_filtros_registro= QPushButton("Filtros")
@@ -1565,6 +1581,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self.btn_guardar_notas.setIcon(icono_emoji("💾"))
         self.btn_guardar_notas.setIconSize(_QSize_emoji(16, 16))
         self.btn_guardar_notas.setObjectName("BtnAccionAgregar")
+        #Lambda sin argumentos: ignora los del clic y guarda las notas de la cuadrícula.
         self.btn_guardar_notas.clicked.connect(lambda: self._guardar_notas_grid())
         fila_resumen.addWidget(self.btn_guardar_notas, 0, Qt.AlignmentFlag.AlignBottom)
         disposicion.addLayout(fila_resumen)
@@ -1591,6 +1608,7 @@ class ModuloCalificacionesTecnicas(QWidget):
                                                     texto_boton= "Ver Detalle del Seleccionado")
         btn_detalle_notas.clicked.disconnect()
         btn_detalle_notas.clicked.connect(self._ver_detalle_estudiante_notas)
+        #*_: argumentos de la señal (no se usan); doble clic equivale a pulsar 'Ver Detalle'.
         self.tabla_notas.doubleClicked.connect(lambda *_: btn_detalle_notas.click())
         lr.addWidget(btn_detalle_notas)
         disposicion.addWidget(frame_res)
@@ -1804,6 +1822,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self._estudiantes_grid_todos= estudiantes_todos
 
         if self._ra_actual_registro and self._estudiantes_grid_todos:
+            #r: cada RA del registro actual; se toma su id.
             ids_ra= [r["id"] for r in self._ra_actual_registro]
             marcadores= ",".join("?" * len(ids_ra))
             c.execute(f"""SELECT * FROM calificacion_ra WHERE anio_academico=?
@@ -1827,10 +1846,12 @@ class ModuloCalificacionesTecnicas(QWidget):
                     ". Ve a la pestaña 'Módulos y RA' para crearlos.", self)
             return
 
+        #r: cada RA del registro actual; se toma su código como título de columna.
         columnas= ["No.", "Matrícula", "Nombre"] + [r["codigo"] for r in self._ra_actual_registro] +\
                    (["C.F."] if self._dominicano else ["Estado del Módulo"])
         self.tabla_notas.setColumnCount(len(columnas))
         self.tabla_notas.setHorizontalHeaderLabels(columnas)
+        #i: posición del RA; r: el RA, cuya descripción se pone como tooltip de su encabezado.
         for i, r in enumerate(self._ra_actual_registro):
             header_item= self.tabla_notas.horizontalHeaderItem(3 + i)
             if header_item is not None:
@@ -1899,6 +1920,8 @@ class ModuloCalificacionesTecnicas(QWidget):
                         in_spin.setValue(valor_cache if valor_cache is not None else -1)
                         in_spin.setEnabled(puede)
                         in_spin.valueChanged.connect(
+                            #Lambda: _v es el valor nuevo (no se usa); r=fila, eid=id del estudiante, raid=id del RA y
+                            #w=el spinbox se fijan al crearla. Avisa a _al_nota_cambiada que esa nota cambió.
                             lambda _v, r=row, eid=est["id"], raid=ra["id"], w=in_spin:
                             self._al_nota_cambiada(r, eid, raid, w))
                         self.tabla_notas.setCellWidget(row, 3 + col, in_spin)
@@ -1912,6 +1935,8 @@ class ModuloCalificacionesTecnicas(QWidget):
                         combo.setEnabled(puede)
                         conectar_tooltip_seleccion(combo, f"Resultado de {est['nombre']} en {ra['codigo']}")
                         combo.currentIndexChanged.connect(
+                            #Lambda: _i es el índice nuevo (no se usa); r=fila, eid=id del estudiante, raid=id del RA y
+                            #w=el combo se fijan al crearla. Avisa a _al_nota_cambiada que esa nota cambió.
                             lambda _i, r=row, eid=est["id"], raid=ra["id"], w=combo:
                             self._al_nota_cambiada(r, eid, raid, w))
                         self.tabla_notas.setCellWidget(row, 3 + col, combo)
@@ -1993,6 +2018,7 @@ class ModuloCalificacionesTecnicas(QWidget):
                 lbl.setStyleSheet("color: #9CA3AF;")
             else:
                 suma_pesos= sum(pesos)
+                #n: cada nota; p: el peso de su RA. Promedio ponderado; si los pesos suman 0, promedio simple.
                 cf= (sum(n * p for n, p in zip(notas, pesos)) / suma_pesos) if suma_pesos > 0 else\
                     (sum(notas) / len(notas) if notas else 0)
                 lbl.setText(f"{cf:.1f}")
@@ -2043,6 +2069,7 @@ class ModuloCalificacionesTecnicas(QWidget):
                     pendiente += 1
                     continue
                 suma_pesos= sum(pesos)
+                #n: cada nota; p: el peso de su RA. Promedio ponderado; si los pesos suman 0, promedio simple.
                 cf= (sum(n * p for n, p in zip(notas, pesos)) / suma_pesos) if suma_pesos > 0 else\
                     (sum(notas) / len(notas) if notas else 0)
                 valores.append(cf)
@@ -2163,6 +2190,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         self._temporizador_busqueda_boletin.setSingleShot(True)
         self._temporizador_busqueda_boletin.setInterval(150)
         self._temporizador_busqueda_boletin.timeout.connect(self._recargar_tabla_boletin)
+        #_t: texto escrito (no se usa); cada cambio reinicia el temporizador que filtra la tabla.
         self.in_buscar_boletin.textChanged.connect(lambda _t: self._temporizador_busqueda_boletin.start())
         fila_busqueda.addWidget(marco_busqueda, 1)
         self.btn_filtros_boletin= QPushButton("Filtros")
@@ -2222,6 +2250,7 @@ class ModuloCalificacionesTecnicas(QWidget):
             fila_botones, self.tabla_estudiantes_boletin, self,
             titulo= "Detalle del Estudiante", texto_boton="Ver Detalle")
         self.tabla_estudiantes_boletin.cellDoubleClicked.connect(
+            #_r, _c: fila y columna del doble clic (no se usan); equivale a pulsar 'Ver Detalle'.
             lambda _r, _c: self.btn_detalle_boletin.click())
         lt.addLayout(fila_botones)
         agregar_boton_pantalla_completa(
@@ -2610,6 +2639,7 @@ class ModuloCalificacionesTecnicas(QWidget):
         pagina= filas[inicio:fin]
         with tabla_pausada(self.tabla_estudiantes_boletin):
             self.tabla_estudiantes_boletin.setRowCount(len(pagina))
+            #f: fila de datos del estudiante en esta página; con ella se llenan las celdas de la fila row.
             for row, f in enumerate(pagina):
                 item_mat= QTableWidgetItem(f["matricula"] or "")
                 item_mat.setData(Qt.ItemDataRole.UserRole, f["id"])
@@ -2794,6 +2824,7 @@ class ModuloCalificacionesTecnicas(QWidget):
             suma_pesos= sum(pesos_validos)
             cf= None
             if notas_validas and len(notas_validas) == len(ra_lista) and suma_pesos > 0:
+                #n: cada nota válida; p: el peso de su RA. Calificación final ponderada.
                 cf= sum(n * p for n, p in zip(notas_validas, pesos_validos)) / suma_pesos
             lbl_cf= QLabel(f"Calificación Final (C.F.): {cf:.1f}" if cf is not None
                              else "Calificación Final (C.F.): pendiente")
@@ -2893,6 +2924,7 @@ class ModuloCalificacionesTecnicas(QWidget):
             from src.boletines.boletin_minerd import formato_boletin_general
             from src.boletines.boletin_tecnico_minerd import exportar_boletin_tecnico_oficial_pdf
         except ImportError:
+            #Lambda sin argumentos: reemplaza la función ausente y siempre devuelve el formato 'simple'.
             formato_boletin_general= lambda: "simple"
         if formato_boletin_general() == "oficial_rd":
             estudiante_id= datos["estudiante"]["id"]

@@ -59,6 +59,7 @@ def _paleta(main_window):
     if not paletas or tema not in paletas:
         return {"accent": "#6366F1", "bg_panel": "#FFFFFF", "bg_btn": "#E2E8F0",
                 "txt_prim": "#0F172A", "txt_sec": "#64748B"}
+    #p: paletas del tema activo; de aquí se leen los colores [claro, oscuro] que se eligen con idx.
     p= paletas[tema]
     idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
     return {"accent": p["btn_op_bg"][idx], "bg_panel": p["display_bg"][idx],
@@ -68,6 +69,7 @@ def _paleta(main_window):
 
 def _estilo_asistente(paleta):
 
+    #p: la paleta recibida; abreviatura para interpolar sus colores en la hoja de estilo.
     p= paleta
     accent= p["accent"]
     return f"""
@@ -220,6 +222,7 @@ class _TarjetaMetodo(QFrame):
 
     def _aplicar_estilo(self):
 
+        #p: paleta de la ventana, para pintar la tarjeta según esté marcada o no.
         p= self._paleta
         if self._marcada:
             fondo= _hex_a_rgba(self._color, 0.12)
@@ -310,6 +313,8 @@ class PaginaIntro(QWizardPage):
         self._tarjetas= []
         for clave, icono, titulo, subtitulo, color in self.METODOS_INFO:
             tarjeta= _TarjetaMetodo(icono, titulo, subtitulo, color, paleta)
+            #Lambda: cl se fija por defecto con la clave de este método (evita que todas usen la última);
+            #al hacer clic en la tarjeta selecciona ese método.
             tarjeta.clicked.connect(lambda cl=clave: self._seleccionar(cl))
             disposicion.addWidget(tarjeta)
             self._tarjetas.append((clave, tarjeta))
@@ -882,6 +887,7 @@ class AsistenteSincronizacion(QWizard):
             boton= self.button(rol)
             if boton is not None:
                 boton.setCursor(Qt.CursorShape.PointingHandCursor)
+                #Lambda: b se fija con el botón actual; al presionarlo (pressed) lanza su animación de rebote.
                 boton.pressed.connect(lambda b=boton: _animar_click(b))
 
     def _al_cambiar_pagina(self, _id):

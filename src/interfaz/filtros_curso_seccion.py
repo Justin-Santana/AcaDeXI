@@ -227,6 +227,7 @@ def interseccion_opcional(*sets_opcionales):
     if not activos:
         return None
     resultado= activos[0]
+    #s: cada conjunto de secciones activo (no None) restante; se intersecta con el resultado acumulado.
     for s in activos[1:]:
         resultado= resultado & s
     return resultado
