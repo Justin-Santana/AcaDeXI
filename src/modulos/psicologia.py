@@ -585,9 +585,11 @@ class Chip(QFrame):
             base= QColor(base)
             base.setAlpha(min(255, base.alpha() + 34))
         t= self._factor
+        #r: rojo interpolado entre el color base y el activo según t (0 a 1)
         r= base.red() + (self._color_activo.red() - base.red()) * t
         g= base.green() + (self._color_activo.green() - base.green()) * t
         b= base.blue() + (self._color_activo.blue() - base.blue()) * t
+        #a: transparencia interpolada entre la base y opaco (255) según t (0 a 1)
         a= base.alpha() + (255 - base.alpha()) * t
         return QColor(int(r), int(g), int(b), int(a))
 
@@ -632,6 +634,7 @@ class Chip(QFrame):
                 progreso= anim.currentValue()
                 if progreso is None:
                     continue
+                #r: radio actual de la onda; crece con el progreso hasta radio_max
                 r= radio_max * progreso
                 alpha= max(0, int(90 * (1 - progreso)))
                 painter.setPen(Qt.PenStyle.NoPen)
@@ -690,6 +693,7 @@ class SegmentadoPildora(QWidget):
             btn.setCheckable(True)
             btn.setFlat(True)
             btn.setObjectName("SegmentadoBoton")
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn.clicked.connect(lambda _=False, k=clave: self.establecer_valor(k))
             #Ancho mínimo calculado a partir del propio texto (en vez de un
             #setMinimumWidth(260) fijo repartido entre TODAS las opciones):
@@ -1022,6 +1026,7 @@ class ModuloPsicologia(QWidget):
         self._temporizador_busqueda.setSingleShot(True)
         self._temporizador_busqueda.setInterval(150)
         self._temporizador_busqueda.timeout.connect(self._refrescar)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
         self.in_busqueda.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
 
         #Los combos/chips de filtro siguen existiendo exactamente igual que
@@ -1038,6 +1043,7 @@ class ModuloPsicologia(QWidget):
         conectar_tooltip_seleccion(self.combo_curso_filtro, "Filtrar por curso")
         conectar_tooltip_seleccion(self.combo_seccion_filtro, "Filtrar por sección")
         self.combo_curso_filtro.currentIndexChanged.connect(
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: cascada_seccion_por_curso(self.combo_curso_filtro, self.combo_seccion_filtro, incluir_todas=True))
         self.combo_curso_filtro.currentIndexChanged.connect(self._refrescar)
         self.combo_seccion_filtro.currentIndexChanged.connect(self._refrescar)
@@ -1067,8 +1073,10 @@ class ModuloPsicologia(QWidget):
         self._cargar_carreras_combo_filtro()
 
         self.chip_destacadas= Chip("destacadas", "Destacados", color_activo="#F59E0B")
+        #_m: estado del chip que no se usa; solo se vuelve a filtrar
         self.chip_destacadas.alternado.connect(lambda _m: self._refrescar())
         self.chip_vencidas= Chip("vencidas", "Vencidas", color_activo="#EF4444")
+        #_m: estado del chip que no se usa; solo se vuelve a filtrar
         self.chip_vencidas.alternado.connect(lambda _m: self._refrescar())
 
         self.btn_filtros= BotonAnimado("Filtros")
@@ -1135,6 +1143,7 @@ class ModuloPsicologia(QWidget):
         self.tabla.verticalHeader().setVisible(False)
         self.tabla.verticalHeader().setDefaultSectionSize(40)
         self.tabla.itemSelectionChanged.connect(self._actualizar_botones_accion)
+        #_i: índice o ítem que trae la señal y no se usa
         self.tabla.itemDoubleClicked.connect(lambda _i: self._ver_detalle())
         lay_tabla.addWidget(self.tabla, 1)
         self.estado_vacio= EstadoVacioFiltro(self.tabla, icono="🧠",
@@ -1250,6 +1259,7 @@ class ModuloPsicologia(QWidget):
         conectar_tooltip_seleccion(self.combo_curso_form, "Curso del estudiante")
         conectar_tooltip_seleccion(self.combo_seccion_form, "Sección del estudiante")
         self.combo_curso_form.currentIndexChanged.connect(
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: cascada_seccion_por_curso(self.combo_curso_form, self.combo_seccion_form, incluir_todas=False))
         self.combo_seccion_form.currentIndexChanged.connect(self._poblar_estudiantes_form)
         self.combo_estudiante_form= QComboBox()
@@ -1432,9 +1442,11 @@ class ModuloPsicologia(QWidget):
         #método (mismo callback que el botón correspondiente), solo que
         #sobre acciones que antes no tenían tecla asignada.
         registrar_atajo(self, self.main_window, "Ctrl+F", "Buscar",
+                         #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
                          lambda: (self.in_busqueda.setFocus(), self.in_busqueda.selectAll()))
         registrar_atajo(self, self.main_window, "F5", "Actualizar tabla", self._refrescar)
         registrar_atajo(self, self.main_window, "Ctrl+D", "Ver detalle del registro seleccionado",
+                         #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                          lambda: self.btn_ver.click() if self.btn_ver.isEnabled() else None)
         registrar_atajo(self, self.main_window, "Ctrl+Shift+F", "Abrir panel de filtros",
                          self._abrir_dialogo_filtros)
@@ -1775,6 +1787,7 @@ class ModuloPsicologia(QWidget):
         anim.setEndValue(valor_final)
         anim.setDuration(350)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor actual del slider, que se muestra como porcentaje
         anim.valueChanged.connect(lambda v: self.chip_contador.setText(texto(int(v))))
         anim.start()
         self._anim_contador= anim
@@ -1788,6 +1801,7 @@ class ModuloPsicologia(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(160)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: self.tabla.setGraphicsEffect(None))
         anim.start()
         self._anim_tabla= anim
@@ -2211,6 +2225,7 @@ class ModuloPsicologia(QWidget):
         accion_quitar= QAction("Quitar próxima cita", menu)
         accion_quitar.setEnabled(tiene_cita)
         accion_quitar.triggered.connect(
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self.fecha_proxima_cita_form.setDate(self.fecha_proxima_cita_form.minimumDate()))
         menu.addAction(accion_quitar)
         menu.exec(self.fecha_proxima_cita_form.mapToGlobal(posicion))
@@ -2469,6 +2484,7 @@ class ModuloPsicologia(QWidget):
         titulo= f"{fila['est_nombre']} {fila['est_apellidos']} — Expediente de Psicología"
         texto_completo= (fila["texto"] or "").strip()
         extra_botones= [("Ver nota completa",
+                           #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                            lambda: mostrar_texto_largo(self, "Nota / descripción del caso", texto_completo))]
         #Misma fotografía del estudiante que muestra Estudiantes.py -en grande, arriba del detalle-, para reconocerlo
         #de un vistazo al revisar el expediente (ver DialogoDetalleRegistro.foto_path en paginacion.py, que ya sabe

@@ -76,9 +76,11 @@ class PanelPermisosSideStepper(QWidget):
 
         fila_acciones= QHBoxLayout()
         btn_todos= QPushButton("Marcar todos")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_todos.clicked.connect(lambda: self._marcar_todos(True))
         fila_acciones.addWidget(btn_todos)
         btn_ninguno= QPushButton("Desmarcar todos")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_ninguno.clicked.connect(lambda: self._marcar_todos(False))
         fila_acciones.addWidget(btn_ninguno)
         fila_acciones.addStretch()

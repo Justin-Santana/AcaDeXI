@@ -412,7 +412,9 @@ class MotorAlarmas(QObject):
 
         salida= []
         hoy_iso= ahora.strftime("%Y-%m-%d")
+        #r: fila de un recordatorio activo
         for r in conn.execute("SELECT * FROM recordatorios WHERE activo=1").fetchall():
+            #r: la fila como dict, para leer sus campos con .get
             r= dict(r)
             aplica_hoy= False
             if r["repetir"] == "unica" and r["fecha"] == hoy_iso:
@@ -447,7 +449,9 @@ class MotorAlarmas(QObject):
                 "SELECT * FROM eventos WHERE fecha=? AND hora IS NOT NULL AND hora <> ''", (hoy_iso,)
             ).fetchall()
             profesor_id= self._profesor_id_actual(mw, conn_inst)
+            #f: fila del resultado de la consulta
             for f in filas:
+                #f: la fila como dict, para leer sus campos con .get
                 f= dict(f)
                 visible= f.get("visibilidad") in (None, "", "Institucional", "Pública", "Publica")
                 if not visible and profesor_id and f.get("materia_id"):
@@ -511,6 +515,7 @@ class MotorAlarmas(QObject):
                 #(los gerenciales no tienen "su" horario), así que no se emite ninguna clase.
                 pass
             for f in filas:
+                #f: la fila como dict, para leer sus campos con .get
                 f= dict(f)
                 if f.get("hora_inicio") and self._dentro_de_tolerancia(ahora, hoy_iso, f["hora_inicio"]):
                     clave= f"clase_{f['id']}_{hoy_iso}"
@@ -712,6 +717,7 @@ class OverlayEfectoAlarma(QWidget):
             paso.setDuration(55)
             paso.setEndValue(QPoint(base.x() + dx, base.y()))
             grupo.addAnimation(paso)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         grupo.finished.connect(lambda: contenedor.move(base))
         self._grupo_vibracion= grupo
         grupo.start()
@@ -1170,12 +1176,14 @@ class PanelAlarmas(QWidget):
             btn_editar.setIconSize(_QSize_emoji(16, 16))
             btn_editar.setFixedWidth(28)
             btn_editar.setToolTip("Editar este recordatorio.")
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn_editar.clicked.connect(lambda _c=False, rid=r["id"]: self._editar_recordatorio(rid))
             btn_borrar= QPushButton("")
             btn_borrar.setIcon(icono_emoji("🗑"))
             btn_borrar.setIconSize(_QSize_emoji(16, 16))
             btn_borrar.setFixedWidth(28)
             btn_borrar.setToolTip("Eliminar este recordatorio.")
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn_borrar.clicked.connect(lambda _c=False, rid=r["id"]: self._borrar_recordatorio(rid))
             lay_acciones.addWidget(btn_editar)
             lay_acciones.addWidget(btn_borrar)
@@ -1184,6 +1192,7 @@ class PanelAlarmas(QWidget):
     def _editar_recordatorio(self, id_recordatorio):
 
         recordatorios= {r["id"]: r for r in listar_recordatorios(self.main_window)}
+        #r: el recordatorio a modificar; None si ya no existe
         r= recordatorios.get(id_recordatorio)
         if not r:
             return

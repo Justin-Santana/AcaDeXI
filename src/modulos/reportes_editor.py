@@ -302,6 +302,7 @@ def _traducir_filas_formula(formula, delta):
     for i in range(0, len(partes), 2):  #solo los trozos FUERA de comillas
         partes[i]= re.sub(
             r"(\$?)([A-Za-z]{1,3})(\$?)(\d+)(?![\w($])",
+            #m: referencia tipo A1 encontrada; la fila se desplaza delta salvo que vaya anclada con $
             lambda m: (m.group(1) + m.group(2) + m.group(3) +
                        (m.group(4) if m.group(3) == "$"
                         else str(max(1, int(m.group(4)) + delta)))),
@@ -526,6 +527,7 @@ def _aplanar(argumentos):
 def _numeros(argumentos):
 
     numeros= []
+    #v: cada valor ya aplanado del argumento; si es un error de fórmula se vuelve a lanzar
     for v in _aplanar(argumentos):
         if isinstance(v, _ErrorFormulaValor):
             raise v
@@ -634,6 +636,7 @@ def _f_abs(a):
 
 def _f_sqrt(a):
 
+    #v: el número del que se saca la raíz; negativo da #¡NUM!
     v= _num(a[0])
     if v < 0:
         raise _ErrorFormulaValor("#¡NUM!")
@@ -1007,6 +1010,7 @@ class _MotorFormulas:
         if r1 is None or r2 is None:
             raise _ErrorFormulaValor("#¡REF!")
         valores= []
+        #r: fila dentro del rango, de la menor a la mayor
         for r in range(min(r1, r2), max(r1, r2) + 1):
             for c in range(min(c1, c2), max(c1, c2) + 1):
                 valores.append(self.valor_celda(r, c))
@@ -1233,6 +1237,7 @@ class _DialogoEditorPaginaPDF(QDialog):
 
         def _cambiar_fuente(_i=None):
 
+            #f: formato de caracteres que se aplica a la selección (solo la familia de fuente)
             f= QTextCharFormat()
             f.setFontFamilies([self.combo_fuente.currentText()])
             _aplicar(f)
@@ -1241,6 +1246,7 @@ class _DialogoEditorPaginaPDF(QDialog):
 
             try:
 
+                #f: formato de caracteres que se aplica a la selección (solo el tamaño)
                 f= QTextCharFormat()
                 f.setFontPointSize(float(self.combo_tamano.currentText()))
                 _aplicar(f)
@@ -1249,18 +1255,21 @@ class _DialogoEditorPaginaPDF(QDialog):
 
         def _alternar_negrita(activo):
 
+            #f: formato de caracteres que se aplica a la selección
             f= QTextCharFormat()
             f.setFontWeight(QFont.Weight.Bold if activo else QFont.Weight.Normal)
             _aplicar(f)
 
         def _alternar_cursiva(activo):
 
+            #f: formato de caracteres que se aplica a la selección
             f= QTextCharFormat()
             f.setFontItalic(activo)
             _aplicar(f)
 
         def _alternar_subrayado(activo):
 
+            #f: formato de caracteres que se aplica a la selección
             f= QTextCharFormat()
             f.setFontUnderline(activo)
             _aplicar(f)
@@ -1269,6 +1278,7 @@ class _DialogoEditorPaginaPDF(QDialog):
 
             color= _elegir_color_con_icono(QColor("#000000"), self, "Color del texto")
             if color.isValid():
+                #f: formato de caracteres que se aplica a la selección
                 f= QTextCharFormat()
                 f.setForeground(color)
                 _aplicar(f)
@@ -1279,8 +1289,11 @@ class _DialogoEditorPaginaPDF(QDialog):
         btn_cursiva.toggled.connect(_alternar_cursiva)
         btn_subrayado.toggled.connect(_alternar_subrayado)
         btn_color.clicked.connect(_elegir_color)
+        #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
         btn_izq.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignLeft) if marcado else None)
+        #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
         btn_centro.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignHCenter) if marcado else None)
+        #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
         btn_der.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignRight) if marcado else None)
 
         #Refleja en los botones la alineación del párrafo donde está el
@@ -1486,6 +1499,7 @@ class _EtiquetaPaginaPDFSeleccionable(QLabel):
         painter= QPainter(self)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(37, 99, 235, 90))
+        #p: rectángulo de una palabra en el rango: (izquierda, arriba, derecha, abajo)
         for p in self._palabras_en_rango():
             painter.drawRect(int(p[0]), int(p[1]), max(1, int(p[2] - p[0])), max(1, int(p[3] - p[1])))
         painter.end()
@@ -1562,6 +1576,7 @@ class _DialogoMarcaDeAgua(QDialog):
         self.slider_opacidad.setRange(5, 100)
         self.slider_opacidad.setValue(25)
         self.lbl_opacidad= QLabel("25%")
+        #v: valor actual del slider, que se muestra como porcentaje
         self.slider_opacidad.valueChanged.connect(lambda v: self.lbl_opacidad.setText(f"{v}%"))
         fila_opacidad= QHBoxLayout()
         fila_opacidad.addWidget(self.slider_opacidad, 1)
@@ -2320,6 +2335,7 @@ class VisorEditorReportes(QWidget):
         self.combo_modo_editor.setToolTip("Modo del editor (solo afecta a esta ventana, no a la app)")
         self.combo_modo_editor.setCursor(Qt.CursorShape.PointingHandCursor)
         self.combo_modo_editor.currentTextChanged.connect(
+            #texto: nombre del modo elegido en el combo, en minúscula
             lambda texto: (setattr(self, "_tema_modo_editor", texto.strip().lower()),
                            self._aplicar_tema_editor()))
         lay_barra.addWidget(self.combo_modo_editor)
@@ -2329,6 +2345,7 @@ class VisorEditorReportes(QWidget):
         self.combo_acento_editor.setToolTip("Color de acento del editor (solo afecta a esta ventana)")
         self.combo_acento_editor.setCursor(Qt.CursorShape.PointingHandCursor)
         self.combo_acento_editor.currentIndexChanged.connect(
+            #_: el índice no se usa; el color sale de currentData() del combo
             lambda _: (setattr(self, "_tema_acento_editor",
                                self.combo_acento_editor.currentData() or "#2563EB"),
                        self._aplicar_tema_editor()))
@@ -2535,6 +2552,7 @@ class VisorEditorReportes(QWidget):
         #Ordenar ascendente/descendente por la columna de la celda actual -mismo comportamiento que los botones
         #"AZ"/"ZA" de la cinta-.
         _atajo("Ctrl+Shift+A", _si_hoja(lambda: self._ordenar(Qt.SortOrder.AscendingOrder)), "Ordenar ascendente (hoja)")
+        #la lambda deja la orden lista para ejecutarse solo cuando se pulse el atajo
         _atajo("Ctrl+Shift+D", _si_hoja(lambda: self._ordenar(Qt.SortOrder.DescendingOrder)), "Ordenar descendente (hoja)")
 
         #Autoajustar el ancho de las columnas -mismo botón "Autoajustar" de la cinta-.
@@ -2685,7 +2703,9 @@ class VisorEditorReportes(QWidget):
         btn_der.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_der.setFixedWidth(20)
         barra_scroll= contenedor.horizontalScrollBar()
+        #cada clic mueve la barra 120 px hacia la izquierda
         btn_izq.clicked.connect(lambda: barra_scroll.setValue(barra_scroll.value() - 120))
+        #cada clic mueve la barra 120 px hacia la derecha
         btn_der.clicked.connect(lambda: barra_scroll.setValue(barra_scroll.value() + 120))
 
         def _actualizar_flechas(*_args):
@@ -2762,6 +2782,7 @@ class VisorEditorReportes(QWidget):
 
         contenedor= QWidget()
         contenedor.setObjectName("GrupoRibbon")
+        #v: layout vertical del grupo del ribbon (botones arriba, título abajo)
         v= QVBoxLayout(contenedor)
         v.setContentsMargins(4, 2, 4, 0)
         v.setSpacing(2)
@@ -2799,7 +2820,9 @@ class VisorEditorReportes(QWidget):
         campo.setFixedWidth(46)
         campo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         campo.setToolTip(tooltip_campo)
+        #al_fijar recibe el texto que hay en el campo al pulsar Enter
         campo.returnPressed.connect(lambda: al_fijar(campo.text()))
+        #al_fijar recibe el texto del campo también al perder el foco
         campo.editingFinished.connect(lambda: al_fijar(campo.text()))
         pl.addWidget(campo)
 
@@ -2956,12 +2979,15 @@ class VisorEditorReportes(QWidget):
 
         #Grupo "Alinear"
         g_alinear, f_alinear= self._crear_grupo_ribbon("Alinear")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         _b_alinear_izq= _boton(f_alinear, "", "Alinear a la izquierda", lambda: self._alinear(Qt.AlignmentFlag.AlignLeft))
         _b_alinear_izq.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA))
         _b_alinear_izq.setIconSize(_QSize_emoji(16, 16))
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         _b_alinear_centro= _boton(f_alinear, "", "Centrar", lambda: self._alinear(Qt.AlignmentFlag.AlignHCenter))
         _b_alinear_centro.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO))
         _b_alinear_centro.setIconSize(_QSize_emoji(16, 16))
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         _b_alinear_der= _boton(f_alinear, "", "Alinear a la derecha", lambda: self._alinear(Qt.AlignmentFlag.AlignRight))
         _b_alinear_der.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA))
         _b_alinear_der.setIconSize(_QSize_emoji(16, 16))
@@ -2970,7 +2996,9 @@ class VisorEditorReportes(QWidget):
 
         #Grupo "Datos"
         g_datos, f_datos= self._crear_grupo_ribbon("Datos")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         _boton(f_datos, "AZ", "Ordenar ascendente por la columna seleccionada", lambda: self._ordenar(Qt.SortOrder.AscendingOrder))
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         _boton(f_datos, "ZA", "Ordenar descendente por la columna seleccionada", lambda: self._ordenar(Qt.SortOrder.DescendingOrder))
         _boton(f_datos, "Autoajustar", "Autoajustar el ancho de las columnas", self._autoajustar_columnas)
         tb.addWidget(g_datos)
@@ -2992,10 +3020,12 @@ class VisorEditorReportes(QWidget):
             ("Contar números", "CONTAR"), ("Contar no vacías", "CONTARA"),
         ):
             accion= menu_operacion.addAction(etiqueta)
+            #el valor por defecto fija la opción de esta vuelta del bucle (si no, todas usarían la última); el primer parámetro absorbe el checked de triggered
             accion.triggered.connect(lambda _chk=False, f=funcion_excel: self._insertar_operacion_rapida(f))
         menu_operacion.addSeparator()
         for etiqueta, operador in (("Restar (−)", "-"), ("Dividir (÷)", "/")):
             accion= menu_operacion.addAction(etiqueta)
+            #el valor por defecto fija la opción de esta vuelta del bucle (si no, todas usarían la última); el primer parámetro absorbe el checked de triggered
             accion.triggered.connect(lambda _chk=False, op=operador: self._insertar_operacion_encadenada(op))
         btn_operacion.setMenu(menu_operacion)
         f_calcular.addWidget(btn_operacion)
@@ -3005,6 +3035,7 @@ class VisorEditorReportes(QWidget):
         #Grupo "Insertar"
         g_insertar, f_insertar= self._crear_grupo_ribbon("Insertar")
         _boton(f_insertar, "Imagen", "Insertar una imagen en la celda seleccionada", self._insertar_imagen_hoja)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         _boton(f_insertar, "Enlace", "Insertar o editar un hipervínculo en la celda seleccionada", lambda: self._hoja_insertar_enlace())
         _boton(f_insertar, "Gráfico", "Crear un gráfico nativo de Excel a partir de los datos seleccionados", self._insertar_grafico_hoja)
         _b_cuadro= _boton(f_insertar, "Cuadro de texto", "Insertar un cuadro de texto (celda con borde y relleno) en la posición seleccionada", self._insertar_cuadro_texto_hoja)
@@ -3017,7 +3048,9 @@ class VisorEditorReportes(QWidget):
         g_vista, f_vista= self._crear_grupo_ribbon("Vista")
         pill_zoom, self.in_zoom_hoja= self._crear_pill_zoom(
             "100%",
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self._zoom_hoja_cambiar(-10),
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self._zoom_hoja_cambiar(10),
             self._zoom_hoja_set,
             "Escribe el porcentaje de zoom (10%–400%) y pulsa Enter para aplicarlo",
@@ -3152,7 +3185,9 @@ class VisorEditorReportes(QWidget):
         g_vista, f_vista= self._crear_grupo_ribbon("Vista")
         pill_zoom_pdf, self.in_zoom_pdf= self._crear_pill_zoom(
             "140%",
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self._pdf_zoom(-0.2),
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self._pdf_zoom(0.2),
             self._pdf_zoom_set,
             "Escribe el porcentaje de zoom (10%–400%) y pulsa Enter para aplicarlo",
@@ -3276,6 +3311,7 @@ class VisorEditorReportes(QWidget):
         self.btn_copiar_texto_pdf= QPushButton("Copiar todo el texto")
         self.btn_copiar_texto_pdf.setIcon(icono_emoji("📋"))
         self.btn_copiar_texto_pdf.setIconSize(_QSize_emoji(16, 16))
+        #copia todo el texto del panel: lo selecciona entero y lo manda al portapapeles
         self.btn_copiar_texto_pdf.clicked.connect(lambda: (self.panel_texto_pdf.selectAll(), self.panel_texto_pdf.copy()))
         self.btn_copiar_texto_pdf.setVisible(False)
         panel_lateral.addWidget(self.btn_copiar_texto_pdf)
@@ -3386,15 +3422,19 @@ class VisorEditorReportes(QWidget):
         #dispare de nuevo su propia alineación y "pise" la que se acaba de elegir, que era la causa de que la
         #alineación vieja pareciera "mantenerse").
         g_alinear_w, f_alinear_w= self._crear_grupo_ribbon("Alinear")
+        #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
         self.btn_alinear_izq_word= _boton(f_alinear_w, "", "Alinear a la izquierda", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignLeft) if marcado else None, checable=True)
         self.btn_alinear_izq_word.setIcon(icono_emoji(EMOJI_ALINEAR_IZQUIERDA))
         self.btn_alinear_izq_word.setIconSize(_QSize_emoji(16, 16))
+        #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
         self.btn_alinear_centro_word= _boton(f_alinear_w, "", "Centrar", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignHCenter) if marcado else None, checable=True)
         self.btn_alinear_centro_word.setIcon(icono_emoji(EMOJI_ALINEAR_CENTRO))
         self.btn_alinear_centro_word.setIconSize(_QSize_emoji(16, 16))
+        #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
         self.btn_alinear_der_word= _boton(f_alinear_w, "", "Alinear a la derecha", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignRight) if marcado else None, checable=True)
         self.btn_alinear_der_word.setIcon(icono_emoji(EMOJI_ALINEAR_DERECHA))
         self.btn_alinear_der_word.setIconSize(_QSize_emoji(16, 16))
+        #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
         self.btn_alinear_just_word= _boton(f_alinear_w, "", "Justificar", lambda marcado: self._word_alinear(Qt.AlignmentFlag.AlignJustify) if marcado else None, checable=True)
         self.btn_alinear_just_word.setIcon(self._icono_alinear_justificado())
         self.btn_alinear_just_word.setIconSize(_QSize_emoji(16, 16))
@@ -3466,7 +3506,9 @@ class VisorEditorReportes(QWidget):
         g_vista_w, f_vista_w= self._crear_grupo_ribbon("Vista")
         pill_zoom_word, self.in_zoom_word= self._crear_pill_zoom(
             "100%",
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self._word_zoom(-20),
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self._word_zoom(20),
             self._word_zoom_set,
             "Escribe el porcentaje de zoom (10%–400%) y pulsa Enter para aplicarlo",
@@ -3517,7 +3559,9 @@ class VisorEditorReportes(QWidget):
         self.editor_word.textChanged.connect(self._word_seguir_cursor)
         self.editor_word.cursorPositionChanged.connect(self._word_sincronizar_barra)
         self.editor_word.cursorPositionChanged.connect(self._word_seguir_cursor)
+        #_: valor que trae la señal y aquí no se usa
         self.editor_word.document().undoAvailable.connect(lambda _: self._actualizar_botones_deshacer())
+        #_: valor que trae la señal y aquí no se usa
         self.editor_word.document().redoAvailable.connect(lambda _: self._actualizar_botones_deshacer())
         #Interacción con imágenes al estilo Word: doble clic sobre una imagen abre el diálogo de tamaño, y el clic
         #derecho ofrece las mismas acciones rápidas (100%, 50%, ajustar al ancho, eliminar).
@@ -3575,6 +3619,7 @@ class VisorEditorReportes(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(220)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #al terminar la animación se quita el efecto gráfico para que la página quede sin transparencia
         anim.finished.connect(lambda: self.stack.currentWidget().setGraphicsEffect(None))
         anim.start()
         self._anim_pagina= anim
@@ -4006,6 +4051,7 @@ class VisorEditorReportes(QWidget):
         if not tint:
             return hex_rgb
         import colorsys
+        #r: canal rojo del color, de 0 a 1 (g y b siguen igual para pasarlos a colorsys)
         r= int(hex_rgb[0:2], 16) / 255.0
         g= int(hex_rgb[2:4], 16) / 255.0
         b= int(hex_rgb[4:6], 16) / 255.0
@@ -4112,12 +4158,15 @@ class VisorEditorReportes(QWidget):
                 return wb, wb_cache, tema
             self._hilo_abrir_xlsx= WorkerHilo(_tarea_io)
             self._hilo_abrir_xlsx.terminado.connect(
+                #res: la tupla (libro, caché, tema) que devolvió _tarea_io
                 lambda res: self._al_xlsx_cargado(res[0], res[1], res[2]))
             self._hilo_abrir_xlsx.error.connect(
+                #mensaje: texto del error que emite el hilo
                 lambda mensaje: (self._bloquear_controles_xlsx(False),
                              mostrar_mensaje("error", "Error al abrir Excel",
                                              mensaje.split("\n")[0], self._padre_dialogo())))
             self._hilo_abrir_xlsx.finished.connect(
+                #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                 lambda: self._bloquear_controles_xlsx(False))
             self._hilo_abrir_xlsx.start()
         else:
@@ -4497,6 +4546,7 @@ class VisorEditorReportes(QWidget):
         rangos= self.tabla_editor.selectedRanges()
         if not rangos:
             return None
+        #r: el primer rango seleccionado; los demás se ignoran
         r= rangos[0]
         return r.topRow(), r.bottomRow(), r.leftColumn(), r.rightColumn()
 
@@ -4904,6 +4954,7 @@ class VisorEditorReportes(QWidget):
             slider.setRange(0, 100)
             slider.setValue(int((1.0 - etiqueta.opacidad) * 100))
             lbl_valor= QLabel(f"{slider.value()}%")
+            #v: valor actual del slider, que se muestra como porcentaje
             slider.valueChanged.connect(lambda v: lbl_valor.setText(f"{v}%"))
             fila_op.addWidget(slider, 1)
             fila_op.addWidget(lbl_valor)
@@ -5123,6 +5174,7 @@ class VisorEditorReportes(QWidget):
             return
         r1, r2, c1, c2= rango
         referencias= []
+        #r: fila actual de la hoja
         for r in range(r1, r2 + 1):
             for c in range(c1, c2 + 1):
                 referencias.append(f"{_letra_columna(c)}{r + 1}")
@@ -5160,6 +5212,7 @@ class VisorEditorReportes(QWidget):
                     self.tabla_editor.insertColumn(col_destino)
                     self.tabla_editor.setHorizontalHeaderLabels(
                         [_letra_columna(i) for i in range(self.tabla_editor.columnCount())])
+                    #r: fila actual de la hoja
                     for r in range(self.tabla_editor.rowCount()):
                         self.tabla_editor.setItem(r, col_destino, QTableWidgetItem(""))
                 destino_r, destino_c= r1, col_destino
@@ -5212,6 +5265,7 @@ class VisorEditorReportes(QWidget):
         ws= self._wb[nombre_hoja]
         filas= self.tabla_editor.rowCount()
         columnas= self.tabla_editor.columnCount()
+        #r: fila actual de la hoja
         for r in range(filas):
             for c in range(columnas):
                 item= self.tabla_editor.item(r, c)
@@ -5322,6 +5376,7 @@ class VisorEditorReportes(QWidget):
     def _extraer_filas_de_tabla(self):
 
         filas= []
+        #r: fila actual de la hoja
         for r in range(self.tabla_editor.rowCount()):
             fila= []
             for c in range(self.tabla_editor.columnCount()):
@@ -5335,6 +5390,7 @@ class VisorEditorReportes(QWidget):
     def _extraer_filas_crudas_de_tabla(self):
 
         filas= []
+        #r: fila actual de la hoja
         for r in range(self.tabla_editor.rowCount()):
             fila= []
             for c in range(self.tabla_editor.columnCount()):
@@ -5417,6 +5473,7 @@ class VisorEditorReportes(QWidget):
                 return crudo
 
             motor= _MotorFormulas(obtener_crudo)
+            #r: fila actual de la hoja
             for r in range(filas):
                 for c in range(columnas):
                     item= self.tabla_editor.item(r, c)
@@ -5495,6 +5552,7 @@ class VisorEditorReportes(QWidget):
         col= self.tabla_editor.currentColumn()
         pos= col + 1 if col >= 0 else self.tabla_editor.columnCount()
         self.tabla_editor.insertColumn(pos)
+        #r: fila actual de la hoja
         for r in range(self.tabla_editor.rowCount()):
             self.tabla_editor.setItem(r, pos, QTableWidgetItem(""))
         self.tabla_editor.setHorizontalHeaderLabels(
@@ -5549,6 +5607,7 @@ class VisorEditorReportes(QWidget):
         #donde falte, para que el color/formato cubra la selección completa tal como se ve en Excel.
         self._sincronizando= True
         for rango in rangos:
+            #r: fila actual de la hoja
             for r in range(rango.topRow(), rango.bottomRow() + 1):
                 for c in range(rango.leftColumn(), rango.rightColumn() + 1):
                     if tabla.item(r, c) is None:
@@ -5571,6 +5630,7 @@ class VisorEditorReportes(QWidget):
 
         filas, columnas= self.tabla_editor.rowCount(), self.tabla_editor.columnCount()
         datos= []
+        #r: fila actual de la hoja
         for r in range(filas):
             fila= []
             for c in range(columnas):
@@ -5663,6 +5723,7 @@ class VisorEditorReportes(QWidget):
     def _extraer_bloque_hoja(self, fila_ini, fila_fin, col_ini, col_fin):
 
         bloque= []
+        #r: fila actual de la hoja
         for r in range(fila_ini, fila_fin + 1):
             fila= []
             for c in range(col_ini, col_fin + 1):
@@ -5827,6 +5888,7 @@ class VisorEditorReportes(QWidget):
         accion_pegar= menu.addAction("Pegar")
         accion_pegar.setShortcut(QKeySequence.StandardKey.Paste)
         accion_pegar.setEnabled(hay_para_pegar)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         accion_pegar.triggered.connect(lambda: self._hoja_pegar_seleccion())
 
         menu_especial= menu.addMenu("Pegado especial (operación)")
@@ -5834,6 +5896,7 @@ class VisorEditorReportes(QWidget):
         for etiqueta, clave in (("Sumar", "sumar"), ("Restar", "restar"),
                                 ("Multiplicar", "multiplicar"), ("Dividir", "dividir")):
             accion_op= menu_especial.addAction(etiqueta)
+            #el valor por defecto fija la opción de esta vuelta del bucle (si no, todas usarían la última); el primer parámetro absorbe el checked de triggered
             accion_op.triggered.connect(lambda checked=False, op=clave: self._hoja_pegar_seleccion(operacion=op))
 
         menu.addSeparator()
@@ -5849,10 +5912,12 @@ class VisorEditorReportes(QWidget):
             ("Contar números", "CONTAR"), ("Contar no vacías", "CONTARA"),
         ):
             accion_op= menu_operacion.addAction(etiqueta)
+            #el valor por defecto fija la opción de esta vuelta del bucle (si no, todas usarían la última); el primer parámetro absorbe el checked de triggered
             accion_op.triggered.connect(lambda checked=False, f=funcion_excel: self._insertar_operacion_rapida(f))
         menu_operacion.addSeparator()
         for etiqueta, operador in (("Restar (−)", "-"), ("Dividir (÷)", "/")):
             accion_op= menu_operacion.addAction(etiqueta)
+            #el valor por defecto fija la opción de esta vuelta del bucle (si no, todas usarían la última); el primer parámetro absorbe el checked de triggered
             accion_op.triggered.connect(lambda checked=False, op=operador: self._insertar_operacion_encadenada(op))
 
         menu.addSeparator()
@@ -5862,12 +5927,16 @@ class VisorEditorReportes(QWidget):
             accion_abrir_link= menu.addAction("Abrir enlace")
             accion_editar_link= menu.addAction("Editar hipervínculo…")
             accion_quitar_link= menu.addAction("Quitar hipervínculo")
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_abrir_link.triggered.connect(lambda: abrir_enlace_externo(enlace_actual, self))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_editar_link.triggered.connect(lambda: self._hoja_insertar_enlace(celda_bajo_cursor))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_quitar_link.triggered.connect(lambda: self._hoja_quitar_enlace(celda_bajo_cursor))
         else:
             accion_link= menu.addAction("Insertar hipervínculo…")
             accion_link.setEnabled(hay_seleccion)
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_link.triggered.connect(lambda: self._hoja_insertar_enlace())
 
         menu.addSeparator()
@@ -5999,6 +6068,7 @@ class VisorEditorReportes(QWidget):
         self._sincronizando= True
         for c in range(col_ini, col_fin + 1):
             patron= []
+            #r: fila actual de la hoja
             for r in range(fila_ini, fila_fin + 1):
                 item= self.tabla_editor.item(r, c)
                 if item is None:
@@ -6030,6 +6100,7 @@ class VisorEditorReportes(QWidget):
                 if coincidencia and coincidencia.group(2) and (not son_numeros):
                     texto_incremental= coincidencia
 
+            #r: fila actual de la hoja
             for r in range(fila_fin + 1, fila_hasta + 1):
                 idx_patron= (r - fila_fin - 1) % alto_patron
                 item_patron= patron[idx_patron]
@@ -6286,12 +6357,14 @@ class VisorEditorReportes(QWidget):
         tabla.setUpdatesEnabled(False)
         try:
 
+            #r: fila actual de la hoja
             for r in range(filas):
                 for c in range(columnas):
                     item= tabla.item(r, c)
                     if item is not None:
                         item.setData(ROL_FILA_ORIGEN, r)
             tabla.sortItems(columna, orden)
+            #r: fila actual de la hoja
             for r in range(filas):
                 for c in range(columnas):
                     item= tabla.item(r, c)
@@ -6376,6 +6449,7 @@ class VisorEditorReportes(QWidget):
         self.in_zoom_hoja.setText(f"{nuevo}%")
         self.in_zoom_hoja.blockSignals(False)
         self._sincronizando= True
+        #r: fila actual de la hoja
         for r in range(self.tabla_editor.rowCount()):
             for c in range(self.tabla_editor.columnCount()):
                 item= self.tabla_editor.item(r, c)
@@ -6391,6 +6465,7 @@ class VisorEditorReportes(QWidget):
                 fuente.setPointSizeF(max(6.0, base * nuevo / 100))
                 item.setFont(fuente)
         alto_fila= max(18, int(22 * nuevo / 100))
+        #r: fila actual de la hoja
         for r in range(self.tabla_editor.rowCount()):
             self.tabla_editor.setRowHeight(r, alto_fila)
         self._sincronizando= False
@@ -6437,6 +6512,7 @@ class VisorEditorReportes(QWidget):
         self._registrar_deshacer_hoja()
         contador= 0
         self._sincronizando= True
+        #r: fila actual de la hoja
         for r in range(self.tabla_editor.rowCount()):
             for c in range(self.tabla_editor.columnCount()):
                 item= self.tabla_editor.item(r, c)
@@ -6489,6 +6565,7 @@ class VisorEditorReportes(QWidget):
 
                         wb.save(ruta)
                     self._hilo_guardado= WorkerHilo(_guardar_io)
+                    #_: valor que trae la señal y aquí no se usa
                     self._hilo_guardado.terminado.connect(lambda _: (
                         self._poner_btn_guardando(False),
                         registrar_auditoria("Reportes",
@@ -6496,6 +6573,7 @@ class VisorEditorReportes(QWidget):
                             getattr(self.main_window, "usuario_actual", None), ruta),
                         mostrar_mensaje("exito", "Guardado",
                             f"Los cambios se guardaron en:\n{ruta}", self._padre_dialogo())))
+                    #mensaje: texto del error que emite el hilo
                     self._hilo_guardado.error.connect(lambda mensaje: (
                         self._poner_btn_guardando(False),
                         mostrar_mensaje("error", "No se pudo guardar",
@@ -6564,6 +6642,7 @@ class VisorEditorReportes(QWidget):
                         mostrar_mensaje("exito", "Guardado",
                             f"Copia guardada en:\n{ruta}", self._padre_dialogo())
                     self._hilo_guardado_como.terminado.connect(_al_ok)
+                    #mensaje: texto del error que emite el hilo
                     self._hilo_guardado_como.error.connect(lambda mensaje: (
                         self._poner_btn_guardando(False),
                         mostrar_mensaje("error", "No se pudo guardar",
@@ -6636,6 +6715,7 @@ class VisorEditorReportes(QWidget):
         #El ajuste al ancho se hace un instante después (no en este mismo tick), igual que con el PDF: justo ahora el
         #panel puede no tener todavía su tamaño final visible.
         QTimer.singleShot(0, self._word_ajustar_zoom_al_ancho)
+        #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: None if self._cerrando else (
             self._vista_word.horizontalScrollBar().setValue(0),
             self._vista_word.verticalScrollBar().setValue(0)))
@@ -7196,6 +7276,7 @@ class VisorEditorReportes(QWidget):
         slider.setRange(0, 95)
         slider.setValue(0)
         lbl_valor= QLabel("0%")
+        #v: valor actual del slider, que se muestra como porcentaje
         slider.valueChanged.connect(lambda v: lbl_valor.setText(f"{v}%"))
         fila.addWidget(slider, 1)
         fila.addWidget(lbl_valor)
@@ -7250,11 +7331,17 @@ class VisorEditorReportes(QWidget):
             accion_dialogo= menu.addAction("Cambiar tamaño…")
             accion_transparencia= menu.addAction("Transparencia…")
             accion_eliminar= menu.addAction("Eliminar imagen")
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_100.triggered.connect(lambda: self._word_escalar_imagen(cursor_img, 1.0))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_50.triggered.connect(lambda: self._word_escalar_imagen(cursor_img, 0.5))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_ajustar.triggered.connect(lambda: self._word_ajustar_imagen_a_pagina(cursor_img))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_dialogo.triggered.connect(lambda: self._word_redimensionar_imagen_en(cursor_img))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_transparencia.triggered.connect(lambda: self._word_transparencia_imagen(cursor_img))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_eliminar.triggered.connect(lambda: self._word_eliminar_imagen(cursor_img))
         enlace= self.editor_word.anchorAt(punto)
         if enlace:
@@ -7262,8 +7349,11 @@ class VisorEditorReportes(QWidget):
             accion_abrir= menu.addAction("Abrir enlace")
             accion_editar= menu.addAction("Editar hipervínculo…")
             accion_quitar= menu.addAction("Quitar hipervínculo")
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_abrir.triggered.connect(lambda: abrir_enlace_externo(enlace, self))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_editar.triggered.connect(lambda: self._word_insertar_enlace(punto))
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             accion_quitar.triggered.connect(lambda: self._word_quitar_enlace(punto))
         menu.exec(self.editor_word.viewport().mapToGlobal(punto))
 
@@ -7708,6 +7798,7 @@ class VisorEditorReportes(QWidget):
         self._continuar_render_pdf_por_tandas(self._token_render_pdf)
         if self.panel_texto_pdf.isVisible():
             self._actualizar_panel_texto_pdf()
+        #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: self._pdf_desplazar_a_pagina(self._indice_pagina_pdf))
 
     #Rasteriza hasta `tamano_tanda` páginas de la cola pendiente y se
@@ -7751,6 +7842,7 @@ class VisorEditorReportes(QWidget):
                 lbl.enlaces= []
                 for enlace in enlaces_crudos:
                     uri= enlace.get("uri")
+                    #r: posición de origen del enlace en la página (campo "from" del PDF)
                     r= enlace.get("from")
                     if not uri or r is None:
                         continue  #enlaces internos (a otra página del mismo PDF) quedan fuera por ahora
@@ -7766,6 +7858,7 @@ class VisorEditorReportes(QWidget):
             except Exception as error:
                 print(f"[PDF] No se pudo renderizar la página {i + 1}: {error}")
         if self._cola_render_pdf:
+            #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
             QTimer.singleShot(0, lambda: self._continuar_render_pdf_por_tandas(token, tamano_tanda))
         else:
             self._render_en_progreso= False
@@ -8313,6 +8406,7 @@ class VisorEditorReportes(QWidget):
         cols= self.tabla_editor.columnCount()
         partes= ["<html><body><table border='1' cellspacing='0' cellpadding='5' "
                   "style='border-collapse:collapse; font-family:Arial, sans-serif; font-size:9pt;'>"]
+        #r: fila actual de la hoja
         for r in range(filas):
             partes.append("<tr>")
             for c in range(cols):
@@ -8370,6 +8464,7 @@ class VisorEditorReportes(QWidget):
                         ("Texto de la página actual (.txt)", "texto")]
         for etiqueta, formato in opciones:
             accion= self.menu_exportar.addAction(f"Exportar a {etiqueta}")
+            #el valor por defecto fija la opción de esta vuelta del bucle (si no, todas usarían la última); el primer parámetro absorbe el checked de triggered
             accion.triggered.connect(lambda checked=False, f=formato: self._exportar(f))
         self.btn_exportar.setEnabled(bool(opciones))
 
@@ -8424,10 +8519,12 @@ class VisorEditorReportes(QWidget):
 
                     wb.save(ruta)
                 self._hilo_exportar_xlsx= WorkerHilo(_xlsx_io)
+                #_: valor que trae la señal y aquí no se usa
                 self._hilo_exportar_xlsx.terminado.connect(lambda _: (
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("exito", "Exportado",
                         "El archivo se exportó correctamente.", self._padre_dialogo())))
+                #mensaje: texto del error que emite el hilo
                 self._hilo_exportar_xlsx.error.connect(lambda mensaje: (
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("error", "Error al exportar",
@@ -8470,10 +8567,12 @@ class VisorEditorReportes(QWidget):
 
                     documento.save(ruta)
                 self._hilo_exportar_docx= WorkerHilo(_docx_io)
+                #_: valor que trae la señal y aquí no se usa
                 self._hilo_exportar_docx.terminado.connect(lambda _: (
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("exito", "Exportado",
                         "El archivo se exportó correctamente.", self._padre_dialogo())))
+                #mensaje: texto del error que emite el hilo
                 self._hilo_exportar_docx.error.connect(lambda mensaje: (
                     QApplication.restoreOverrideCursor(),
                     mostrar_mensaje("error", "Error al exportar",
@@ -8532,10 +8631,12 @@ class VisorEditorReportes(QWidget):
                 doc.setHtml(html)
                 doc.print_(printer)
             self._hilo_exportar_pdf= WorkerHilo(_tarea_pdf)
+            #_: valor que trae la señal y aquí no se usa
             self._hilo_exportar_pdf.terminado.connect(lambda _: (
                 QApplication.restoreOverrideCursor(),
                 mostrar_mensaje("exito", "Exportado",
                     "El archivo se exportó correctamente.", self._padre_dialogo())))
+            #mensaje: texto del error que emite el hilo
             self._hilo_exportar_pdf.error.connect(lambda mensaje: (
                 QApplication.restoreOverrideCursor(),
                 mostrar_mensaje("error", "Error al exportar",

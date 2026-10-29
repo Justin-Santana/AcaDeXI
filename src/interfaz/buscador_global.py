@@ -415,6 +415,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Profesores", etiqueta, "Profesores", fila["nombre"],
                                         _icono_categoria("Profesores"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -431,6 +432,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Personal", etiqueta, "Personal", fila["nombre"],
                                         _icono_categoria("Personal"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -455,6 +457,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Materias", etiqueta, destino_materias, fila["nombre"],
                                         _icono_categoria(destino_materias))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -480,6 +483,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Calendario", etiqueta, "Calendario", fila["titulo"],
                                         _icono_categoria("Calendario"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -510,6 +514,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Banco de Tareas", etiqueta, "Banco de Tareas", fila["titulo"],
                                         _icono_categoria("Banco de Tareas"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -542,6 +547,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Observaciones", etiqueta, "Observaciones",
                                         nombre_est or None, _icono_categoria("Observaciones"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -566,6 +572,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Psicología", etiqueta, "Psicología",
                                         nombre_est or None, _icono_categoria("Psicología"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -597,6 +604,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Materiales", etiqueta, "Materiales",
                                         fila["nombre"], _icono_categoria("Materiales"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -636,6 +644,7 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Horario", etiqueta, "Horario",
                                         fila["materia_nombre"], _icono_categoria("Horario"))))
+        #par: (puntaje, resultado); los de mayor puntaje van primero
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 

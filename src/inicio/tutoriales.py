@@ -809,6 +809,7 @@ class PantallaEleccionTutorial(QDialog):
         fila.setSpacing(16)
         t_rapido= _TarjetaModo("⚡", "Modo Rápido", "Un recorrido corto de lectura: qué es cada sección, sin tener "
                                                       "que hacer clic en nada del programa real.")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         t_rapido.elegida.connect(lambda: self._elegir(self.RAPIDO))
         fila.addWidget(t_rapido)
         #mostrar_detallado=False: para ediciones/tipos sin pasos
@@ -817,12 +818,14 @@ class PantallaEleccionTutorial(QDialog):
         if mostrar_detallado:
             t_detallado= _TarjetaModo("📖", "Modo Detallado", "Un recorrido guiado paso a paso, con acciones "
                                                                 "reales en cada módulo (podrás saltar cualquier paso).")
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             t_detallado.elegida.connect(lambda: self._elegir(self.DETALLADO))
             fila.addWidget(t_detallado)
         lay.addLayout(fila)
 
         btn_saltar= QPushButton("Saltar tutoriales por ahora")
         btn_saltar.setObjectName("BtnAccionNeutro")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_saltar.clicked.connect(lambda: self._elegir(self.SALTAR))
         lay.addWidget(btn_saltar, alignment=Qt.AlignmentFlag.AlignCenter)
 
@@ -1982,6 +1985,7 @@ class AsistenteSpotlight(QWidget):
         #salida: "Saltar este paso" sigue disponible en todo momento.
         self._intentos_boton += 1
         if self._intentos_boton < self._INTENTOS_ANTES_DE_AYUDAR:
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             QTimer.singleShot(1000, lambda: self._enganchar_boton(texto_boton_objetivo))
         else:
             self.panel.mostrar_ayuda(

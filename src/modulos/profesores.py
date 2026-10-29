@@ -404,6 +404,7 @@ class ModuloProfesores(QWidget):
         self._temporizador_busqueda.setSingleShot(True)
         self._temporizador_busqueda.setInterval(150)
         self._temporizador_busqueda.timeout.connect(self._filtro_cambio)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
         self.in_buscar.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
 
         #Filtros de módulos técnicos: solo tienen sentido (y solo se muestran) en una institución con el módulo
@@ -524,6 +525,7 @@ class ModuloProfesores(QWidget):
         self._ultima_eliminacion= None
 
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla, self, titulo="Detalle del Profesor")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         tabla_card_layout.addLayout(fila_acciones)
@@ -808,6 +810,7 @@ class ModuloProfesores(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM profesores WHERE id=?", (id_prof,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -930,6 +933,7 @@ class ModuloProfesores(QWidget):
         filas= c.fetchall()
         conn.close()
         filtradas= []
+        #f: fila del resultado de la consulta
         for f in filas:
             if texto and texto not in _normalizar(f"{f['nombre']} {f['apellidos']}"):
                 continue
@@ -1199,6 +1203,7 @@ class ModuloProfesores(QWidget):
         anim.setEndValue(valor_final)
         anim.setDuration(350)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor actual del slider, que se muestra como porcentaje
         anim.valueChanged.connect(lambda v: self.chip_contador.setText(texto(int(v))))
         anim.start()
         self._anim_contador= anim  #referencia viva mientras corre la animación
@@ -1215,6 +1220,7 @@ class ModuloProfesores(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(160)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: self.tabla.setGraphicsEffect(None))
         anim.start()
         self._anim_tabla= anim  #referencia viva mientras corre la animación

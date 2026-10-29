@@ -400,6 +400,7 @@ class ModuloMaterias(QWidget):
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(al_cambiar)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
         in_campo.textChanged.connect(lambda _t: temporizador.start())
         return frame, in_campo
 
@@ -475,6 +476,7 @@ class ModuloMaterias(QWidget):
         btn_limpiar.setIcon(icono_emoji("🧹"))
         btn_limpiar.setIconSize(_QSize_emoji(16, 16))
         btn_limpiar.setObjectName("BtnAccionNeutro")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_limpiar.clicked.connect(lambda: self._limpiar_combos_filtro([w for _, w in campos]))
         fila_botones.addWidget(btn_limpiar)
         fila_botones.addStretch()
@@ -798,6 +800,7 @@ class ModuloMaterias(QWidget):
             ("Profesor:", self.filtro_materias_profesor),
             ("Estado:", self.filtro_materias_estado),
         ])
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._agregar_boton_filtros(barra_busqueda, lambda: self._abrir_dialogo(self.dialogo_filtros_materias))
         lr.addWidget(barra_busqueda)
 
@@ -853,6 +856,7 @@ class ModuloMaterias(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_materia)
         fila_botones.addWidget(btn_eliminar)
         btn_detalle_mat= agregar_boton_detalle(fila_botones, self.tabla_materias, self, titulo="Detalle de la Materia")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_materias.doubleClicked.connect(lambda *_: btn_detalle_mat.click())
         fila_botones.addStretch()
         lr.addLayout(fila_botones)
@@ -1092,6 +1096,7 @@ class ModuloMaterias(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM materias WHERE id=?", (id_mat,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -1271,6 +1276,7 @@ class ModuloMaterias(QWidget):
             ("Nivel Educativo:", self.combo_filtro_nivel_seccion),
             ("Turno:", self.combo_filtro_turno_seccion),
         ])
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._agregar_boton_filtros(barra_busqueda, lambda: self._abrir_dialogo(self.dialogo_filtros_secciones))
         lr.addWidget(barra_busqueda)
 
@@ -1322,6 +1328,7 @@ class ModuloMaterias(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_seccion)
         fila_botones.addWidget(btn_eliminar)
         btn_detalle_sec= agregar_boton_detalle(fila_botones, self.tabla_secciones, self, titulo="Detalle de la Sección")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_secciones.doubleClicked.connect(lambda *_: btn_detalle_sec.click())
         fila_botones.addStretch()
         lr.addLayout(fila_botones)
@@ -1432,6 +1439,7 @@ class ModuloMaterias(QWidget):
                      grados.ciclo_secundaria as ciclo_secundaria
                      FROM secciones
                      LEFT JOIN grados ON secciones.grado_id = grados.id WHERE secciones.id=?""", (id_sec,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -1571,6 +1579,7 @@ class ModuloMaterias(QWidget):
         self.dialogo_filtros_aulas= self._construir_dialogo_filtros("Filtros de Aulas y Laboratorios", [
             ("Tipo:", self.combo_filtro_tipo_aula),
         ])
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._agregar_boton_filtros(barra_busqueda, lambda: self._abrir_dialogo(self.dialogo_filtros_aulas))
         lr.addWidget(barra_busqueda)
 
@@ -1621,6 +1630,7 @@ class ModuloMaterias(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_aula)
         fila_acciones_aulas.addWidget(btn_eliminar)
         btn_detalle_aula= agregar_boton_detalle(fila_acciones_aulas, self.tabla_aulas, self, titulo="Detalle del Aula")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_aulas.doubleClicked.connect(lambda *_: btn_detalle_aula.click())
         fila_acciones_aulas.addStretch()
         lr.addLayout(fila_acciones_aulas)
@@ -1647,6 +1657,7 @@ class ModuloMaterias(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM aulas WHERE id=?", (id_aula,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -1849,6 +1860,7 @@ class ModuloMaterias(QWidget):
             ("Sección:", self.filtro_horarios_seccion),
             ("Día:", self.filtro_horarios_dia),
         ])
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._agregar_boton_filtros(barra_busqueda, lambda: self._abrir_dialogo(self.dialogo_filtros_horarios))
         lr.addWidget(barra_busqueda)
 
@@ -1900,6 +1912,7 @@ class ModuloMaterias(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_horario)
         fila_acciones_horarios.addWidget(btn_eliminar)
         btn_detalle_hor= agregar_boton_detalle(fila_acciones_horarios, self.tabla_horarios, self, titulo="Detalle del Horario")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_horarios.doubleClicked.connect(lambda *_: btn_detalle_hor.click())
         fila_acciones_horarios.addStretch()
         lr.addLayout(fila_acciones_horarios)
@@ -2051,6 +2064,7 @@ class ModuloMaterias(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM horarios WHERE id=?", (id_h,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -2338,6 +2352,7 @@ class ModuloMaterias(QWidget):
         self.dialogo_filtros_asignaciones= self._construir_dialogo_filtros("Filtros de Co-Docentes", [
             ("Tipo de asignación:", self.filtro_asignaciones_tipo),
         ])
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._agregar_boton_filtros(barra_busqueda, lambda: self._abrir_dialogo(self.dialogo_filtros_asignaciones))
         lr.addWidget(barra_busqueda)
 
@@ -2391,6 +2406,7 @@ class ModuloMaterias(QWidget):
         fila_botones.addWidget(btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_asignaciones, self,
                                            titulo= "Detalle de la Asignación")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_asignaciones.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_botones.addStretch()
         lr.addLayout(fila_botones)
@@ -2510,6 +2526,7 @@ class ModuloMaterias(QWidget):
                      FROM materia_profesores mp
                      LEFT JOIN secciones ON secciones.id = mp.seccion_id
                      WHERE mp.id=?""", (id_asig,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if f is None:

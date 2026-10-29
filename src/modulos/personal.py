@@ -771,6 +771,7 @@ class ModuloPersonal(QWidget):
         btn_eliminar.clicked.connect(self._eliminar)
         fila_acciones.addWidget(btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla, self, titulo="Detalle del Personal Administrativo")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         tabla_card_layout.addLayout(fila_acciones)
@@ -1383,6 +1384,7 @@ class ModuloPersonal(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(160)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: self.tabla.setGraphicsEffect(None))
         anim.start()
         self._anim_tabla= anim  #referencia viva mientras corre la animación

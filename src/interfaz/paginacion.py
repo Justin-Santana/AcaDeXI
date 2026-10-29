@@ -1127,6 +1127,7 @@ def agregar_boton_pantalla_completa(layout_cabecera, widgets, titulo="Tabla", pa
             return
         dialogo_ref= _DialogoTablaCompleta(widgets, titulo=titulo, parent=parent or widgets[0])
         estado["dialogo_propio"]= dialogo_ref
+        #_: resultado del diálogo, que no se usa; al cerrarse se olvida la referencia
         dialogo_ref.finished.connect(lambda _: estado.__setitem__("dialogo_propio", None))
         dialogo_ref.exec()
 

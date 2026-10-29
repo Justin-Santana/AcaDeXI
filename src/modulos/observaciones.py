@@ -278,6 +278,7 @@ def _animar_aparicion(widget, duracion=280):
     anim.setEndValue(1.0)
     anim.setEasingCurve(QEasingCurve.Type.OutCubic)
     widget._anim_aparicion_ref= anim  #evita que el GC la recolecte a mitad de camino
+    #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
     anim.finished.connect(lambda: widget.setGraphicsEffect(None))
     anim.start()
 
@@ -398,6 +399,7 @@ class ContadorAnimado(QLabel):
         super().__init__(parent)
         self._valor= 0
         self._valor_objetivo= 0
+        #plantilla por defecto: muestra el número tal cual
         self._plantilla= plantilla_texto or (lambda v: str(v))
         self._animacion= QPropertyAnimation(self, b"valorAnimado", self)
         self._animacion.setDuration(480)
@@ -630,9 +632,11 @@ class Chip(QFrame):
             base= QColor(base)
             base.setAlpha(min(255, base.alpha() + 34))
         t= self._factor
+        #r: rojo interpolado entre el color base y el activo según t (0 a 1)
         r= base.red() + (self._color_activo.red() - base.red()) * t
         g= base.green() + (self._color_activo.green() - base.green()) * t
         b= base.blue() + (self._color_activo.blue() - base.blue()) * t
+        #a: transparencia interpolada entre la base y opaco (255) según t (0 a 1)
         a= base.alpha() + (255 - base.alpha()) * t
         return QColor(int(r), int(g), int(b), int(a))
 
@@ -682,6 +686,7 @@ class Chip(QFrame):
                 progreso= anim.currentValue()
                 if progreso is None:
                     continue
+                #r: radio actual de la onda; crece con el progreso hasta radio_max
                 r= radio_max * progreso
                 alpha= max(0, int(90 * (1 - progreso)))
                 painter.setPen(Qt.PenStyle.NoPen)
@@ -719,12 +724,14 @@ class SegmentadoNaturaleza(QWidget):
             btn.setCheckable(True)
             btn.setFlat(True)
             btn.setObjectName("SegmentadoBoton")
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn.clicked.connect(lambda _=False, k=clave: self.establecer_valor(k))
             lay.addWidget(btn, 1)
             self._botones.append((clave, btn))
         self._botones[1][1].setChecked(True)
         self._resaltado.lower()
         self._fondo.lower()
+        #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: self._reposicionar_resaltado(animar=False))
 
     def resizeEvent(self, evento):
@@ -1083,6 +1090,7 @@ class CintaAjusteCompetencia(QFrame):
         btn_cerrar.setFixedWidth(28)
         btn_cerrar.setObjectName("BtnAccionNeutro")
         btn_cerrar.setCursor(Qt.CursorShape.PointingHandCursor)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_cerrar.clicked.connect(lambda: (self.descartada.emit(), self.ocultar()))
         lay.addWidget(btn_cerrar)
 
@@ -1246,6 +1254,7 @@ class ModuloObservaciones(QWidget):
         self._construir_ui()
         self._aplicar_tema_visual()
         self.refrescar()
+        #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: _animar_aparicion(self._contenido, 320))
         self._registrar_atajos_teclado()
 
@@ -1307,6 +1316,7 @@ class ModuloObservaciones(QWidget):
         bloque_titulo.addWidget(self.lbl_subtitulo_cabecera)
         cabecera_layout.addLayout(bloque_titulo, 1)
 
+        #v: cantidad actual del contador animado; el texto pasa a plural si no es 1
         self.chip_contador= ContadorAnimado(lambda v: f"{v} observación" + ("es" if v != 1 else ""))
         self.chip_contador.setObjectName("ChipContador")
         cabecera_layout.addWidget(self.chip_contador, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -1365,6 +1375,7 @@ class ModuloObservaciones(QWidget):
         self._temporizador_busqueda.setSingleShot(True)
         self._temporizador_busqueda.setInterval(150)
         self._temporizador_busqueda.timeout.connect(self._filtro_cambio)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
         self.in_buscar.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
 
         self.btn_filtros_listado= QPushButton("Filtros")
@@ -1410,15 +1421,18 @@ class ModuloObservaciones(QWidget):
         self.chips_filtro_naturaleza= {}
         chip_todas= Chip("todas", "Todas", color_activo="#6366F1")
         chip_todas.establecer_marcado(True, animar=False, emitir=False)
+        #_m: estado del chip que no se usa; k= fija la clave de este chip
         chip_todas.alternado.connect(lambda _m, k="todas": self._clic_filtro_naturaleza(k))
         layout_nat_filtro.addWidget(chip_todas)
         self.chips_filtro_naturaleza["todas"]= chip_todas
         for clave, color in NATURALEZAS:
             chip= Chip(clave, clave, color_activo=color)
+            #_m: estado del chip que no se usa; k= fija la clave de este chip
             chip.alternado.connect(lambda _m, k=clave: self._clic_filtro_naturaleza(k))
             layout_nat_filtro.addWidget(chip)
             self.chips_filtro_naturaleza[clave]= chip
         self.chip_destacadas= Chip("destacadas", "Destacadas", color_activo="#F59E0B")
+        #_m: estado del chip que no se usa; solo se vuelve a filtrar
         self.chip_destacadas.alternado.connect(lambda _m: self._filtro_cambio())
         layout_nat_filtro.addWidget(self.chip_destacadas)
         layout_avanzado.addWidget(marco_chips_naturaleza)
@@ -1428,6 +1442,7 @@ class ModuloObservaciones(QWidget):
         self.chips_categoria_filtro= {}
         for clave, etiqueta, _palabras in CATEGORIAS:
             chip= Chip(clave, etiqueta, color_activo="#6366F1")
+            #_m: estado del chip que no se usa; solo se vuelve a filtrar
             chip.alternado.connect(lambda _m: self._filtro_cambio())
             layout_cat_filtro.addWidget(chip)
             self.chips_categoria_filtro[clave]= chip
@@ -1500,6 +1515,7 @@ class ModuloObservaciones(QWidget):
         self.tabla.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.tabla.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.tabla.setCursor(Qt.CursorShape.PointingHandCursor)
+        #fila: fila con doble clic; _col, la columna, no se usa
         self.tabla.cellDoubleClicked.connect(lambda fila, _col: self._abrir_detalle_fila(fila))
         tabla_card_layout.addWidget(self.tabla, 1)
 
@@ -1684,6 +1700,7 @@ class ModuloObservaciones(QWidget):
             btn.setIconSize(QSize(16, 16))
             btn.setObjectName("ChipPlantilla")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn.clicked.connect(lambda _=False, p=plantilla: self._aplicar_plantilla(p))
             layout_plantillas.addWidget(btn)
         form.addWidget(marco_plantillas)
@@ -2151,6 +2168,7 @@ class ModuloObservaciones(QWidget):
             btn.setObjectName("ChipSugerida")
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn.clicked.connect(lambda _=False, k=clave: self._aceptar_sugerencia(k))
             self.layout_sugerencias.addWidget(btn)
         #Sin animación de entrada aquí a propósito: estos chips se crean y muestran dinámicamente (a diferencia de los
@@ -2448,6 +2466,7 @@ class ModuloObservaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT usuario_id FROM observaciones WHERE id=?", (id_obs,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         return bool(f) and self._puede_editar_fila(f)
@@ -2741,6 +2760,7 @@ class ModuloObservaciones(QWidget):
         ]
         texto_completo= (fila["texto"] or "").strip() or "— Sin descripción —"
         extra_botones= [("Ver descripción completa",
+                           #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                            lambda: mostrar_texto_largo(self, "Descripción completa", texto_completo))]
         mostrar_detalle_campos(self, f"Observación · {fila['nombre_est'] or '—'}", campos,
                                 extra_botones= extra_botones)
@@ -2798,6 +2818,7 @@ class ModuloObservaciones(QWidget):
             for clave in (visible["categorias"] or "").split(","):
                 if clave:
                     conteo[clave]= conteo.get(clave, 0) + 1
+        #kv: (clave, cantidad); primero las 5 más frecuentes
         top= sorted(conteo.items(), key=lambda kv: kv[1], reverse=True)[:5]
         maximo= top[0][1] if top else 0
         for i, barra in enumerate(self.barras_frecuencia):

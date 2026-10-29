@@ -286,6 +286,7 @@ class ModuloMateriales(QWidget):
         self._temporizador_busqueda.setSingleShot(True)
         self._temporizador_busqueda.setInterval(150)
         self._temporizador_busqueda.timeout.connect(self._refrescar)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
         self.buscador.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
         fila_filtros.addWidget(marco_busqueda, stretch=1)
         disposicion.addWidget(self.tarjeta_filtros)
@@ -365,6 +366,7 @@ class ModuloMateriales(QWidget):
         self.btn_eliminar.clicked.connect(self._eliminar_seleccionado)
         fila_botones.addWidget(self.btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla, self, titulo="Detalle del Material")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_botones.addStretch()
         disposicion.addLayout(fila_botones)
@@ -485,15 +487,19 @@ class ModuloMateriales(QWidget):
         #habilitado (_actualizar_botones_accion ya deja los botones deshabilitados cuando no hay selección o no hay
         #permiso).
         registrar_atajo(self, self.main_window, "Ctrl+F", "Buscar",
+                         #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
                          lambda: (self.buscador.setFocus(), self.buscador.selectAll()))
         registrar_atajo(self, self.main_window, "F5", "Actualizar tabla", self._refrescar)
         registrar_atajo(self, self.main_window, "Ctrl+N", "Nuevo material",
                          self._abrir_panel_nuevo_material)
         registrar_atajo(self, self.main_window, "Ctrl+E", "Editar seleccionado",
+                         #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                          lambda: self.btn_editar.click() if self.btn_editar.isEnabled() else None)
         registrar_atajo(self, self.main_window, "Ctrl+M", "Registrar préstamo / devolución",
+                         #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                          lambda: self.btn_movimiento.click() if self.btn_movimiento.isEnabled() else None)
         registrar_atajo(self, self.main_window, "Delete", "Eliminar seleccionado",
+                         #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                          lambda: self.btn_eliminar.click() if self.btn_eliminar.isEnabled() else None)
 
     #Despliega (si hace falta) el panel colapsable de alta y le pone
@@ -700,10 +706,13 @@ class ModuloMateriales(QWidget):
     #asentado).
     def _hacer_visible_formulario(self):
 
+        #p: se sube por los widgets padre hasta dar con el área de scroll
         p= self.panel_form_material.parentWidget()
         while p is not None and not isinstance(p, QScrollArea):
+            #p: se sube por los widgets padre hasta dar con el área de scroll
             p= p.parentWidget()
         if p is not None:
+            #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
             QTimer.singleShot(0, lambda: p.ensureWidgetVisible(self.panel_form_material, 0, 30))
 
     def _cargar_seleccionado_en_formulario(self):
@@ -1000,6 +1009,7 @@ class _DialogoSelectorIconoMaterial(_DialogoCentrado):
                     background-color: rgba(99, 102, 241, 0.20);
                 }
             """)
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn.clicked.connect(lambda _checked=False, c=clave: self._elegir(c))
             grid.addWidget(btn, i // columnas, i % columnas)
         disposicion.addWidget(contenedor_grid)

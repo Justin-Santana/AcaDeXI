@@ -197,10 +197,12 @@ class EditorSecuencia(QDialog):
         barra.addWidget(btn_quitar)
 
         btn_subir= QPushButton("Subir")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_subir.clicked.connect(lambda: self.tabla_sesiones.mover_actual(-1))
         barra.addWidget(btn_subir)
 
         btn_bajar= QPushButton("Bajar")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_bajar.clicked.connect(lambda: self.tabla_sesiones.mover_actual(1))
         barra.addWidget(btn_bajar)
 
@@ -387,8 +389,10 @@ class EditorSecuencia(QDialog):
         self.tareas_pendientes= set()
 
         self._poblar_lista_marcable(self.lista_competencias, competencias_de_materia_grado(materia_id, grado_id),
+                                    #fila: registro de la lista; la lambda arma el texto que se ve en cada casilla
                                     lambda fila: f"{fila['codigo']}. {fila['descripcion']}", competencias_marcadas)
         self._poblar_lista_marcable(self.lista_tareas, logica.tareas_de_materia(materia_id, grado_id),
+                                    #fila: registro de la lista; la lambda arma el texto que se ve en cada casilla
                                     lambda fila: f"{fila['titulo']} ({fila['categoria'] or 'Tarea'})", tareas_marcadas)
 
         self._al_cambiar_competencias()
@@ -402,6 +406,7 @@ class EditorSecuencia(QDialog):
         indicadores= logica.indicadores_de_competencias(self._marcados(self.lista_competencias))
 
         self._poblar_lista_marcable(self.lista_indicadores, indicadores,
+                                    #fila: registro de la lista; la lambda arma el texto que se ve en cada casilla
                                     lambda fila: f"{fila['codigo_competencia']} · {fila['codigo']}: {fila['descripcion']}",
                                     indicadores_marcados)
 
@@ -633,6 +638,7 @@ class ModuloSecuenciasDidacticas(QWidget):
         for columna in range(1, 7):
             self.tabla_secuencias.horizontalHeader().setSectionResizeMode(columna, QHeaderView.ResizeMode.ResizeToContents)
 
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_secuencias.doubleClicked.connect(lambda *_: self._editar())
 
         return self.tabla_secuencias

@@ -380,6 +380,7 @@ class ContadorClicable(QLabel):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(500)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor animado (decimal) que se redondea a entero para el texto
         self._anim.valueChanged.connect(lambda v: self._refrescar_texto(int(v)))
         self._refrescar_texto(0)
         self.establecer_activa(False)
@@ -584,6 +585,7 @@ class ModuloPolitecnico(QWidget):
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(callback_filtro)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador
         in_campo.textChanged.connect(lambda _t: temporizador.start())
 
         self._iconos_busqueda= getattr(self, "_iconos_busqueda", [])
@@ -700,6 +702,7 @@ class ModuloPolitecnico(QWidget):
         anim.setEndValue(valor_final)
         anim.setDuration(400)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor animado (decimal) que se redondea a entero para el chip
         anim.valueChanged.connect(lambda v: chip.setText(formato(int(v))))
         anim.start()
         setattr(self, f"_anim_{atributo}", anim)
@@ -871,6 +874,7 @@ class ModuloPolitecnico(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_especialidad)
         fila_acciones_esp.addWidget(btn_eliminar)
         btn_detalle_esp= agregar_boton_detalle(fila_acciones_esp, self.tabla_especialidades, self, titulo="Detalle del Área Técnica")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_especialidades.doubleClicked.connect(lambda *_: btn_detalle_esp.click())
         fila_acciones_esp.addStretch()
         self.tarjeta_tabla_especialidades.contenido.addLayout(fila_acciones_esp)
@@ -1004,6 +1008,7 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM especialidades WHERE id=?", (id_esp,))
+        #f: fila de la especialidad; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -1221,6 +1226,7 @@ class ModuloPolitecnico(QWidget):
         grid_mt.addWidget(QLabel("Estado:"), 1, 0)
         grid_mt.addWidget(self.mt_filtro_estado, 1, 1)
         self._cerrar_ventana_filtros(dialogo_mt, lay_mt, callback_limpiar=self._limpiar_filtros_modulos)
+        #clicked no manda datos y el diálogo de filtros a abrir ya queda fijado aquí
         btn_filtros_modulos.clicked.connect(lambda: self._abrir_ventana(self.dialogo_filtros_modulos))
         fila_busqueda_modulos.addWidget(btn_filtros_modulos)
         self.tarjeta_tabla_modulos.contenido.addLayout(fila_busqueda_modulos)
@@ -1273,6 +1279,7 @@ class ModuloPolitecnico(QWidget):
         fila_acciones.addWidget(btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla_modulos_tecnicos, self,
                                              titulo= "Detalle del Módulo Técnico")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_modulos_tecnicos.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         self.tarjeta_tabla_modulos.contenido.addLayout(fila_acciones)
@@ -1405,6 +1412,7 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM materias WHERE id=?", (id_mod,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -1654,6 +1662,7 @@ class ModuloPolitecnico(QWidget):
         grid_at.addWidget(QLabel("Tipo de asignación:"), 1, 0)
         grid_at.addWidget(self.at_filtro_tipo, 1, 1)
         self._cerrar_ventana_filtros(dialogo_at, lay_at, callback_limpiar=self._limpiar_filtros_asig_tecnica)
+        #clicked no manda datos y el diálogo de filtros a abrir ya queda fijado aquí
         btn_filtros_asig.clicked.connect(lambda: self._abrir_ventana(self.dialogo_filtros_asig_tecnica))
         fila_busqueda_asig.addWidget(btn_filtros_asig)
         self.tarjeta_tabla_asig_tecnica.contenido.addLayout(fila_busqueda_asig)
@@ -1699,6 +1708,7 @@ class ModuloPolitecnico(QWidget):
         fila_acciones.addWidget(btn_eliminar)
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla_asig_tecnica, self,
                                              titulo= "Detalle de la Asignación")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_asig_tecnica.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_acciones.addStretch()
         self.tarjeta_tabla_asig_tecnica.contenido.addLayout(fila_acciones)
@@ -1998,6 +2008,7 @@ class ModuloPolitecnico(QWidget):
         self.etiquetas_leyenda_talleres= {}
         for clave, etiqueta_txt, color in SEGMENTOS_TALLERES:
             lbl= ContadorClicable(etiqueta_txt, color, interactiva=True)
+            #el valor por defecto fija la clave de esta vuelta del bucle; si no, todos usarían la última
             lbl.clicada.connect(lambda c=clave: self._alternar_filtro_talleres(c))
             leyenda_t.addWidget(lbl)
             self.etiquetas_leyenda_talleres[clave]= lbl
@@ -2081,6 +2092,7 @@ class ModuloPolitecnico(QWidget):
         fila_acciones_taller.addWidget(btn_cargar_taller)
         agregar_boton_detalle(fila_acciones_taller, self.tabla_talleres, self, titulo="Detalle del Taller/Laboratorio")
         self.tabla_talleres.doubleClicked.connect(
+            #indice: celda con doble clic; se muestra el detalle de su fila
             lambda indice: mostrar_detalle_fila(self, self.tabla_talleres, indice.row(),
                                                 titulo= "Detalle del Taller/Laboratorio"))
         fila_acciones_taller.addStretch()
@@ -2183,6 +2195,7 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT especialidad_id FROM aulas WHERE id=?", (aula_id,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         idx= self.t_espacio.findData(aula_id)
@@ -2351,6 +2364,7 @@ class ModuloPolitecnico(QWidget):
         fila_acciones.addWidget(btn_eliminar)
         agregar_boton_detalle(fila_acciones, self.tabla_empresas, self, titulo="Detalle de la Empresa")
         self.tabla_empresas.doubleClicked.connect(
+            #indice: celda con doble clic; se muestra el detalle de su fila
             lambda indice: mostrar_detalle_fila(self, self.tabla_empresas, indice.row(),
                                                 titulo= "Detalle de la Empresa"))
         fila_acciones.addStretch()
@@ -2409,6 +2423,7 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM empresas_pasantia WHERE id=?", (id_emp,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -2541,6 +2556,7 @@ class ModuloPolitecnico(QWidget):
         self.etiquetas_leyenda_pasantias= {}
         for clave, etiqueta_txt, color in SEGMENTOS_PASANTIAS:
             lbl= ContadorClicable(etiqueta_txt, color, interactiva=True)
+            #el valor por defecto fija la clave de esta vuelta del bucle; si no, todos usarían la última
             lbl.clicada.connect(lambda c=clave: self._alternar_filtro_pasantias(c))
             leyenda_p.addWidget(lbl)
             self.etiquetas_leyenda_pasantias[clave]= lbl
@@ -2634,6 +2650,7 @@ class ModuloPolitecnico(QWidget):
         self.btn_filtros_pasantias.setIconSize(_QSize_emoji(16, 16))
         self.btn_filtros_pasantias.setObjectName("BtnAccionNeutro")
         self.btn_filtros_pasantias.setToolTip("Filtrar por área técnica, carrera, curso y sección del estudiante")
+        #clicked no manda datos y el diálogo de filtros a abrir ya queda fijado aquí
         self.btn_filtros_pasantias.clicked.connect(lambda: self._abrir_ventana(self.dialogo_filtros_pasantias))
         fila_busqueda_pasantias.addWidget(self.btn_filtros_pasantias)
         self.tarjeta_tabla_pasantias.contenido.addLayout(fila_busqueda_pasantias)
@@ -2686,6 +2703,7 @@ class ModuloPolitecnico(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_pasantia)
         fila_acciones_pas.addWidget(btn_eliminar)
         btn_detalle_pas= agregar_boton_detalle(fila_acciones_pas, self.tabla_pasantias, self, titulo="Detalle de la Pasantía")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_pasantias.doubleClicked.connect(lambda *_: btn_detalle_pas.click())
         fila_acciones_pas.addStretch()
         self.tarjeta_tabla_pasantias.contenido.addLayout(fila_acciones_pas)
@@ -2815,6 +2833,7 @@ class ModuloPolitecnico(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM pasantias WHERE id=?", (id_p,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -2958,6 +2977,7 @@ class ModuloPolitecnico(QWidget):
         #amplios (p.ej. "Todos los cursos"), quede seleccionado por accidente
         #el primer estudiante de la lista sin que el usuario lo haya elegido.
         self.p_estudiante.addItem("Selecciona un estudiante…", None)
+        #f: fila de un estudiante con pasantía; se filtra por curso y sección
         for f in getattr(self, "_estudiantes_pasantia", []):
             if grado_id is not None and f["grado_id"] != grado_id:
                 continue
@@ -3081,6 +3101,7 @@ class ModuloPolitecnico(QWidget):
         mostrar_columna_numero= mostrar_columna_numero_lista(
             self.main_window, seccion_id_f, especialidad_id_f, carrera_id_f)
         if mostrar_columna_numero:
+            #f: fila de la pasantía; las que no tienen número de lista van al final
             filas= sorted(filas, key=lambda f: (
                 f["numero_lista_est"] is None, f["numero_lista_est"] or 0))
         self.tabla_pasantias.setColumnHidden(0, not mostrar_columna_numero)
@@ -3122,10 +3143,13 @@ class ModuloPolitecnico(QWidget):
         #Iconos dibujados con QPainter (mismos dibujos que ya usa el resto de la app), insertados como <img> inline en
         #vez del emoji real para no depender de una fuente de emojis del sistema.
         self._animar_valor_chip(self.chip_especialidades, "_valor_chip_especialidades", total_especialidades,
+                                 #v: cantidad actual del chip animado; el texto pasa a plural si no es 1
                                  lambda v: f"{html_icono_emoji('🎨', 14)} {v} área" + ("s técnicas" if v != 1 else " técnica"))
         self._animar_valor_chip(self.chip_empresas, "_valor_chip_empresas", total_empresas,
+                                 #v: cantidad actual del chip animado; el texto pasa a plural si no es 1
                                  lambda v: f"{html_icono_emoji('🏢', 14)} {v} empresa" + ("s" if v != 1 else "") + " aliada" + ("s" if v != 1 else ""))
         self._animar_valor_chip(self.chip_pasantias, "_valor_chip_pasantias", total_pasantias_curso,
+                                 #v: cantidad actual del chip animado; el texto pasa a plural si no es 1
                                  lambda v: f"{html_icono_emoji('🎓', 14)} {v} pasantía" + ("s" if v != 1 else "") + " en curso")
 
     #Refresca combos e indicadores (donut/barras/chips) y la pestaña

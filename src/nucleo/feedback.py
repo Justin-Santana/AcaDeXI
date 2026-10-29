@@ -54,6 +54,7 @@ class _Aviso(QFrame):
         if accion is not None:
             btn_accion= QPushButton(texto_accion or "Deshacer")
             btn_accion.setCursor(Qt.CursorShape.PointingHandCursor)
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             btn_accion.clicked.connect(lambda: self._usar_accion(accion))
             disposicion.addWidget(btn_accion)
 
@@ -145,6 +146,7 @@ def mostrar_toast(widget, texto, tipo="info", accion=None, texto_accion="", dura
         vigilante= _VigilaTamano(ventana)
         ventana.installEventFilter(vigilante)
         _vigilantes[ventana]= vigilante
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         ventana.destroyed.connect(lambda *_: _olvidar_ventana(ventana))
 
     #Si hay demasiados, se descarta el más viejo

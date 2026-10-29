@@ -196,6 +196,7 @@ class PastillaContador(QFrame):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(550)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor actual del slider, que se muestra como porcentaje
         self._anim.valueChanged.connect(lambda v: self.lbl_valor.setText(str(int(v))))
 
     def poner_texto(self, texto):

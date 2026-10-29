@@ -158,12 +158,14 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
             cvs.drawCentredString(cx + COL_PERIODO / 2, fila2_y - 10, periodo["nombre"])
             et_local, idx_local= etiqueta, i
             columnas.append((cx, COL_PERIODO,
+                              #a: datos de un alumno; et e ix se fijan por defecto para que cada columna conserve los suyos
                               lambda a, et=et_local, ix=idx_local: _fmt(a["grilla"]["grupos"].get(et, [None] * n_periodos)[ix])))
             if mostrar_rp:
                 cxr= cx + COL_PERIODO
                 cvs.rect(cxr, fila2_y - 14, COL_RP, 14, stroke=1, fill=0)
                 cvs.setFont("Helvetica-Bold", 5.5)
                 cvs.drawCentredString(cxr + COL_RP / 2, fila2_y - 10, f"RP{i + 1}")
+                #a: datos de un alumno; la lambda saca el valor que va en esta columna
                 columnas.append((cxr, COL_RP, lambda a, ix=idx_local: _fmt(a["rp"][ix] if ix < len(a["rp"]) else None)))
         x += ancho_grupo
 
@@ -173,6 +175,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
                                   COL_C - 2, alto_doble - 6, tamano_inicial=6)
         cvs.setFillColorRGB(0, 0, 0)
         idx_local= i
+        #a: datos de un alumno; la lambda saca el valor que va en esta columna
         columnas.append((x, COL_C, lambda a, ix=idx_local: _fmt(a["grilla"]["finales_por_grupo"][ix]
                                                                  if ix < len(a["grilla"]["finales_por_grupo"]) else None)))
         x += COL_C
@@ -181,6 +184,7 @@ def dibujar_informe_primaria_oficial(cvs, institucion, boletin, colores=None):
     _dibujar_texto_multilinea(cvs, "Calificación final del área", x + COL_FINAL / 2, fila1_y - alto_doble / 2 + 3,
                               COL_FINAL - 4, alto_doble - 6, tamano_inicial=5.5)
     cvs.setFillColorRGB(0, 0, 0)
+    #a: datos de un alumno; la lambda saca el valor que va en esta columna
     columnas.append((x, COL_FINAL, lambda a: _fmt(a["grilla"]["final"])))
     x += COL_FINAL
 

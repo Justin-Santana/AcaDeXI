@@ -1142,6 +1142,7 @@ class ModuloBancoTareas(QWidget):
         btn_detalle_tareas= agregar_boton_detalle(
             fila_botones, self.tabla_tareas, self, titulo="Detalle de la Tarea",
             proveedor_extra_botones= self._boton_ver_descripcion_tarea)
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_tareas.doubleClicked.connect(lambda *_: btn_detalle_tareas.click())
         fila_botones.addStretch()
         disposicion.addLayout(fila_botones)
@@ -2068,6 +2069,7 @@ class ModuloBancoTareas(QWidget):
         disposicion.setSpacing(12)
 
         self.cinta_alerta_entregas= CintaAlerta()
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self.cinta_alerta_entregas.clicada.connect(lambda: self._alternar_filtro_entregas("atrasadas_no_entregadas"))
         disposicion.addWidget(self.cinta_alerta_entregas)
 
@@ -2234,6 +2236,7 @@ class ModuloBancoTareas(QWidget):
         self.btn_calificar_entrega.clicked.connect(self._calificar_entrega)
         fila_acciones.addWidget(self.btn_calificar_entrega)
         btn_detalle_entregas= agregar_boton_detalle(fila_acciones, self.tabla_entregas, self, titulo="Detalle de la Entrega")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_entregas.doubleClicked.connect(lambda *_: btn_detalle_entregas.click())
         fila_acciones.addStretch()
         disposicion.addLayout(fila_acciones)
@@ -2336,6 +2339,7 @@ class ModuloBancoTareas(QWidget):
         btn_limpiar.setIcon(icono_emoji("🧹"))
         btn_limpiar.setIconSize(_QSize_emoji(16, 16))
         btn_limpiar.setObjectName("BtnAccionNeutro")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_limpiar.clicked.connect(lambda: self._alternar_filtro_entregas(None))
         fila_botones.addWidget(btn_limpiar)
         fila_botones.addStretch()

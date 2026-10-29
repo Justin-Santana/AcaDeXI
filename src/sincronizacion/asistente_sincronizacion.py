@@ -544,6 +544,7 @@ class PaginaGoogle(_PaginaConectable):
         self.btn_conectar.setIcon(icono_emoji("☁"))
         self.btn_conectar.setIconSize(_QSize_emoji(16, 16))
         self.btn_conectar.setCursor(Qt.CursorShape.PointingHandCursor)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self.btn_conectar.pressed.connect(lambda: _animar_click(self.btn_conectar))
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
@@ -577,6 +578,7 @@ class PaginaGoogle(_PaginaConectable):
             self.chip.ok("Conectado correctamente.")
             self.completeChanged.emit()
 
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._ejecutar_en_hilo(lambda: avanzado.google_drive_conectar(client_id, client_secret),
                                _al_terminar, "Esperando autorización en el navegador…")
 
@@ -618,6 +620,7 @@ class PaginaDropbox(_PaginaConectable):
         self.btn_conectar.setIcon(icono_emoji("🔌"))
         self.btn_conectar.setIconSize(_QSize_emoji(16, 16))
         self.btn_conectar.setCursor(Qt.CursorShape.PointingHandCursor)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self.btn_conectar.pressed.connect(lambda: _animar_click(self.btn_conectar))
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
@@ -662,6 +665,7 @@ class PaginaDropbox(_PaginaConectable):
             self.completeChanged.emit()
 
         self._ejecutar_en_hilo(
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: avanzado.dropbox_finalizar_conexion(flow, codigo, app_key, app_secret),
             _al_terminar, "Confirmando el código con Dropbox…")
 
@@ -700,6 +704,7 @@ class PaginaOneDrive(_PaginaConectable):
         self.btn_conectar.setIcon(icono_emoji("☁"))
         self.btn_conectar.setIconSize(_QSize_emoji(16, 16))
         self.btn_conectar.setCursor(Qt.CursorShape.PointingHandCursor)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self.btn_conectar.pressed.connect(lambda: _animar_click(self.btn_conectar))
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
@@ -740,9 +745,11 @@ class PaginaOneDrive(_PaginaConectable):
                 self.chip.ok("Conectado correctamente.")
                 self.completeChanged.emit()
 
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             self._ejecutar_en_hilo(lambda: avanzado.onedrive_finalizar_conexion(app, flujo, client_id),
                                    _tras_finalizar, "Esperando que confirmes el inicio de sesión…")
 
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._ejecutar_en_hilo(lambda: avanzado.onedrive_conectar(client_id),
                                _tras_iniciar, "Iniciando sesión de dispositivo…")
 
@@ -776,6 +783,7 @@ class PaginaServidor(_PaginaConectable):
         self.btn_exportar.setIcon(icono_emoji("\uE002"))
         self.btn_exportar.setIconSize(_QSize_emoji(16, 16))
         self.btn_exportar.setCursor(Qt.CursorShape.PointingHandCursor)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self.btn_exportar.pressed.connect(lambda: _animar_click(self.btn_exportar))
         self.btn_exportar.clicked.connect(self._exportar)
         fila_exportar.addWidget(self.btn_exportar)
@@ -798,6 +806,7 @@ class PaginaServidor(_PaginaConectable):
         self.btn_conectar.setIcon(icono_emoji("🔌"))
         self.btn_conectar.setIconSize(_QSize_emoji(16, 16))
         self.btn_conectar.setCursor(Qt.CursorShape.PointingHandCursor)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self.btn_conectar.pressed.connect(lambda: _animar_click(self.btn_conectar))
         self.btn_conectar.clicked.connect(self._conectar)
         fila.addWidget(self.btn_conectar)
@@ -832,6 +841,7 @@ class PaginaServidor(_PaginaConectable):
             self.chip.ok("Conectado correctamente.")
             self.completeChanged.emit()
 
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._ejecutar_en_hilo(lambda: avanzado.servidor_conectar(url, token),
                                _al_terminar, "Contactando al servidor…")
 

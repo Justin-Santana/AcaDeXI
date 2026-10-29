@@ -555,6 +555,7 @@ class VistaSemanalHorario(QWidget):
 
         self._clases= clases
         self._franjas= sorted({(c["hora_inicio"], c["hora_fin"]) for c in clases},
+                                #t: franja (inicio, fin); se ordenan por la hora de inicio en minutos
                                 key= lambda t: _minutos(t[0]))
         alto_total= self.ALTO_CABECERA + len(self._franjas) * (self.ALTO_FILA + self.ESPACIO_FILA) + 14
         self.setFixedHeight(max(alto_total, self.ALTO_CABECERA + 70))
@@ -974,6 +975,7 @@ class ModuloHorario(QWidget):
         self._temporizador_busqueda= QTimer(self)
         self._temporizador_busqueda.setSingleShot(True)
         self._temporizador_busqueda.setInterval(150)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._temporizador_busqueda.timeout.connect(lambda: self._aplicar_filtros(animar=False))
 
         #Construimos solo la UI (sin tocar la base de datos) para que el módulo se pinte de inmediato al hacer clic en
@@ -1124,6 +1126,7 @@ class ModuloHorario(QWidget):
         limitar_campo_texto(self.in_busqueda, 150)
         self.in_busqueda.setPlaceholderText("Buscar materia, sección, aula o nota…")
         self.in_busqueda.setStyleSheet("QLineEdit { border: none; background: transparent; padding: 8px 0; }")
+        #_: valor que trae la señal y aquí no se usa
         self.in_busqueda.textChanged.connect(lambda _: self._temporizador_busqueda.start())
         lay_busqueda.addWidget(self.in_busqueda, 1)
         fila_busqueda.addWidget(marco_busqueda, 1)
@@ -1167,10 +1170,12 @@ class ModuloHorario(QWidget):
         self.combo_filtro_seccion= QComboBox()
         self.combo_filtro_seccion.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.combo_filtro_seccion.setMinimumWidth(190)
+        #_: valor que trae la señal y aquí no se usa
         self.combo_filtro_seccion.currentIndexChanged.connect(lambda _: self._aplicar_filtros(animar=False))
         self.combo_filtro_materia= QComboBox()
         self.combo_filtro_materia.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.combo_filtro_materia.setMinimumWidth(190)
+        #_: valor que trae la señal y aquí no se usa
         self.combo_filtro_materia.currentIndexChanged.connect(lambda _: self._aplicar_filtros(animar=False))
         conectar_tooltip_seleccion(self.combo_filtro_materia, "Filtrar por materia")
 
@@ -1181,6 +1186,7 @@ class ModuloHorario(QWidget):
         self.lbl_filtro_especialidad_hor= QLabel("Área Técnica:")
         self.combo_filtro_especialidad_hor= QComboBox()
         self.combo_filtro_especialidad_hor.setMinimumWidth(210)
+        #_: valor que trae la señal y aquí no se usa
         self.combo_filtro_especialidad_hor.currentIndexChanged.connect(lambda _: self._aplicar_filtros(animar=False))
         conectar_tooltip_seleccion(self.combo_filtro_especialidad_hor,
                                     "Filtrar por área técnica de la sección (Politécnico)")
@@ -1188,6 +1194,7 @@ class ModuloHorario(QWidget):
         self.lbl_filtro_carrera_hor= QLabel("Carrera:")
         self.combo_filtro_carrera_hor= QComboBox()
         self.combo_filtro_carrera_hor.setMinimumWidth(210)
+        #_: valor que trae la señal y aquí no se usa
         self.combo_filtro_carrera_hor.currentIndexChanged.connect(lambda _: self._aplicar_filtros(animar=False))
         conectar_tooltip_seleccion(self.combo_filtro_carrera_hor,
             "Filtrar por carrera: muestra solo secciones con estudiantes de esa carrera (Universidad)")
@@ -1473,6 +1480,7 @@ class ModuloHorario(QWidget):
             if clave and clave not in vistos:
                 vistos.add(clave)
                 claves.append(clave)
+        #t: nombre de la materia; se ordena sin tildes ni mayúsculas
         claves.sort(key=lambda t: _normalizar(t))
 
         if not claves:
@@ -1510,6 +1518,7 @@ class ModuloHorario(QWidget):
                 f"QPushButton {{ background-color: {base}; color: white; border: none; "
                 f"border-radius: 8px; padding: 6px 12px; font-weight: 600; }}"
             )
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn_swatch.clicked.connect(lambda _=False, k=clave, b=btn_swatch: self._elegir_color_materia(k, b))
             fila.addWidget(btn_swatch)
 
@@ -1519,6 +1528,7 @@ class ModuloHorario(QWidget):
             btn_reset.setToolTip("Restablecer al color automático")
             btn_reset.setCursor(Qt.CursorShape.PointingHandCursor)
             btn_reset.setFixedWidth(30)
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn_reset.clicked.connect(lambda _=False, k=clave, b=btn_swatch: self._restablecer_color_materia(k, b))
             fila.addWidget(btn_reset)
 
@@ -1676,10 +1686,12 @@ class ModuloHorario(QWidget):
             for it in items[inicio:fin]:
                 lyt_lista.addWidget(self._tarjeta_overflow(it, c))
             if fin < len(items):
+                #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
                 QTimer.singleShot(0, lambda: _agregar_tanda(fin))
             else:
                 lyt_lista.addStretch()
 
+        #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: _agregar_tanda(0))
         dialogo.exec()
 

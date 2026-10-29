@@ -59,6 +59,7 @@ def _tablas_a_vigilar(conn):
 def _columnas_clave(conn, tabla):
 
     info= conn.execute(f'PRAGMA table_info("{tabla}")').fetchall()
+    #fila: resultado de table_info; fila[5] es la posición dentro de la clave primaria
     claves= [fila[1] for fila in sorted(info, key=lambda fila: fila[5]) if fila[5] > 0]
     if claves:
         return claves

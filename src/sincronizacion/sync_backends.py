@@ -110,6 +110,7 @@ def _hash_archivo(ruta):
         return None
     huella= hashlib.sha256()
     with open(ruta, "rb") as f:
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         for bloque in iter(lambda: f.read(65536), b""):
             huella.update(bloque)
     return huella.hexdigest()

@@ -237,6 +237,7 @@ def _hash_archivo(ruta):
             return cacheado[1]
     huella= hashlib.sha256()
     with open(ruta, "rb") as f:
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         for bloque in iter(lambda: f.read(65536), b""):
             huella.update(bloque)
     digest= huella.hexdigest()
@@ -413,6 +414,7 @@ def _fundido_entrada(widget, duracion=260):
     anim.setStartValue(0.0)
     anim.setEndValue(1.0)
     anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+    #_v: valor animado que no se usa; w= fija el widget que se repinta
     anim.valueChanged.connect(lambda _v, w=widget: w.update())
     widget._anim_fundido= anim  #evita que el recolector de basura la corte a mitad de vuelo
 
@@ -803,6 +805,7 @@ class ModuloSincronizacion(QWidget):
             self.combo_modo.setItemData(i, TOOLTIPS_MODOS_TRABAJO.get(modo, ""), Qt.ItemDataRole.ToolTipRole)
         self.combo_modo.setToolTip(TOOLTIPS_MODOS_TRABAJO.get(self.combo_modo.currentText(), ""))
         self.combo_modo.currentTextChanged.connect(
+            #texto: modo de trabajo elegido; su descripción se muestra como tooltip
             lambda texto: self.combo_modo.setToolTip(TOOLTIPS_MODOS_TRABAJO.get(texto, "")))
         disposicion.addWidget(self.combo_modo)
 
@@ -914,6 +917,7 @@ class ModuloSincronizacion(QWidget):
             btn_chip.setObjectName("ChipBackendSync")
             btn_chip.setCheckable(True)
             btn_chip.setCursor(Qt.CursorShape.PointingHandCursor)
+            #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
             btn_chip.clicked.connect(lambda checked, idx=i, cl=clave: self._cambiar_metodo_avanzado(idx, cl))
             self.grupo_backends.addButton(btn_chip, i)
             self._chips_backend[clave]= btn_chip
@@ -1295,6 +1299,7 @@ class ModuloSincronizacion(QWidget):
                     "(los cambios hechos en otros equipos se perderán).\n\n"
                     "¿Confirmas que quieres subir de todas formas?", self) != QMessageBox.StandardButton.Yes:
                 return
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._ejecutar_en_hilo(lambda: subir_cambios(self.main_window),
                                "Subiendo cambios…", self._al_terminar_subir)
 
@@ -1319,6 +1324,7 @@ class ModuloSincronizacion(QWidget):
                     "equipo (se hará un backup de seguridad automático antes, por si hay que "
                     "revertir).\n\n¿Confirmas que quieres descargar de todas formas?", self) != QMessageBox.StandardButton.Yes:
                 return
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._ejecutar_en_hilo(lambda: descargar_novedades(self.main_window),
                                "Descargando novedades…", self._al_terminar_descargar)
 
@@ -1341,6 +1347,7 @@ class ModuloSincronizacion(QWidget):
             mostrar_mensaje("advertencia", "No conectado", f"Primero conecta {avanzado.METODOS[metodo]}.", self)
             return
         self._alternar_botones_avanzado_ocupado(True)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._hilo_avanzado= _HiloOperacionSync(lambda: avanzado.subir(metodo), self)
 
         def _terminado(destino, error):
@@ -1363,6 +1370,7 @@ class ModuloSincronizacion(QWidget):
             mostrar_mensaje("advertencia", "No conectado", f"Primero conecta {avanzado.METODOS[metodo]}.", self)
             return
         self._alternar_botones_avanzado_ocupado(True)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._hilo_avanzado= _HiloOperacionSync(lambda: avanzado.descargar(metodo), self)
 
         def _terminado(respaldo, error):
@@ -1413,6 +1421,7 @@ class ModuloSincronizacion(QWidget):
         if self._hilo_estado is not None and self._hilo_estado.isRunning():
             return
         self.tarjeta_estado.mostrar_ocupado("Verificando…")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._hilo_estado= _HiloOperacionSync(lambda: obtener_estado(self.main_window), self)
 
         def _listo(estado, error):
@@ -1466,6 +1475,7 @@ class ModuloSincronizacion(QWidget):
         if not paletas or tema not in paletas:
             return {"accent": "#6366F1", "accent_hv": "#4F46E5", "bg_panel": "#FFFFFF", "bg_btn": "#E2E8F0",
                     "txt_prim": "#0F172A", "txt_sec": "#64748B"}
+        #p: paleta del tema actual; cada color trae dos valores, 0 para claro y 1 para oscuro
         p= paletas[tema]
         idx= 1 if getattr(mw, "modo_oscuro", False) else 0
         return {"accent": p["btn_op_bg"][idx],

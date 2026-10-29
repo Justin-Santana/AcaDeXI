@@ -991,6 +991,7 @@ class ModuloAsistencia(QWidget):
         self._temporizador_busqueda_estudiantes.setInterval(150)
         self._temporizador_busqueda_estudiantes.timeout.connect(self._filtro_estudiantes_cambio)
         self.in_buscar_estudiantes.textChanged.connect(
+            #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
             lambda _t: self._temporizador_busqueda_estudiantes.start())
 
 
@@ -1050,6 +1051,7 @@ class ModuloAsistencia(QWidget):
             btn= _boton_estado_color(texto, color, None)
             btn.setIcon(icono_emoji(ICONOS_ESTADO.get(estado, "")))
             btn.setIconSize(_QSize_emoji(16, 16))
+            #el valor por defecto fija la opción de esta vuelta del bucle (si no, todas usarían la última); el primer parámetro absorbe el checked de triggered
             btn.clicked.connect(lambda checked=False, e=estado, b=btn: self._marcar_todos(e, b))
             fila, columna= divmod(indice, COLUMNAS_MARCAR)
             grid_marcar.addWidget(btn, fila, columna)
@@ -1453,6 +1455,7 @@ class ModuloAsistencia(QWidget):
         anim.setEndValue(1.0)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         widget._anim_aparicion_ref= anim  #evita que el GC la recolecte a mitad de camino
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: widget.setGraphicsEffect(None))
         anim.start()
 
@@ -1471,6 +1474,7 @@ class ModuloAsistencia(QWidget):
         anim.setKeyValueAt(1, 1.0)
         anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
         widget._anim_flash_ref= anim
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: widget.setGraphicsEffect(None))
         anim.start()
 
@@ -1644,6 +1648,7 @@ class ModuloAsistencia(QWidget):
                 "porcentaje": porcentaje,
                 "total": total,
             })
+        #x: resumen de un estudiante; se ordena de mayor a menor porcentaje
         resultado.sort(key=lambda x: x["porcentaje"], reverse=True)
         return resultado
 
@@ -2054,6 +2059,7 @@ class ModuloAsistencia(QWidget):
             conectar_tooltip_seleccion(combo, f"Estado de asistencia de {est['nombre']}")
             self._estilizar_combo_estado(combo, estado_actual)
             combo.currentTextChanged.connect(
+                #estado: texto elegido en el combo; eid y cb se fijan con los de esta fila
                 lambda estado, eid=est["id"], cb=combo: self._al_cambio_estado_fila(eid, estado, cb))
             self.tabla.setCellWidget(i, 2, combo)
         ajustar_anchos_columnas(self.tabla)
@@ -2156,6 +2162,7 @@ class ModuloAsistencia(QWidget):
         texto_original= self._btn_guardar.text()
         self._btn_guardar.setText("¡Guardado!")
         self._btn_guardar.setEnabled(False)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         QTimer.singleShot(1400, lambda: (self._btn_guardar.setText(texto_original), self._btn_guardar.setEnabled(True)))
         mostrar_mensaje("exito", "Guardado", "El registro de asistencia se guardó correctamente.", self)
 

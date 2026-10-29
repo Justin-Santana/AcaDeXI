@@ -713,6 +713,7 @@ class RecuperarPasswordDialog(QDialog):
         btn_ver.setObjectName("BtnVerPass")
         btn_ver.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_ver.setCheckable(True)
+        #visible: botón activo = contraseña a la vista; e y b fijan el campo y el botón de esta vuelta
         btn_ver.toggled.connect(lambda visible, e=in_entrada, b=btn_ver: (
             e.setEchoMode(QLineEdit.EchoMode.Normal if visible else QLineEdit.EchoMode.Password),
             b.setText("" if visible else "")))

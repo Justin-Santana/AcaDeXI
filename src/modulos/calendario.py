@@ -873,6 +873,7 @@ class ModuloCalendario(QWidget):
         self.combo_filtro_vista_curso= QComboBox()
         self.combo_filtro_vista_curso.currentIndexChanged.connect(self._curso_filtro_vista_cambio)
         self.combo_filtro_vista_seccion= QComboBox()
+        #_: valor que trae la señal y aquí no se usa
         self.combo_filtro_vista_seccion.currentIndexChanged.connect(lambda _: self._filtro_vista_cambio())
         self.lbl_filtro_vista_especialidad= QLabel("Área Técnica:")
         self.combo_filtro_vista_especialidad= QComboBox()
@@ -886,6 +887,7 @@ class ModuloCalendario(QWidget):
             "Filtrar los eventos por carrera: solo secciones con estudiantes de esa carrera (Universidad)")
         self.lbl_filtro_vista_materia= QLabel("Materia (opcional):")
         self.combo_filtro_vista_materia= QComboBox()
+        #_: valor que trae la señal y aquí no se usa
         self.combo_filtro_vista_materia.currentIndexChanged.connect(lambda _: self._filtro_vista_cambio())
         self._construir_dialogo_filtros_vista()
 
@@ -895,6 +897,7 @@ class ModuloCalendario(QWidget):
         self._temporizador_busqueda.setSingleShot(True)
         self._temporizador_busqueda.setInterval(150)
         self._temporizador_busqueda.timeout.connect(self._filtro_busqueda_cambio)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
         self.in_busqueda.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
 
         #--- Filtro dinámico por tipo (chips) ---
@@ -999,10 +1002,12 @@ class ModuloCalendario(QWidget):
             item_desc= self.tabla.item(fila_sel, 8)
             texto_completo= (item_desc.text() if item_desc else "").strip()
             return [("Ver detalle completo",
+                      #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                       lambda: mostrar_texto_largo(self, "Detalle completo", texto_completo))]
 
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla, self, titulo="Detalle del Evento",
                                              proveedor_extra_botones= _extra_botones_detalle)
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla.doubleClicked.connect(lambda *_: btn_detalle.click())
         fila_botones.addStretch()
         disposicion.addLayout(fila_botones)
@@ -1040,6 +1045,7 @@ class ModuloCalendario(QWidget):
         btn.setCheckable(True)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setChecked(dato == self.filtro_tipo_actual)
+        #el primer parámetro absorbe el checked de la señal y no se usa; el valor por defecto fija el de esta vuelta del bucle
         btn.clicked.connect(lambda _=False, d=dato: self._al_filtro_tipo(d))
         return btn
 
@@ -1641,10 +1647,12 @@ class ModuloCalendario(QWidget):
 
         hoy= date.today()
         candidatos= []
+        #f: evento del calendario; solo cuentan los de hoy en adelante
         for f in self._eventos_todos:
             fecha_ev= self._parsear_fecha(f["fecha"])
             if fecha_ev and fecha_ev >= hoy:
                 candidatos.append((fecha_ev, f["hora"] or "", f))
+        #t: (fecha, hora, evento); los más próximos primero
         candidatos.sort(key=lambda t: (t[0], t[1]))
 
         if not candidatos:
@@ -2044,6 +2052,7 @@ class ModuloCalendario(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM eventos WHERE id=?", (id_ev,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:

@@ -750,6 +750,7 @@ class ModuloReportes(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(220)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: widget.setGraphicsEffect(None))
         anim.start()
         self._anim_tab= anim
@@ -769,6 +770,7 @@ class ModuloReportes(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(160)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: tabla.setGraphicsEffect(None))
         anim.start()
         tabla._anim_fundido= anim  #referencia viva mientras corre la animación
@@ -995,6 +997,7 @@ class ModuloReportes(QWidget):
                     self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"], panel.get("combo_nivel"))
                 panel["paginacion"].reiniciar()
                 recargar_fn()
+            #_i: índice o ítem que trae la señal y no se usa
             panel["combo_curso"].currentIndexChanged.connect(lambda _i: _en_cambio_curso())
 
         if panel.get("combo_seccion") is not None:
@@ -1002,6 +1005,7 @@ class ModuloReportes(QWidget):
 
                 panel["paginacion"].reiniciar()
                 recargar_fn()
+            #_i: índice o ítem que trae la señal y no se usa
             panel["combo_seccion"].currentIndexChanged.connect(lambda _i: _en_cambio_seccion())
 
         if panel.get("combo_especialidad") is not None:
@@ -1009,6 +1013,7 @@ class ModuloReportes(QWidget):
 
                 panel["paginacion"].reiniciar()
                 recargar_fn()
+            #_i: índice o ítem que trae la señal y no se usa
             panel["combo_especialidad"].currentIndexChanged.connect(lambda _i: _en_cambio_especialidad())
 
         if panel.get("combo_filtro_especialidad_rep") is not None:
@@ -1020,6 +1025,7 @@ class ModuloReportes(QWidget):
             panel["combo_filtro_especialidad_rep"].currentIndexChanged.connect(
                 lambda _i: _en_cambio_filtro_tecnico_rep())
             panel["combo_filtro_carrera_rep"].currentIndexChanged.connect(
+                #_i: índice o ítem que trae la señal y no se usa
                 lambda _i: _en_cambio_filtro_tecnico_rep())
 
         def _limpiar():

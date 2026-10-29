@@ -377,6 +377,7 @@ class MallaCurricular(QWidget):
         punto= evento.position()
         nuevo_hover= None
         for mid, nodo in self._nodos.items():
+            #r: rectángulo del nodo en el diagrama
             r= nodo["rect"]
             if r is not None and r.contains(punto):
                 nuevo_hover= mid
@@ -476,6 +477,7 @@ class MallaCurricular(QWidget):
         fuente_chip.setBold(True)
         metricas= QFontMetrics(fuente_chip)
         for mid, nodo in self._nodos.items():
+            #r: rectángulo del nodo en el diagrama
             r= nodo["rect"]
             if r is None:
                 continue
@@ -664,6 +666,7 @@ class ModuloUniversidad(QWidget):
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(callback_filtro)
+        #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
         in_campo.textChanged.connect(lambda _t: temporizador.start())
 
         self._iconos_busqueda= getattr(self, "_iconos_busqueda", [])
@@ -751,6 +754,7 @@ class ModuloUniversidad(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(160)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: tabla.setGraphicsEffect(None))
         anim.start()
         self._anim_tabla= anim
@@ -766,6 +770,7 @@ class ModuloUniversidad(QWidget):
         anim.setEndValue(1.0)
         anim.setDuration(300)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         anim.finished.connect(lambda: widget.setGraphicsEffect(None))
         anim.start()
         self._anim_entrada= anim
@@ -784,6 +789,7 @@ class ModuloUniversidad(QWidget):
         anim.setEndValue(valor_final)
         anim.setDuration(400)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor actual del slider, que se muestra como porcentaje
         anim.valueChanged.connect(lambda v: chip.setText(formato(int(v))))
         anim.start()
         setattr(self, f"_anim_{atributo}", anim)
@@ -917,6 +923,7 @@ class ModuloUniversidad(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_facultad)
         fila_acciones_fac.addWidget(btn_eliminar)
         btn_detalle_fac= agregar_boton_detalle(fila_acciones_fac, self.tabla_facultades, self, titulo="Detalle de la Facultad")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_facultades.doubleClicked.connect(lambda *_: btn_detalle_fac.click())
         fila_acciones_fac.addStretch()
         layout_tabla.addLayout(fila_acciones_fac)
@@ -942,6 +949,7 @@ class ModuloUniversidad(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM facultades WHERE id=?", (id_fac,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -1076,6 +1084,7 @@ class ModuloUniversidad(QWidget):
             self._animar_valor_chip(self.chip_facultades, "_valor_chip_facultades", total_facultades,
                                      lambda v: f"{html_icono_emoji('🏛', 14)} {v} facultad" + ("es" if v != 1 else ""))
             self._animar_valor_chip(self.chip_carreras, "_valor_chip_carreras", total_carreras,
+                                     #v: cantidad actual del chip animado; el texto cambia a plural si no es 1
                                      lambda v: f"{html_icono_emoji('🎓', 14)} {v} carrera" + ("s" if v != 1 else ""))
 
     def _actualizar_leyenda_donut(self, segmentos):
@@ -1180,6 +1189,7 @@ class ModuloUniversidad(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_carrera)
         fila_acciones_car.addWidget(btn_eliminar)
         btn_detalle_car= agregar_boton_detalle(fila_acciones_car, self.tabla_carreras, self, titulo="Detalle de la Carrera")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_carreras.doubleClicked.connect(lambda *_: btn_detalle_car.click())
         fila_acciones_car.addStretch()
         layout_tabla.addLayout(fila_acciones_car)
@@ -1222,6 +1232,7 @@ class ModuloUniversidad(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM carreras WHERE id=?", (id_car,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:
@@ -1445,6 +1456,7 @@ class ModuloUniversidad(QWidget):
         btn_eliminar.clicked.connect(self._eliminar_pensum)
         fila_acciones_pensum.addWidget(btn_eliminar)
         btn_detalle_pen= agregar_boton_detalle(fila_acciones_pensum, self.tabla_pensum, self, titulo="Detalle del Pensum")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_pensum.doubleClicked.connect(lambda *_: btn_detalle_pen.click())
         fila_acciones_pensum.addStretch()
         layout_tabla.addLayout(fila_acciones_pensum)
@@ -1474,6 +1486,7 @@ class ModuloUniversidad(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM pensum WHERE id=?", (id_p,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:

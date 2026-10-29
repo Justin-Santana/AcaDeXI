@@ -426,6 +426,7 @@ class SplashBienvenida(QWidget):
         self._anim_barra.setEndValue(1.0)
         self._anim_barra.setEasingCurve(QEasingCurve.Type.InOutCubic)
         self._anim_barra.valueChanged.connect(
+            #v: avance de la animación (0 a 1) sobre el ancho total de la barra
             lambda v: self.relleno_barra.setFixedWidth(int(ancho_track * v)))
         self._anim_barra.finished.connect(self._mostrar_check_estado)
         self._anim_barra.start()

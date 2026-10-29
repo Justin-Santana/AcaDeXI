@@ -358,6 +358,7 @@ class ModuloEstudiantesST(QWidget):
         conn= db.obtener_conexion(self.main_window)
         c= conn.cursor()
         c.execute("SELECT * FROM estudiantes WHERE id=?", (id_estudiante,))
+        #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
         if not f:

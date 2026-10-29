@@ -179,6 +179,7 @@ class GuardaInstanciaUnica:
         socket= self.local_server.nextPendingConnection()
         if socket is None:
             return
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         socket.readyRead.connect(lambda: self._leer_y_restaurar(socket))
         socket.disconnected.connect(socket.deleteLater)
 
@@ -460,6 +461,7 @@ class StackedWidgetTamanoActual(QStackedWidget):
     def __init__(self, parent=None):
 
         super().__init__(parent)
+        #_i: índice o ítem que trae la señal y no se usa
         self.currentChanged.connect(lambda _i: self.updateGeometry())
 
     def sizeHint(self):
@@ -849,6 +851,7 @@ class MainWindow(QMainWindow):
         self.nav_list.setCurrentRow(0)
         self.nav_list.currentRowChanged.connect(self.cambiar_vista)
         self.nav_list.verticalScrollBar().valueChanged.connect(
+            #_v: valor que trae la señal y no se usa; solo se recoloca la píldora de navegación
             lambda _v: self._mover_pildora_nav(self.nav_list.currentRow(), animar=False))
         left_layout.addWidget(self.nav_list, 1)
 
@@ -914,6 +917,7 @@ class MainWindow(QMainWindow):
         self._titulo_modulo_atajos= "AcaDeXI"
 
         registrar_atajo(self, self, "Ctrl+K", "Buscar en todo el sistema",
+                         #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
                          lambda: (self.in_busqueda_global.setFocus(), self.in_busqueda_global.selectAll()),
                          contexto=Qt.ShortcutContext.ApplicationShortcut)
         #Se guarda la referencia (no solo se registra) porque el Tutorial Detallado necesita poder desactivarlo
@@ -961,6 +965,7 @@ class MainWindow(QMainWindow):
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         azul= QColor("#3B82F6") if getattr(self, "minimizar_a_bandeja", True) else QColor("#EF4444")
         borde= QColor("#FFFFFF")
+        #s: lado del icono; todo el dibujo se calcula en proporción a s
         s= base.width()
         d= s * 0.34  #diámetro del punto
         pintor.setBrush(QBrush(azul))
@@ -979,6 +984,7 @@ class MainWindow(QMainWindow):
         pintor= QPainter(pm)
         pintor.setRenderHint(QPainter.RenderHint.Antialiasing)
         azul= QColor("#3B82F6") if getattr(self, "minimizar_a_bandeja", True) else QColor("#EF4444")
+        #s: lado del icono; todo el dibujo se calcula en proporción a s
         s= size
         pintor.setBrush(QBrush(azul))
         pintor.setPen(QPen(QColor("#FFFFFF"), max(1.5, s * 0.09)))
@@ -1472,8 +1478,10 @@ class MainWindow(QMainWindow):
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         anim.setStartValue(self.left_panel.width())
         anim.setEndValue(ancho_destino)
+        #v: ancho animado del panel, en píxeles
         anim.valueChanged.connect(lambda v: self.left_panel.setFixedWidth(int(v)))
         anim.valueChanged.connect(
+            #_v: valor que trae la señal y no se usa; solo se recoloca la píldora de navegación
             lambda _v: self._mover_pildora_nav(self.nav_list.currentRow(), animar=False))
         self._anim_sidebar_activa= anim
         anim.start()
@@ -1787,6 +1795,7 @@ class MainWindow(QMainWindow):
         pagina= self.stacked_widget.widget(indice)
         if hasattr(pagina, "actualizar_tema"):
             pagina.actualizar_tema()
+        #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: self._refrescar_paginas_tema_async(indice + 1, al_terminar))
 
 
@@ -2578,6 +2587,7 @@ class MainWindow(QMainWindow):
     def showEvent(self, evento):
 
         super().showEvent(evento)
+        #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: self._mover_pildora_nav(self.nav_list.currentRow(), animar=False))
         #Al volver desde la bandeja, reactivamos lo que pausamos en
         #hideEvent (ver ahí el porqué).

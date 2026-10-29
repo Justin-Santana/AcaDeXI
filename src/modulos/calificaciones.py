@@ -194,6 +194,7 @@ def _efecto_transicion(widget, duracion=220):
     anim.setEndValue(1.0)
     anim.setDuration(duracion)
     anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+    #al terminar la animación se quita el efecto gráfico del widget
     anim.finished.connect(lambda: widget.setGraphicsEffect(None))
     widget._anim_fade= anim
     anim.start()
@@ -425,6 +426,7 @@ class TarjetaAlerta(QWidget):
 
         painter= QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        #r: rectángulo del widget con 2 px de margen para que el borde no se corte
         r= QRectF(self.rect()).adjusted(2, 2, -2, -2)
         radio= 14.0
         color= self._color
@@ -1009,6 +1011,7 @@ class TimelineEvaluacion(QWidget):
 
         for i, (etiqueta, color_hex, conteo) in enumerate(self._etapas):
             color= QColor(color_hex)
+            #r: radio del nodo de esta etapa
             r= radios[i]
             cx, cy= xs[i], pos_y
             if conteo > 0:
@@ -1135,6 +1138,7 @@ class LineaTendencia(QWidget):
 
         relleno= QPainterPath()
         relleno.moveTo(pts[0].x(), rect.bottom())
+        #p: punto de la curva, de izquierda a derecha
         for p in pts:
             relleno.lineTo(p)
         relleno.lineTo(pts[-1].x(), rect.bottom())
@@ -1152,6 +1156,7 @@ class LineaTendencia(QWidget):
 
         linea= QPainterPath()
         linea.moveTo(pts[0])
+        #p: punto de la curva, a partir del segundo
         for p in pts[1:]:
             linea.lineTo(p)
         pluma= QPen(self._color, 2.6)
@@ -1163,6 +1168,7 @@ class LineaTendencia(QWidget):
 
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(self._color)
+        #p: punto de la curva hasta la etapa completa
         for p in pts_totales[:idx_completo]:
             painter.drawEllipse(p, 3.0, 3.0)
         if idx_completo == n - 1:
@@ -2010,6 +2016,7 @@ class ModuloCalificaciones(QWidget):
         fila.addWidget(lbl_resumen, 1)
         setattr(self, f"lbl_resumen_filtros_{nombre}", lbl_resumen)
         btn= self._crear_boton_filtros("Filtrar por curso, sección, área técnica/carrera")
+        #clicked no manda datos y el diálogo de filtros a abrir ya queda fijado aquí
         btn.clicked.connect(lambda: self._abrir_dialogo_filtros(dialogo))
         setattr(self, f"btn_filtros_{nombre}", btn)
         fila.addWidget(btn)
@@ -2028,6 +2035,7 @@ class ModuloCalificaciones(QWidget):
     #primer refresco inmediato.
     def _conectar_resumen_filtros(self, nombre, partes):
 
+        #actualizar: función sin argumentos para conectarla a cada combo y llamarla una vez al inicio
         actualizar= lambda: self._actualizar_resumen_filtros_generico(nombre, partes)
         for _etiqueta, combo in partes:
             combo.currentIndexChanged.connect(actualizar)
@@ -2164,6 +2172,7 @@ class ModuloCalificaciones(QWidget):
     def _permitidas_secciones(self):
 
         if self._cache_permitidas_secciones is _SIN_CARGAR:
+            #p: secciones permitidas al usuario; None si no tiene restricción
             p= obtener_secciones_permitidas(self.main_window)
             self._cache_permitidas_secciones= set(p) if p is not None else None
         return self._cache_permitidas_secciones
@@ -2171,6 +2180,7 @@ class ModuloCalificaciones(QWidget):
     def _permitidas_materias(self):
 
         if self._cache_permitidas_materias is _SIN_CARGAR:
+            #p: materias permitidas al usuario; None si no tiene restricción
             p= obtener_materias_permitidas(self.main_window)
             self._cache_permitidas_materias= set(p) if p is not None else None
         return self._cache_permitidas_materias
@@ -2229,6 +2239,7 @@ class ModuloCalificaciones(QWidget):
         #para los suyos.
         for boton in placeholder.findChildren(QPushButton):
             boton.setCursor(Qt.CursorShape.PointingHandCursor)
+            #b= fija el botón de esta vuelta del bucle; si no, todos animarían el último
             boton.pressed.connect(lambda b=boton: _animar_click(b))
 
     #Fuerza la carga inmediata de una pestaña (sin esperar a que el
@@ -2378,6 +2389,7 @@ class ModuloCalificaciones(QWidget):
         #conexión .clicked existente.
         for boton in self.findChildren(QPushButton):
             boton.setCursor(Qt.CursorShape.PointingHandCursor)
+            #b= fija el botón de esta vuelta del bucle; si no, todos animarían el último
             boton.pressed.connect(lambda b=boton: _animar_click(b))
     #---------------- REGISTRO ---------------- Ventana de "☰ FILTROS" — reutilizable en todas las pestañas del
     #módulo. Mismo patrón visual/funcional que ya usan Calendario, Banco de Tareas y Calificaciones Técnicas: una
@@ -2582,6 +2594,7 @@ class ModuloCalificaciones(QWidget):
         form.setVerticalSpacing(14)
         self.combo_curso= QComboBox()
         self.combo_curso.currentIndexChanged.connect(
+            #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
             lambda: (self._filtrar_seccion_por_curso(self.combo_curso, self.combo_seccion, incluir_todas=False),
                       self._cargar_estudiantes_combo()))
         self.combo_seccion= QComboBox()
@@ -2652,6 +2665,7 @@ class ModuloCalificaciones(QWidget):
         self.lbl_resumen_filtros_registro.setWordWrap(True)
         fila_filtros_registro.addWidget(self.lbl_resumen_filtros_registro, 1)
         self.btn_filtros_registro= self._crear_boton_filtros("Filtrar por curso, sección, área técnica/carrera")
+        #clicked no manda datos y el diálogo de filtros a abrir ya queda fijado aquí
         self.btn_filtros_registro.clicked.connect(lambda: self._abrir_dialogo_filtros(self.dialogo_filtros_registro))
         fila_filtros_registro.addWidget(self.btn_filtros_registro)
         form.addLayout(fila_filtros_registro, 0, 0, 1, 4)
@@ -2840,6 +2854,7 @@ class ModuloCalificaciones(QWidget):
         btn_detalle= agregar_boton_detalle(fila_acciones, self.tabla_registro, self, 
                                              titulo= "Detalle de la Calificación",
                                              proveedor_extra_botones= self._boton_ver_descripcion_calificacion)
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_registro.doubleClicked.connect(lambda *_: btn_detalle.click())
         
         fila_acciones.addStretch()
@@ -2888,6 +2903,7 @@ class ModuloCalificaciones(QWidget):
         permitidas= self._permitidas_secciones()
         especialidad_id= self.combo_filtro_especialidad_registro.currentData() if self._es_politecnico() else None
         carrera_id= self.combo_filtro_carrera_registro.currentData() if self._es_universidad() else None
+        #f: fila de un estudiante; se descartan los de otra sección o sin permiso
         for f in self._estudiantes_activos():
             if f["seccion_id"] != seccion_id:
                 continue
@@ -3315,6 +3331,7 @@ class ModuloCalificaciones(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT solo_lectura, importado_de FROM calificaciones WHERE id=?", (id_cal,))
+        #f: solo_lectura e importado_de de la nota; None si ya no existe
         f= c.fetchone()
         if f and f["solo_lectura"] and not tiene_acceso_gerencial(self.main_window):
             conn.close()
@@ -3355,6 +3372,7 @@ class ModuloCalificaciones(QWidget):
             "Filtrar por carrera del estudiante (Universidad)")
         self.combo_curso_boletin= QComboBox()
         self.combo_curso_boletin.currentIndexChanged.connect(
+            #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
             lambda: (self._filtrar_seccion_por_curso_corto(self.combo_curso_boletin, self.combo_seccion_boletin),
                       self._cargar_estudiantes_boletin()))
         self.combo_seccion_boletin= QComboBox()
@@ -3375,6 +3393,7 @@ class ModuloCalificaciones(QWidget):
         self.lbl_resumen_filtros_boletin.setWordWrap(True)
         fila_filtro_tecnico_boletin.addWidget(self.lbl_resumen_filtros_boletin, 1)
         self.btn_filtros_boletin= self._crear_boton_filtros("Filtrar por curso, sección, área técnica/carrera")
+        #clicked no manda datos y el diálogo de filtros a abrir ya queda fijado aquí
         self.btn_filtros_boletin.clicked.connect(lambda: self._abrir_dialogo_filtros(self.dialogo_filtros_boletin))
         fila_filtro_tecnico_boletin.addWidget(self.btn_filtros_boletin)
         disposicion.addLayout(fila_filtro_tecnico_boletin)
@@ -3495,6 +3514,7 @@ class ModuloCalificaciones(QWidget):
         fila_acciones_boletin.addWidget(self.btn_rp)
         btn_detalle_bol= agregar_boton_detalle(fila_acciones_boletin, self.tabla_boletin, self,
                                                  titulo= "Detalle de la Nota")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_boletin.doubleClicked.connect(lambda *_: btn_detalle_bol.click())
         fila_acciones_boletin.addStretch()
         disposicion.addLayout(fila_acciones_boletin)
@@ -3535,6 +3555,7 @@ class ModuloCalificaciones(QWidget):
         permitidas= self._permitidas_secciones()
         especialidad_id= self.combo_filtro_especialidad_boletin.currentData() if self._es_politecnico() else None
         carrera_id= self.combo_filtro_carrera_boletin.currentData() if self._es_universidad() else None
+        #f: fila de un estudiante; se descartan los de otra sección o sin permiso
         for f in self._estudiantes_activos():
             if seccion_id is not None and f["seccion_id"] != seccion_id:
                 continue
@@ -3836,6 +3857,7 @@ class ModuloCalificaciones(QWidget):
                                "RP Superada": "#3B82F6", "RP Pendiente": "#F59E0B",
                                "Requiere RP": "#EF4444", "Reprobado": "#EF4444"}
             conteo= {}
+            #f: fila de un estudiante del boletín; se cuenta cuántos hay por estado
             for f in filas:
                 conteo[f["estado"]]= conteo.get(f["estado"], 0) + 1
             self.dona_boletin.actualizar(
@@ -4044,6 +4066,7 @@ class ModuloCalificaciones(QWidget):
 
             from src.boletines.boletin_minerd import formato_boletin_general, exportar_boletin_general_oficial_pdf
         except ImportError:
+            #si falta el módulo del boletín oficial se usa siempre el formato simple
             formato_boletin_general= lambda: "simple"
         if formato_boletin_general() == "oficial_rd":
             boletin= exportar_boletin_general_oficial_pdf(estudiante_id, ruta, institucion)
@@ -4090,6 +4113,7 @@ class ModuloCalificaciones(QWidget):
 
             self._hilo_boletin_simple= WorkerHilo(_tarea_boletin)
             self._hilo_boletin_simple.terminado.connect(_al_boletin_ok)
+            #mensaje: texto del error que emite el hilo
             self._hilo_boletin_simple.error.connect(lambda mensaje: (
                 QApplication.restoreOverrideCursor(),
                 mostrar_mensaje("error", "Error al exportar", mensaje.split("\n")[0], self)))
@@ -4130,6 +4154,7 @@ class ModuloCalificaciones(QWidget):
             from src.boletines.boletin_minerd import formato_boletin_general
             from src.boletines.boletin_completo import exportar_boletines_multiples_secciones_pdf
         except ImportError:
+            #si falta el módulo del boletín oficial se usa siempre el formato simple
             formato_boletin_general= lambda: "simple"
         if formato_boletin_general() == "oficial_rd":
             curso_nombre= self.combo_curso_masivo.currentText().replace(" ", "_").replace("/", "-")
@@ -4300,6 +4325,7 @@ class ModuloCalificaciones(QWidget):
             "Filtrar por carrera del estudiante (Universidad)")
         self.combo_curso_historial= QComboBox()
         self.combo_curso_historial.currentIndexChanged.connect(
+            #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
             lambda: (self._filtrar_seccion_por_curso_corto(self.combo_curso_historial, self.combo_seccion_historial),
                       self._cargar_estudiantes_historial()))
         self.combo_seccion_historial= QComboBox()
@@ -4318,6 +4344,7 @@ class ModuloCalificaciones(QWidget):
         self.lbl_resumen_filtros_historial.setWordWrap(True)
         fila_filtro_tecnico_historial.addWidget(self.lbl_resumen_filtros_historial, 1)
         self.btn_filtros_historial= self._crear_boton_filtros("Filtrar por curso, sección, área técnica/carrera")
+        #clicked no manda datos y el diálogo de filtros a abrir ya queda fijado aquí
         self.btn_filtros_historial.clicked.connect(lambda: self._abrir_dialogo_filtros(self.dialogo_filtros_historial))
         fila_filtro_tecnico_historial.addWidget(self.btn_filtros_historial)
         disposicion.addLayout(fila_filtro_tecnico_historial)
@@ -4403,6 +4430,7 @@ class ModuloCalificaciones(QWidget):
         fila_acciones_hist.addWidget(btn_pdf)
         btn_detalle_hist= agregar_boton_detalle(fila_acciones_hist, self.tabla_historial, self,
                                                   titulo= "Detalle del Historial")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_historial.doubleClicked.connect(lambda *_: btn_detalle_hist.click())
         fila_acciones_hist.addStretch()
         disposicion.addLayout(fila_acciones_hist)
@@ -4416,6 +4444,7 @@ class ModuloCalificaciones(QWidget):
         permitidas= self._permitidas_secciones()
         especialidad_id= self.combo_filtro_especialidad_historial.currentData() if self._es_politecnico() else None
         carrera_id= self.combo_filtro_carrera_historial.currentData() if self._es_universidad() else None
+        #f: fila de un estudiante; se descartan los de otra sección o sin permiso
         for f in self._estudiantes_todos():
             if seccion_id is not None and f["seccion_id"] != seccion_id:
                 continue
@@ -4656,6 +4685,7 @@ class ModuloCalificaciones(QWidget):
             self._crear_combos_filtro_tecnico(self._cargar_estudiantes_desempeno)
         self.combo_curso_desempeno= QComboBox()
         self.combo_curso_desempeno.currentIndexChanged.connect(
+            #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
             lambda: (self._filtrar_seccion_por_curso_corto(self.combo_curso_desempeno, self.combo_seccion_desempeno),
                       self._cargar_estudiantes_desempeno()))
         self.combo_seccion_desempeno= QComboBox()
@@ -4712,6 +4742,7 @@ class ModuloCalificaciones(QWidget):
             combo_nivel.setMinimumHeight(30)
             conectar_tooltip_seleccion(combo_nivel, f"Nivel de desempeño en '{competencia}'")
             combo_nivel.currentTextChanged.connect(
+                #texto: nivel elegido; cb= fija el combo de esta vuelta del bucle
                 lambda texto, cb=combo_nivel: self._colorear_nivel_desempeno(cb, texto))
             self._colorear_nivel_desempeno(combo_nivel, combo_nivel.currentText())
             combo_nivel.currentTextChanged.connect(self._actualizar_resumen_desempeno)
@@ -5388,6 +5419,7 @@ class ModuloCalificaciones(QWidget):
 
         self.combo_curso_finales= QComboBox()
         self.combo_curso_finales.currentIndexChanged.connect(
+            #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
             lambda: (self._filtrar_seccion_por_curso_corto(self.combo_curso_finales, self.combo_seccion_finales),
                       self._cargar_estudiantes_finales()))
         self.combo_seccion_finales= QComboBox()
@@ -5429,6 +5461,7 @@ class ModuloCalificaciones(QWidget):
         self.in_buscar_finales.setPlaceholderText(
             "Buscar por materia, etapa o resultado (ignora tildes y mayúsculas)...")
         self.in_buscar_finales.texto_buscado.connect(
+            #t: texto escrito en el buscador; filtra las filas mirando solo las columnas indicadas
             lambda t: self._filtrar_tabla_texto(self.tabla_finales, t, (0, 2, 5)))
         disposicion.addWidget(self.in_buscar_finales)
         disposicion.addSpacing(6)
@@ -5461,16 +5494,19 @@ class ModuloCalificaciones(QWidget):
         btn_completiva= QPushButton("Registrar Nota Completiva")
         btn_completiva.setIcon(icono_emoji(EMOJI_NOTA_COMPLETIVA))
         btn_completiva.setIconSize(_QSize_emoji(16, 16))
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_completiva.clicked.connect(lambda: self._registrar_evaluacion_final("completiva"))
         fila_botones.addWidget(btn_completiva)
         btn_extraordinaria= QPushButton("Registrar Nota Extraordinaria")
         btn_extraordinaria.setIcon(icono_emoji(EMOJI_NOTA_EXTRAORDINARIA))
         btn_extraordinaria.setIconSize(_QSize_emoji(16, 16))
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_extraordinaria.clicked.connect(lambda: self._registrar_evaluacion_final("extraordinaria"))
         fila_botones.addWidget(btn_extraordinaria)
         btn_especial= QPushButton("Registrar Nota Especial")
         btn_especial.setIcon(icono_emoji(EMOJI_NOTA_ESPECIAL))
         btn_especial.setIconSize(_QSize_emoji(16, 16))
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_especial.clicked.connect(lambda: self._registrar_evaluacion_final("especial"))
         fila_botones.addWidget(btn_especial)
         fila_botones.addStretch()
@@ -5536,6 +5572,7 @@ class ModuloCalificaciones(QWidget):
             _actualizar_estado_combo_estudiante(self.combo_curso_finales, self.combo_seccion_finales,
                                                  self.combo_estudiante_finales)
             return
+        #f: fila de un estudiante; se descartan los de otra sección o sin permiso
         for f in self._filtrar_por_tecnico(self._estudiantes_activos(), self.combo_filtro_especialidad_finales,
                                             self.combo_filtro_carrera_finales):
             if f["seccion_id"] != seccion_id:
@@ -5736,6 +5773,7 @@ class ModuloCalificaciones(QWidget):
         self._resultados_finales_actuales= []
         pendientes= []
         for mat in materias:
+            #r: resultado final de la materia (dict); se le agrega el nombre
             r= self._resultado_final_materia(estudiante_id, mat["id"], metodo, nota_minima, anio)
             r["materia_nombre"]= mat["nombre"]
             self._resultados_finales_actuales.append(r)
@@ -5796,6 +5834,7 @@ class ModuloCalificaciones(QWidget):
             #perdida definitivamente en 'Especial'. Así el nodo que se ilumina es literalmente donde el docente tiene
             #trabajo pendiente.
             conteo_cascada= {"Año": 0, "Completiva": 0, "Extraordinaria": 0, "Especial": 0}
+            #r: resultado final de una materia; se cuenta en qué etapa de la cascada quedó
             for r in self._resultados_finales_actuales:
                 etapa= r["etapa"]
                 if etapa == "Año" and r["aprobado"] is None:
@@ -5937,6 +5976,7 @@ class ModuloCalificaciones(QWidget):
         self.in_buscar_curriculo.setPlaceholderText(
             "Buscar por código, descripción o competencia fundamental (ignora tildes y mayúsculas)...")
         self.in_buscar_curriculo.texto_buscado.connect(
+            #t: texto escrito en el buscador; filtra las filas mirando solo las columnas indicadas
             lambda t: self._filtrar_tabla_texto(self.tabla_curriculo, t, (0, 1, 2)))
         disposicion.addWidget(self.in_buscar_curriculo)
         disposicion.addSpacing(6)
@@ -6214,6 +6254,7 @@ class ModuloCalificaciones(QWidget):
 
         self.combo_curso_competencias= QComboBox()
         self.combo_curso_competencias.currentIndexChanged.connect(
+            #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
             lambda: (self._filtrar_seccion_por_curso_corto(self.combo_curso_competencias,
                                                       self.combo_seccion_competencias),
                       self._cargar_estudiantes_competencias()))
@@ -6263,6 +6304,7 @@ class ModuloCalificaciones(QWidget):
         self.in_buscar_competencias.setPlaceholderText(
             "Buscar por competencia, nivel u observación (ignora tildes y mayúsculas)...")
         self.in_buscar_competencias.texto_buscado.connect(
+            #t: texto escrito en el buscador; filtra las filas mirando solo las columnas indicadas
             lambda t: self._filtrar_tabla_texto(self.tabla_competencias, t, (0, 2, 5)))
         disposicion.addWidget(self.in_buscar_competencias)
         disposicion.addSpacing(6)
@@ -6330,6 +6372,7 @@ class ModuloCalificaciones(QWidget):
             _actualizar_estado_combo_estudiante(self.combo_curso_competencias, self.combo_seccion_competencias,
                                                  self.combo_estudiante_competencias)
             return
+        #f: fila de un estudiante; se descartan los de otra sección o sin permiso
         for f in self._filtrar_por_tecnico(self._estudiantes_activos(), self.combo_filtro_especialidad_competencias,
                                             self.combo_filtro_carrera_competencias):
             if f["seccion_id"] != seccion_id:
@@ -6480,13 +6523,14 @@ class ModuloCalificaciones(QWidget):
 
         self.lbl_filtro_especialidad_compartir, self.combo_filtro_especialidad_compartir,\
             self.lbl_filtro_carrera_compartir, self.combo_filtro_carrera_compartir=\
-            self._crear_combos_filtro_tecnico(lambda: None)
+            self._crear_combos_filtro_tecnico(lambda: None)   #callback vacío: aquí no hay nada que refrescar al cambiar el filtro técnico
 
         #--- Exportar ---
         fila_exp= QHBoxLayout()
         fila_exp.setSpacing(10)
         self.combo_curso_compartir= QComboBox()
         self.combo_curso_compartir.currentIndexChanged.connect(
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             lambda: self._filtrar_seccion_por_curso_corto(self.combo_curso_compartir, self.combo_seccion_compartir))
         self.combo_seccion_compartir= QComboBox()
 
@@ -6549,6 +6593,7 @@ class ModuloCalificaciones(QWidget):
         self.in_buscar_paquetes.setPlaceholderText(
             "Buscar por materia, sección, periodo o docente (ignora tildes y mayúsculas)...")
         self.in_buscar_paquetes.texto_buscado.connect(
+            #t: texto escrito en el buscador; filtra las filas mirando solo las columnas indicadas
             lambda t: self._filtrar_tabla_texto(self.tabla_paquetes, t, (0, 1, 2, 3)))
         disposicion.addWidget(self.in_buscar_paquetes)
         disposicion.addSpacing(6)
@@ -6868,6 +6913,7 @@ class ModuloCalificaciones(QWidget):
                      FROM calificaciones
                      LEFT JOIN estudiantes ON calificaciones.estudiante_id = estudiantes.id
                      WHERE calificaciones.id=?""", (id_calificacion,))
+        #f: datos de la calificación a editar; None si ya no existe
         f= c.fetchone()
         if f is not None:
             c.execute("SELECT competencia_id FROM calificacion_competencia WHERE calificacion_id=?",
@@ -7078,6 +7124,7 @@ class ModuloCalificaciones(QWidget):
         if not paletas or tema not in paletas:
             return {"accent": "#6366F1", "accent_hover": "#4F46E5", "bg_panel": "#FFFFFF",
                     "bg_btn": "#E2E8F0", "txt_prim": "#0F172A", "txt_sec": "#64748B"}
+        #p: paleta del tema actual; cada color trae dos valores, 0 para claro y 1 para oscuro
         p= paletas[tema]
         idx= 1 if getattr(mw, "modo_oscuro", False) else 0
         accent= p["btn_op_bg"][idx]

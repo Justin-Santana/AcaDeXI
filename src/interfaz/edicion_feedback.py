@@ -64,6 +64,7 @@ class BannerEdicion(QFrame):
                 anim.setStartValue(0.0)
                 anim.setEndValue(1.0)
                 anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+                #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                 anim.finished.connect(lambda: self.setGraphicsEffect(None))
                 anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
                 self._anim_fade= anim
@@ -263,6 +264,7 @@ def _desplazar_hasta(banner, _pase=0):
     #Pases de corrección (sin animación): cubren tanto el final de la propia animación de scroll como cualquier
     #reacomodo tardío del layout.
     for retardo in (400, 800, 1400):
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         QTimer.singleShot(retardo, lambda: _desplazar_todo(banner, animado=False))
 
 

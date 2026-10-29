@@ -179,10 +179,12 @@ class EditorSecuenciaST(QDialog):
         barra.addWidget(btn_quitar)
 
         btn_subir= QPushButton("Subir")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_subir.clicked.connect(lambda: self.tabla_sesiones.mover_actual(-1))
         barra.addWidget(btn_subir)
 
         btn_bajar= QPushButton("Bajar")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         btn_bajar.clicked.connect(lambda: self.tabla_sesiones.mover_actual(1))
         barra.addWidget(btn_bajar)
 
@@ -396,6 +398,7 @@ class ModuloSecuenciasST(QWidget):
         self.tabla_secuencias.verticalHeader().setVisible(False)
         self.tabla_secuencias.setMinimumHeight(240)
         self.tabla_secuencias.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_secuencias.doubleClicked.connect(lambda *_: self._editar())
 
         return self.tabla_secuencias

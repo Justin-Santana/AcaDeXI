@@ -743,12 +743,16 @@ class ModuloDashboard(QWidget):
         grid= QGridLayout()
         grid.setSpacing(16)
         self.tarjeta_estudiantes= TarjetaIndicador("🎓", "Estudiantes Activos", "#6366F1",
+                                                      #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                                                       al_click= lambda: self._ir_a_modulo("Estudiantes"))
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._al_click_profesores= lambda: self._ir_a_modulo("Profesores")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._al_click_horario_docente= lambda: self._ir_a_modulo("Horario")
         self.tarjeta_profesores= TarjetaIndicador(EMOJI_PROFESOR, "Profesores Activos", "#0D9488",
                                                      al_click= self._al_click_profesores)
         self.tarjeta_materias= TarjetaIndicador("📘", "Materias", "#8B5CF6",
+                                                   #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                                                    al_click= lambda: self._ir_a_modulo("Materias"))
         #"Secciones/Grupos" (institucional) va a Materias, que tiene la pestaña "Cursos y Secciones". Para el docente
         #("Mis Secciones") NO reutilizamos ese mismo destino: "Mis Materias" ya muestra su horario semanal completo,
@@ -756,14 +760,17 @@ class ModuloDashboard(QWidget):
         #lleva a "Mis Estudiantes" con el filtro de Curso/Sección abierto de una vez: para un docente, "ver sus
         #secciones" es, en la práctica, ver quién está en cada una.
         self._al_click_secciones= lambda: self._ir_a_modulo("Materias")
+        #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
         self._al_click_secciones_docente= lambda: self._ir_a_modulo("Mis Estudiantes", pestana="secciones")
         self.tarjeta_secciones= TarjetaIndicador(EMOJI_SECCIONES_GRUPOS, "Secciones/Grupos", "#F59E0B",
                                                     al_click= self._al_click_secciones)
         self.tarjeta_asistencia_hoy= TarjetaIndicador("✅", "Asistencia Hoy", "#10B981",
                                                          sufijo= "%", decimales=1,
+                                                         #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                                                          al_click= lambda: self._ir_a_modulo("Asistencia"))
         self.tarjeta_riesgo= TarjetaIndicador(EMOJI_ESTUDIANTE_RIESGO, "Estudiantes en Riesgo", "#EF4444",
                                                 invertir_tendencia= True,
+                                                #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
                                                 al_click= lambda: self._ir_a_modulo(
                                                     "Reportes", pestana="riesgo"))
         self._tarjetas= [self.tarjeta_estudiantes, self.tarjeta_profesores, self.tarjeta_materias,
@@ -1115,10 +1122,12 @@ class ModuloDashboard(QWidget):
         #refresco (es una consulta barata: _tipo_institucion ya cachea con try/except) y no solo cuando cambia el modo
         #docente/institucional.
         if restringido:
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             self.tarjeta_materias._al_click= lambda: self._ir_a_modulo("Materias")
         elif self._es_politecnico_activo() and self._puede_elegir_modulos_tecnicos():
             self.tarjeta_materias._al_click= self._mostrar_selector_materias_modulos
         else:
+            #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
             self.tarjeta_materias._al_click= lambda: self._ir_a_modulo("Materias")
         self.tarjeta_materias.setCursor(Qt.CursorShape.PointingHandCursor)
 

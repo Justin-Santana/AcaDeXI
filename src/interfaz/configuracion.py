@@ -2033,11 +2033,13 @@ class ModuloConfiguracion(QWidget):
 
         self.btn_color_banda_secundaria= QPushButton()
         self.btn_color_banda_secundaria.setToolTip("Color de la banda de título del Boletín de Secundaria")
+        #elige el color de la banda del boletín de Secundaria
         self.btn_color_banda_secundaria.clicked.connect(lambda: self._elegir_color_boletin("Secundaria"))
         form_boletin.addRow("Color del Boletín — Secundaria:", self.btn_color_banda_secundaria)
 
         self.btn_color_banda_primaria= QPushButton()
         self.btn_color_banda_primaria.setToolTip("Color de la banda de título del Informe de Aprendizaje de Primaria")
+        #elige el color de la banda del boletín de Primaria
         self.btn_color_banda_primaria.clicked.connect(lambda: self._elegir_color_boletin("Primaria"))
         form_boletin.addRow("Color del Informe — Primaria:", self.btn_color_banda_primaria)
 
