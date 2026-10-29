@@ -1640,6 +1640,7 @@ class ModuloConfiguracion(QWidget):
             titulo= self.tabs.tabText(i).split(" ", 1)[-1]  #sin el emoji
             #Lambda: idx se fija por defecto con el índice i de esta pestaña; el atajo salta a ella.
             registrar_atajo(self, self.main_window, f"Ctrl+{i + 1}",
+                             #el valor por defecto fija la clave de esta vuelta del bucle; si no, todos usarían la última
                              f"Ir a {titulo}", lambda idx=i: self._ir_a_pestana(idx))
 
     def _ir_a_pestana(self, indice):
@@ -2723,6 +2724,7 @@ class ModuloConfiguracion(QWidget):
         btn_detalle_usuario= agregar_boton_detalle(
             fila_botones, self.tabla_usuarios, self, titulo="Detalle del Usuario")
         btn_detalle_usuario.setVisible(False)
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_usuarios.doubleClicked.connect(lambda *_: btn_detalle_usuario.click())
 
         fila_botones.addStretch()
@@ -3577,6 +3579,7 @@ class ModuloConfiguracion(QWidget):
         fila_botones_backups= QHBoxLayout()
         btn_detalle_backup= agregar_boton_detalle(
             fila_botones_backups, self.tabla_backups, self, titulo="Detalle de la Copia de Seguridad")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_backups.doubleClicked.connect(lambda *_: btn_detalle_backup.click())
         fila_botones_backups.addStretch()
         t_historial.contenido.addLayout(fila_botones_backups)
@@ -4258,6 +4261,7 @@ class ModuloConfiguracion(QWidget):
         fila_botones_auditoria= QHBoxLayout()
         btn_detalle_auditoria= agregar_boton_detalle(
             fila_botones_auditoria, self.tabla_auditoria, self, titulo="Detalle del Registro de Auditoría")
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
         self.tabla_auditoria.doubleClicked.connect(lambda *_: btn_detalle_auditoria.click())
         fila_botones_auditoria.addStretch()
         t_bitacora.contenido.addLayout(fila_botones_auditoria)
