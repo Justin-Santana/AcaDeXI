@@ -762,9 +762,9 @@ class ModuloBancoTareas(QWidget):
         self.chip_contador.setObjectName("ChipContador")
         cabecera_layout.addWidget(self.chip_contador, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self.chip_entregas= QLabel("0 entregas")
-        self.chip_entregas.setObjectName("ChipContador")
-        cabecera_layout.addWidget(self.chip_entregas, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.lbl_chip_entregas= QLabel("0 entregas")
+        self.lbl_chip_entregas.setObjectName("ChipContador")
+        cabecera_layout.addWidget(self.lbl_chip_entregas, 0, Qt.AlignmentFlag.AlignVCenter)
 
         disposicion.addWidget(self.frame_cabecera)
 
@@ -891,20 +891,20 @@ class ModuloBancoTareas(QWidget):
         for _combo in (self.combo_materia, self.combo_categoria, self.combo_periodo):
             _combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             _combo.setMinimumContentsLength(18)
-        self.date_asignacion= QDateEdit(calendarPopup=True)
-        self.date_asignacion.setDate(QDate.currentDate())
-        self.date_entrega= QDateEdit(calendarPopup=True)
-        self.date_entrega.setDate(QDate.currentDate().addDays(7))
-        aplicar_formato_widget_fecha(self.date_asignacion, self.main_window)
-        aplicar_formato_widget_fecha(self.date_entrega, self.main_window)
+        self.in_date_asignacion= QDateEdit(calendarPopup=True)
+        self.in_date_asignacion.setDate(QDate.currentDate())
+        self.in_date_entrega= QDateEdit(calendarPopup=True)
+        self.in_date_entrega.setDate(QDate.currentDate().addDays(7))
+        aplicar_formato_widget_fecha(self.in_date_asignacion, self.main_window)
+        aplicar_formato_widget_fecha(self.in_date_entrega, self.main_window)
         self.spin_peso= QDoubleSpinBox()
         self.spin_peso.setRange(0, 100)
         self.spin_peso.setSuffix(" %")
         self.spin_peso.setToolTip("Peso sugerido de esta tarea en el cálculo de la nota final")
-        self.spin_valor_max= QDoubleSpinBox()
-        self.spin_valor_max.setRange(1, 1000)
-        self.spin_valor_max.setValue(100)
-        self.spin_valor_max.setToolTip("Valor o puntaje máximo que puede obtener un estudiante en esta tarea")
+        self.in_spin_valor_max= QDoubleSpinBox()
+        self.in_spin_valor_max.setRange(1, 1000)
+        self.in_spin_valor_max.setValue(100)
+        self.in_spin_valor_max.setToolTip("Valor o puntaje máximo que puede obtener un estudiante en esta tarea")
         self.combo_estado_tarea= QComboBox()
         self.combo_estado_tarea.addItems(ESTADOS_TAREA)
         conectar_tooltip_seleccion(self.combo_estado_tarea, "Estado de la tarea: Activa (visible) o Archivada")
@@ -994,13 +994,13 @@ class ModuloBancoTareas(QWidget):
         form.addWidget(QLabel("Periodo:"), 1, 2)
         form.addWidget(self.combo_periodo, 1, 3)
         form.addWidget(QLabel("Fecha asignación:"), 2, 0)
-        form.addWidget(self.date_asignacion, 2, 1)
+        form.addWidget(self.in_date_asignacion, 2, 1)
         form.addWidget(QLabel("Fecha entrega:"), 2, 2)
-        form.addWidget(self.date_entrega, 2, 3)
+        form.addWidget(self.in_date_entrega, 2, 3)
         form.addWidget(QLabel("Peso sugerido:"), 3, 0)
         form.addWidget(self.spin_peso, 3, 1)
         form.addWidget(QLabel("Valor máximo:"), 3, 2)
-        form.addWidget(self.spin_valor_max, 3, 3)
+        form.addWidget(self.in_spin_valor_max, 3, 3)
         form.addWidget(QLabel("Estado:"), 4, 0)
         form.addWidget(self.combo_estado_tarea, 4, 1)
         form.addWidget(self.lbl_competencias_tarea, 4, 2)
@@ -1468,9 +1468,9 @@ class ModuloBancoTareas(QWidget):
             materia_id, self.combo_periodo.currentData(), profesor_id,
             self.in_titulo.text().strip(), self.in_descripcion.toPlainText().strip(),
             self.combo_categoria.currentText(),
-            self.date_asignacion.date().toString("yyyy-MM-dd"),
-            self.date_entrega.date().toString("yyyy-MM-dd"),
-            self.spin_peso.value(), self.spin_valor_max.value(), self.combo_estado_tarea.currentText(),
+            self.in_date_asignacion.date().toString("yyyy-MM-dd"),
+            self.in_date_entrega.date().toString("yyyy-MM-dd"),
+            self.spin_peso.value(), self.in_spin_valor_max.value(), self.combo_estado_tarea.currentText(),
             competencias_txt, curso_id_tarea, seccion_id_tarea, especialidad_id_tarea, carrera_id_tarea,
         )
         try:
@@ -1679,10 +1679,10 @@ class ModuloBancoTareas(QWidget):
         self.in_titulo.clear()
         self.in_descripcion.clear()
         self.combo_categoria.setCurrentIndex(0)
-        self.date_asignacion.setDate(QDate.currentDate())
-        self.date_entrega.setDate(QDate.currentDate().addDays(7))
+        self.in_date_asignacion.setDate(QDate.currentDate())
+        self.in_date_entrega.setDate(QDate.currentDate().addDays(7))
         self.spin_peso.setValue(0)
-        self.spin_valor_max.setValue(100)
+        self.in_spin_valor_max.setValue(100)
         self.combo_estado_tarea.setCurrentIndex(0)
         self._competencias_tarea_seleccionadas= []
         self._actualizar_boton_competencias()
@@ -1733,11 +1733,11 @@ class ModuloBancoTareas(QWidget):
         idxp= self.combo_periodo.findData(f["periodo_id"])
         self.combo_periodo.setCurrentIndex(idxp if idxp >= 0 else 0)
         if f["fecha_asignacion"]:
-            self.date_asignacion.setDate(QDate.fromString(f["fecha_asignacion"], "yyyy-MM-dd"))
+            self.in_date_asignacion.setDate(QDate.fromString(f["fecha_asignacion"], "yyyy-MM-dd"))
         if f["fecha_entrega"]:
-            self.date_entrega.setDate(QDate.fromString(f["fecha_entrega"], "yyyy-MM-dd"))
+            self.in_date_entrega.setDate(QDate.fromString(f["fecha_entrega"], "yyyy-MM-dd"))
         self.spin_peso.setValue(f["peso"] or 0)
-        self.spin_valor_max.setValue(f["valor_maximo"] or 100)
+        self.in_spin_valor_max.setValue(f["valor_maximo"] or 100)
         self.combo_estado_tarea.setCurrentText(f["estado"] or "Activa")
         try:
 
@@ -2934,7 +2934,7 @@ class ModuloBancoTareas(QWidget):
                 conteo[estado] += 1
         self._conteo_entregas_actual= conteo
         total_entregadas= conteo.get("Entregada", 0)
-        self.chip_entregas.setText(f"✅ {total_entregadas} entregada{'s' if total_entregadas != 1 else ''}")
+        self.lbl_chip_entregas.setText(f"✅ {total_entregadas} entregada{'s' if total_entregadas != 1 else ''}")
         self.barra_entregas.establecer_valores(conteo)
         for clave, lbl in self.etiquetas_leyenda_entregas.items():
             lbl.establecer_valor(conteo.get(clave, 0))
@@ -3180,7 +3180,7 @@ class ModuloBancoTareas(QWidget):
                 background: transparent;
             }}
         """)
-        for chip in (self.chip_contador, self.chip_entregas):
+        for chip in (self.chip_contador, self.lbl_chip_entregas):
             chip.setStyleSheet("""
                 QLabel#ChipContador {
                     background-color: rgba(255, 255, 255, 40);

@@ -1095,15 +1095,15 @@ class PanelAlarmas(QWidget):
         form.addRow("Título:", self.in_titulo_rec)
 
         fila_fh= QHBoxLayout()
-        self.date_rec= QDateEdit(calendarPopup=True)
-        aplicar_formato_widget_fecha(self.date_rec, self.main_window)
-        self.date_rec.setToolTip("Fecha en que debe sonar (o el día base si es semanal).")
-        self.time_rec= QTimeEdit()
-        self.time_rec.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        aplicar_formato_widget_hora(self.time_rec, self.main_window)
-        self.time_rec.setToolTip("Hora exacta en que debe sonar.")
-        fila_fh.addWidget(self.date_rec)
-        fila_fh.addWidget(self.time_rec)
+        self.in_date_rec= QDateEdit(calendarPopup=True)
+        aplicar_formato_widget_fecha(self.in_date_rec, self.main_window)
+        self.in_date_rec.setToolTip("Fecha en que debe sonar (o el día base si es semanal).")
+        self.in_time_rec= QTimeEdit()
+        self.in_time_rec.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        aplicar_formato_widget_hora(self.in_time_rec, self.main_window)
+        self.in_time_rec.setToolTip("Hora exacta en que debe sonar.")
+        fila_fh.addWidget(self.in_date_rec)
+        fila_fh.addWidget(self.in_time_rec)
         form.addRow("Fecha y hora:", fila_fh)
 
         self.combo_repetir= QComboBox()
@@ -1143,8 +1143,8 @@ class PanelAlarmas(QWidget):
         if not titulo:
             QMessageBox.warning(self, "Falta el título", "Escribe un título para el recordatorio.")
             return
-        fecha= self.date_rec.date().toString("yyyy-MM-dd")
-        hora= self.time_rec.time().toString("HH:mm")
+        fecha= self.in_date_rec.date().toString("yyyy-MM-dd")
+        hora= self.in_time_rec.time().toString("HH:mm")
         repetir= self.combo_repetir.currentData()
         guardar_recordatorio(self.main_window, self._id_edicion, titulo, fecha, hora, repetir, None, None)
         self._cancelar_edicion()
@@ -1200,9 +1200,9 @@ class PanelAlarmas(QWidget):
         self.in_titulo_rec.setText(r["titulo"])
         y, m, d= [int(x) for x in r["fecha"].split("-")]
         from PySide6.QtCore import QDate, QTime
-        self.date_rec.setDate(QDate(y, m, d))
+        self.in_date_rec.setDate(QDate(y, m, d))
         hh, mm= [int(x) for x in r["hora"].split(":")[:2]]
-        self.time_rec.setTime(QTime(hh, mm))
+        self.in_time_rec.setTime(QTime(hh, mm))
         idx= self.combo_repetir.findData(r["repetir"])
         if idx >= 0:
             self.combo_repetir.setCurrentIndex(idx)

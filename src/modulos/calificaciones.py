@@ -1463,11 +1463,11 @@ class DialogoRecuperacionPedagogica(QDialog):
         disposicion.addLayout(form)
 
         disposicion.addWidget(QLabel("Actividades realizadas durante la RP:"))
-        self.actividades= QTextEdit()
-        limitar_campo_texto(self.actividades, 5000)
-        self.actividades.setPlainText(datos_actuales.get("actividades_realizadas") or "")
-        self.actividades.setMaximumHeight(80)
-        disposicion.addWidget(self.actividades)
+        self.in_actividades= QTextEdit()
+        limitar_campo_texto(self.in_actividades, 5000)
+        self.in_actividades.setPlainText(datos_actuales.get("actividades_realizadas") or "")
+        self.in_actividades.setMaximumHeight(80)
+        disposicion.addWidget(self.in_actividades)
 
         disposicion.addWidget(QLabel("Observación del docente:"))
         self.observacion= QTextEdit()
@@ -1489,7 +1489,7 @@ class DialogoRecuperacionPedagogica(QDialog):
             "fecha": self.fecha.date().toString("yyyy-MM-dd"),
             "docente_responsable": self.docente.text().strip(),
             "nota_rp": self.nota.value(),
-            "actividades_realizadas": self.actividades.toPlainText().strip(),
+            "actividades_realizadas": self.in_actividades.toPlainText().strip(),
             "observacion": self.observacion.toPlainText().strip(),
         }
 
@@ -1580,13 +1580,13 @@ class DialogoIndicadoresLogro(QDialog):
         self.in_descripcion= QLineEdit()
         self.in_descripcion.setPlaceholderText("Descripción del indicador")
         limitar_campo_texto(self.in_descripcion, 300)
-        self.spin_orden= QSpinBox()
-        self.spin_orden.setRange(1, 99)
-        self.spin_orden.setValue(1)
+        self.in_spin_orden= QSpinBox()
+        self.in_spin_orden.setRange(1, 99)
+        self.in_spin_orden.setValue(1)
         form.addWidget(QLabel("Código:"), 0, 0)
         form.addWidget(self.in_codigo, 0, 1)
         form.addWidget(QLabel("Orden:"), 0, 2)
-        form.addWidget(self.spin_orden, 0, 3)
+        form.addWidget(self.in_spin_orden, 0, 3)
         form.addWidget(self.in_descripcion, 1, 0, 1, 4)
         disposicion.addLayout(form)
 
@@ -1622,7 +1622,7 @@ class DialogoIndicadoresLogro(QDialog):
             self.btn_eliminar.setEnabled(False)
             self.in_codigo.setEnabled(False)
             self.in_descripcion.setEnabled(False)
-            self.spin_orden.setEnabled(False)
+            self.in_spin_orden.setEnabled(False)
 
         self._cargar_tabla()
         centrar_y_al_frente(self, parent)
@@ -1644,7 +1644,7 @@ class DialogoIndicadoresLogro(QDialog):
                 self.tabla.setItem(i, 0, item_cod)
                 self.tabla.setItem(i, 1, QTableWidgetItem(f["descripcion"]))
                 self.tabla.setItem(i, 2, QTableWidgetItem(str(f["orden"])))
-        self.spin_orden.setValue(len(filas) + 1)
+        self.in_spin_orden.setValue(len(filas) + 1)
 
     def _guardar(self):
 
@@ -1660,10 +1660,10 @@ class DialogoIndicadoresLogro(QDialog):
             if self.id_edicion is None:
                 c.execute("""INSERT INTO indicadores_logro (competencia_id, codigo, descripcion, orden)
                              VALUES (?,?,?,?)""",
-                          (self.competencia_id, codigo, descripcion, self.spin_orden.value()))
+                          (self.competencia_id, codigo, descripcion, self.in_spin_orden.value()))
             else:
                 c.execute("UPDATE indicadores_logro SET codigo=?, descripcion=?, orden=? WHERE id=?",
-                          (codigo, descripcion, self.spin_orden.value(), self.id_edicion))
+                          (codigo, descripcion, self.in_spin_orden.value(), self.id_edicion))
             conn.commit()
         except Exception:
             conn.rollback()
@@ -1687,7 +1687,7 @@ class DialogoIndicadoresLogro(QDialog):
         self.id_edicion= self.tabla.item(fila, 0).data(Qt.ItemDataRole.UserRole)
         self.in_codigo.setText(self.tabla.item(fila, 0).text())
         self.in_descripcion.setText(self.tabla.item(fila, 1).text())
-        self.spin_orden.setValue(int(self.tabla.item(fila, 2).text()))
+        self.in_spin_orden.setValue(int(self.tabla.item(fila, 2).text()))
         self.btn_guardar.setText("Actualizar Indicador")
         activar_modo_edicion(self.in_codigo,
                              f"Editando indicador: {self.in_descripcion.text()}")
@@ -6030,13 +6030,13 @@ class ModuloCalificaciones(QWidget):
         ajustar_combo_ancho_seguro(self.combo_fundamental_ce)
         conectar_tooltip_seleccion(self.combo_fundamental_ce,
             "Competencia Fundamental (RD) a la que se mapea esta competencia específica")
-        self.spin_orden_ce= QSpinBox()
-        self.spin_orden_ce.setRange(1, 99)
-        self.spin_orden_ce.setValue(1)
+        self.in_spin_orden_ce= QSpinBox()
+        self.in_spin_orden_ce.setRange(1, 99)
+        self.in_spin_orden_ce.setValue(1)
         fila_form.addWidget(QLabel("Código:"), 0, 0)
         fila_form.addWidget(self.in_codigo_ce, 0, 1)
         fila_form.addWidget(QLabel("Orden:"), 0, 2)
-        fila_form.addWidget(self.spin_orden_ce, 0, 3)
+        fila_form.addWidget(self.in_spin_orden_ce, 0, 3)
         fila_form.addWidget(self.in_descripcion_ce, 1, 0, 1, 2)
         fila_form.addWidget(QLabel("Mapea a Competencia Fundamental:"), 1, 2)
         fila_form.addWidget(self.combo_fundamental_ce, 1, 3)
@@ -6134,7 +6134,7 @@ class ModuloCalificaciones(QWidget):
         self.in_codigo_ce.clear()
         self.in_descripcion_ce.clear()
         self.combo_fundamental_ce.setCurrentIndex(0)
-        self.spin_orden_ce.setValue((self.tabla_curriculo.rowCount() or 0) + 1)
+        self.in_spin_orden_ce.setValue((self.tabla_curriculo.rowCount() or 0) + 1)
         desactivar_modo_edicion(self.in_codigo_ce)
 
     def _guardar_competencia_curriculo(self):
@@ -6152,7 +6152,7 @@ class ModuloCalificaciones(QWidget):
                              "Selecciona materia y grado, y completa código y descripción.", self)
             return
         fundamental= self.combo_fundamental_ce.currentData() or ""
-        orden= self.spin_orden_ce.value()
+        orden= self.in_spin_orden_ce.value()
         conn= obtener_conexion()
         c= conn.cursor()
         try:
@@ -6199,7 +6199,7 @@ class ModuloCalificaciones(QWidget):
         self.in_descripcion_ce.setText(comp["descripcion"])
         idx_fund= self.combo_fundamental_ce.findData(comp["competencia_fundamental"] or "")
         self.combo_fundamental_ce.setCurrentIndex(idx_fund if idx_fund >= 0 else 0)
-        self.spin_orden_ce.setValue(comp["orden"] or 1)
+        self.in_spin_orden_ce.setValue(comp["orden"] or 1)
         activar_modo_edicion(self.in_codigo_ce,
                              f"Editando competencia: {comp['codigo'] or ''}")
 

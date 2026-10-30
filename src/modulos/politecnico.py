@@ -555,13 +555,13 @@ class ModuloPolitecnico(QWidget):
         self.chip_especialidades.setObjectName("ChipResumenPolitecnico")
         cab.addWidget(self.chip_especialidades, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self.chip_empresas= QLabel("0 empresas aliadas")
-        self.chip_empresas.setObjectName("ChipResumenPolitecnico")
-        cab.addWidget(self.chip_empresas, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.lbl_chip_empresas= QLabel("0 empresas aliadas")
+        self.lbl_chip_empresas.setObjectName("ChipResumenPolitecnico")
+        cab.addWidget(self.lbl_chip_empresas, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self.chip_pasantias= QLabel("0 pasantías en curso")
-        self.chip_pasantias.setObjectName("ChipResumenPolitecnico")
-        cab.addWidget(self.chip_pasantias, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.lbl_chip_pasantias= QLabel("0 pasantías en curso")
+        self.lbl_chip_pasantias.setObjectName("ChipResumenPolitecnico")
+        cab.addWidget(self.lbl_chip_pasantias, 0, Qt.AlignmentFlag.AlignVCenter)
 
         return self.frame_cabecera
 
@@ -1149,42 +1149,42 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_modulo= TarjetaSeccion("✏", "Nuevo Módulo Técnico")
         form= QGridLayout()
         form.setSpacing(10)
-        self.mt_codigo= QLineEdit()
-        self.mt_codigo.setPlaceholderText("Código (autogenerado)")
-        limitar_campo_texto(self.mt_codigo, 300)
-        self.mt_codigo.setReadOnly(True)
-        self.mt_codigo.setToolTip(
+        self.in_mt_codigo= QLineEdit()
+        self.in_mt_codigo.setPlaceholderText("Código (autogenerado)")
+        limitar_campo_texto(self.in_mt_codigo, 300)
+        self.in_mt_codigo.setReadOnly(True)
+        self.in_mt_codigo.setToolTip(
             "Autogenerado. Clic derecho para escribirlo manualmente o para "
             "volver a autogenerado.")
-        self.mt_codigo.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.mt_codigo.customContextMenuRequested.connect(self._menu_contextual_codigo_modulo)
+        self.in_mt_codigo.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.in_mt_codigo.customContextMenuRequested.connect(self._menu_contextual_codigo_modulo)
         self._codigo_modulo_manual= False
-        self.mt_nombre= QLineEdit()
-        self.mt_nombre.setPlaceholderText("Nombre del Módulo Técnico")
-        limitar_campo_texto(self.mt_nombre, 300)
-        self.mt_nombre.textChanged.connect(self._previsualizar_codigo_modulo)
-        self.mt_creditos= QSpinBox()
-        self.mt_creditos.setRange(0, 20)
-        self.mt_creditos.setToolTip("Créditos académicos del módulo técnico dentro del plan de estudios.")
+        self.in_mt_nombre= QLineEdit()
+        self.in_mt_nombre.setPlaceholderText("Nombre del Módulo Técnico")
+        limitar_campo_texto(self.in_mt_nombre, 300)
+        self.in_mt_nombre.textChanged.connect(self._previsualizar_codigo_modulo)
+        self.in_mt_creditos= QSpinBox()
+        self.in_mt_creditos.setRange(0, 20)
+        self.in_mt_creditos.setToolTip("Créditos académicos del módulo técnico dentro del plan de estudios.")
         self.mt_especialidad= QComboBox()
         conectar_tooltip_seleccion(self.mt_especialidad, "Área técnica a la que pertenece este módulo (obligatorio).")
-        self.mt_profesor= QComboBox()
-        conectar_tooltip_seleccion(self.mt_profesor,
+        self.combo_mt_profesor= QComboBox()
+        conectar_tooltip_seleccion(self.combo_mt_profesor,
             "Profesor titular del módulo técnico. 'Sin asignar' = aún no tiene profesor titular")
-        self.mt_estado= QComboBox()
-        self.mt_estado.addItems(["Activa", "Inactiva"])
-        conectar_tooltip_seleccion(self.mt_estado, "Estado del módulo: Activa = disponible para horarios y matrícula")
-        self.mt_curso= QComboBox()
-        conectar_tooltip_seleccion(self.mt_curso,
+        self.combo_mt_estado= QComboBox()
+        self.combo_mt_estado.addItems(["Activa", "Inactiva"])
+        conectar_tooltip_seleccion(self.combo_mt_estado, "Estado del módulo: Activa = disponible para horarios y matrícula")
+        self.combo_mt_curso= QComboBox()
+        conectar_tooltip_seleccion(self.combo_mt_curso,
             "Curso/Grado al que se vincula este módulo (OPCIONAL). Si lo dejas en 'Sin curso específico', "
             "el módulo puede asignarse a cualquier curso de su área. Solo cursos de Secundaria - Segundo Ciclo.")
-        form.addWidget(self.mt_codigo, 0, 0)
-        form.addWidget(self.mt_nombre, 0, 1)
-        form.addWidget(self.mt_creditos, 0, 2)
+        form.addWidget(self.in_mt_codigo, 0, 0)
+        form.addWidget(self.in_mt_nombre, 0, 1)
+        form.addWidget(self.in_mt_creditos, 0, 2)
         form.addWidget(self.mt_especialidad, 1, 0)
-        form.addWidget(self.mt_profesor, 1, 1)
-        form.addWidget(self.mt_estado, 1, 2)
-        form.addWidget(self.mt_curso, 2, 0)
+        form.addWidget(self.combo_mt_profesor, 1, 1)
+        form.addWidget(self.combo_mt_estado, 1, 2)
+        form.addWidget(self.combo_mt_curso, 2, 0)
         btn_guardar= QPushButton("Guardar Módulo Técnico")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -1293,10 +1293,10 @@ class ModuloPolitecnico(QWidget):
 
         if self._codigo_modulo_manual:
             return
-        if not self.mt_nombre.text().strip():
-            self.mt_codigo.clear()
+        if not self.in_mt_nombre.text().strip():
+            self.in_mt_codigo.clear()
             return
-        self.mt_codigo.setText(self._generar_codigo_modulo(excluir_id=self.id_edicion_modulo_tecnico))
+        self.in_mt_codigo.setText(self._generar_codigo_modulo(excluir_id=self.id_edicion_modulo_tecnico))
 
     #Clic derecho sobre el campo "Código" del módulo técnico: alterna
     #entre escribirlo a mano y dejarlo autogenerado de nuevo -mismo
@@ -1308,20 +1308,20 @@ class ModuloPolitecnico(QWidget):
             accion= menu.addAction(icono_emoji("🔄"), "Volver a autogenerado")
         else:
             accion= menu.addAction(icono_emoji("✏"), "Escribir código manualmente")
-        if menu.exec(self.mt_codigo.mapToGlobal(pos)) == accion:
+        if menu.exec(self.in_mt_codigo.mapToGlobal(pos)) == accion:
             if self._codigo_modulo_manual:
                 self._codigo_modulo_manual= False
-                self.mt_codigo.setReadOnly(True)
+                self.in_mt_codigo.setReadOnly(True)
                 self._previsualizar_codigo_modulo()
             else:
                 self._codigo_modulo_manual= True
-                self.mt_codigo.setReadOnly(False)
-                self.mt_codigo.setFocus()
-                self.mt_codigo.selectAll()
+                self.in_mt_codigo.setReadOnly(False)
+                self.in_mt_codigo.setFocus()
+                self.in_mt_codigo.selectAll()
 
     def _generar_codigo_modulo(self, excluir_id=None):
 
-        nombre= self.mt_nombre.text().strip()
+        nombre= self.in_mt_nombre.text().strip()
         base= "".join(w[0] for w in nombre.upper().split()[:3]) or "MT"
         conn= obtener_conexion()
         c= conn.cursor()
@@ -1339,21 +1339,21 @@ class ModuloPolitecnico(QWidget):
     def _limpiar_modulo_tecnico(self):
 
         self.id_edicion_modulo_tecnico= None
-        self.mt_codigo.clear()
+        self.in_mt_codigo.clear()
         self._codigo_modulo_manual= False
-        self.mt_codigo.setReadOnly(True)
-        self.mt_nombre.clear()
-        self.mt_creditos.setValue(0)
+        self.in_mt_codigo.setReadOnly(True)
+        self.in_mt_nombre.clear()
+        self.in_mt_creditos.setValue(0)
         self.mt_especialidad.setCurrentIndex(0)
-        self.mt_profesor.setCurrentIndex(0)
-        self.mt_estado.setCurrentIndex(0)
-        self.mt_curso.setCurrentIndex(0)
+        self.combo_mt_profesor.setCurrentIndex(0)
+        self.combo_mt_estado.setCurrentIndex(0)
+        self.combo_mt_curso.setCurrentIndex(0)
         self.tabla_modulos_tecnicos.clearSelection()
-        desactivar_modo_edicion(self.mt_nombre)
+        desactivar_modo_edicion(self.in_mt_nombre)
 
     def _guardar_modulo_tecnico(self):
 
-        nombre= self.mt_nombre.text().strip()
+        nombre= self.in_mt_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
             return
@@ -1367,16 +1367,16 @@ class ModuloPolitecnico(QWidget):
                              f"Ya existe un módulo técnico llamado «{nombre}».", self)
             self._destello(self.tarjeta_form_modulo, "#EF4444")
             return
-        grado_id= self.mt_curso.currentData()
+        grado_id= self.combo_mt_curso.currentData()
         if grado_id is not None and not curso_admite_componente_tecnico(grado_id):
             mostrar_mensaje("advertencia", "Combinación inválida",
                              "Los módulos técnicos solo pueden vincularse a cursos de Secundaria - Segundo Ciclo.", self)
             self._destello(self.tarjeta_form_modulo, "#EF4444")
             return
-        if not self.mt_codigo.text().strip():
-            self.mt_codigo.setText(self._generar_codigo_modulo(excluir_id=self.id_edicion_modulo_tecnico))
-        datos= (self.mt_codigo.text().strip(), nombre, self.mt_creditos.value(),
-                 self.mt_especialidad.currentData(), self.mt_profesor.currentData(), self.mt_estado.currentText(),
+        if not self.in_mt_codigo.text().strip():
+            self.in_mt_codigo.setText(self._generar_codigo_modulo(excluir_id=self.id_edicion_modulo_tecnico))
+        datos= (self.in_mt_codigo.text().strip(), nombre, self.in_mt_creditos.value(),
+                 self.mt_especialidad.currentData(), self.combo_mt_profesor.currentData(), self.combo_mt_estado.currentText(),
                  "Técnica (RA)", grado_id)
         conn= obtener_conexion()
         try:
@@ -1420,25 +1420,25 @@ class ModuloPolitecnico(QWidget):
         if not f:
             return
         self.id_edicion_modulo_tecnico= f["id"]
-        self.mt_codigo.setText(f["codigo"] or "")
+        self.in_mt_codigo.setText(f["codigo"] or "")
         #Al cargar un módulo técnico ya existente para editarlo, el código deja de ser de solo lectura: es la otra
         #puerta de entrada (junto con el clic derecho) para poder escribirlo a mano.
         self._codigo_modulo_manual= True
-        self.mt_codigo.setReadOnly(False)
-        self.mt_nombre.blockSignals(True)
-        self.mt_nombre.setText(f["nombre"] or "")
-        self.mt_nombre.blockSignals(False)
-        self.mt_creditos.setValue(f["creditos"] or 0)
+        self.in_mt_codigo.setReadOnly(False)
+        self.in_mt_nombre.blockSignals(True)
+        self.in_mt_nombre.setText(f["nombre"] or "")
+        self.in_mt_nombre.blockSignals(False)
+        self.in_mt_creditos.setValue(f["creditos"] or 0)
         idx= self.mt_especialidad.findData(f["especialidad_id"])
         self.mt_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
-        idx2= self.mt_profesor.findData(f["profesor_id"])
-        self.mt_profesor.setCurrentIndex(idx2 if idx2 >= 0 else 0)
-        idx_curso= self.mt_curso.findData(f["grado_id"])
-        self.mt_curso.setCurrentIndex(idx_curso if idx_curso >= 0 else 0)
-        self.mt_estado.setCurrentText(f["estado"] or "Activa")
+        idx2= self.combo_mt_profesor.findData(f["profesor_id"])
+        self.combo_mt_profesor.setCurrentIndex(idx2 if idx2 >= 0 else 0)
+        idx_curso= self.combo_mt_curso.findData(f["grado_id"])
+        self.combo_mt_curso.setCurrentIndex(idx_curso if idx_curso >= 0 else 0)
+        self.combo_mt_estado.setCurrentText(f["estado"] or "Activa")
         if hasattr(self, "panel_form_modulo"):
             self.panel_form_modulo.expandir(True, animar=False)  #de golpe al editar
-        activar_modo_edicion(self.mt_nombre, f"Editando módulo técnico: {f['nombre'] or ''}")
+        activar_modo_edicion(self.in_mt_nombre, f"Editando módulo técnico: {f['nombre'] or ''}")
 
     def _eliminar_modulo_tecnico(self):
 
@@ -1495,7 +1495,7 @@ class ModuloPolitecnico(QWidget):
         c= conn.cursor()
         self.mt_especialidad.clear()
         self.mt_especialidad.addItem("— Selecciona un área técnica —", None)
-        poblar_combo_curso_opcional(self.mt_curso, solo_con_componente_tecnico=True)
+        poblar_combo_curso_opcional(self.combo_mt_curso, solo_con_componente_tecnico=True)
         if hasattr(self, "mt_filtro_especialidad"):
             actual= self.mt_filtro_especialidad.currentData()
             self.mt_filtro_especialidad.blockSignals(True)
@@ -1510,11 +1510,11 @@ class ModuloPolitecnico(QWidget):
             idx= self.mt_filtro_especialidad.findData(actual)
             self.mt_filtro_especialidad.setCurrentIndex(idx if idx >= 0 else 0)
             self.mt_filtro_especialidad.blockSignals(False)
-        self.mt_profesor.clear()
-        self.mt_profesor.addItem("Sin asignar", None)
+        self.combo_mt_profesor.clear()
+        self.combo_mt_profesor.addItem("Sin asignar", None)
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
         for fila in c.fetchall():
-            self.mt_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
+            self.combo_mt_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
     def _cargar_modulos_tecnicos(self):
@@ -1603,26 +1603,26 @@ class ModuloPolitecnico(QWidget):
         conectar_tooltip_seleccion(self.at_modulo, "Módulo Técnico al que se asigna este profesor")
         #Igual que en Horarios/Asignaciones de materias.py: primero se elige el Grado/Curso (opcional) y eso acota las
         #opciones de Sección.
-        self.at_curso= QComboBox()
-        self.at_curso.currentIndexChanged.connect(self._al_cambiar_curso_asignacion_tecnica)
-        self.at_seccion= QComboBox()
-        self.at_profesor= QComboBox()
-        conectar_tooltip_seleccion(self.at_profesor, "Profesor que se asigna al módulo técnico")
-        self.at_tipo= QComboBox()
-        self.at_tipo.addItems(["Titular", "Auxiliar", "Suplente", "Co-titular", "Practicante"])
-        conectar_tooltip_seleccion(self.at_tipo,
+        self.combo_at_curso= QComboBox()
+        self.combo_at_curso.currentIndexChanged.connect(self._al_cambiar_curso_asignacion_tecnica)
+        self.combo_at_seccion= QComboBox()
+        self.combo_at_profesor= QComboBox()
+        conectar_tooltip_seleccion(self.combo_at_profesor, "Profesor que se asigna al módulo técnico")
+        self.combo_at_tipo= QComboBox()
+        self.combo_at_tipo.addItems(["Titular", "Auxiliar", "Suplente", "Co-titular", "Practicante"])
+        conectar_tooltip_seleccion(self.combo_at_tipo,
             "'Titular' aquí significa titular DE ESA SECCIÓN/CURSO en particular — útil cuando "
             "varios profesores dan el mismo módulo, cada uno en un curso distinto.")
         form.addWidget(QLabel("Módulo Técnico:"), 0, 0)
         form.addWidget(self.at_modulo, 0, 1)
         form.addWidget(QLabel("Profesor:"), 0, 2)
-        form.addWidget(self.at_profesor, 0, 3)
+        form.addWidget(self.combo_at_profesor, 0, 3)
         form.addWidget(QLabel("Grado/Curso (opcional):"), 1, 0)
-        form.addWidget(self.at_curso, 1, 1)
+        form.addWidget(self.combo_at_curso, 1, 1)
         form.addWidget(QLabel("Sección (opcional):"), 1, 2)
-        form.addWidget(self.at_seccion, 1, 3)
+        form.addWidget(self.combo_at_seccion, 1, 3)
         form.addWidget(QLabel("Tipo de asignación:"), 2, 0)
-        form.addWidget(self.at_tipo, 2, 1)
+        form.addWidget(self.combo_at_tipo, 2, 1)
         btn_guardar= QPushButton("Asignar Profesor")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -1767,10 +1767,10 @@ class ModuloPolitecnico(QWidget):
     #solo aparezcan los módulos de esa misma área.
     def _filtro_area_asignacion_tecnica_cambio(self):
 
-        curso_previo= self.at_curso.currentData() if self.at_curso.count() else None
+        curso_previo= self.combo_at_curso.currentData() if self.combo_at_curso.count() else None
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
-        poblar_combo_curso(self.at_curso, incluir_todos=False, seleccion_previa=curso_previo,
+        poblar_combo_curso(self.combo_at_curso, incluir_todos=False, seleccion_previa=curso_previo,
                             secciones_permitidas= permitidas)
         self._al_cambiar_curso_asignacion_tecnica()
         self._cargar_modulos_tecnicos_combo_asignacion()
@@ -1784,7 +1784,7 @@ class ModuloPolitecnico(QWidget):
         modulo_previo= self.at_modulo.currentData() if self.at_modulo.count() else None
         self.at_modulo.blockSignals(True)
         self.at_modulo.clear()
-        grado_id= self.at_curso.currentData() if self.at_curso.count() else None
+        grado_id= self.combo_at_curso.currentData() if self.combo_at_curso.count() else None
         for modulo_id_, nombre_ in modulos_tecnicos_por_area_y_curso(especialidad_id, grado_id):
             self.at_modulo.addItem(nombre_, modulo_id_)
         idx= self.at_modulo.findData(modulo_previo)
@@ -1795,32 +1795,32 @@ class ModuloPolitecnico(QWidget):
 
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
-        cascada_seccion_por_curso(self.at_curso, self.at_seccion, incluir_todas=False,
+        cascada_seccion_por_curso(self.combo_at_curso, self.combo_at_seccion, incluir_todas=False,
                                    secciones_permitidas= permitidas)
         if seccion_id_preseleccionar is not None:
-            idx= self.at_seccion.findData(seccion_id_preseleccionar)
-            self.at_seccion.setCurrentIndex(idx if idx >= 0 else 0)
+            idx= self.combo_at_seccion.findData(seccion_id_preseleccionar)
+            self.combo_at_seccion.setCurrentIndex(idx if idx >= 0 else 0)
         #Al cambiar de curso, los módulos disponibles se acotan a ese curso (y a su área).
         self._cargar_modulos_tecnicos_combo_asignacion()
 
     def _limpiar_asignacion_tecnica(self):
 
         self.at_modulo.setCurrentIndex(0)
-        self.at_curso.setCurrentIndex(0)
-        self.at_seccion.setCurrentIndex(0)
-        self.at_profesor.setCurrentIndex(0)
-        self.at_tipo.setCurrentIndex(0)
+        self.combo_at_curso.setCurrentIndex(0)
+        self.combo_at_seccion.setCurrentIndex(0)
+        self.combo_at_profesor.setCurrentIndex(0)
+        self.combo_at_tipo.setCurrentIndex(0)
         self.tabla_asig_tecnica.clearSelection()
 
     def _guardar_asignacion_tecnica(self):
 
         modulo_id= self.at_modulo.currentData()
-        profesor_id= self.at_profesor.currentData()
+        profesor_id= self.combo_at_profesor.currentData()
         if modulo_id is None or profesor_id is None:
             mostrar_mensaje("advertencia", "Datos incompletos",
                              "Selecciona el módulo técnico y el profesor.", self)
             return
-        seccion_id= self.at_seccion.currentData()
+        seccion_id= self.combo_at_seccion.currentData()
         if seccion_id is not None and seccion_id not in secciones_con_componente_tecnico_valido():
             mostrar_mensaje("advertencia", "Combinación inválida",
                              "La sección elegida no es Secundaria - Segundo Ciclo: no puede tener módulos "
@@ -1841,7 +1841,7 @@ class ModuloPolitecnico(QWidget):
                                  "Este módulo técnico está vinculado a otro curso. Elige una sección de ese mismo curso.", self)
                 self._destello(self.tarjeta_form_asig_tecnica, "#EF4444")
                 return
-        tipo= self.at_tipo.currentText()
+        tipo= self.combo_at_tipo.currentText()
         conn= obtener_conexion()
         try:
 
@@ -1865,7 +1865,7 @@ class ModuloPolitecnico(QWidget):
         finally:
             conn.close()
         registrar_auditoria("Politécnico", "Asignó profesor a módulo técnico", self.main_window.usuario_actual,
-                            f"{self.at_profesor.currentText()} -> {self.at_modulo.currentText()} ({tipo})")
+                            f"{self.combo_at_profesor.currentText()} -> {self.at_modulo.currentText()} ({tipo})")
         self._destello(self.tarjeta_form_asig_tecnica, "#22C55E")
         self._limpiar_asignacion_tecnica()
         self._cargar_asignaciones_tecnicas()
@@ -1916,25 +1916,25 @@ class ModuloPolitecnico(QWidget):
 
         self._cargar_filtro_especialidad_asignacion_tecnica()
 
-        self.at_profesor.clear()
-        self.at_profesor.addItem("Sin asignar", None)
+        self.combo_at_profesor.clear()
+        self.combo_at_profesor.addItem("Sin asignar", None)
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
         for fila in c.fetchall():
-            self.at_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
+            self.combo_at_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
         self._cargar_modulos_tecnicos_combo_asignacion()
 
-        curso_previo= self.at_curso.currentData() if self.at_curso.count() else None
+        curso_previo= self.combo_at_curso.currentData() if self.combo_at_curso.count() else None
         #Solo se ofrecen cursos que académicamente pueden tener componente
         #técnico (Secundaria, no Primer Ciclo — ver puede_tener_componente_tecnico
         #en configuracion.py), Y ADEMÁS, si hay un Área Técnica elegida arriba, solo los cursos de esa área (ver
         #_secciones_de_especialidad_asignacion).
         permitidas= interseccion_opcional(secciones_con_componente_tecnico_valido(),
                                             self._secciones_de_especialidad_asignacion())
-        poblar_combo_curso(self.at_curso, incluir_todos=False, seleccion_previa=curso_previo,
+        poblar_combo_curso(self.combo_at_curso, incluir_todos=False, seleccion_previa=curso_previo,
                             secciones_permitidas= permitidas)
         self._al_cambiar_curso_asignacion_tecnica()
 
@@ -2020,14 +2020,14 @@ class ModuloPolitecnico(QWidget):
         self.tarjeta_form_taller= TarjetaSeccion("🔗", "Vincular Taller/Laboratorio")
         form= QGridLayout()
         form.setSpacing(10)
-        self.t_espacio= QComboBox()
-        conectar_tooltip_seleccion(self.t_espacio, "Taller o laboratorio a vincular con un área técnica")
-        self.t_especialidad= QComboBox()
-        conectar_tooltip_seleccion(self.t_especialidad, "Área técnica a la que pertenece este taller/laboratorio")
+        self.combo_t_espacio= QComboBox()
+        conectar_tooltip_seleccion(self.combo_t_espacio, "Taller o laboratorio a vincular con un área técnica")
+        self.combo_t_especialidad= QComboBox()
+        conectar_tooltip_seleccion(self.combo_t_especialidad, "Área técnica a la que pertenece este taller/laboratorio")
         form.addWidget(QLabel("Taller/Laboratorio:"), 0, 0)
-        form.addWidget(self.t_espacio, 0, 1)
+        form.addWidget(self.combo_t_espacio, 0, 1)
         form.addWidget(QLabel("Área Técnica:"), 0, 2)
-        form.addWidget(self.t_especialidad, 0, 3)
+        form.addWidget(self.combo_t_especialidad, 0, 3)
         btn_vincular= QPushButton("Vincular")
         btn_vincular.setIcon(icono_emoji("➕"))
         btn_vincular.setIconSize(_QSize_emoji(16, 16))
@@ -2135,27 +2135,27 @@ class ModuloPolitecnico(QWidget):
 
     def _cargar_combos_talleres(self):
 
-        self.t_espacio.clear()
-        self.t_especialidad.clear()
-        self.t_especialidad.addItem("Sin área técnica", None)
+        self.combo_t_espacio.clear()
+        self.combo_t_especialidad.clear()
+        self.combo_t_especialidad.addItem("Sin área técnica", None)
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre, tipo FROM aulas WHERE tipo IN ('Taller', 'Laboratorio') ORDER BY nombre")
         for fila in c.fetchall():
-            self.t_espacio.addItem(f"{fila['nombre']} ({fila['tipo']})", fila["id"])
+            self.combo_t_espacio.addItem(f"{fila['nombre']} ({fila['tipo']})", fila["id"])
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
         for fila in c.fetchall():
-            self.t_especialidad.addItem(fila["nombre"], fila["id"])
+            self.combo_t_especialidad.addItem(fila["nombre"], fila["id"])
         conn.close()
 
     def _vincular_taller(self):
 
-        aula_id= self.t_espacio.currentData()
+        aula_id= self.combo_t_espacio.currentData()
         if aula_id is None:
             mostrar_mensaje("advertencia", "Sin talleres/laboratorios",
                            "Primero crea un espacio de tipo Taller o Laboratorio en Materias Aulas y Laboratorios.", self)
             return
-        especialidad_id= self.t_especialidad.currentData()
+        especialidad_id= self.combo_t_especialidad.currentData()
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("UPDATE aulas SET especialidad_id=? WHERE id=?", (especialidad_id, aula_id))
@@ -2200,13 +2200,13 @@ class ModuloPolitecnico(QWidget):
         #f: fila consultada; None si no existe
         f= c.fetchone()
         conn.close()
-        idx= self.t_espacio.findData(aula_id)
-        self.t_espacio.setCurrentIndex(idx if idx >= 0 else 0)
-        idx2= self.t_especialidad.findData(f["especialidad_id"] if f else None)
-        self.t_especialidad.setCurrentIndex(idx2 if idx2 >= 0 else 0)
+        idx= self.combo_t_espacio.findData(aula_id)
+        self.combo_t_espacio.setCurrentIndex(idx if idx >= 0 else 0)
+        idx2= self.combo_t_especialidad.findData(f["especialidad_id"] if f else None)
+        self.combo_t_especialidad.setCurrentIndex(idx2 if idx2 >= 0 else 0)
         if hasattr(self, "panel_form_taller"):
             self.panel_form_taller.expandir(True, animar=False)  #de golpe al editar
-        activar_modo_edicion(self.t_espacio, "Editando taller/laboratorio")
+        activar_modo_edicion(self.combo_t_espacio, "Editando taller/laboratorio")
 
     def _filtro_talleres_cambio(self):
 
@@ -2272,28 +2272,28 @@ class ModuloPolitecnico(QWidget):
         self.emp_nombre= QLineEdit()
         self.emp_nombre.setPlaceholderText("Nombre de la Empresa")
         limitar_campo_texto(self.emp_nombre, 300)
-        self.emp_rubro= QComboBox()
-        self.emp_rubro.setEditable(True)
-        self.emp_rubro.addItems(RUBROS_SUGERIDOS)
-        conectar_tooltip_seleccion(self.emp_rubro, "Rubro / sector de la empresa")
-        self.emp_ubicacion= QLineEdit()
-        self.emp_ubicacion.setPlaceholderText("Ubicación (ciudad/dirección)")
-        limitar_campo_texto(self.emp_ubicacion, 300)
-        self.emp_contacto= QLineEdit()
-        self.emp_contacto.setPlaceholderText("Contacto")
-        limitar_campo_texto(self.emp_contacto, 300)
-        self.emp_telefono= QLineEdit()
-        self.emp_telefono.setPlaceholderText("Teléfono")
-        limitar_campo_texto(self.emp_telefono, 300)
-        self.emp_cupos= QSpinBox()
-        self.emp_cupos.setRange(0, 500)
-        self.emp_cupos.setToolTip("Cantidad de cupos de pasantía disponibles en esta empresa")
+        self.combo_emp_rubro= QComboBox()
+        self.combo_emp_rubro.setEditable(True)
+        self.combo_emp_rubro.addItems(RUBROS_SUGERIDOS)
+        conectar_tooltip_seleccion(self.combo_emp_rubro, "Rubro / sector de la empresa")
+        self.in_emp_ubicacion= QLineEdit()
+        self.in_emp_ubicacion.setPlaceholderText("Ubicación (ciudad/dirección)")
+        limitar_campo_texto(self.in_emp_ubicacion, 300)
+        self.in_emp_contacto= QLineEdit()
+        self.in_emp_contacto.setPlaceholderText("Contacto")
+        limitar_campo_texto(self.in_emp_contacto, 300)
+        self.in_emp_telefono= QLineEdit()
+        self.in_emp_telefono.setPlaceholderText("Teléfono")
+        limitar_campo_texto(self.in_emp_telefono, 300)
+        self.in_emp_cupos= QSpinBox()
+        self.in_emp_cupos.setRange(0, 500)
+        self.in_emp_cupos.setToolTip("Cantidad de cupos de pasantía disponibles en esta empresa")
         form.addWidget(self.emp_nombre, 0, 0)
-        form.addWidget(self.emp_rubro, 0, 1)
-        form.addWidget(self.emp_ubicacion, 0, 2)
-        form.addWidget(self.emp_contacto, 1, 0)
-        form.addWidget(self.emp_telefono, 1, 1)
-        form.addWidget(self.emp_cupos, 1, 2)
+        form.addWidget(self.combo_emp_rubro, 0, 1)
+        form.addWidget(self.in_emp_ubicacion, 0, 2)
+        form.addWidget(self.in_emp_contacto, 1, 0)
+        form.addWidget(self.in_emp_telefono, 1, 1)
+        form.addWidget(self.in_emp_cupos, 1, 2)
         btn_guardar= QPushButton("Guardar Empresa")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -2380,9 +2380,9 @@ class ModuloPolitecnico(QWidget):
         if not self.emp_nombre.text().strip():
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
             return
-        datos= (self.emp_nombre.text().strip(), self.emp_rubro.currentText().strip(),
-                 self.emp_ubicacion.text().strip(), self.emp_contacto.text().strip(),
-                 self.emp_telefono.text().strip(), self.emp_cupos.value())
+        datos= (self.emp_nombre.text().strip(), self.combo_emp_rubro.currentText().strip(),
+                 self.in_emp_ubicacion.text().strip(), self.in_emp_contacto.text().strip(),
+                 self.in_emp_telefono.text().strip(), self.in_emp_cupos.value())
         conn= obtener_conexion()
         c= conn.cursor()
         if self.id_edicion_empresa is None:
@@ -2406,12 +2406,12 @@ class ModuloPolitecnico(QWidget):
 
         self.id_edicion_empresa= None
         self.emp_nombre.clear()
-        self.emp_rubro.setCurrentIndex(-1)
-        self.emp_rubro.clearEditText()
-        self.emp_ubicacion.clear()
-        self.emp_contacto.clear()
-        self.emp_telefono.clear()
-        self.emp_cupos.setValue(0)
+        self.combo_emp_rubro.setCurrentIndex(-1)
+        self.combo_emp_rubro.clearEditText()
+        self.in_emp_ubicacion.clear()
+        self.in_emp_contacto.clear()
+        self.in_emp_telefono.clear()
+        self.in_emp_cupos.setValue(0)
         self.tabla_empresas.clearSelection()
         desactivar_modo_edicion(self.emp_nombre)
 
@@ -2432,11 +2432,11 @@ class ModuloPolitecnico(QWidget):
             return
         self.id_edicion_empresa= f["id"]
         self.emp_nombre.setText(f["nombre"] or "")
-        self.emp_rubro.setCurrentText(f["rubro"] or "")
-        self.emp_ubicacion.setText(f["ubicacion"] or "")
-        self.emp_contacto.setText(f["contacto"] or "")
-        self.emp_telefono.setText(f["telefono"] or "")
-        self.emp_cupos.setValue(f["cupos"] or 0)
+        self.combo_emp_rubro.setCurrentText(f["rubro"] or "")
+        self.in_emp_ubicacion.setText(f["ubicacion"] or "")
+        self.in_emp_contacto.setText(f["contacto"] or "")
+        self.in_emp_telefono.setText(f["telefono"] or "")
+        self.in_emp_cupos.setValue(f["cupos"] or 0)
         if hasattr(self, "panel_form_empresa"):
             self.panel_form_empresa.expandir(True, animar=False)  #de golpe al editar
         activar_modo_edicion(self.emp_nombre, f"Editando empresa: {f['nombre'] or ''}")
@@ -2599,27 +2599,27 @@ class ModuloPolitecnico(QWidget):
 
         form= QGridLayout()
         form.setSpacing(10)
-        self.p_estudiante= QComboBox()
-        conectar_tooltip_seleccion(self.p_estudiante,
+        self.combo_p_estudiante= QComboBox()
+        conectar_tooltip_seleccion(self.combo_p_estudiante,
             "Estudiante que realiza la pasantía (usa \" Filtros\" para ubicarlo más rápido)")
-        self.p_empresa= QComboBox()
-        conectar_tooltip_seleccion(self.p_empresa, "Empresa donde el estudiante realiza la pasantía")
-        self.p_horas= QDoubleSpinBox()
-        self.p_horas.setRange(0, 5000)
-        self.p_horas.setDecimals(0)
-        self.p_horas.setSuffix(" horas")
-        self.p_horas.setToolTip("Horas acumuladas de la pasantía")
-        self.p_estado= QComboBox()
-        self.p_estado.addItems(ESTADOS_PASANTIA)
-        conectar_tooltip_seleccion(self.p_estado, "Estado actual de la pasantía (En curso, Finalizada, Suspendida)")
-        self.p_desempeno= QLineEdit()
-        self.p_desempeno.setPlaceholderText("Desempeño técnico (observaciones)")
-        limitar_campo_texto(self.p_desempeno, 300)
-        form.addWidget(self.p_estudiante, 0, 0)
-        form.addWidget(self.p_empresa, 0, 1)
-        form.addWidget(self.p_horas, 0, 2)
-        form.addWidget(self.p_estado, 1, 0)
-        form.addWidget(self.p_desempeno, 1, 1, 1, 2)
+        self.combo_p_empresa= QComboBox()
+        conectar_tooltip_seleccion(self.combo_p_empresa, "Empresa donde el estudiante realiza la pasantía")
+        self.in_p_horas= QDoubleSpinBox()
+        self.in_p_horas.setRange(0, 5000)
+        self.in_p_horas.setDecimals(0)
+        self.in_p_horas.setSuffix(" horas")
+        self.in_p_horas.setToolTip("Horas acumuladas de la pasantía")
+        self.combo_p_estado= QComboBox()
+        self.combo_p_estado.addItems(ESTADOS_PASANTIA)
+        conectar_tooltip_seleccion(self.combo_p_estado, "Estado actual de la pasantía (En curso, Finalizada, Suspendida)")
+        self.in_p_desempeno= QLineEdit()
+        self.in_p_desempeno.setPlaceholderText("Desempeño técnico (observaciones)")
+        limitar_campo_texto(self.in_p_desempeno, 300)
+        form.addWidget(self.combo_p_estudiante, 0, 0)
+        form.addWidget(self.combo_p_empresa, 0, 1)
+        form.addWidget(self.in_p_horas, 0, 2)
+        form.addWidget(self.combo_p_estado, 1, 0)
+        form.addWidget(self.in_p_desempeno, 1, 1, 1, 2)
         btn_guardar= QPushButton("Registrar Pasantía")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -2817,13 +2817,13 @@ class ModuloPolitecnico(QWidget):
             self.p_filtro_curso.setCurrentIndex(0)
         if hasattr(self, "p_filtro_seccion"):
             self.p_filtro_seccion.setCurrentIndex(0)
-        self.p_estudiante.setCurrentIndex(0)
-        self.p_empresa.setCurrentIndex(0)
-        self.p_horas.setValue(0)
-        self.p_estado.setCurrentIndex(0)
-        self.p_desempeno.clear()
+        self.combo_p_estudiante.setCurrentIndex(0)
+        self.combo_p_empresa.setCurrentIndex(0)
+        self.in_p_horas.setValue(0)
+        self.combo_p_estado.setCurrentIndex(0)
+        self.in_p_desempeno.clear()
         self.tabla_pasantias.clearSelection()
-        desactivar_modo_edicion(self.p_desempeno)
+        desactivar_modo_edicion(self.in_p_desempeno)
 
     def _cargar_pasantia_seleccionada(self):
 
@@ -2849,20 +2849,20 @@ class ModuloPolitecnico(QWidget):
             self.p_filtro_curso.setCurrentIndex(0)
         if hasattr(self, "p_filtro_seccion"):
             self.p_filtro_seccion.setCurrentIndex(0)
-        idx_est= self.p_estudiante.findData(f["estudiante_id"])
-        self.p_estudiante.setCurrentIndex(idx_est if idx_est >= 0 else 0)
-        idx_emp= self.p_empresa.findData(f["empresa_id"])
-        self.p_empresa.setCurrentIndex(idx_emp if idx_emp >= 0 else 0)
-        self.p_horas.setValue(f["horas_acumuladas"] or 0)
-        self.p_estado.setCurrentText(f["estado"] or "")
-        self.p_desempeno.setText(f["desempeno"] or "")
+        idx_est= self.combo_p_estudiante.findData(f["estudiante_id"])
+        self.combo_p_estudiante.setCurrentIndex(idx_est if idx_est >= 0 else 0)
+        idx_emp= self.combo_p_empresa.findData(f["empresa_id"])
+        self.combo_p_empresa.setCurrentIndex(idx_emp if idx_emp >= 0 else 0)
+        self.in_p_horas.setValue(f["horas_acumuladas"] or 0)
+        self.combo_p_estado.setCurrentText(f["estado"] or "")
+        self.in_p_desempeno.setText(f["desempeno"] or "")
         if hasattr(self, "panel_form_pasantia"):
             self.panel_form_pasantia.expandir(True, animar=False)  #de golpe al editar
-        activar_modo_edicion(self.p_desempeno, "Editando pasantía")
+        activar_modo_edicion(self.in_p_desempeno, "Editando pasantía")
 
     def _cargar_combos_pasantias(self):
 
-        self.p_empresa.clear()
+        self.combo_p_empresa.clear()
         conn= obtener_conexion()
         c= conn.cursor()
         #Traemos también matrícula, curso y sección de cada estudiante activo para poder filtrar el combo por
@@ -2879,7 +2879,7 @@ class ModuloPolitecnico(QWidget):
         self._estudiantes_pasantia= [dict(fila) for fila in c.fetchall()]
         c.execute("SELECT id, nombre FROM empresas_pasantia ORDER BY nombre")
         for fila in c.fetchall():
-            self.p_empresa.addItem(fila["nombre"], fila["id"])
+            self.combo_p_empresa.addItem(fila["nombre"], fila["id"])
         conn.close()
 
         poblar_combo_curso(self.p_filtro_curso, incluir_todos=False)
@@ -2965,7 +2965,7 @@ class ModuloPolitecnico(QWidget):
     #siendo válida.
     def _filtro_estudiantes_pasantia_cambio(self):
 
-        id_previo= self.p_estudiante.currentData()
+        id_previo= self.combo_p_estudiante.currentData()
         texto= _normalizar(self.p_buscar_estudiante.text().strip()) if hasattr(self, "p_buscar_estudiante") else ""
         grado_id= self.p_filtro_curso.currentData() if hasattr(self, "p_filtro_curso") else None
         seccion_id= self.p_filtro_seccion.currentData() if hasattr(self, "p_filtro_seccion") else None
@@ -2973,12 +2973,12 @@ class ModuloPolitecnico(QWidget):
                             if hasattr(self, "p_filtro_especialidad") and self._es_politecnico() else None)
         carrera_id= (self.p_filtro_carrera.currentData()
                       if hasattr(self, "p_filtro_carrera") and self._es_universidad() else None)
-        self.p_estudiante.blockSignals(True)
-        self.p_estudiante.clear()
+        self.combo_p_estudiante.blockSignals(True)
+        self.combo_p_estudiante.clear()
         #Placeholder real (sin datos) primero: evita que, con los filtros
         #amplios (p.ej. "Todos los cursos"), quede seleccionado por accidente
         #el primer estudiante de la lista sin que el usuario lo haya elegido.
-        self.p_estudiante.addItem("Selecciona un estudiante…", None)
+        self.combo_p_estudiante.addItem("Selecciona un estudiante…", None)
         #f: fila de un estudiante con pasantía; se filtra por curso y sección
         for f in getattr(self, "_estudiantes_pasantia", []):
             if grado_id is not None and f["grado_id"] != grado_id:
@@ -2992,10 +2992,10 @@ class ModuloPolitecnico(QWidget):
             if texto and texto not in _normalizar(
                     f"{f['nombre'] or ''} {f['apellidos'] or ''} {f['matricula'] or ''}"):
                 continue
-            self.p_estudiante.addItem(f"{f['nombre']} {f['apellidos'] or ''}", f["id"])
-        idx= self.p_estudiante.findData(id_previo)
-        self.p_estudiante.setCurrentIndex(idx if idx >= 0 else 0)
-        self.p_estudiante.blockSignals(False)
+            self.combo_p_estudiante.addItem(f"{f['nombre']} {f['apellidos'] or ''}", f["id"])
+        idx= self.combo_p_estudiante.findData(id_previo)
+        self.combo_p_estudiante.setCurrentIndex(idx if idx >= 0 else 0)
+        self.combo_p_estudiante.blockSignals(False)
         self._actualizar_resumen_filtros_pasantias()
         if hasattr(self, "paginacion_pasantias"):
             self.paginacion_pasantias.reiniciar()
@@ -3003,8 +3003,8 @@ class ModuloPolitecnico(QWidget):
 
     def _guardar_pasantia(self):
 
-        est_id= self.p_estudiante.currentData()
-        emp_id= self.p_empresa.currentData()
+        est_id= self.combo_p_estudiante.currentData()
+        emp_id= self.combo_p_empresa.currentData()
         if est_id is None or emp_id is None:
             mostrar_mensaje("advertencia", "Datos incompletos", "Selecciona estudiante y empresa.", self)
             return
@@ -3013,13 +3013,13 @@ class ModuloPolitecnico(QWidget):
         if getattr(self, "id_edicion_pasantia", None) is None:
             c.execute("""INSERT INTO pasantias (estudiante_id, empresa_id, horas_acumuladas, estado, desempeno)
                          VALUES (?,?,?,?,?)""",
-                      (est_id, emp_id, self.p_horas.value(), self.p_estado.currentText(), self.p_desempeno.text().strip()))
+                      (est_id, emp_id, self.in_p_horas.value(), self.combo_p_estado.currentText(), self.in_p_desempeno.text().strip()))
             accion= "Registró pasantía"
         else:
             c.execute("""UPDATE pasantias SET estudiante_id=?, empresa_id=?, horas_acumuladas=?, estado=?,
                          desempeno= ? WHERE id=?""",
-                      (est_id, emp_id, self.p_horas.value(), self.p_estado.currentText(),
-                       self.p_desempeno.text().strip(), self.id_edicion_pasantia))
+                      (est_id, emp_id, self.in_p_horas.value(), self.combo_p_estado.currentText(),
+                       self.in_p_desempeno.text().strip(), self.id_edicion_pasantia))
             accion= "Editó pasantía"
         conn.commit()
         conn.close()
@@ -3147,10 +3147,10 @@ class ModuloPolitecnico(QWidget):
         self._animar_valor_chip(self.chip_especialidades, "_valor_chip_especialidades", total_especialidades,
                                  #v: cantidad actual del chip animado; el texto pasa a plural si no es 1
                                  lambda v: f"{html_icono_emoji('🎨', 14)} {v} área" + ("s técnicas" if v != 1 else " técnica"))
-        self._animar_valor_chip(self.chip_empresas, "_valor_chip_empresas", total_empresas,
+        self._animar_valor_chip(self.lbl_chip_empresas, "_valor_chip_empresas", total_empresas,
                                  #v: cantidad actual del chip animado; el texto pasa a plural si no es 1
                                  lambda v: f"{html_icono_emoji('🏢', 14)} {v} empresa" + ("s" if v != 1 else "") + " aliada" + ("s" if v != 1 else ""))
-        self._animar_valor_chip(self.chip_pasantias, "_valor_chip_pasantias", total_pasantias_curso,
+        self._animar_valor_chip(self.lbl_chip_pasantias, "_valor_chip_pasantias", total_pasantias_curso,
                                  #v: cantidad actual del chip animado; el texto pasa a plural si no es 1
                                  lambda v: f"{html_icono_emoji('🎓', 14)} {v} pasantía" + ("s" if v != 1 else "") + " en curso")
 

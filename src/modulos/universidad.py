@@ -619,9 +619,9 @@ class ModuloUniversidad(QWidget):
         self.chip_facultades.setObjectName("ChipResumenUniversidad")
         cab.addWidget(self.chip_facultades, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self.chip_carreras= QLabel("0 carreras")
-        self.chip_carreras.setObjectName("ChipResumenUniversidad")
-        cab.addWidget(self.chip_carreras, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.lbl_chip_carreras= QLabel("0 carreras")
+        self.lbl_chip_carreras.setObjectName("ChipResumenUniversidad")
+        cab.addWidget(self.lbl_chip_carreras, 0, Qt.AlignmentFlag.AlignVCenter)
 
         return self.frame_cabecera
 
@@ -854,11 +854,11 @@ class ModuloUniversidad(QWidget):
         lbl_titulo_form.setObjectName("TituloTarjetaUniversidad")
         layout_form.addWidget(lbl_titulo_form)
         fila= QHBoxLayout()
-        self.f_nombre= QLineEdit()
-        self.f_nombre.setPlaceholderText("Nombre de la Facultad")
-        limitar_campo_texto(self.f_nombre, 300)
-        self.f_nombre.setToolTip("Nombre de la facultad (ej. Facultad de Ingeniería)")
-        fila.addWidget(self.f_nombre)
+        self.in_f_nombre= QLineEdit()
+        self.in_f_nombre.setPlaceholderText("Nombre de la Facultad")
+        limitar_campo_texto(self.in_f_nombre, 300)
+        self.in_f_nombre.setToolTip("Nombre de la facultad (ej. Facultad de Ingeniería)")
+        fila.addWidget(self.in_f_nombre)
         self.btn_guardar_facultad= BotonAnimado("Agregar Facultad")
         self.btn_guardar_facultad.setObjectName("BtnAccionAgregar")
         self.btn_guardar_facultad.clicked.connect(self._guardar_facultad)
@@ -934,9 +934,9 @@ class ModuloUniversidad(QWidget):
 
         self.id_edicion_facultad= None
         self.btn_guardar_facultad.setText("Agregar Facultad")
-        self.f_nombre.clear()
+        self.in_f_nombre.clear()
         self.tabla_facultades.clearSelection()
-        desactivar_modo_edicion(self.f_nombre)
+        desactivar_modo_edicion(self.in_f_nombre)
 
     def _cargar_facultad_seleccionada(self):
 
@@ -954,13 +954,13 @@ class ModuloUniversidad(QWidget):
         if not f:
             return
         self.id_edicion_facultad= f["id"]
-        self.f_nombre.setText(f["nombre"] or "")
+        self.in_f_nombre.setText(f["nombre"] or "")
         self.btn_guardar_facultad.setText("Guardar Cambios")
-        activar_modo_edicion(self.f_nombre, f"Editando facultad: {f['nombre'] or ''}")
+        activar_modo_edicion(self.in_f_nombre, f"Editando facultad: {f['nombre'] or ''}")
 
     def _guardar_facultad(self):
 
-        nombre= self.f_nombre.text().strip()
+        nombre= self.in_f_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
             return
@@ -1082,7 +1082,7 @@ class ModuloUniversidad(QWidget):
             #vez del emoji real para no depender de una fuente de emojis del sistema.
             self._animar_valor_chip(self.chip_facultades, "_valor_chip_facultades", total_facultades,
                                      lambda v: f"{html_icono_emoji('🏛', 14)} {v} facultad" + ("es" if v != 1 else ""))
-            self._animar_valor_chip(self.chip_carreras, "_valor_chip_carreras", total_carreras,
+            self._animar_valor_chip(self.lbl_chip_carreras, "_valor_chip_carreras", total_carreras,
                                      #v: cantidad actual del chip animado; el texto cambia a plural si no es 1
                                      lambda v: f"{html_icono_emoji('🎓', 14)} {v} carrera" + ("s" if v != 1 else ""))
 
@@ -1126,14 +1126,14 @@ class ModuloUniversidad(QWidget):
         lbl_titulo_form.setObjectName("TituloTarjetaUniversidad")
         layout_form.addWidget(lbl_titulo_form)
         form= QGridLayout()
-        self.car_nombre= QLineEdit()
-        self.car_nombre.setPlaceholderText("Nombre de la Carrera")
-        limitar_campo_texto(self.car_nombre, 300)
-        self.car_nombre.setToolTip("Nombre de la carrera (ej. Ingeniería en Sistemas)")
-        self.car_facultad= QComboBox()
-        conectar_tooltip_seleccion(self.car_facultad, "Facultad a la que pertenece esta carrera")
-        form.addWidget(self.car_nombre, 0, 0)
-        form.addWidget(self.car_facultad, 0, 1)
+        self.in_car_nombre= QLineEdit()
+        self.in_car_nombre.setPlaceholderText("Nombre de la Carrera")
+        limitar_campo_texto(self.in_car_nombre, 300)
+        self.in_car_nombre.setToolTip("Nombre de la carrera (ej. Ingeniería en Sistemas)")
+        self.combo_car_facultad= QComboBox()
+        conectar_tooltip_seleccion(self.combo_car_facultad, "Facultad a la que pertenece esta carrera")
+        form.addWidget(self.in_car_nombre, 0, 0)
+        form.addWidget(self.combo_car_facultad, 0, 1)
         self.btn_guardar_carrera= BotonAnimado("Agregar Carrera")
         self.btn_guardar_carrera.setObjectName("BtnAccionAgregar")
         self.btn_guardar_carrera.clicked.connect(self._guardar_carrera)
@@ -1200,26 +1200,26 @@ class ModuloUniversidad(QWidget):
 
         self.id_edicion_carrera= None
         self.btn_guardar_carrera.setText("Agregar Carrera")
-        self.car_nombre.clear()
-        self.car_facultad.setCurrentIndex(0)
-        desactivar_modo_edicion(self.car_nombre)
+        self.in_car_nombre.clear()
+        self.combo_car_facultad.setCurrentIndex(0)
+        desactivar_modo_edicion(self.in_car_nombre)
         self.tabla_carreras.clearSelection()
 
     def _cargar_facultades_combo(self):
 
-        seleccion_previa= self.car_facultad.currentData()
-        self.car_facultad.blockSignals(True)
-        self.car_facultad.clear()
+        seleccion_previa= self.combo_car_facultad.currentData()
+        self.combo_car_facultad.blockSignals(True)
+        self.combo_car_facultad.clear()
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT id, nombre FROM facultades ORDER BY nombre")
         for fila in c.fetchall():
-            self.car_facultad.addItem(fila["nombre"], fila["id"])
+            self.combo_car_facultad.addItem(fila["nombre"], fila["id"])
         conn.close()
         if seleccion_previa is not None:
-            idx= self.car_facultad.findData(seleccion_previa)
-            self.car_facultad.setCurrentIndex(idx if idx >= 0 else 0)
-        self.car_facultad.blockSignals(False)
+            idx= self.combo_car_facultad.findData(seleccion_previa)
+            self.combo_car_facultad.setCurrentIndex(idx if idx >= 0 else 0)
+        self.combo_car_facultad.blockSignals(False)
 
     def _cargar_carrera_seleccionada(self):
 
@@ -1237,16 +1237,16 @@ class ModuloUniversidad(QWidget):
         if not f:
             return
         self.id_edicion_carrera= f["id"]
-        self.car_nombre.setText(f["nombre"] or "")
-        idx= self.car_facultad.findData(f["facultad_id"])
-        self.car_facultad.setCurrentIndex(idx if idx >= 0 else 0)
+        self.in_car_nombre.setText(f["nombre"] or "")
+        idx= self.combo_car_facultad.findData(f["facultad_id"])
+        self.combo_car_facultad.setCurrentIndex(idx if idx >= 0 else 0)
         self.btn_guardar_carrera.setText("Guardar Cambios")
-        activar_modo_edicion(self.car_nombre, f"Editando carrera: {f['nombre'] or ''}")
+        activar_modo_edicion(self.in_car_nombre, f"Editando carrera: {f['nombre'] or ''}")
 
     def _guardar_carrera(self):
 
-        nombre= self.car_nombre.text().strip()
-        facultad_id= self.car_facultad.currentData()
+        nombre= self.in_car_nombre.text().strip()
+        facultad_id= self.combo_car_facultad.currentData()
         if not nombre or facultad_id is None:
             mostrar_mensaje("advertencia", "Datos incompletos", "Nombre y facultad son obligatorios.", self)
             return
@@ -1384,23 +1384,23 @@ class ModuloUniversidad(QWidget):
         self.pen_carrera= QComboBox()
         conectar_tooltip_seleccion(self.pen_carrera, "Carrera a la que se agrega esta materia en el pensum")
         self.pen_carrera.currentIndexChanged.connect(self._actualizar_prerrequisitos_disponibles)
-        self.pen_materia= QComboBox()
-        conectar_tooltip_seleccion(self.pen_materia, "Materia que se incluirá en el pensum de la carrera")
-        self.pen_materia.currentIndexChanged.connect(self._actualizar_prerrequisitos_disponibles)
-        self.pen_semestre= QSpinBox()
-        self.pen_semestre.setRange(1, 20)
-        self.pen_semestre.setToolTip("Semestre en el que se cursa esta materia (1-20)")
+        self.combo_pen_materia= QComboBox()
+        conectar_tooltip_seleccion(self.combo_pen_materia, "Materia que se incluirá en el pensum de la carrera")
+        self.combo_pen_materia.currentIndexChanged.connect(self._actualizar_prerrequisitos_disponibles)
+        self.in_pen_semestre= QSpinBox()
+        self.in_pen_semestre.setRange(1, 20)
+        self.in_pen_semestre.setToolTip("Semestre en el que se cursa esta materia (1-20)")
         self.pen_prerrequisito= QComboBox()
         conectar_tooltip_seleccion(self.pen_prerrequisito,
             "Materia que debe aprobarse antes de cursar esta (opcional). Solo se listan "
             "materias que ya estén en el pensum de la carrera elegida arriba.")
-        self.pen_electiva= QCheckBox("Es materia electiva")
-        self.pen_electiva.setToolTip("Marca esta casilla si la materia es electiva (no obligatoria)")
+        self.chk_pen_electiva= QCheckBox("Es materia electiva")
+        self.chk_pen_electiva.setToolTip("Marca esta casilla si la materia es electiva (no obligatoria)")
         form.addWidget(self.pen_carrera, 0, 0)
-        form.addWidget(self.pen_materia, 0, 1)
-        form.addWidget(self.pen_semestre, 0, 2)
+        form.addWidget(self.combo_pen_materia, 0, 1)
+        form.addWidget(self.in_pen_semestre, 0, 2)
         form.addWidget(self.pen_prerrequisito, 1, 0)
-        form.addWidget(self.pen_electiva, 1, 1)
+        form.addWidget(self.chk_pen_electiva, 1, 1)
         self.btn_guardar_pensum= BotonAnimado("Agregar al Pensum")
         self.btn_guardar_pensum.setObjectName("BtnAccionAgregar")
         self.btn_guardar_pensum.clicked.connect(self._guardar_pensum)
@@ -1468,11 +1468,11 @@ class ModuloUniversidad(QWidget):
         self.id_edicion_pensum= None
         self.btn_guardar_pensum.setText("Agregar al Pensum")
         self.pen_carrera.setCurrentIndex(0)
-        self.pen_materia.setCurrentIndex(0)
-        desactivar_modo_edicion(self.pen_semestre)
-        self.pen_semestre.setValue(1)
+        self.combo_pen_materia.setCurrentIndex(0)
+        desactivar_modo_edicion(self.in_pen_semestre)
+        self.in_pen_semestre.setValue(1)
         self.pen_prerrequisito.setCurrentIndex(0)
-        self.pen_electiva.setChecked(False)
+        self.chk_pen_electiva.setChecked(False)
         self.tabla_pensum.clearSelection()
 
     def _cargar_pensum_seleccionado(self):
@@ -1493,21 +1493,21 @@ class ModuloUniversidad(QWidget):
         self.id_edicion_pensum= f["id"]
         idx_car= self.pen_carrera.findData(f["carrera_id"])
         self.pen_carrera.setCurrentIndex(idx_car if idx_car >= 0 else 0)
-        idx_mat= self.pen_materia.findData(f["materia_id"])
-        self.pen_materia.setCurrentIndex(idx_mat if idx_mat >= 0 else 0)
-        self.pen_semestre.setValue(f["semestre"] or 1)
+        idx_mat= self.combo_pen_materia.findData(f["materia_id"])
+        self.combo_pen_materia.setCurrentIndex(idx_mat if idx_mat >= 0 else 0)
+        self.in_pen_semestre.setValue(f["semestre"] or 1)
         idx_prereq= self.pen_prerrequisito.findData(f["prerrequisito_id"])
         self.pen_prerrequisito.setCurrentIndex(idx_prereq if idx_prereq >= 0 else 0)
-        self.pen_electiva.setChecked(bool(f["electiva"]))
+        self.chk_pen_electiva.setChecked(bool(f["electiva"]))
         self.btn_guardar_pensum.setText("Guardar Cambios")
-        activar_modo_edicion(self.pen_semestre, "Editando registro del pensum")
+        activar_modo_edicion(self.in_pen_semestre, "Editando registro del pensum")
 
     def _cargar_combos_pensum(self):
 
         self.pen_carrera.blockSignals(True)
-        self.pen_materia.blockSignals(True)
+        self.combo_pen_materia.blockSignals(True)
         self.pen_carrera.clear()
-        self.pen_materia.clear()
+        self.combo_pen_materia.clear()
         seleccion_malla_previa= self.malla_filtro_carrera.currentData() if hasattr(self, "malla_filtro_carrera") else None
         if hasattr(self, "malla_filtro_carrera"):
             self.malla_filtro_carrera.blockSignals(True)
@@ -1521,7 +1521,7 @@ class ModuloUniversidad(QWidget):
                 self.malla_filtro_carrera.addItem(fila["nombre"], fila["id"])
         c.execute("SELECT id, nombre FROM materias ORDER BY nombre")
         for fila in c.fetchall():
-            self.pen_materia.addItem(fila["nombre"], fila["id"])
+            self.combo_pen_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
         if hasattr(self, "malla_filtro_carrera"):
             if seleccion_malla_previa is not None:
@@ -1529,7 +1529,7 @@ class ModuloUniversidad(QWidget):
                 self.malla_filtro_carrera.setCurrentIndex(idx if idx >= 0 else 0)
             self.malla_filtro_carrera.blockSignals(False)
         self.pen_carrera.blockSignals(False)
-        self.pen_materia.blockSignals(False)
+        self.combo_pen_materia.blockSignals(False)
         #El combo de prerrequisitos depende de la carrera/materia elegidas (ver
         #_actualizar_prerrequisitos_disponibles), así que se repuebla al final.
         self._actualizar_prerrequisitos_disponibles()
@@ -1545,7 +1545,7 @@ class ModuloUniversidad(QWidget):
         if not hasattr(self, "pen_prerrequisito"):
             return
         carrera_id= self.pen_carrera.currentData()
-        materia_actual= self.pen_materia.currentData()
+        materia_actual= self.combo_pen_materia.currentData()
         seleccion_previa= self.pen_prerrequisito.currentData()
         self.pen_prerrequisito.blockSignals(True)
         self.pen_prerrequisito.clear()
@@ -1568,14 +1568,14 @@ class ModuloUniversidad(QWidget):
     def _guardar_pensum(self):
 
         carrera_id= self.pen_carrera.currentData()
-        materia_id= self.pen_materia.currentData()
+        materia_id= self.combo_pen_materia.currentData()
         if carrera_id is None or materia_id is None:
             mostrar_mensaje("advertencia", "Datos incompletos", "Selecciona carrera y materia.", self)
             return
 
         prerrequisito_id= self.pen_prerrequisito.currentData()
-        semestre= self.pen_semestre.value()
-        electiva= 1 if self.pen_electiva.isChecked() else 0
+        semestre= self.in_pen_semestre.value()
+        electiva= 1 if self.chk_pen_electiva.isChecked() else 0
         id_actual= self.id_edicion_pensum
 
         if prerrequisito_id is not None and prerrequisito_id == materia_id:

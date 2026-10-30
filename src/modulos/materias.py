@@ -717,45 +717,45 @@ class ModuloMaterias(QWidget):
         self.lbl_nota_tecnicos.setWordWrap(True)
         self.lbl_nota_tecnicos.setObjectName("DescModulo")
         disposicion.addWidget(self.lbl_nota_tecnicos)
-        self.m_codigo= QLineEdit()
-        limitar_campo_texto(self.m_codigo, 300)
-        self.m_codigo.setPlaceholderText("Código (autogenerado)")
-        self.m_codigo.setReadOnly(True)
-        self.m_codigo.setToolTip(
+        self.in_m_codigo= QLineEdit()
+        limitar_campo_texto(self.in_m_codigo, 300)
+        self.in_m_codigo.setPlaceholderText("Código (autogenerado)")
+        self.in_m_codigo.setReadOnly(True)
+        self.in_m_codigo.setToolTip(
             "Autogenerado. Clic derecho para escribirlo manualmente o para "
             "volver a autogenerado.")
-        self.m_codigo.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.m_codigo.customContextMenuRequested.connect(self._menu_contextual_codigo_materia)
+        self.in_m_codigo.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.in_m_codigo.customContextMenuRequested.connect(self._menu_contextual_codigo_materia)
         self._codigo_materia_manual= False
-        self.m_nombre= QLineEdit()
-        limitar_campo_texto(self.m_nombre, 300)
-        self.m_nombre.setPlaceholderText("Nombre de la Materia")
-        self.m_nombre.textChanged.connect(self._previsualizar_codigo_materia)
-        self.m_creditos= QSpinBox()
-        self.m_creditos.setRange(0, 20)
-        self.m_creditos.setToolTip(
+        self.in_m_nombre= QLineEdit()
+        limitar_campo_texto(self.in_m_nombre, 300)
+        self.in_m_nombre.setPlaceholderText("Nombre de la Materia")
+        self.in_m_nombre.textChanged.connect(self._previsualizar_codigo_materia)
+        self.in_m_creditos= QSpinBox()
+        self.in_m_creditos.setRange(0, 20)
+        self.in_m_creditos.setToolTip(
             "Créditos académicos: el 'peso' o valor en horas de estudio que tiene esta materia "
             "dentro del plan de estudios. A más créditos, mayor carga académica representa la "
             "materia (suele influir en el cálculo de promedios ponderados y en la carga horaria "
             "total del estudiante)."
         )
-        self.m_profesor= QComboBox()
-        conectar_tooltip_seleccion(self.m_profesor,
+        self.combo_m_profesor= QComboBox()
+        conectar_tooltip_seleccion(self.combo_m_profesor,
             "Profesor titular de la materia. 'Sin asignar' = aún no tiene profesor titular")
-        self.m_estado= QComboBox()
-        self.m_estado.addItems(["Activa", "Inactiva"])
-        conectar_tooltip_seleccion(self.m_estado, "Estado de la materia: Activa = disponible para horarios y matrícula")
-        self.m_curso= QComboBox()
-        conectar_tooltip_seleccion(self.m_curso,
+        self.combo_m_estado= QComboBox()
+        self.combo_m_estado.addItems(["Activa", "Inactiva"])
+        conectar_tooltip_seleccion(self.combo_m_estado, "Estado de la materia: Activa = disponible para horarios y matrícula")
+        self.combo_m_curso= QComboBox()
+        conectar_tooltip_seleccion(self.combo_m_curso,
             "Curso/Grado al que se vincula esta materia (OPCIONAL). 'Sin curso específico' = disponible "
             "para cualquier curso.")
-        poblar_combo_curso_opcional(self.m_curso)
-        form.addWidget(self.m_codigo, 0, 0)
-        form.addWidget(self.m_nombre, 0, 1)
-        form.addWidget(self.m_creditos, 0, 2)
-        form.addWidget(self.m_profesor, 1, 0)
-        form.addWidget(self.m_estado, 1, 1)
-        form.addWidget(self.m_curso, 2, 0)
+        poblar_combo_curso_opcional(self.combo_m_curso)
+        form.addWidget(self.in_m_codigo, 0, 0)
+        form.addWidget(self.in_m_nombre, 0, 1)
+        form.addWidget(self.in_m_creditos, 0, 2)
+        form.addWidget(self.combo_m_profesor, 1, 0)
+        form.addWidget(self.combo_m_estado, 1, 1)
+        form.addWidget(self.combo_m_curso, 2, 0)
 
         btn_guardar= QPushButton("Guardar Materia")
         btn_guardar.setIcon(icono_emoji("💾"))
@@ -866,13 +866,13 @@ class ModuloMaterias(QWidget):
 
     def _exportar_paquete_profesor_seleccionado(self):
 
-        profesor_id= self.m_profesor.currentData()
+        profesor_id= self.combo_m_profesor.currentData()
         if profesor_id is None:
             mostrar_mensaje("advertencia", "Sin profesor seleccionado",
                            "Elige un profesor en el campo 'Profesor' (arriba) para exportarle su paquete "
                            "de materias, secciones y estudiantes.", self)
             return
-        profesor_nombre= self.m_profesor.currentText().strip()
+        profesor_nombre= self.combo_m_profesor.currentText().strip()
         exportar_paquete_docente(self.main_window, self, profesor_id=profesor_id, profesor_nombre=profesor_nombre)
 
     def _previsualizar_codigo_materia(self):
@@ -880,7 +880,7 @@ class ModuloMaterias(QWidget):
         if self._codigo_materia_manual:
             return
         if self.id_edicion_materia is None:
-            self.m_codigo.setText(self._generar_codigo_materia() if self.m_nombre.text().strip() else "")
+            self.in_m_codigo.setText(self._generar_codigo_materia() if self.in_m_nombre.text().strip() else "")
 
     #Clic derecho sobre el campo "Código": alterna entre escribirlo a
     #mano y dejarlo autogenerado de nuevo. Si ya está en modo manual
@@ -895,20 +895,20 @@ class ModuloMaterias(QWidget):
             accion= menu.addAction(icono_emoji("🔄"), "Volver a autogenerado")
         else:
             accion= menu.addAction(icono_emoji("✏"), "Escribir código manualmente")
-        if menu.exec(self.m_codigo.mapToGlobal(pos)) == accion:
+        if menu.exec(self.in_m_codigo.mapToGlobal(pos)) == accion:
             if self._codigo_materia_manual:
                 self._codigo_materia_manual= False
-                self.m_codigo.setReadOnly(True)
+                self.in_m_codigo.setReadOnly(True)
                 self._previsualizar_codigo_materia()
             else:
                 self._codigo_materia_manual= True
-                self.m_codigo.setReadOnly(False)
-                self.m_codigo.setFocus()
-                self.m_codigo.selectAll()
+                self.in_m_codigo.setReadOnly(False)
+                self.in_m_codigo.setFocus()
+                self.in_m_codigo.selectAll()
 
     def _generar_codigo_materia(self):
 
-        base= "".join(w[0] for w in self.m_nombre.text().strip().upper().split()[:3]) or "MAT"
+        base= "".join(w[0] for w in self.in_m_nombre.text().strip().upper().split()[:3]) or "MAT"
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT codigo FROM materias WHERE codigo LIKE ?", (f"{base}-%",))
@@ -924,7 +924,7 @@ class ModuloMaterias(QWidget):
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no puede editar materias.", self)
             return
-        nombre= self.m_nombre.text().strip()
+        nombre= self.in_m_nombre.text().strip()
         if not nombre:
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
             return
@@ -932,13 +932,13 @@ class ModuloMaterias(QWidget):
             mostrar_mensaje("advertencia", "Materia duplicada",
                              f"Ya existe una materia llamada «{nombre}».", self)
             return
-        if not self.m_codigo.text().strip():
-            self.m_codigo.setText(self._generar_codigo_materia())
+        if not self.in_m_codigo.text().strip():
+            self.in_m_codigo.setText(self._generar_codigo_materia())
         #Esta pestaña solo maneja materias académicas normales: nunca tienen área técnica ni modelo RA. Los módulos
         #técnicos se crean y editan en el módulo Politécnico ("🛠 Módulos Técnicos").
-        datos= (self.m_codigo.text().strip(), nombre, self.m_creditos.value(),
-                 None, self.m_profesor.currentData(), self.m_estado.currentText(),
-                 MODELO_EVALUACION_COMPETENCIAS, self.m_curso.currentData())
+        datos= (self.in_m_codigo.text().strip(), nombre, self.in_m_creditos.value(),
+                 None, self.combo_m_profesor.currentData(), self.combo_m_estado.currentText(),
+                 MODELO_EVALUACION_COMPETENCIAS, self.combo_m_curso.currentData())
         conn= obtener_conexion()
         try:
 
@@ -965,18 +965,18 @@ class ModuloMaterias(QWidget):
     def _limpiar_materia(self):
 
         self.id_edicion_materia= None
-        self.m_codigo.clear()
+        self.in_m_codigo.clear()
         #Vuelve al modo autogenerado por defecto para una materia nueva; si el usuario quiere un código propio, siempre
         #puede pedirlo de nuevo con clic derecho (ver _menu_contextual_codigo_materia).
         self._codigo_materia_manual= False
-        self.m_codigo.setReadOnly(True)
-        self.m_nombre.clear()
-        self.m_creditos.setValue(0)
-        self.m_profesor.setCurrentIndex(0)
-        self.m_estado.setCurrentIndex(0)
-        self.m_curso.setCurrentIndex(0)
+        self.in_m_codigo.setReadOnly(True)
+        self.in_m_nombre.clear()
+        self.in_m_creditos.setValue(0)
+        self.combo_m_profesor.setCurrentIndex(0)
+        self.combo_m_estado.setCurrentIndex(0)
+        self.combo_m_curso.setCurrentIndex(0)
         self.tabla_materias.clearSelection()
-        desactivar_modo_edicion(self.m_nombre)
+        desactivar_modo_edicion(self.in_m_nombre)
 
     #True si la institución es de tipo Politécnico (o Personalizado con el
     #módulo Politécnico activo) — solo entonces tiene sentido pedir el Área
@@ -1019,22 +1019,22 @@ class ModuloMaterias(QWidget):
     #ofrecer opciones que no tengan sentido para el contexto actual.
     def _poblar_nivel_educativo_seccion(self):
 
-        seleccion_previa= self.s_nivel_educativo.currentData() if self.s_nivel_educativo.count() else None
+        seleccion_previa= self.combo_s_nivel_educativo.currentData() if self.combo_s_nivel_educativo.count() else None
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM configuracion WHERE id=1")
         cfg= c.fetchone()
         conn.close()
         habilitados= niveles_academicos_habilitados(cfg) if cfg else NIVELES_ACADEMICOS
-        self.s_nivel_educativo.blockSignals(True)
-        self.s_nivel_educativo.clear()
-        self.s_nivel_educativo.addItem("— Sin clasificar —", None)
+        self.combo_s_nivel_educativo.blockSignals(True)
+        self.combo_s_nivel_educativo.clear()
+        self.combo_s_nivel_educativo.addItem("— Sin clasificar —", None)
         for nivel in NIVELES_ACADEMICOS:
             if nivel in habilitados:
-                self.s_nivel_educativo.addItem(nivel, nivel)
-        idx= self.s_nivel_educativo.findData(seleccion_previa)
-        self.s_nivel_educativo.setCurrentIndex(idx if idx >= 0 else 0)
-        self.s_nivel_educativo.blockSignals(False)
+                self.combo_s_nivel_educativo.addItem(nivel, nivel)
+        idx= self.combo_s_nivel_educativo.findData(seleccion_previa)
+        self.combo_s_nivel_educativo.setCurrentIndex(idx if idx >= 0 else 0)
+        self.combo_s_nivel_educativo.blockSignals(False)
 
     #El Ciclo solo tiene sentido si el nivel elegido es Secundaria, y el
     #Área Técnica solo es académicamente válida en Secundaria - Segundo
@@ -1049,24 +1049,24 @@ class ModuloMaterias(QWidget):
     #para ese curso.
     def _actualizar_ciclo_y_especialidad_seccion(self):
 
-        nivel= self.s_nivel_educativo.currentData()
-        self.s_ciclo_secundaria.setVisible(nivel == "Secundaria")
+        nivel= self.combo_s_nivel_educativo.currentData()
+        self.combo_s_ciclo_secundaria.setVisible(nivel == "Secundaria")
         if nivel != "Secundaria":
-            self.s_ciclo_secundaria.setCurrentIndex(0)
-        ciclo= self.s_ciclo_secundaria.currentData()
+            self.combo_s_ciclo_secundaria.setCurrentIndex(0)
+        ciclo= self.combo_s_ciclo_secundaria.currentData()
         permite_tecnico= (not nivel) or puede_tener_componente_tecnico(nivel, ciclo, self._tipo_institucion())
         visible_especialidad= self._es_politecnico() and permite_tecnico
-        self.s_especialidad.setVisible(visible_especialidad)
-        self.s_especialidad.setEnabled(True)
+        self.combo_s_especialidad.setVisible(visible_especialidad)
+        self.combo_s_especialidad.setEnabled(True)
         if not visible_especialidad:
-            self.s_especialidad.setCurrentIndex(0)
+            self.combo_s_especialidad.setCurrentIndex(0)
             if self._es_politecnico():
-                self.s_especialidad.setToolTip(
+                self.combo_s_especialidad.setToolTip(
                     "Esta institución es un Politécnico, pero el nivel/ciclo elegido para este curso "
                     "(Primer Ciclo de Secundaria, Primaria, Preparatoria o Universidad) no puede tener "
                     "Área Técnica -es un componente exclusivo de Secundaria, Segundo Ciclo.")
         else:
-            self.s_especialidad.setToolTip(
+            self.combo_s_especialidad.setToolTip(
                 "Área técnica del curso/sección (obligatorio en Politécnico). Se usa para filtrar "
                 "estudiantes, materias y secciones por área técnica.")
 
@@ -1074,9 +1074,9 @@ class ModuloMaterias(QWidget):
         #todavía no se ha clasificado el curso).
         permite_carrera= (not nivel) or nivel == "Universidad"
         visible_carrera= self._es_universidad() and permite_carrera
-        self.s_carrera.setVisible(visible_carrera)
+        self.combo_s_carrera.setVisible(visible_carrera)
         if not visible_carrera:
-            self.s_carrera.setCurrentIndex(0)
+            self.combo_s_carrera.setCurrentIndex(0)
 
     def _tipo_institucion(self):
 
@@ -1102,19 +1102,19 @@ class ModuloMaterias(QWidget):
         if not f:
             return
         self.id_edicion_materia= f["id"]
-        self.m_codigo.setText(f["codigo"] or "")
+        self.in_m_codigo.setText(f["codigo"] or "")
         #Al cargar una materia ya existente para editarla, el código deja de ser de solo lectura: es la otra puerta de
         #entrada (junto con el clic derecho) para poder escribirlo a mano.
         self._codigo_materia_manual= True
-        self.m_codigo.setReadOnly(False)
-        self.m_nombre.setText(f["nombre"] or "")
-        self.m_creditos.setValue(f["creditos"] or 0)
-        idx_curso= self.m_curso.findData(f["grado_id"])
-        self.m_curso.setCurrentIndex(idx_curso if idx_curso >= 0 else 0)
-        idx2= self.m_profesor.findData(f["profesor_id"])
-        self.m_profesor.setCurrentIndex(idx2 if idx2 >= 0 else 0)
-        self.m_estado.setCurrentText(f["estado"] or "Activa")
-        activar_modo_edicion(self.m_nombre, f"Editando materia: {f['nombre'] or ''}")
+        self.in_m_codigo.setReadOnly(False)
+        self.in_m_nombre.setText(f["nombre"] or "")
+        self.in_m_creditos.setValue(f["creditos"] or 0)
+        idx_curso= self.combo_m_curso.findData(f["grado_id"])
+        self.combo_m_curso.setCurrentIndex(idx_curso if idx_curso >= 0 else 0)
+        idx2= self.combo_m_profesor.findData(f["profesor_id"])
+        self.combo_m_profesor.setCurrentIndex(idx2 if idx2 >= 0 else 0)
+        self.combo_m_estado.setCurrentText(f["estado"] or "Activa")
+        activar_modo_edicion(self.in_m_nombre, f"Editando materia: {f['nombre'] or ''}")
 
     def _eliminar_materia(self):
 
@@ -1185,45 +1185,45 @@ class ModuloMaterias(QWidget):
         disposicion.setContentsMargins(4, 12, 4, 4)
         disposicion.setSpacing(14)
         frame_form, form= self._tarjeta_formulario("Datos de la Sección")
-        self.s_grado= QLineEdit()
-        limitar_campo_texto(self.s_grado, 300)
-        self.s_grado.setPlaceholderText("Grado/Curso (ej. 5to)")
-        self.s_nivel_educativo= QComboBox()
-        self.s_nivel_educativo.addItem("— Sin clasificar —", None)
-        conectar_tooltip_seleccion(self.s_nivel_educativo,
+        self.in_s_grado= QLineEdit()
+        limitar_campo_texto(self.in_s_grado, 300)
+        self.in_s_grado.setPlaceholderText("Grado/Curso (ej. 5to)")
+        self.combo_s_nivel_educativo= QComboBox()
+        self.combo_s_nivel_educativo.addItem("— Sin clasificar —", None)
+        conectar_tooltip_seleccion(self.combo_s_nivel_educativo,
             "Nivel educativo del Grado/Curso. Se usa para calcular la nota mínima aprobatoria correcta "
             "(Sistema Dominicano), para los filtros de Estudiantes, y para validar si el curso puede "
             "tener Área Técnica. Solo se ofrecen los niveles habilitados en Configuración > Académico. "
             "Déjalo 'Sin clasificar' si no aplica.")
-        self.s_ciclo_secundaria= QComboBox()
-        self.s_ciclo_secundaria.addItem("— Sin clasificar —", None)
+        self.combo_s_ciclo_secundaria= QComboBox()
+        self.combo_s_ciclo_secundaria.addItem("— Sin clasificar —", None)
         for ciclo in CICLOS_SECUNDARIA:
-            self.s_ciclo_secundaria.addItem(ciclo, ciclo)
-        conectar_tooltip_seleccion(self.s_ciclo_secundaria,
+            self.combo_s_ciclo_secundaria.addItem(ciclo, ciclo)
+        conectar_tooltip_seleccion(self.combo_s_ciclo_secundaria,
             "Ciclo dentro de Secundaria (sistema dominicano). Solo el Segundo Ciclo puede tener Área "
             "Técnica/modalidad técnico-profesional; el Primer Ciclo nunca la tiene.")
-        self.s_nivel_educativo.currentIndexChanged.connect(self._actualizar_ciclo_y_especialidad_seccion)
-        self.s_ciclo_secundaria.currentIndexChanged.connect(self._actualizar_ciclo_y_especialidad_seccion)
+        self.combo_s_nivel_educativo.currentIndexChanged.connect(self._actualizar_ciclo_y_especialidad_seccion)
+        self.combo_s_ciclo_secundaria.currentIndexChanged.connect(self._actualizar_ciclo_y_especialidad_seccion)
         self._poblar_nivel_educativo_seccion()
-        self.s_nombre= QLineEdit()
-        limitar_campo_texto(self.s_nombre, 300)
-        self.s_nombre.setPlaceholderText("Sección (ej. A)")
-        self.s_turno= QComboBox()
-        self.s_turno.addItems(TURNOS)
-        conectar_tooltip_seleccion(self.s_turno, "Turno en el que opera esta sección")
-        self.s_aula= QComboBox()
-        conectar_tooltip_seleccion(self.s_aula, "Aula fija asignada a la sección. 'Sin asignar' = aún no tiene aula fija")
-        self.s_especialidad= QComboBox()
-        conectar_tooltip_seleccion(self.s_especialidad,
+        self.in_s_nombre= QLineEdit()
+        limitar_campo_texto(self.in_s_nombre, 300)
+        self.in_s_nombre.setPlaceholderText("Sección (ej. A)")
+        self.combo_s_turno= QComboBox()
+        self.combo_s_turno.addItems(TURNOS)
+        conectar_tooltip_seleccion(self.combo_s_turno, "Turno en el que opera esta sección")
+        self.combo_s_aula= QComboBox()
+        conectar_tooltip_seleccion(self.combo_s_aula, "Aula fija asignada a la sección. 'Sin asignar' = aún no tiene aula fija")
+        self.combo_s_especialidad= QComboBox()
+        conectar_tooltip_seleccion(self.combo_s_especialidad,
             "Área técnica del curso/sección (obligatorio en Politécnico). Se usa para filtrar "
             "estudiantes, materias y secciones por área técnica.")
-        self.s_carrera= QComboBox()
-        conectar_tooltip_seleccion(self.s_carrera,
+        self.combo_s_carrera= QComboBox()
+        conectar_tooltip_seleccion(self.combo_s_carrera,
             "Carrera del curso/sección (opcional, solo en Universidad). No es obligatorio: la mayoría de "
             "estudiantes universitarios ya se matriculan directamente por Carrera. Úsalo solo si además "
             "quieres clasificar este Curso/Sección por Carrera para los filtros del sistema.")
-        self.s_profesor_guia= QComboBox()
-        conectar_tooltip_seleccion(self.s_profesor_guia,
+        self.combo_s_profesor_guia= QComboBox()
+        conectar_tooltip_seleccion(self.combo_s_profesor_guia,
             "Profesor guía/tutor de la sección. 'Sin asignar' = aún no tiene profesor guía")
         #Aplica el estado inicial de visibilidad del Ciclo (y de habilitado/ deshabilitado del Área Técnica) apenas se
         #crean todos los combos que
@@ -1232,15 +1232,15 @@ class ModuloMaterias(QWidget):
         #índice con el que arranca el combo, que no dispara el signal) el combo de Ciclo se quedaba visible desde el
         #inicio hasta el primer cambio manual.
         self._actualizar_ciclo_y_especialidad_seccion()
-        form.addWidget(self.s_grado, 0, 0)
-        form.addWidget(self.s_nombre, 0, 1)
-        form.addWidget(self.s_turno, 0, 2)
-        form.addWidget(self.s_aula, 1, 0)
-        form.addWidget(self.s_especialidad, 1, 1)
-        form.addWidget(self.s_profesor_guia, 1, 2)
-        form.addWidget(self.s_nivel_educativo, 2, 0)
-        form.addWidget(self.s_ciclo_secundaria, 2, 1)
-        form.addWidget(self.s_carrera, 2, 2)
+        form.addWidget(self.in_s_grado, 0, 0)
+        form.addWidget(self.in_s_nombre, 0, 1)
+        form.addWidget(self.combo_s_turno, 0, 2)
+        form.addWidget(self.combo_s_aula, 1, 0)
+        form.addWidget(self.combo_s_especialidad, 1, 1)
+        form.addWidget(self.combo_s_profesor_guia, 1, 2)
+        form.addWidget(self.combo_s_nivel_educativo, 2, 0)
+        form.addWidget(self.combo_s_ciclo_secundaria, 2, 1)
+        form.addWidget(self.combo_s_carrera, 2, 2)
         btn_guardar= QPushButton("Guardar Sección")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -1338,24 +1338,24 @@ class ModuloMaterias(QWidget):
 
     def _guardar_seccion(self):
 
-        if not self.s_grado.text().strip() or not self.s_nombre.text().strip():
+        if not self.in_s_grado.text().strip() or not self.in_s_nombre.text().strip():
             mostrar_mensaje("advertencia", "Datos incompletos", "Grado y sección son obligatorios.", self)
             return
-        nivel_educativo= self.s_nivel_educativo.currentData()
-        ciclo_secundaria= self.s_ciclo_secundaria.currentData() if nivel_educativo == "Secundaria" else None
+        nivel_educativo= self.combo_s_nivel_educativo.currentData()
+        ciclo_secundaria= self.combo_s_ciclo_secundaria.currentData() if nivel_educativo == "Secundaria" else None
         #El Área Técnica solo es obligatoria si, además de ser un Politécnico, el Nivel/Ciclo de ESTE curso admite
         #componente técnico (ver puede_tener_componente_tecnico). Si el usuario ya clasificó el curso como Primaria,
         #Preparatoria, Universidad o Secundaria-Primer Ciclo, el combo ni siquiera se muestra
         #(_actualizar_ciclo_y_especialidad_seccion) y por lo tanto tampoco debe exigirse aquí.
         permite_tecnico= (not nivel_educativo) or puede_tener_componente_tecnico(
             nivel_educativo, ciclo_secundaria, self._tipo_institucion())
-        if self._es_politecnico() and permite_tecnico and self.s_especialidad.currentData() is None:
+        if self._es_politecnico() and permite_tecnico and self.combo_s_especialidad.currentData() is None:
             mostrar_mensaje("advertencia", "Datos incompletos",
                              "Esta institución es un Politécnico: selecciona el Área Técnica del curso/sección.", self)
             return
         #Validación lógica (no solo visual): un Área Técnica nunca es válida fuera de Secundaria - Segundo Ciclo, sin
         #importar cómo haya quedado habilitado o no el combo en pantalla (ver puede_tener_componente_tecnico).
-        if (self.s_especialidad.currentData() is not None
+        if (self.combo_s_especialidad.currentData() is not None
                 and not puede_tener_componente_tecnico(nivel_educativo, ciclo_secundaria, self._tipo_institucion())):
             mostrar_mensaje("advertencia", "Combinación inválida",
                              "El Área Técnica solo es válida para cursos de Secundaria - Segundo Ciclo. "
@@ -1363,20 +1363,20 @@ class ModuloMaterias(QWidget):
             return
         conn= obtener_conexion()
         c= conn.cursor()
-        c.execute("SELECT id FROM grados WHERE nombre=?", (self.s_grado.text().strip(),))
+        c.execute("SELECT id FROM grados WHERE nombre=?", (self.in_s_grado.text().strip(),))
         g= c.fetchone()
         if g:
             grado_id= g["id"]
             #El curso también "recuerda" el área técnica más reciente que se le asignó desde una sección, para poder
             #filtrar por área técnica a nivel de curso.
-            if self.s_especialidad.currentData() is not None:
+            if self.combo_s_especialidad.currentData() is not None:
                 c.execute("UPDATE grados SET especialidad_id=? WHERE id=?",
-                          (self.s_especialidad.currentData(), grado_id))
+                          (self.combo_s_especialidad.currentData(), grado_id))
             #Mismo criterio para la Carrera (Universidad): el Curso "recuerda" la última Carrera que se le asignó desde una
             #sección, igual que ya hace con el Área Técnica de Politécnico.
-            if self.s_carrera.currentData() is not None:
+            if self.combo_s_carrera.currentData() is not None:
                 c.execute("UPDATE grados SET carrera_id=? WHERE id=?",
-                          (self.s_carrera.currentData(), grado_id))
+                          (self.combo_s_carrera.currentData(), grado_id))
             #Mismo criterio para el nivel educativo (Primaria/Secundaria/Preparatoria/ Universidad) y el ciclo: se guardan
             #a nivel de Grado/Curso, no de Sección, así que se actualizan aquí igual que la especialidad. "Sin clasificar"
             #(None) se guarda tal cual: permite revertir una clasificación puesta por error.
@@ -1385,12 +1385,12 @@ class ModuloMaterias(QWidget):
         else:
             c.execute("INSERT INTO grados (nombre, especialidad_id, carrera_id, nivel_educativo, ciclo_secundaria) "
                       "VALUES (?,?,?,?,?)",
-                      (self.s_grado.text().strip(), self.s_especialidad.currentData(),
-                       self.s_carrera.currentData(), nivel_educativo, ciclo_secundaria))
+                      (self.in_s_grado.text().strip(), self.combo_s_especialidad.currentData(),
+                       self.combo_s_carrera.currentData(), nivel_educativo, ciclo_secundaria))
             grado_id= c.lastrowid
-        datos= (grado_id, self.s_nombre.text().strip(), self.s_turno.currentText(),
-                 self.s_aula.currentData(), self.s_especialidad.currentData(), self.s_carrera.currentData(),
-                 self.s_profesor_guia.currentData())
+        datos= (grado_id, self.in_s_nombre.text().strip(), self.combo_s_turno.currentText(),
+                 self.combo_s_aula.currentData(), self.combo_s_especialidad.currentData(), self.combo_s_carrera.currentData(),
+                 self.combo_s_profesor_guia.currentData())
         if self.id_edicion_seccion is None:
             c.execute("""INSERT INTO secciones (grado_id, nombre, turno, aula_id, especialidad_id, carrera_id,
                          profesor_guia_id) VALUES (?,?,?,?,?,?,?)""", datos)
@@ -1402,7 +1402,7 @@ class ModuloMaterias(QWidget):
         conn.commit()
         conn.close()
         registrar_auditoria("Secciones", accion, self.main_window.usuario_actual,
-                            f"{self.s_grado.text()} - {self.s_nombre.text()}")
+                            f"{self.in_s_grado.text()} - {self.in_s_nombre.text()}")
         self._limpiar_seccion()
         self.refrescar()
 
@@ -1412,20 +1412,20 @@ class ModuloMaterias(QWidget):
         #quedaban con el valor de la última sección cargada/guardada. Eso hacía que una sección nueva pudiera guardarse
         #por accidente con el profesor guía (u otro dato) de la anterior, sin que el usuario lo notara.
         self.id_edicion_seccion= None
-        self.s_grado.clear()
-        self.s_nivel_educativo.setCurrentIndex(0)
-        self.s_ciclo_secundaria.setCurrentIndex(0)
-        self.s_nombre.clear()
-        self.s_turno.setCurrentIndex(0)
-        self.s_aula.setCurrentIndex(0)
-        self.s_especialidad.setCurrentIndex(0)
-        self.s_carrera.setCurrentIndex(0)
-        self.s_profesor_guia.setCurrentIndex(0)
+        self.in_s_grado.clear()
+        self.combo_s_nivel_educativo.setCurrentIndex(0)
+        self.combo_s_ciclo_secundaria.setCurrentIndex(0)
+        self.in_s_nombre.clear()
+        self.combo_s_turno.setCurrentIndex(0)
+        self.combo_s_aula.setCurrentIndex(0)
+        self.combo_s_especialidad.setCurrentIndex(0)
+        self.combo_s_carrera.setCurrentIndex(0)
+        self.combo_s_profesor_guia.setCurrentIndex(0)
         self.tabla_secciones.clearSelection()
         #Por si Nivel/Ciclo ya estaban en índice 0 (no dispara currentIndexChanged):
         #recalcula visibilidad igualmente, para que Ciclo no quede visible por error.
         self._actualizar_ciclo_y_especialidad_seccion()
-        desactivar_modo_edicion(self.s_nombre)
+        desactivar_modo_edicion(self.in_s_nombre)
 
     def _cargar_seccion_seleccionada(self):
 
@@ -1445,23 +1445,23 @@ class ModuloMaterias(QWidget):
         if not f:
             return
         self.id_edicion_seccion= f["id"]
-        self.s_grado.setText(f["grado_nombre"] or "")
-        idx_nivel= self.s_nivel_educativo.findData(f["nivel_educativo"])
-        self.s_nivel_educativo.setCurrentIndex(idx_nivel if idx_nivel >= 0 else 0)
-        idx_ciclo= self.s_ciclo_secundaria.findData(f["ciclo_secundaria"])
-        self.s_ciclo_secundaria.setCurrentIndex(idx_ciclo if idx_ciclo >= 0 else 0)
+        self.in_s_grado.setText(f["grado_nombre"] or "")
+        idx_nivel= self.combo_s_nivel_educativo.findData(f["nivel_educativo"])
+        self.combo_s_nivel_educativo.setCurrentIndex(idx_nivel if idx_nivel >= 0 else 0)
+        idx_ciclo= self.combo_s_ciclo_secundaria.findData(f["ciclo_secundaria"])
+        self.combo_s_ciclo_secundaria.setCurrentIndex(idx_ciclo if idx_ciclo >= 0 else 0)
         self._actualizar_ciclo_y_especialidad_seccion()
-        self.s_nombre.setText(f["nombre"] or "")
-        self.s_turno.setCurrentText(f["turno"] or "Mañana")
-        idx= self.s_aula.findData(f["aula_id"])
-        self.s_aula.setCurrentIndex(idx if idx >= 0 else 0)
-        idx2= self.s_especialidad.findData(f["especialidad_id"])
-        self.s_especialidad.setCurrentIndex(idx2 if idx2 >= 0 else 0)
-        idx4= self.s_carrera.findData(f["carrera_id"])
-        self.s_carrera.setCurrentIndex(idx4 if idx4 >= 0 else 0)
-        idx3= self.s_profesor_guia.findData(f["profesor_guia_id"])
-        self.s_profesor_guia.setCurrentIndex(idx3 if idx3 >= 0 else 0)
-        activar_modo_edicion(self.s_nombre, f"Editando sección: {f['nombre'] or ''}")
+        self.in_s_nombre.setText(f["nombre"] or "")
+        self.combo_s_turno.setCurrentText(f["turno"] or "Mañana")
+        idx= self.combo_s_aula.findData(f["aula_id"])
+        self.combo_s_aula.setCurrentIndex(idx if idx >= 0 else 0)
+        idx2= self.combo_s_especialidad.findData(f["especialidad_id"])
+        self.combo_s_especialidad.setCurrentIndex(idx2 if idx2 >= 0 else 0)
+        idx4= self.combo_s_carrera.findData(f["carrera_id"])
+        self.combo_s_carrera.setCurrentIndex(idx4 if idx4 >= 0 else 0)
+        idx3= self.combo_s_profesor_guia.findData(f["profesor_guia_id"])
+        self.combo_s_profesor_guia.setCurrentIndex(idx3 if idx3 >= 0 else 0)
+        activar_modo_edicion(self.in_s_nombre, f"Editando sección: {f['nombre'] or ''}")
 
     def _eliminar_seccion(self):
 
@@ -1537,19 +1537,19 @@ class ModuloMaterias(QWidget):
         disposicion.setContentsMargins(4, 12, 4, 4)
         disposicion.setSpacing(14)
         frame_form, form= self._tarjeta_formulario("Datos del Espacio Físico")
-        self.a_nombre= QLineEdit()
-        limitar_campo_texto(self.a_nombre, 300)
-        self.a_nombre.setPlaceholderText("Nombre del Aula/Laboratorio")
-        self.a_tipo= QComboBox()
-        self.a_tipo.addItems(["Aula", "Laboratorio", "Taller"])
-        conectar_tooltip_seleccion(self.a_tipo, "Tipo de espacio físico")
-        self.a_capacidad= QSpinBox()
-        self.a_capacidad.setRange(1, 200)
-        self.a_capacidad.setValue(30)
-        self.a_capacidad.setToolTip("Capacidad máxima de estudiantes que caben en el espacio")
-        form.addWidget(self.a_nombre, 0, 0)
-        form.addWidget(self.a_tipo, 0, 1)
-        form.addWidget(self.a_capacidad, 0, 2)
+        self.in_a_nombre= QLineEdit()
+        limitar_campo_texto(self.in_a_nombre, 300)
+        self.in_a_nombre.setPlaceholderText("Nombre del Aula/Laboratorio")
+        self.combo_a_tipo= QComboBox()
+        self.combo_a_tipo.addItems(["Aula", "Laboratorio", "Taller"])
+        conectar_tooltip_seleccion(self.combo_a_tipo, "Tipo de espacio físico")
+        self.in_a_capacidad= QSpinBox()
+        self.in_a_capacidad.setRange(1, 200)
+        self.in_a_capacidad.setValue(30)
+        self.in_a_capacidad.setToolTip("Capacidad máxima de estudiantes que caben en el espacio")
+        form.addWidget(self.in_a_nombre, 0, 0)
+        form.addWidget(self.combo_a_tipo, 0, 1)
+        form.addWidget(self.in_a_capacidad, 0, 2)
         btn_guardar= QPushButton("Guardar Aula")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -1641,11 +1641,11 @@ class ModuloMaterias(QWidget):
     def _limpiar_aula(self):
 
         self.id_edicion_aula= None
-        self.a_nombre.clear()
-        self.a_tipo.setCurrentIndex(0)
-        self.a_capacidad.setValue(30)
+        self.in_a_nombre.clear()
+        self.combo_a_tipo.setCurrentIndex(0)
+        self.in_a_capacidad.setValue(30)
         self.tabla_aulas.clearSelection()
-        desactivar_modo_edicion(self.a_nombre)
+        desactivar_modo_edicion(self.in_a_nombre)
 
     def _cargar_aula_seleccionada(self):
 
@@ -1663,30 +1663,30 @@ class ModuloMaterias(QWidget):
         if not f:
             return
         self.id_edicion_aula= f["id"]
-        self.a_nombre.setText(f["nombre"] or "")
-        self.a_tipo.setCurrentText(f["tipo"] or "Aula")
-        self.a_capacidad.setValue(f["capacidad"] or 1)
-        activar_modo_edicion(self.a_nombre, f"Editando aula: {f['nombre'] or ''}")
+        self.in_a_nombre.setText(f["nombre"] or "")
+        self.combo_a_tipo.setCurrentText(f["tipo"] or "Aula")
+        self.in_a_capacidad.setValue(f["capacidad"] or 1)
+        activar_modo_edicion(self.in_a_nombre, f"Editando aula: {f['nombre'] or ''}")
 
     def _guardar_aula(self):
 
-        if not self.a_nombre.text().strip():
+        if not self.in_a_nombre.text().strip():
             mostrar_mensaje("advertencia", "Datos incompletos", "El nombre es obligatorio.", self)
             return
         conn= obtener_conexion()
         c= conn.cursor()
         if self.id_edicion_aula is None:
             c.execute("INSERT INTO aulas (nombre, tipo, capacidad) VALUES (?,?,?)",
-                      (self.a_nombre.text().strip(), self.a_tipo.currentText(), self.a_capacidad.value()))
+                      (self.in_a_nombre.text().strip(), self.combo_a_tipo.currentText(), self.in_a_capacidad.value()))
             accion= "Agregó aula"
         else:
             c.execute("UPDATE aulas SET nombre=?, tipo=?, capacidad=? WHERE id=?",
-                      (self.a_nombre.text().strip(), self.a_tipo.currentText(), self.a_capacidad.value(),
+                      (self.in_a_nombre.text().strip(), self.combo_a_tipo.currentText(), self.in_a_capacidad.value(),
                        self.id_edicion_aula))
             accion= "Editó aula"
         conn.commit()
         conn.close()
-        registrar_auditoria("Aulas", accion, self.main_window.usuario_actual, self.a_nombre.text().strip())
+        registrar_auditoria("Aulas", accion, self.main_window.usuario_actual, self.in_a_nombre.text().strip())
         self._limpiar_aula()
         self.refrescar()
 
@@ -1758,33 +1758,33 @@ class ModuloMaterias(QWidget):
         #elegía directo la Sección, ya mezclando todos los cursos, y encima el combo arrancaba con la primera sección
         #de la lista ya seleccionada — así que "Sección" en realidad nunca era obligatoria, se guardaba el valor por
         #defecto si el usuario no tocaba el combo).
-        self.h_curso= QComboBox()
-        self.h_curso.setToolTip("Curso/Grado al que pertenece la sección (obligatorio)")
-        self.h_curso.addItem("Selecciona un curso/grado…", None)
-        self.h_curso.currentIndexChanged.connect(self._al_cambiar_curso_horario)
-        self.h_seccion= QComboBox()
-        self.h_seccion.setToolTip("Sección a la que se asigna esta clase (obligatorio)")
-        self.h_seccion.addItem("Selecciona primero un curso/grado…", None)
-        self.h_materia= QComboBox()
-        conectar_tooltip_seleccion(self.h_materia, "Materia o Módulo Técnico que se dicta en este horario")
-        self.h_dia= QComboBox()
-        self.h_dia.addItems(DIAS)
-        conectar_tooltip_seleccion(self.h_dia, "Día de la semana en que se dicta la clase")
-        self.h_hora_inicio= QLineEdit()
-        limitar_campo_texto(self.h_hora_inicio, 300)
-        self.h_hora_inicio.setPlaceholderText("Hora inicio (08:00)")
-        self.h_hora_fin= QLineEdit()
-        limitar_campo_texto(self.h_hora_fin, 300)
-        self.h_hora_fin.setPlaceholderText("Hora fin (09:00)")
-        self.h_aula= QComboBox()
-        conectar_tooltip_seleccion(self.h_aula, "Aula donde se dicta la clase. 'Sin asignar' = sin aula fija para esta clase")
-        form.addWidget(self.h_curso, 0, 0)
-        form.addWidget(self.h_seccion, 0, 1)
-        form.addWidget(self.h_materia, 0, 2)
-        form.addWidget(self.h_dia, 1, 0)
-        form.addWidget(self.h_hora_inicio, 1, 1)
-        form.addWidget(self.h_hora_fin, 1, 2)
-        form.addWidget(self.h_aula, 2, 0)
+        self.combo_h_curso= QComboBox()
+        self.combo_h_curso.setToolTip("Curso/Grado al que pertenece la sección (obligatorio)")
+        self.combo_h_curso.addItem("Selecciona un curso/grado…", None)
+        self.combo_h_curso.currentIndexChanged.connect(self._al_cambiar_curso_horario)
+        self.combo_h_seccion= QComboBox()
+        self.combo_h_seccion.setToolTip("Sección a la que se asigna esta clase (obligatorio)")
+        self.combo_h_seccion.addItem("Selecciona primero un curso/grado…", None)
+        self.combo_h_materia= QComboBox()
+        conectar_tooltip_seleccion(self.combo_h_materia, "Materia o Módulo Técnico que se dicta en este horario")
+        self.combo_h_dia= QComboBox()
+        self.combo_h_dia.addItems(DIAS)
+        conectar_tooltip_seleccion(self.combo_h_dia, "Día de la semana en que se dicta la clase")
+        self.in_h_hora_inicio= QLineEdit()
+        limitar_campo_texto(self.in_h_hora_inicio, 300)
+        self.in_h_hora_inicio.setPlaceholderText("Hora inicio (08:00)")
+        self.in_h_hora_fin= QLineEdit()
+        limitar_campo_texto(self.in_h_hora_fin, 300)
+        self.in_h_hora_fin.setPlaceholderText("Hora fin (09:00)")
+        self.combo_h_aula= QComboBox()
+        conectar_tooltip_seleccion(self.combo_h_aula, "Aula donde se dicta la clase. 'Sin asignar' = sin aula fija para esta clase")
+        form.addWidget(self.combo_h_curso, 0, 0)
+        form.addWidget(self.combo_h_seccion, 0, 1)
+        form.addWidget(self.combo_h_materia, 0, 2)
+        form.addWidget(self.combo_h_dia, 1, 0)
+        form.addWidget(self.in_h_hora_inicio, 1, 1)
+        form.addWidget(self.in_h_hora_fin, 1, 2)
+        form.addWidget(self.combo_h_aula, 2, 0)
         btn_guardar= QPushButton("Guardar Horario")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -1932,7 +1932,7 @@ class ModuloMaterias(QWidget):
     #al menos un estudiante activo de esa carrera.
     def _al_cambiar_curso_horario(self, _indice=None, seccion_id_preseleccionar=None):
 
-        cascada_seccion_por_curso(self.h_curso, self.h_seccion, incluir_todas=False)
+        cascada_seccion_por_curso(self.combo_h_curso, self.combo_h_seccion, incluir_todas=False)
 
         especialidad_id= self.h_filtro_especialidad.currentData() if self._es_politecnico() else None
         carrera_id= self.h_filtro_carrera.currentData() if self._es_universidad() else None
@@ -1945,9 +1945,9 @@ class ModuloMaterias(QWidget):
                              WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
                 secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
                 conn.close()
-            actual= self.h_seccion.currentData()
-            for i in range(self.h_seccion.count() - 1, 0, -1):
-                seccion_id= self.h_seccion.itemData(i)
+            actual= self.combo_h_seccion.currentData()
+            for i in range(self.combo_h_seccion.count() - 1, 0, -1):
+                seccion_id= self.combo_h_seccion.itemData(i)
                 if seccion_id is None:
                     continue
                 conn= obtener_conexion()
@@ -1957,16 +1957,16 @@ class ModuloMaterias(QWidget):
                 conn.close()
                 especialidad_seccion= fila_sec["especialidad_id"] if fila_sec else None
                 if especialidad_id is not None and especialidad_seccion != especialidad_id:
-                    self.h_seccion.removeItem(i)
+                    self.combo_h_seccion.removeItem(i)
                     continue
                 if secciones_carrera is not None and seccion_id not in secciones_carrera:
-                    self.h_seccion.removeItem(i)
-            idx= self.h_seccion.findData(actual)
-            self.h_seccion.setCurrentIndex(idx if idx >= 0 else 0)
+                    self.combo_h_seccion.removeItem(i)
+            idx= self.combo_h_seccion.findData(actual)
+            self.combo_h_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
         if seccion_id_preseleccionar is not None:
-            idx= self.h_seccion.findData(seccion_id_preseleccionar)
-            self.h_seccion.setCurrentIndex(idx if idx >= 0 else 0)
+            idx= self.combo_h_seccion.findData(seccion_id_preseleccionar)
+            self.combo_h_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
     #Igual que en Estudiantes: los combos de Área Técnica y Carrera del
     #formulario 'Asignar Clase' solo se muestran/pueblan si la
@@ -2021,8 +2021,8 @@ class ModuloMaterias(QWidget):
     def _cargar_combo_h_materia(self):
 
         especialidad_id= self.h_filtro_especialidad.currentData() if self._es_politecnico() else None
-        actual= self.h_materia.currentData()
-        self.h_materia.clear()
+        actual= self.combo_h_materia.currentData()
+        self.combo_h_materia.clear()
         conn= obtener_conexion()
         c= conn.cursor()
         if especialidad_id is not None:
@@ -2031,28 +2031,28 @@ class ModuloMaterias(QWidget):
         else:
             c.execute("SELECT id, nombre FROM materias WHERE estado='Activa' ORDER BY nombre")
         for fila in c.fetchall():
-            self.h_materia.addItem(fila["nombre"], fila["id"])
+            self.combo_h_materia.addItem(fila["nombre"], fila["id"])
         conn.close()
-        idx= self.h_materia.findData(actual)
-        self.h_materia.setCurrentIndex(idx if idx >= 0 else 0)
+        idx= self.combo_h_materia.findData(actual)
+        self.combo_h_materia.setCurrentIndex(idx if idx >= 0 else 0)
 
     def _limpiar_horario_form(self):
 
         self.id_edicion_horario= None
-        self.h_curso.setCurrentIndex(0)
-        self.h_seccion.setCurrentIndex(0)
+        self.combo_h_curso.setCurrentIndex(0)
+        self.combo_h_seccion.setCurrentIndex(0)
         if hasattr(self, "h_filtro_especialidad"):
             self.h_filtro_especialidad.setCurrentIndex(0)
         if hasattr(self, "h_filtro_carrera"):
             self.h_filtro_carrera.setCurrentIndex(0)
         self._cargar_combo_h_materia()
-        self.h_materia.setCurrentIndex(0)
-        self.h_dia.setCurrentIndex(0)
-        self.h_hora_inicio.clear()
-        self.h_hora_fin.clear()
-        self.h_aula.setCurrentIndex(0)
+        self.combo_h_materia.setCurrentIndex(0)
+        self.combo_h_dia.setCurrentIndex(0)
+        self.in_h_hora_inicio.clear()
+        self.in_h_hora_fin.clear()
+        self.combo_h_aula.setCurrentIndex(0)
         self.tabla_horarios.clearSelection()
-        desactivar_modo_edicion(self.h_hora_inicio)
+        desactivar_modo_edicion(self.in_h_hora_inicio)
 
     def _cargar_horario_seleccionado(self):
 
@@ -2070,27 +2070,27 @@ class ModuloMaterias(QWidget):
         if not f:
             return
         self.id_edicion_horario= f["id"]
-        preseleccionar_curso_y_seccion(self.h_curso, self.h_seccion, f["seccion_id"], incluir_todas=False)
-        idx_mat= self.h_materia.findData(f["materia_id"])
-        self.h_materia.setCurrentIndex(idx_mat if idx_mat >= 0 else 0)
-        self.h_dia.setCurrentText(f["dia"] or DIAS[0])
-        self.h_hora_inicio.setText(f["hora_inicio"] or "")
-        self.h_hora_fin.setText(f["hora_fin"] or "")
-        idx_aula= self.h_aula.findData(f["aula_id"])
-        self.h_aula.setCurrentIndex(idx_aula if idx_aula >= 0 else 0)
-        activar_modo_edicion(self.h_hora_inicio, "Editando franja de horario")
+        preseleccionar_curso_y_seccion(self.combo_h_curso, self.combo_h_seccion, f["seccion_id"], incluir_todas=False)
+        idx_mat= self.combo_h_materia.findData(f["materia_id"])
+        self.combo_h_materia.setCurrentIndex(idx_mat if idx_mat >= 0 else 0)
+        self.combo_h_dia.setCurrentText(f["dia"] or DIAS[0])
+        self.in_h_hora_inicio.setText(f["hora_inicio"] or "")
+        self.in_h_hora_fin.setText(f["hora_fin"] or "")
+        idx_aula= self.combo_h_aula.findData(f["aula_id"])
+        self.combo_h_aula.setCurrentIndex(idx_aula if idx_aula >= 0 else 0)
+        activar_modo_edicion(self.in_h_hora_inicio, "Editando franja de horario")
 
     def _guardar_horario(self):
 
-        if self.h_curso.currentData() is None:
+        if self.combo_h_curso.currentData() is None:
             mostrar_mensaje("advertencia", "Datos incompletos", "Selecciona el curso/grado.", self)
             return
-        if self.h_seccion.currentData() is None or self.h_materia.currentData() is None:
+        if self.combo_h_seccion.currentData() is None or self.combo_h_materia.currentData() is None:
             mostrar_mensaje("advertencia", "Datos incompletos", "Selecciona sección y materia.", self)
             return
-        dia= self.h_dia.currentText()
-        hora_inicio_txt= self.h_hora_inicio.text().strip()
-        hora_fin_txt= self.h_hora_fin.text().strip()
+        dia= self.combo_h_dia.currentText()
+        hora_inicio_txt= self.in_h_hora_inicio.text().strip()
+        hora_fin_txt= self.in_h_hora_fin.text().strip()
         try:
 
             nuevo_inicio= _minutos(hora_inicio_txt)
@@ -2103,8 +2103,8 @@ class ModuloMaterias(QWidget):
             mostrar_mensaje("advertencia", "Rango inválido",
                            "La hora de fin debe ser posterior a la hora de inicio.", self)
             return
-        materia_id= self.h_materia.currentData()
-        aula_id= self.h_aula.currentData()
+        materia_id= self.combo_h_materia.currentData()
+        aula_id= self.combo_h_aula.currentData()
         conflicto= self._detectar_conflicto_horario(dia, nuevo_inicio, nuevo_fin, materia_id, aula_id,
                                                        excluir_id= self.id_edicion_horario)
         if conflicto:
@@ -2115,12 +2115,12 @@ class ModuloMaterias(QWidget):
         if self.id_edicion_horario is None:
             c.execute("""INSERT INTO horarios (seccion_id, materia_id, dia, hora_inicio, hora_fin, aula_id)
                          VALUES (?,?,?,?,?,?)""",
-                      (self.h_seccion.currentData(), materia_id, dia, hora_inicio_txt, hora_fin_txt, aula_id))
+                      (self.combo_h_seccion.currentData(), materia_id, dia, hora_inicio_txt, hora_fin_txt, aula_id))
             accion= "Asignó horario"
         else:
             c.execute("""UPDATE horarios SET seccion_id=?, materia_id=?, dia=?, hora_inicio=?, hora_fin=?,
                          aula_id= ? WHERE id=?""",
-                      (self.h_seccion.currentData(), materia_id, dia, hora_inicio_txt, hora_fin_txt, aula_id,
+                      (self.combo_h_seccion.currentData(), materia_id, dia, hora_inicio_txt, hora_fin_txt, aula_id,
                        self.id_edicion_horario))
             accion= "Editó horario"
         conn.commit()
@@ -2268,28 +2268,28 @@ class ModuloMaterias(QWidget):
         lbl_desc.setWordWrap(True)
         disposicion.addWidget(lbl_desc)
         frame_form, form= self._tarjeta_formulario("Nueva Asignación")
-        self.ap_materia= QComboBox()
-        conectar_tooltip_seleccion(self.ap_materia, "Materia académica a la que se asigna este co-docente")
+        self.combo_ap_materia= QComboBox()
+        conectar_tooltip_seleccion(self.combo_ap_materia, "Materia académica a la que se asigna este co-docente")
         #Igual que en Horarios: primero se elige el Grado/Curso (opcional) y eso acota las opciones de Sección, en vez
         #de mezclar todas las secciones de todos los grados en un solo combo largo.
-        self.ap_curso= QComboBox()
-        self.ap_curso.currentIndexChanged.connect(self._al_cambiar_curso_asignacion)
-        self.ap_seccion= QComboBox()
-        self.ap_profesor= QComboBox()
-        conectar_tooltip_seleccion(self.ap_profesor, "Profesor que se asigna como co-docente")
-        self.ap_tipo= QComboBox()
-        self.ap_tipo.addItems(["Auxiliar", "Suplente", "Co-titular", "Practicante"])
-        conectar_tooltip_seleccion(self.ap_tipo, "Rol del co-docente en esta materia/sección")
+        self.combo_ap_curso= QComboBox()
+        self.combo_ap_curso.currentIndexChanged.connect(self._al_cambiar_curso_asignacion)
+        self.combo_ap_seccion= QComboBox()
+        self.combo_ap_profesor= QComboBox()
+        conectar_tooltip_seleccion(self.combo_ap_profesor, "Profesor que se asigna como co-docente")
+        self.combo_ap_tipo= QComboBox()
+        self.combo_ap_tipo.addItems(["Auxiliar", "Suplente", "Co-titular", "Practicante"])
+        conectar_tooltip_seleccion(self.combo_ap_tipo, "Rol del co-docente en esta materia/sección")
         form.addWidget(QLabel("Materia:"), 0, 0)
-        form.addWidget(self.ap_materia, 0, 1)
+        form.addWidget(self.combo_ap_materia, 0, 1)
         form.addWidget(QLabel("Profesor:"), 0, 2)
-        form.addWidget(self.ap_profesor, 0, 3)
+        form.addWidget(self.combo_ap_profesor, 0, 3)
         form.addWidget(QLabel("Grado/Curso (opcional):"), 1, 0)
-        form.addWidget(self.ap_curso, 1, 1)
+        form.addWidget(self.combo_ap_curso, 1, 1)
         form.addWidget(QLabel("Sección (opcional):"), 1, 2)
-        form.addWidget(self.ap_seccion, 1, 3)
+        form.addWidget(self.combo_ap_seccion, 1, 3)
         form.addWidget(QLabel("Tipo de asignación:"), 2, 0)
-        form.addWidget(self.ap_tipo, 2, 1)
+        form.addWidget(self.combo_ap_tipo, 2, 1)
         btn_guardar= QPushButton("Asignar Co-Docente")
         btn_guardar.setIcon(icono_emoji("💾"))
         btn_guardar.setIconSize(_QSize_emoji(16, 16))
@@ -2416,7 +2416,7 @@ class ModuloMaterias(QWidget):
 
     def _al_cambiar_curso_asignacion(self, _indice=None, seccion_id_preseleccionar=None):
 
-        cascada_seccion_por_curso(self.ap_curso, self.ap_seccion, incluir_todas=False)
+        cascada_seccion_por_curso(self.combo_ap_curso, self.combo_ap_seccion, incluir_todas=False)
 
         especialidad_id= self.ap_filtro_especialidad.currentData() if self._es_politecnico() else None
         carrera_id= self.ap_filtro_carrera.currentData() if self._es_universidad() else None
@@ -2429,9 +2429,9 @@ class ModuloMaterias(QWidget):
                              WHERE carrera_id=? AND estado='Activo' AND seccion_id IS NOT NULL""", (carrera_id,))
                 secciones_carrera= {fila["seccion_id"] for fila in c.fetchall()}
                 conn.close()
-            actual= self.ap_seccion.currentData()
-            for i in range(self.ap_seccion.count() - 1, 0, -1):
-                seccion_id= self.ap_seccion.itemData(i)
+            actual= self.combo_ap_seccion.currentData()
+            for i in range(self.combo_ap_seccion.count() - 1, 0, -1):
+                seccion_id= self.combo_ap_seccion.itemData(i)
                 if seccion_id is None:
                     continue
                 conn= obtener_conexion()
@@ -2441,16 +2441,16 @@ class ModuloMaterias(QWidget):
                 conn.close()
                 especialidad_seccion= fila_sec["especialidad_id"] if fila_sec else None
                 if especialidad_id is not None and especialidad_seccion != especialidad_id:
-                    self.ap_seccion.removeItem(i)
+                    self.combo_ap_seccion.removeItem(i)
                     continue
                 if secciones_carrera is not None and seccion_id not in secciones_carrera:
-                    self.ap_seccion.removeItem(i)
-            idx= self.ap_seccion.findData(actual)
-            self.ap_seccion.setCurrentIndex(idx if idx >= 0 else 0)
+                    self.combo_ap_seccion.removeItem(i)
+            idx= self.combo_ap_seccion.findData(actual)
+            self.combo_ap_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
         if seccion_id_preseleccionar is not None:
-            idx= self.ap_seccion.findData(seccion_id_preseleccionar)
-            self.ap_seccion.setCurrentIndex(idx if idx >= 0 else 0)
+            idx= self.combo_ap_seccion.findData(seccion_id_preseleccionar)
+            self.combo_ap_seccion.setCurrentIndex(idx if idx >= 0 else 0)
 
     #Igual que en Estudiantes: los combos de Área Técnica y Carrera de
     #'Asignar Profesor' solo se muestran/pueblan si la institución tiene
@@ -2495,15 +2495,15 @@ class ModuloMaterias(QWidget):
 
     def _limpiar_asignacion(self):
 
-        self.ap_materia.setCurrentIndex(0)
+        self.combo_ap_materia.setCurrentIndex(0)
         if hasattr(self, "ap_filtro_especialidad"):
             self.ap_filtro_especialidad.setCurrentIndex(0)
         if hasattr(self, "ap_filtro_carrera"):
             self.ap_filtro_carrera.setCurrentIndex(0)
-        self.ap_curso.setCurrentIndex(0)
-        self.ap_seccion.setCurrentIndex(0)
-        self.ap_profesor.setCurrentIndex(0)
-        self.ap_tipo.setCurrentIndex(0)
+        self.combo_ap_curso.setCurrentIndex(0)
+        self.combo_ap_seccion.setCurrentIndex(0)
+        self.combo_ap_profesor.setCurrentIndex(0)
+        self.combo_ap_tipo.setCurrentIndex(0)
         self.tabla_asignaciones.clearSelection()
         #Sale del modo edición (si estaba editando una asignación)
         self._id_asignacion_editando= None
@@ -2534,39 +2534,39 @@ class ModuloMaterias(QWidget):
                             "Esta asignación ya no existe (quizá se eliminó desde otro equipo).", self)
             return
         self._id_asignacion_editando= id_asig
-        self.ap_materia.blockSignals(True)
-        idx_m= self.ap_materia.findData(f["materia_id"])
-        self.ap_materia.setCurrentIndex(idx_m if idx_m >= 0 else 0)
-        self.ap_materia.blockSignals(False)
+        self.combo_ap_materia.blockSignals(True)
+        idx_m= self.combo_ap_materia.findData(f["materia_id"])
+        self.combo_ap_materia.setCurrentIndex(idx_m if idx_m >= 0 else 0)
+        self.combo_ap_materia.blockSignals(False)
         #Curso/Sección en cascada: primero el grado de la sección (repopulate el combo de secciones) y luego la sección
         #exacta.
-        self.ap_curso.blockSignals(True)
-        idx_g= self.ap_curso.findData(f["grado_id"]) if f["grado_id"] is not None else 0
-        self.ap_curso.setCurrentIndex(idx_g if idx_g >= 0 else 0)
-        self.ap_curso.blockSignals(False)
+        self.combo_ap_curso.blockSignals(True)
+        idx_g= self.combo_ap_curso.findData(f["grado_id"]) if f["grado_id"] is not None else 0
+        self.combo_ap_curso.setCurrentIndex(idx_g if idx_g >= 0 else 0)
+        self.combo_ap_curso.blockSignals(False)
         self._al_cambiar_curso_asignacion(seccion_id_preseleccionar=f["seccion_id"])
-        idx_p= self.ap_profesor.findData(f["profesor_id"])
-        self.ap_profesor.setCurrentIndex(idx_p if idx_p >= 0 else 0)
-        idx_t= self.ap_tipo.findText(f["tipo_asignacion"] or "Auxiliar")
-        self.ap_tipo.setCurrentIndex(idx_t if idx_t >= 0 else 0)
+        idx_p= self.combo_ap_profesor.findData(f["profesor_id"])
+        self.combo_ap_profesor.setCurrentIndex(idx_p if idx_p >= 0 else 0)
+        idx_t= self.combo_ap_tipo.findText(f["tipo_asignacion"] or "Auxiliar")
+        self.combo_ap_tipo.setCurrentIndex(idx_t if idx_t >= 0 else 0)
         if hasattr(self, "btn_guardar_asignacion"):
             self.btn_guardar_asignacion.setText("Actualizar Asignación")
         #Abre el panel colapsable del formulario (de golpe) y lleva la vista hasta él con el banner "Editando..." —
         #mismo feedback que el resto de pestañas/módulos.
-        activar_modo_edicion(self.ap_materia, f"Editando asignación #{id_asig}")
+        activar_modo_edicion(self.combo_ap_materia, f"Editando asignación #{id_asig}")
 
     def _guardar_asignacion(self):
 
         if not puede_editar(self.main_window):
             mostrar_mensaje("advertencia", "Sin permisos", "Tu rol no puede asignar co-docentes.", self)
             return
-        materia_id= self.ap_materia.currentData()
-        profesor_id= self.ap_profesor.currentData()
+        materia_id= self.combo_ap_materia.currentData()
+        profesor_id= self.combo_ap_profesor.currentData()
         if materia_id is None or profesor_id is None:
             mostrar_mensaje("advertencia", "Datos incompletos", "Selecciona la materia y el profesor.", self)
             return
-        seccion_id= self.ap_seccion.currentData()
-        tipo= self.ap_tipo.currentText()
+        seccion_id= self.combo_ap_seccion.currentData()
+        tipo= self.combo_ap_tipo.currentText()
         editando= getattr(self, "_id_asignacion_editando", None)
         conn= obtener_conexion()
         c= conn.cursor()
@@ -2583,11 +2583,11 @@ class ModuloMaterias(QWidget):
             c.execute("""UPDATE materia_profesores
                          SET materia_id=?, profesor_id=?, seccion_id=?, tipo_asignacion=?
                          WHERE id=?""", (materia_id, profesor_id, seccion_id, tipo, editando))
-            detalle_aud= f"#{editando}: {self.ap_profesor.currentText()} -> {self.ap_materia.currentText()} ({tipo})"
+            detalle_aud= f"#{editando}: {self.combo_ap_profesor.currentText()} -> {self.combo_ap_materia.currentText()} ({tipo})"
         else:
             c.execute("""INSERT INTO materia_profesores (materia_id, profesor_id, seccion_id, tipo_asignacion)
                          VALUES (?,?,?,?)""", (materia_id, profesor_id, seccion_id, tipo))
-            detalle_aud= f"{self.ap_profesor.currentText()} -> {self.ap_materia.currentText()} ({tipo})"
+            detalle_aud= f"{self.combo_ap_profesor.currentText()} -> {self.combo_ap_materia.currentText()} ({tipo})"
         conn.commit()
         conn.close()
         registrar_auditoria("Materias",
@@ -2667,24 +2667,24 @@ class ModuloMaterias(QWidget):
 
         conn= obtener_conexion()
         c= conn.cursor()
-        self.s_especialidad.clear()
-        self.s_especialidad.addItem("— Selecciona un área técnica —" if self._es_politecnico() else "Sin área técnica", None)
+        self.combo_s_especialidad.clear()
+        self.combo_s_especialidad.addItem("— Selecciona un área técnica —" if self._es_politecnico() else "Sin área técnica", None)
         c.execute("SELECT id, nombre FROM especialidades ORDER BY nombre")
         for fila in c.fetchall():
-            self.s_especialidad.addItem(fila["nombre"], fila["id"])
-        self.s_carrera.clear()
-        self.s_carrera.addItem("Sin carrera", None)
+            self.combo_s_especialidad.addItem(fila["nombre"], fila["id"])
+        self.combo_s_carrera.clear()
+        self.combo_s_carrera.addItem("Sin carrera", None)
         c.execute("SELECT id, nombre FROM carreras ORDER BY nombre")
         for fila in c.fetchall():
-            self.s_carrera.addItem(fila["nombre"], fila["id"])
-        for combo in (self.m_profesor, self.s_profesor_guia):
+            self.combo_s_carrera.addItem(fila["nombre"], fila["id"])
+        for combo in (self.combo_m_profesor, self.combo_s_profesor_guia):
             combo.clear()
             combo.addItem("Sin asignar", None)
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
         for fila in c.fetchall():
             texto= f"{fila['nombre']} {fila['apellidos'] or ''}".strip()
-            self.m_profesor.addItem(texto, fila["id"])
-            self.s_profesor_guia.addItem(texto, fila["id"])
+            self.combo_m_profesor.addItem(texto, fila["id"])
+            self.combo_s_profesor_guia.addItem(texto, fila["id"])
         if hasattr(self, "filtro_materias_profesor"):
             seleccion_previa= self.filtro_materias_profesor.currentData()
             self.filtro_materias_profesor.blockSignals(True)
@@ -2696,22 +2696,22 @@ class ModuloMaterias(QWidget):
             idx_fp= self.filtro_materias_profesor.findData(seleccion_previa)
             self.filtro_materias_profesor.setCurrentIndex(idx_fp if idx_fp >= 0 else 0)
             self.filtro_materias_profesor.blockSignals(False)
-        for combo in (self.s_aula, self.h_aula):
+        for combo in (self.combo_s_aula, self.combo_h_aula):
             combo.clear()
             combo.addItem("Sin asignar", None)
         c.execute("SELECT id, nombre FROM aulas ORDER BY nombre")
         for fila in c.fetchall():
-            self.s_aula.addItem(fila["nombre"], fila["id"])
-            self.h_aula.addItem(fila["nombre"], fila["id"])
-        curso_previo= self.h_curso.currentData()
-        poblar_combo_curso(self.h_curso, incluir_todos=False, seleccion_previa=curso_previo)
+            self.combo_s_aula.addItem(fila["nombre"], fila["id"])
+            self.combo_h_aula.addItem(fila["nombre"], fila["id"])
+        curso_previo= self.combo_h_curso.currentData()
+        poblar_combo_curso(self.combo_h_curso, incluir_todos=False, seleccion_previa=curso_previo)
         self._cargar_filtro_tecnico_horario()
         self._al_cambiar_curso_horario()
         self._cargar_combo_h_materia()
         if hasattr(self, "filtro_horarios_curso"):
             poblar_combo_curso(self.filtro_horarios_curso, incluir_todos=True)
             cascada_seccion_por_curso(self.filtro_horarios_curso, self.filtro_horarios_seccion, incluir_todas=True)
-        self.ap_materia.clear()
+        self.combo_ap_materia.clear()
         #Los módulos técnicos (modelo_evaluacion='Técnica (RA)') se excluyen: sus
         #co-docentes se asignan desde la pestaña "👨🏫 Profesores por Módulo" del módulo Politécnico, para no tener dos
         #lugares distintos haciendo lo mismo.
@@ -2719,15 +2719,15 @@ class ModuloMaterias(QWidget):
                      WHERE modelo_evaluacion IS NULL OR modelo_evaluacion != 'Técnica (RA)'
                      ORDER BY nombre""")
         for fila in c.fetchall():
-            self.ap_materia.addItem(fila["nombre"], fila["id"])
-        curso_previo_ap= self.ap_curso.currentData()
-        poblar_combo_curso(self.ap_curso, incluir_todos=False, seleccion_previa=curso_previo_ap)
+            self.combo_ap_materia.addItem(fila["nombre"], fila["id"])
+        curso_previo_ap= self.combo_ap_curso.currentData()
+        poblar_combo_curso(self.combo_ap_curso, incluir_todos=False, seleccion_previa=curso_previo_ap)
         self._cargar_filtro_tecnico_asignacion()
         self._al_cambiar_curso_asignacion()
-        self.ap_profesor.clear()
+        self.combo_ap_profesor.clear()
         c.execute("SELECT id, nombre, apellidos FROM profesores WHERE estado='Activo' ORDER BY nombre")
         for fila in c.fetchall():
-            self.ap_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
+            self.combo_ap_profesor.addItem(f"{fila['nombre']} {fila['apellidos'] or ''}".strip(), fila["id"])
         conn.close()
 
     def refrescar(self):

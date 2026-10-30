@@ -751,10 +751,10 @@ class ModuloCalendario(QWidget):
         self.combo_tipo.currentTextChanged.connect(self._sync_visibilidad_por_tipo)
         self.date_fecha= QDateEdit(calendarPopup=True)
         self.date_fecha.setDate(QDate.currentDate())
-        self.time_hora= QTimeEdit()
-        self.time_hora.setTime(QTime(8, 0))
+        self.in_time_hora= QTimeEdit()
+        self.in_time_hora.setTime(QTime(8, 0))
         aplicar_formato_widget_fecha(self.date_fecha, self.main_window)
-        aplicar_formato_widget_hora(self.time_hora, self.main_window)
+        aplicar_formato_widget_hora(self.in_time_hora, self.main_window)
         self.combo_curso= QComboBox()
         self.combo_curso.currentIndexChanged.connect(self._curso_evento_cambio)
         self.combo_seccion= QComboBox()
@@ -772,7 +772,7 @@ class ModuloCalendario(QWidget):
         form.addWidget(QLabel("Fecha:"), 1, 0)
         form.addWidget(self.date_fecha, 1, 1)
         form.addWidget(QLabel("Hora:"), 1, 2)
-        form.addWidget(self.time_hora, 1, 3)
+        form.addWidget(self.in_time_hora, 1, 3)
         form.addWidget(self.lbl_curso, 2, 0)
         form.addWidget(self.combo_curso, 2, 1)
         form.addWidget(self.lbl_seccion, 2, 2)
@@ -1960,7 +1960,7 @@ class ModuloCalendario(QWidget):
                 self.toast.mostrar("Solo puedes editar tus propios eventos personales.", "advertencia")
                 return
         datos= (self.in_titulo.text().strip(), self.in_desc.toPlainText().strip(), tipo,
-                 self.date_fecha.date().toString("yyyy-MM-dd"), self.time_hora.time().toString("HH:mm"),
+                 self.date_fecha.date().toString("yyyy-MM-dd"), self.in_time_hora.time().toString("HH:mm"),
                  self.combo_seccion.currentData(), self.combo_materia.currentData(), usuario_id, visibilidad)
         conn= obtener_conexion()
         c= conn.cursor()
@@ -2027,7 +2027,7 @@ class ModuloCalendario(QWidget):
         self.in_desc.clear()
         self.combo_tipo.setCurrentIndex(0)
         self.date_fecha.setDate(QDate.currentDate())
-        self.time_hora.setTime(QTime(8, 0))
+        self.in_time_hora.setTime(QTime(8, 0))
         if hasattr(self, "combo_filtro_especialidad_evento"):
             self.combo_filtro_especialidad_evento.setCurrentIndex(0)
         if hasattr(self, "combo_filtro_carrera_evento"):
@@ -2066,7 +2066,7 @@ class ModuloCalendario(QWidget):
         self.combo_tipo.setCurrentIndex(idx if idx >= 0 else 0)
         self.date_fecha.setDate(QDate.fromString(f["fecha"], "yyyy-MM-dd"))
         if f["hora"]:
-            self.time_hora.setTime(QTime.fromString(f["hora"], "HH:mm"))
+            self.in_time_hora.setTime(QTime.fromString(f["hora"], "HH:mm"))
         self._cargar_combos()
         preseleccionar_curso_y_seccion(self.combo_curso, self.combo_seccion, f["seccion_id"],
                                         incluir_todas= False)

@@ -1310,23 +1310,23 @@ class ModuloPsicologia(QWidget):
         fila2.setContentsMargins(0, 0, 0, 0)
         fila2.setSpacing(10)
         lbl_proxima_cita= QLabel("Próxima cita:")
-        self.fecha_proxima_cita_form= QDateEdit()
-        self.fecha_proxima_cita_form.setCalendarPopup(True)
-        self.fecha_proxima_cita_form.setSpecialValueText("Sin próxima cita")
-        self.fecha_proxima_cita_form.setDate(self.fecha_proxima_cita_form.minimumDate())
-        self.fecha_proxima_cita_form.setMinimumHeight(38)
-        self.fecha_proxima_cita_form.setMinimumWidth(190)
+        self.in_fecha_proxima_cita_form= QDateEdit()
+        self.in_fecha_proxima_cita_form.setCalendarPopup(True)
+        self.in_fecha_proxima_cita_form.setSpecialValueText("Sin próxima cita")
+        self.in_fecha_proxima_cita_form.setDate(self.in_fecha_proxima_cita_form.minimumDate())
+        self.in_fecha_proxima_cita_form.setMinimumHeight(38)
+        self.in_fecha_proxima_cita_form.setMinimumWidth(190)
         #Clic derecho -> "Quitar próxima cita": la única forma de volver a
         #"Sin próxima cita" antes era ir abriendo el calendario y buscando una fecha anterior a la mínima, lo cual no
         #es intuitivo ni siempre posible. Con un menú contextual se vuelve un atajo directo, igual
         #que "clic derecho -> cortar/pegar" en cualquier campo de texto.
-        self.fecha_proxima_cita_form.setToolTip("Clic derecho para quitar la próxima cita")
-        self.fecha_proxima_cita_form.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.fecha_proxima_cita_form.customContextMenuRequested.connect(
+        self.in_fecha_proxima_cita_form.setToolTip("Clic derecho para quitar la próxima cita")
+        self.in_fecha_proxima_cita_form.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.in_fecha_proxima_cita_form.customContextMenuRequested.connect(
             self._menu_contextual_proxima_cita)
         self.chk_destacada_form= QCheckBox("Marcar como destacado")
         fila2.addWidget(lbl_proxima_cita)
-        fila2.addWidget(self.fecha_proxima_cita_form)
+        fila2.addWidget(self.in_fecha_proxima_cita_form)
         fila2.addSpacing(36)
         fila2.addWidget(self.chk_destacada_form)
         fila2.addStretch()
@@ -1645,7 +1645,7 @@ class ModuloPsicologia(QWidget):
             }}
         """
         for campo in (self.combo_curso_form, self.combo_seccion_form, self.combo_estudiante_form,
-                      self.combo_area_tecnica_form, self.combo_carrera_form, self.fecha_proxima_cita_form,
+                      self.combo_area_tecnica_form, self.combo_carrera_form, self.in_fecha_proxima_cita_form,
                       self.combo_curso_filtro, self.combo_seccion_filtro, self.combo_estado_caso_filtro,
                       self.combo_filtro_especialidad, self.combo_filtro_carrera, self.txt_descripcion_form):
             campo.setStyleSheet(estilo_campo)
@@ -1654,7 +1654,7 @@ class ModuloPsicologia(QWidget):
         #es, otra vez, una ventana de nivel superior aparte -por eso no basta con el estilo del QDateEdit de arriba-, y
         #por defecto Qt lo pinta siempre en blanco/negro sin importar el tema, así que en modo oscuro quedaba
         #deslumbrando sobre el resto de la tarjeta oscura. Se estiliza aquí, en el propio QCalendarWidget interno.
-        calendario_widget= self.fecha_proxima_cita_form.calendarWidget()
+        calendario_widget= self.in_fecha_proxima_cita_form.calendarWidget()
         if calendario_widget is not None:
             calendario_widget.setStyleSheet(f"""
                 QCalendarWidget {{
@@ -2218,16 +2218,16 @@ class ModuloPsicologia(QWidget):
     #es el lugar natural para sumarlas.
     def _menu_contextual_proxima_cita(self, posicion):
 
-        tiene_cita= (self.fecha_proxima_cita_form.date()
-                      != self.fecha_proxima_cita_form.minimumDate())
-        menu= QMenu(self.fecha_proxima_cita_form)
+        tiene_cita= (self.in_fecha_proxima_cita_form.date()
+                      != self.in_fecha_proxima_cita_form.minimumDate())
+        menu= QMenu(self.in_fecha_proxima_cita_form)
         accion_quitar= QAction("Quitar próxima cita", menu)
         accion_quitar.setEnabled(tiene_cita)
         accion_quitar.triggered.connect(
             #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
-            lambda: self.fecha_proxima_cita_form.setDate(self.fecha_proxima_cita_form.minimumDate()))
+            lambda: self.in_fecha_proxima_cita_form.setDate(self.in_fecha_proxima_cita_form.minimumDate()))
         menu.addAction(accion_quitar)
-        menu.exec(self.fecha_proxima_cita_form.mapToGlobal(posicion))
+        menu.exec(self.in_fecha_proxima_cita_form.mapToGlobal(posicion))
 
     #Igual que `_cargar_especialidades_combo_filtro`, pero para el combo
     #del formulario de alta/edición: solo se muestra si la institución
@@ -2325,7 +2325,7 @@ class ModuloPsicologia(QWidget):
         cascada_seccion_por_curso(self.combo_curso_form, self.combo_seccion_form, incluir_todas=False)
         self.segmentado_naturaleza.establecer_valor("Informativa", animar=False)
         self.segmentado_estado.establecer_valor("Abierto", animar=False)
-        self.fecha_proxima_cita_form.setDate(self.fecha_proxima_cita_form.minimumDate())
+        self.in_fecha_proxima_cita_form.setDate(self.in_fecha_proxima_cita_form.minimumDate())
         self.chk_destacada_form.setChecked(False)
         for chip in self._chips_categorias.values():
             chip.establecer_marcado(False, animar=False, emitir=False)
@@ -2374,9 +2374,9 @@ class ModuloPsicologia(QWidget):
         self.segmentado_naturaleza.establecer_valor(fila["naturaleza"] or "Informativa", animar=False)
         self.segmentado_estado.establecer_valor(fila["estado_caso"] or "Abierto", animar=False)
         if fila["proxima_cita"]:
-            self.fecha_proxima_cita_form.setDate(QDate.fromString(fila["proxima_cita"], "yyyy-MM-dd"))
+            self.in_fecha_proxima_cita_form.setDate(QDate.fromString(fila["proxima_cita"], "yyyy-MM-dd"))
         else:
-            self.fecha_proxima_cita_form.setDate(self.fecha_proxima_cita_form.minimumDate())
+            self.in_fecha_proxima_cita_form.setDate(self.in_fecha_proxima_cita_form.minimumDate())
         self.chk_destacada_form.setChecked(bool(fila["destacada"]))
         claves_activas= set((fila["categorias"] or "").split(","))
         for clave, chip in self._chips_categorias.items():
@@ -2413,8 +2413,8 @@ class ModuloPsicologia(QWidget):
         naturaleza= self.segmentado_naturaleza.valor()
         estado_caso= self.segmentado_estado.valor()
         categorias= ",".join(clave for clave, chip in self._chips_categorias.items() if chip.esta_marcado())
-        proxima_cita= (self.fecha_proxima_cita_form.date().toString("yyyy-MM-dd")
-                         if self.fecha_proxima_cita_form.date() != self.fecha_proxima_cita_form.minimumDate() else None)
+        proxima_cita= (self.in_fecha_proxima_cita_form.date().toString("yyyy-MM-dd")
+                         if self.in_fecha_proxima_cita_form.date() != self.in_fecha_proxima_cita_form.minimumDate() else None)
         destacada= 1 if self.chk_destacada_form.isChecked() else 0
         id_usuario= getattr(self.main_window, "id_usuario_actual", None) if self.main_window else None
 

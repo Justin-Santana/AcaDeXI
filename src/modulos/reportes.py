@@ -607,9 +607,9 @@ class ModuloReportes(QWidget):
         bloque_titulo.addWidget(self.lbl_subtitulo_cabecera)
         cabecera_layout.addLayout(bloque_titulo, 1)
 
-        self.chip_actualizado= QLabel("--")
-        self.chip_actualizado.setObjectName("ChipContador")
-        cabecera_layout.addWidget(self.chip_actualizado, 0, Qt.AlignmentFlag.AlignVCenter)
+        self.lbl_chip_actualizado= QLabel("--")
+        self.lbl_chip_actualizado.setObjectName("ChipContador")
+        cabecera_layout.addWidget(self.lbl_chip_actualizado, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.btn_actualizar_todo= BotonAnimado("Actualizar todo")
         self.btn_actualizar_todo.clicked.connect(self.refrescar)
@@ -2570,7 +2570,7 @@ class ModuloReportes(QWidget):
             self._cargar_rendimiento_tecnico()
         #Icono de reloj dibujado con QPainter (mismo dibujo que ya usa el resto de la app), insertado como <img> inline
         #en vez del emoji real para no depender de una fuente de emojis del sistema.
-        self.chip_actualizado.setText(
+        self.lbl_chip_actualizado.setText(
             f"{html_icono_emoji('🕒', 14)} Actualizado "
             f"{formatear_hora(datetime.now().strftime('%H:%M'), self.main_window)}")
 
@@ -2631,7 +2631,7 @@ class ModuloReportes(QWidget):
                 background: transparent;
             }}
         """)
-        self.chip_actualizado.setStyleSheet("""
+        self.lbl_chip_actualizado.setStyleSheet("""
             QLabel#ChipContador {
                 background-color: rgba(255, 255, 255, 40);
                 color: white;

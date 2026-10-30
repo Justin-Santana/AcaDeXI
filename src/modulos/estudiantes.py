@@ -319,9 +319,9 @@ class ModuloEstudiantes(QWidget):
         self.combo_sexo= QComboBox()
         self.combo_sexo.addItems(SEXOS)
         conectar_tooltip_seleccion(self.combo_sexo, "Sexo del estudiante")
-        self.date_nacimiento= QDateEdit(calendarPopup=True)
-        self.date_nacimiento.setDate(QDate(2010, 1, 1))
-        aplicar_formato_widget_fecha(self.date_nacimiento, self.main_window)
+        self.in_date_nacimiento= QDateEdit(calendarPopup=True)
+        self.in_date_nacimiento.setDate(QDate(2010, 1, 1))
+        aplicar_formato_widget_fecha(self.in_date_nacimiento, self.main_window)
         self.in_documento= QLineEdit()
         limitar_campo_texto(self.in_documento, 300)
         self.in_documento.setPlaceholderText("Documento de Identidad")
@@ -370,7 +370,7 @@ class ModuloEstudiantes(QWidget):
         campos_en_orden= []
         if not restringido_ui:
             campos_en_orden.append(self.in_matricula)
-        campos_en_orden += [self.in_nombre, self.in_apellidos, self.combo_sexo, self.date_nacimiento,
+        campos_en_orden += [self.in_nombre, self.in_apellidos, self.combo_sexo, self.in_date_nacimiento,
                              self.in_documento, self.in_direccion, self.in_telefono, self.in_correo,
                              self.in_tutor, self.in_tutor2, self.combo_grado_ficha, self.combo_seccion,
                              self.combo_estado, self.combo_especialidad_estudiante, self.combo_carrera_estudiante]
@@ -1286,7 +1286,7 @@ class ModuloEstudiantes(QWidget):
                 return
         datos= (
             matricula, self.in_nombre.text().strip(), self.in_apellidos.text().strip(),
-            self.combo_sexo.currentText(), self.date_nacimiento.date().toString("yyyy-MM-dd"),
+            self.combo_sexo.currentText(), self.in_date_nacimiento.date().toString("yyyy-MM-dd"),
             self.in_documento.text().strip(), self.in_direccion.text().strip(), self.in_telefono.text().strip(),
             self.in_correo.text().strip(), self.in_tutor.text().strip(), self.in_tutor2.text().strip(),
             self.foto_path, seccion_id, self.combo_estado.currentText(), especialidad_id, carrera_id
@@ -1351,7 +1351,7 @@ class ModuloEstudiantes(QWidget):
             "nombre": self.in_nombre.text().strip(),
             "apellidos": self.in_apellidos.text().strip(),
             "sexo": self.combo_sexo.currentText(),
-            "fecha_nacimiento": self.date_nacimiento.date().toString("yyyy-MM-dd"),
+            "fecha_nacimiento": self.in_date_nacimiento.date().toString("yyyy-MM-dd"),
             "documento": self.in_documento.text().strip(),
             "direccion": self.in_direccion.text().strip(),
             "telefono": self.in_telefono.text().strip(),
@@ -1403,7 +1403,7 @@ class ModuloEstudiantes(QWidget):
         self.combo_estado.setCurrentIndex(0)
         self.combo_especialidad_estudiante.setCurrentIndex(0)
         self.combo_carrera_estudiante.setCurrentIndex(0)
-        self.date_nacimiento.setDate(QDate(2010, 1, 1))
+        self.in_date_nacimiento.setDate(QDate(2010, 1, 1))
         self.combo_grado_ficha.blockSignals(True)
         self.combo_grado_ficha.setCurrentIndex(0)
         self.combo_grado_ficha.blockSignals(False)
@@ -1439,7 +1439,7 @@ class ModuloEstudiantes(QWidget):
         self.in_apellidos.setText(datos["apellidos"] or "")
         self.combo_sexo.setCurrentText(datos["sexo"] or "Masculino")
         if datos["fecha_nacimiento"]:
-            self.date_nacimiento.setDate(QDate.fromString(datos["fecha_nacimiento"], "yyyy-MM-dd"))
+            self.in_date_nacimiento.setDate(QDate.fromString(datos["fecha_nacimiento"], "yyyy-MM-dd"))
         self.in_documento.setText(datos["documento"] or "")
         self.in_direccion.setText(datos["direccion"] or "")
         self.in_telefono.setText(datos["telefono"] or "")

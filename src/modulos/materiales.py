@@ -273,12 +273,12 @@ class ModuloMateriales(QWidget):
         lay_busqueda.setContentsMargins(12, 0, 10, 0)
         lay_busqueda.setSpacing(6)
         lay_busqueda.addWidget(IconoLupa())
-        self.buscador= QLineEdit()
-        limitar_campo_texto(self.buscador, 150)
-        self.buscador.setPlaceholderText("Buscar por nombre, código o ubicación…")
-        self.buscador.setStyleSheet(
+        self.in_buscador= QLineEdit()
+        limitar_campo_texto(self.in_buscador, 150)
+        self.in_buscador.setPlaceholderText("Buscar por nombre, código o ubicación…")
+        self.in_buscador.setStyleSheet(
             "QLineEdit { border: none; background: transparent; padding: 8px 0; }")
-        lay_busqueda.addWidget(self.buscador, 1)
+        lay_busqueda.addWidget(self.in_buscador, 1)
         #Debounce manual (150ms) en vez de disparar la consulta en cada tecla -mismo intervalo que usa el resto de
         #módulos con este
         #patrón (ver politecnico.py/configuracion.py)-.
@@ -287,7 +287,7 @@ class ModuloMateriales(QWidget):
         self._temporizador_busqueda.setInterval(150)
         self._temporizador_busqueda.timeout.connect(self._refrescar)
         #_t: texto escrito que no se usa; cada tecla reinicia el temporizador de búsqueda
-        self.buscador.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
+        self.in_buscador.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
         fila_filtros.addWidget(marco_busqueda, stretch=1)
         disposicion.addWidget(self.tarjeta_filtros)
 
@@ -419,13 +419,13 @@ class ModuloMateriales(QWidget):
         form.addWidget(self.txt_descripcion_form)
 
         fila2= QHBoxLayout()
-        self.spin_total_form= QSpinBox()
-        self.spin_total_form.setRange(0, 100000)
-        self.spin_total_form.setValue(1)
-        self.spin_total_form.valueChanged.connect(self._sincronizar_disponible_maximo)
-        self.spin_disponible_form= QSpinBox()
-        self.spin_disponible_form.setRange(0, 100000)
-        self.spin_disponible_form.setValue(1)
+        self.in_spin_total_form= QSpinBox()
+        self.in_spin_total_form.setRange(0, 100000)
+        self.in_spin_total_form.setValue(1)
+        self.in_spin_total_form.valueChanged.connect(self._sincronizar_disponible_maximo)
+        self.in_spin_disponible_form= QSpinBox()
+        self.in_spin_disponible_form.setRange(0, 100000)
+        self.in_spin_disponible_form.setValue(1)
         self.in_ubicacion_form= QLineEdit()
         self.in_ubicacion_form.setPlaceholderText("Ej. Biblioteca - Estante 3, Taller de Electricidad")
         limitar_campo_texto(self.in_ubicacion_form, 150)
@@ -433,11 +433,11 @@ class ModuloMateriales(QWidget):
         for estado in ESTADOS_MATERIAL:
             self.combo_estado_form.addItem(estado, estado)
         fila2.addWidget(QLabel("Cantidad total:"))
-        fila2.addWidget(self.spin_total_form)
-        self.spin_total_form.setToolTip("Número total de unidades de este material en el inventario.")
+        fila2.addWidget(self.in_spin_total_form)
+        self.in_spin_total_form.setToolTip("Número total de unidades de este material en el inventario.")
         fila2.addWidget(QLabel("Disponible:"))
-        fila2.addWidget(self.spin_disponible_form)
-        self.spin_disponible_form.setToolTip("Unidades disponibles ahora mismo (no prestadas ni dadas de baja).")
+        fila2.addWidget(self.in_spin_disponible_form)
+        self.in_spin_disponible_form.setToolTip("Unidades disponibles ahora mismo (no prestadas ni dadas de baja).")
         fila2.addWidget(QLabel("Estado:"))
         fila2.addWidget(self.combo_estado_form)
         self.combo_estado_form.setToolTip("Situación general del material en el inventario.")
@@ -488,7 +488,7 @@ class ModuloMateriales(QWidget):
         #permiso).
         registrar_atajo(self, self.main_window, "Ctrl+F", "Buscar",
                          #la lambda agrupa varias llamadas que se ejecutan juntas al dispararse la señal
-                         lambda: (self.buscador.setFocus(), self.buscador.selectAll()))
+                         lambda: (self.in_buscador.setFocus(), self.in_buscador.selectAll()))
         registrar_atajo(self, self.main_window, "F5", "Actualizar tabla", self._refrescar)
         registrar_atajo(self, self.main_window, "Ctrl+N", "Nuevo material",
                          self._abrir_panel_nuevo_material)
@@ -592,7 +592,7 @@ class ModuloMateriales(QWidget):
         if estado is not None:
             condiciones.append("materiales.estado = ?")
             parametros.append(estado)
-        texto= self.buscador.text().strip()
+        texto= self.in_buscador.text().strip()
         if texto:
             condiciones.append("(materiales.nombre LIKE ? OR materiales.codigo LIKE ? OR materiales.ubicacion LIKE ?)")
             parametros.extend([f"%{texto}%"] * 3)
@@ -683,9 +683,9 @@ class ModuloMateriales(QWidget):
 
     def _sincronizar_disponible_maximo(self, nuevo_total):
 
-        self.spin_disponible_form.setMaximum(max(0, nuevo_total))
-        if self.spin_disponible_form.value() > nuevo_total:
-            self.spin_disponible_form.setValue(nuevo_total)
+        self.in_spin_disponible_form.setMaximum(max(0, nuevo_total))
+        if self.in_spin_disponible_form.value() > nuevo_total:
+            self.in_spin_disponible_form.setValue(nuevo_total)
 
     #FORMULARIO
     #Conectado al clic del propio encabezado del panel (ver __init__):
@@ -740,9 +740,9 @@ class ModuloMateriales(QWidget):
         self.in_codigo_form.setText(fila["codigo"] or "")
         self.in_nombre_form.setText(fila["nombre"])
         self.txt_descripcion_form.setPlainText(fila["descripcion"] or "")
-        self.spin_total_form.setValue(fila["cantidad_total"])
-        self.spin_disponible_form.setMaximum(max(0, fila["cantidad_total"]))
-        self.spin_disponible_form.setValue(fila["cantidad_disponible"])
+        self.in_spin_total_form.setValue(fila["cantidad_total"])
+        self.in_spin_disponible_form.setMaximum(max(0, fila["cantidad_total"]))
+        self.in_spin_disponible_form.setValue(fila["cantidad_disponible"])
         self.in_ubicacion_form.setText(fila["ubicacion"] or "")
         idx_estado= self.combo_estado_form.findData(fila["estado"])
         self.combo_estado_form.setCurrentIndex(idx_estado if idx_estado >= 0 else 0)
@@ -768,8 +768,8 @@ class ModuloMateriales(QWidget):
         self.in_codigo_form.clear()
         self.in_nombre_form.clear()
         self.txt_descripcion_form.clear()
-        self.spin_total_form.setValue(1)
-        self.spin_disponible_form.setValue(1)
+        self.in_spin_total_form.setValue(1)
+        self.in_spin_disponible_form.setValue(1)
         self.in_ubicacion_form.clear()
         self.combo_estado_form.setCurrentIndex(0)
         desactivar_modo_edicion(self.in_nombre_form)
@@ -792,16 +792,16 @@ class ModuloMateriales(QWidget):
                          cantidad_disponible, ubicacion, estado, adquirido, actualizado)
                          VALUES (?,?,?,?,?,?,?,?,?,?)""",
                       (categoria_id, self.in_codigo_form.text().strip(), nombre,
-                       self.txt_descripcion_form.toPlainText().strip(), self.spin_total_form.value(),
-                       self.spin_disponible_form.value(), self.in_ubicacion_form.text().strip(),
+                       self.txt_descripcion_form.toPlainText().strip(), self.in_spin_total_form.value(),
+                       self.in_spin_disponible_form.value(), self.in_ubicacion_form.text().strip(),
                        self.combo_estado_form.currentData(), date.today().strftime("%Y-%m-%d"), ahora))
             accion= "Creó un material"
         else:
             c.execute("""UPDATE materiales SET categoria_id=?, codigo=?, nombre=?, descripcion=?, cantidad_total=?,
                          cantidad_disponible= ?, ubicacion=?, estado=?, actualizado=? WHERE id=?""",
                       (categoria_id, self.in_codigo_form.text().strip(), nombre,
-                       self.txt_descripcion_form.toPlainText().strip(), self.spin_total_form.value(),
-                       self.spin_disponible_form.value(), self.in_ubicacion_form.text().strip(),
+                       self.txt_descripcion_form.toPlainText().strip(), self.in_spin_total_form.value(),
+                       self.in_spin_disponible_form.value(), self.in_ubicacion_form.text().strip(),
                        self.combo_estado_form.currentData(), ahora, self.material_en_edicion))
             accion= "Editó un material"
         conn.commit()

@@ -1538,12 +1538,12 @@ class _PanelInstruccion(QFrame):
         #--- Manija para arrastrar el panel --- Deliberadamente una fila propia, separada del texto: así el usuario
         #siempre sabe dónde "agarrar" sin arriesgarse a mover el panel sin querer al intentar leer o hacer clic en otra
         #parte.
-        self._manija= QLabel("⠿⠿⠿  Arrastra para mover · Ctrl+H oculta/muestra")
-        self._manija.setObjectName("ManijaPanelTutorial")
-        self._manija.setCursor(Qt.CursorShape.SizeAllCursor)
-        self._manija.setStyleSheet("font-size: 10px; letter-spacing: 1px; background: transparent;")
-        self._manija.installEventFilter(self)
-        lay.addWidget(self._manija)
+        self._lbl_manija= QLabel("⠿⠿⠿  Arrastra para mover · Ctrl+H oculta/muestra")
+        self._lbl_manija.setObjectName("ManijaPanelTutorial")
+        self._lbl_manija.setCursor(Qt.CursorShape.SizeAllCursor)
+        self._lbl_manija.setStyleSheet("font-size: 10px; letter-spacing: 1px; background: transparent;")
+        self._lbl_manija.installEventFilter(self)
+        lay.addWidget(self._lbl_manija)
         self._offset_arrastre= None
 
         self.lbl_progreso= QLabel()
@@ -1617,7 +1617,7 @@ class _PanelInstruccion(QFrame):
 
         #Arrastre manual: solo desde la manija (ver __init__), nunca desde el resto del panel -así un clic sobre el
         #texto o cerca de un botón nunca se confunde con "empezar a arrastrar".
-        if objeto is self._manija:
+        if objeto is self._lbl_manija:
             tipo= evento.type()
             if tipo == QEvent.Type.MouseButtonPress and evento.button() == Qt.MouseButton.LeftButton:
                 self._offset_arrastre= evento.globalPosition().toPoint() - self.pos()

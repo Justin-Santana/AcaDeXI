@@ -1155,10 +1155,10 @@ class ModuloAsistencia(QWidget):
         self.combo_filtro_nivel_alerta.currentIndexChanged.connect(self._nivel_filtro_alerta_cambio)
         conectar_tooltip_seleccion(self.combo_filtro_nivel_alerta, "Filtrar el informe por nivel educativo")
 
-        self.spin_umbral= QDoubleSpinBox()
-        self.spin_umbral.setRange(1, 100)
-        self.spin_umbral.setSuffix(" %")
-        self.spin_umbral.setValue(UMBRAL_INASISTENCIA_DEFECTO)
+        self.in_spin_umbral= QDoubleSpinBox()
+        self.in_spin_umbral.setRange(1, 100)
+        self.in_spin_umbral.setSuffix(" %")
+        self.in_spin_umbral.setValue(UMBRAL_INASISTENCIA_DEFECTO)
 
         self.combo_curso_alerta= QComboBox()
         self.combo_curso_alerta.currentIndexChanged.connect(self._curso_alerta_cambio)
@@ -1389,13 +1389,13 @@ class ModuloAsistencia(QWidget):
             ("Nivel Educativo:", self.combo_filtro_nivel_alerta),
             ("Curso:", self.combo_curso_alerta),
             ("Sección:", self.combo_seccion_alerta),
-            ("Umbral de alerta (% inasistencia):", self.spin_umbral),
+            ("Umbral de alerta (% inasistencia):", self.in_spin_umbral),
         ):
             if combo is self.combo_filtro_especialidad_alerta:
                 grid.addWidget(self.lbl_filtro_especialidad_alerta, fila, 0)
             elif combo is self.combo_filtro_carrera_alerta:
                 grid.addWidget(self.lbl_filtro_carrera_alerta, fila, 0)
-            elif combo is self.spin_umbral:
+            elif combo is self.in_spin_umbral:
                 grid.addWidget(_etiqueta_con_icono(etiqueta, "🎚"), fila, 0)
             else:
                 grid.addWidget(QLabel(etiqueta), fila, 0)
@@ -1416,7 +1416,7 @@ class ModuloAsistencia(QWidget):
         for combo in (self.combo_filtro_especialidad_alerta, self.combo_filtro_carrera_alerta,
                       self.combo_filtro_nivel_alerta, self.combo_curso_alerta, self.combo_seccion_alerta):
             combo.currentIndexChanged.connect(self._actualizar_resumen_filtros_alertas)
-        self.spin_umbral.valueChanged.connect(self._actualizar_resumen_filtros_alertas)
+        self.in_spin_umbral.valueChanged.connect(self._actualizar_resumen_filtros_alertas)
         self._actualizar_resumen_filtros_alertas()
 
     def _actualizar_resumen_filtros_alertas(self):
@@ -1428,7 +1428,7 @@ class ModuloAsistencia(QWidget):
             ("Sección", self.combo_seccion_alerta),
             ("Área Técnica", self.combo_filtro_especialidad_alerta),
             ("Carrera", self.combo_filtro_carrera_alerta),
-            ("Umbral", f"{self.spin_umbral.value():.0f}%"),
+            ("Umbral", f"{self.in_spin_umbral.value():.0f}%"),
         ])
 
     def _abrir_dialogo_filtros_alertas(self):
@@ -1653,7 +1653,7 @@ class ModuloAsistencia(QWidget):
 
     def _generar_informe_inasistencia(self):
 
-        umbral= self.spin_umbral.value()
+        umbral= self.in_spin_umbral.value()
         datos= self._calcular_inasistencia()
         self._datos_informe_actual= datos
         self._umbral_informe_actual= umbral

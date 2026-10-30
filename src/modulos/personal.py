@@ -581,9 +581,9 @@ class ModuloPersonal(QWidget):
         self.in_direccion= QLineEdit()
         limitar_campo_texto(self.in_direccion, 300)
         self.in_direccion.setPlaceholderText("Dirección")
-        self.date_ingreso= QDateEdit(calendarPopup=True)
-        self.date_ingreso.setDate(QDate.currentDate())
-        aplicar_formato_widget_fecha(self.date_ingreso, self.main_window)
+        self.in_date_ingreso= QDateEdit(calendarPopup=True)
+        self.in_date_ingreso.setDate(QDate.currentDate())
+        aplicar_formato_widget_fecha(self.in_date_ingreso, self.main_window)
         self.combo_estado= QComboBox()
         self.combo_estado.addItems(ESTADOS)
         conectar_tooltip_seleccion(self.combo_estado, "Estado laboral actual de la persona")
@@ -602,7 +602,7 @@ class ModuloPersonal(QWidget):
         lbl_fecha= QLabel("Fecha de Ingreso:")
         lbl_fecha.setObjectName("DescModulo")
         form.addWidget(lbl_fecha, 2, 1)
-        form.addWidget(self.date_ingreso, 2, 2)
+        form.addWidget(self.in_date_ingreso, 2, 2)
         form.addWidget(self.combo_estado, 3, 0)
         form.addWidget(lbl_cuenta, 3, 1)
         form.addWidget(self.combo_usuario, 3, 2)
@@ -842,7 +842,7 @@ class ModuloPersonal(QWidget):
         datos= (self.in_nombre.text().strip(), self.in_apellidos.text().strip(),
                  self.combo_cargo.currentText().strip(), self.in_departamento.text().strip(),
                  self.in_correo.text().strip(), self.in_telefono.text().strip(),
-                 self.in_direccion.text().strip(), self.date_ingreso.date().toString("yyyy-MM-dd"),
+                 self.in_direccion.text().strip(), self.in_date_ingreso.date().toString("yyyy-MM-dd"),
                  self.combo_estado.currentText(), self.foto_path, usuario_id)
         try:
 
@@ -880,7 +880,7 @@ class ModuloPersonal(QWidget):
                       self.in_correo, self.in_telefono, self.in_direccion):
             campo.clear()
         self.combo_cargo.setCurrentIndex(0)
-        self.date_ingreso.setDate(QDate.currentDate())
+        self.in_date_ingreso.setDate(QDate.currentDate())
         self.combo_estado.setCurrentIndex(0)
         self._cargar_combo_usuarios()
         desactivar_modo_edicion(self.in_nombre)
@@ -909,7 +909,7 @@ class ModuloPersonal(QWidget):
         self.in_telefono.setText(f["telefono"] or "")
         self.in_direccion.setText(f["direccion"] or "")
         if f["fecha_ingreso"]:
-            self.date_ingreso.setDate(QDate.fromString(f["fecha_ingreso"], "yyyy-MM-dd"))
+            self.in_date_ingreso.setDate(QDate.fromString(f["fecha_ingreso"], "yyyy-MM-dd"))
         self.combo_estado.setCurrentText(f["estado"] or "Activo")
         self.foto_path= (f["foto"] if "foto" in f.keys() else None) or ""
         if self.foto_path and os.path.exists(self.foto_path):

@@ -1242,26 +1242,26 @@ class _DialogoEditorPaginaPDF(QDialog):
         barra.addStretch()
         disposicion.addLayout(barra)
 
-        self.editor= QTextEdit()
-        limitar_campo_texto(self.editor, 5000)
-        self.editor.setPlainText(texto_inicial)
+        self.in_editor= QTextEdit()
+        limitar_campo_texto(self.in_editor, 5000)
+        self.in_editor.setPlainText(texto_inicial)
         _f_inicial= QFont(self.combo_fuente.currentText())
         try:
 
             _f_inicial.setPointSize(int(self.combo_tamano.currentText()))
         except ValueError:
             pass
-        self.editor.setFont(_f_inicial)
-        disposicion.addWidget(self.editor, 1)
+        self.in_editor.setFont(_f_inicial)
+        disposicion.addWidget(self.in_editor, 1)
 
         def _aplicar(formato):
 
-            cursor= self.editor.textCursor()
+            cursor= self.in_editor.textCursor()
             if not cursor.hasSelection():
-                self.editor.setCurrentCharFormat(formato)
+                self.in_editor.setCurrentCharFormat(formato)
                 return
             cursor.mergeCharFormat(formato)
-            self.editor.setTextCursor(cursor)
+            self.in_editor.setTextCursor(cursor)
 
         def _cambiar_fuente(_i=None):
 
@@ -1318,18 +1318,18 @@ class _DialogoEditorPaginaPDF(QDialog):
         btn_subrayado.toggled.connect(_alternar_subrayado)
         btn_color.clicked.connect(_elegir_color)
         #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
-        btn_izq.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignLeft) if marcado else None)
+        btn_izq.toggled.connect(lambda marcado: self.in_editor.setAlignment(Qt.AlignmentFlag.AlignLeft) if marcado else None)
         #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
-        btn_centro.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignHCenter) if marcado else None)
+        btn_centro.toggled.connect(lambda marcado: self.in_editor.setAlignment(Qt.AlignmentFlag.AlignHCenter) if marcado else None)
         #marcado: True si el botón quedó activo; solo se actúa al activarlo, no al apagarse
-        btn_der.toggled.connect(lambda marcado: self.editor.setAlignment(Qt.AlignmentFlag.AlignRight) if marcado else None)
+        btn_der.toggled.connect(lambda marcado: self.in_editor.setAlignment(Qt.AlignmentFlag.AlignRight) if marcado else None)
 
         #Refleja en los botones la alineación del párrafo donde está el
         #cursor ahora mismo, tal como hace _word_sincronizar_barra en la
         #cinta de opciones.
         def _sincronizar_alineacion():
 
-            alineacion= self.editor.alignment()
+            alineacion= self.in_editor.alignment()
             for boton in (btn_izq, btn_centro, btn_der):
                 boton.blockSignals(True)
             btn_izq.setChecked(bool(alineacion & Qt.AlignmentFlag.AlignLeft))
@@ -1338,7 +1338,7 @@ class _DialogoEditorPaginaPDF(QDialog):
             for boton in (btn_izq, btn_centro, btn_der):
                 boton.blockSignals(False)
 
-        self.editor.cursorPositionChanged.connect(_sincronizar_alineacion)
+        self.in_editor.cursorPositionChanged.connect(_sincronizar_alineacion)
 
         botones= QHBoxLayout()
         botones.addStretch()
@@ -1363,7 +1363,7 @@ class _DialogoEditorPaginaPDF(QDialog):
 
     def obtener_html(self):
 
-        return self.editor.toHtml()
+        return self.in_editor.toHtml()
 
 
 #QLabel de una página de PDF que permite SELECCIONAR el texto con el
@@ -1595,10 +1595,10 @@ class _DialogoMarcaDeAgua(QDialog):
         limitar_campo_texto(self.in_texto, 300)
         disposicion.addRow("Texto:", self.in_texto)
 
-        self.spin_tamano= QSpinBox()
-        self.spin_tamano.setRange(8, 160)
-        self.spin_tamano.setValue(48)
-        disposicion.addRow("Tamaño de fuente:", self.spin_tamano)
+        self.in_spin_tamano= QSpinBox()
+        self.in_spin_tamano.setRange(8, 160)
+        self.in_spin_tamano.setValue(48)
+        disposicion.addRow("Tamaño de fuente:", self.in_spin_tamano)
 
         self.slider_opacidad= QSlider(Qt.Orientation.Horizontal)
         self.slider_opacidad.setRange(5, 100)
@@ -1659,7 +1659,7 @@ class _DialogoMarcaDeAgua(QDialog):
 
         return {
             "texto": self.in_texto.text().strip() or "MARCA DE AGUA",
-            "tamano": self.spin_tamano.value(),
+            "tamano": self.in_spin_tamano.value(),
             "opacidad": self.slider_opacidad.value() / 100.0,
             "rotacion": self.combo_rotacion.currentData(),
             "color": (self._color.redF(), self._color.greenF(), self._color.blueF()),
@@ -1683,15 +1683,15 @@ class _DialogoRedimensionarImagen(QDialog):
         self._actualizando= False
         disposicion= QFormLayout(self)
 
-        self.spin_ancho= QSpinBox()
-        self.spin_ancho.setRange(10, 4000)
-        self.spin_ancho.setValue(max(10, int(ancho_actual)))
-        disposicion.addRow("Ancho (px):", self.spin_ancho)
+        self.in_spin_ancho= QSpinBox()
+        self.in_spin_ancho.setRange(10, 4000)
+        self.in_spin_ancho.setValue(max(10, int(ancho_actual)))
+        disposicion.addRow("Ancho (px):", self.in_spin_ancho)
 
-        self.spin_alto= QSpinBox()
-        self.spin_alto.setRange(10, 4000)
-        self.spin_alto.setValue(max(10, int(alto_actual)))
-        disposicion.addRow("Alto (px):", self.spin_alto)
+        self.in_spin_alto= QSpinBox()
+        self.in_spin_alto.setRange(10, 4000)
+        self.in_spin_alto.setValue(max(10, int(alto_actual)))
+        disposicion.addRow("Alto (px):", self.in_spin_alto)
 
         self.chk_proporcion= QCheckBox("Mantener proporción")
         self.chk_proporcion.setChecked(True)
@@ -1707,8 +1707,8 @@ class _DialogoRedimensionarImagen(QDialog):
         fila_slider.addWidget(self.lbl_pct)
         disposicion.addRow(fila_slider)
 
-        self.spin_ancho.valueChanged.connect(self._sincronizar_desde_ancho)
-        self.spin_alto.valueChanged.connect(self._sincronizar_desde_alto)
+        self.in_spin_ancho.valueChanged.connect(self._sincronizar_desde_ancho)
+        self.in_spin_alto.valueChanged.connect(self._sincronizar_desde_alto)
         self.slider_pct.valueChanged.connect(self._aplicar_porcentaje)
 
         fila_botones= QHBoxLayout()
@@ -1732,7 +1732,7 @@ class _DialogoRedimensionarImagen(QDialog):
             return
         self._actualizando= True
         if self.chk_proporcion.isChecked():
-            self.spin_alto.setValue(max(10, round(valor * self._proporcion)))
+            self.in_spin_alto.setValue(max(10, round(valor * self._proporcion)))
         self.slider_pct.setValue(max(10, min(300, round(100 * valor / self._ancho_natural))))
         self.lbl_pct.setText(f"{self.slider_pct.value()}%")
         self._actualizando= False
@@ -1743,7 +1743,7 @@ class _DialogoRedimensionarImagen(QDialog):
             return
         self._actualizando= True
         if self.chk_proporcion.isChecked() and self._proporcion:
-            self.spin_ancho.setValue(max(10, round(valor / self._proporcion)))
+            self.in_spin_ancho.setValue(max(10, round(valor / self._proporcion)))
         self._actualizando= False
 
     def _aplicar_porcentaje(self, valor):
@@ -1753,13 +1753,13 @@ class _DialogoRedimensionarImagen(QDialog):
         self.lbl_pct.setText(f"{valor}%")
         self._actualizando= True
         nuevo_ancho= max(10, round(self._ancho_natural * valor / 100))
-        self.spin_ancho.setValue(nuevo_ancho)
-        self.spin_alto.setValue(max(10, round(nuevo_ancho * self._proporcion)))
+        self.in_spin_ancho.setValue(nuevo_ancho)
+        self.in_spin_alto.setValue(max(10, round(nuevo_ancho * self._proporcion)))
         self._actualizando= False
 
     def valores(self):
 
-        return self.spin_ancho.value(), self.spin_alto.value()
+        return self.in_spin_ancho.value(), self.in_spin_alto.value()
 
 
 #QLabel que recorta su texto con «…» cuando no cabe en el ancho
@@ -3175,10 +3175,10 @@ class VisorEditorReportes(QWidget):
         g_nav, f_nav= self._crear_grupo_ribbon("Navegación")
         _boton(f_nav, "⏮", "Primera página", self._pdf_primera)
         _boton(f_nav, "◀", "Página anterior", self._pdf_anterior)
-        self.spin_pagina_pdf= QSpinBox()
-        self.spin_pagina_pdf.setMinimum(1)
-        self.spin_pagina_pdf.valueChanged.connect(self._pdf_ir_a_pagina)
-        f_nav.addWidget(self.spin_pagina_pdf)
+        self.in_spin_pagina_pdf= QSpinBox()
+        self.in_spin_pagina_pdf.setMinimum(1)
+        self.in_spin_pagina_pdf.valueChanged.connect(self._pdf_ir_a_pagina)
+        f_nav.addWidget(self.in_spin_pagina_pdf)
         self.lbl_total_paginas= QLabel("/ 0")
         f_nav.addWidget(self.lbl_total_paginas)
         _boton(f_nav, "▶", "Página siguiente", self._pdf_siguiente)
@@ -3301,23 +3301,23 @@ class VisorEditorReportes(QWidget):
         self.scroll_pdf.verticalScrollBar().valueChanged.connect(self._pdf_pagina_por_scroll)
         cuerpo.addWidget(self.scroll_pdf, 3)
 
-        self.panel_texto_pdf= QPlainTextEdit()
-        limitar_campo_texto(self.panel_texto_pdf, 5000)
-        self.panel_texto_pdf.setReadOnly(True)
+        self.in_panel_texto_pdf= QPlainTextEdit()
+        limitar_campo_texto(self.in_panel_texto_pdf, 5000)
+        self.in_panel_texto_pdf.setReadOnly(True)
         #Aunque es de solo lectura (no se edita el PDF desde aquí -para eso está "✏ Editar página"-), el texto se puede
         #seleccionar y copiar con normalidad, igual que en el visor de un navegador.
-        self.panel_texto_pdf.setTextInteractionFlags(
+        self.in_panel_texto_pdf.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard)
-        self.panel_texto_pdf.setPlaceholderText("El texto extraído de la página aparecerá aquí…")
-        self.panel_texto_pdf.setVisible(False)
-        self.panel_texto_pdf.setMaximumWidth(320)
+        self.in_panel_texto_pdf.setPlaceholderText("El texto extraído de la página aparecerá aquí…")
+        self.in_panel_texto_pdf.setVisible(False)
+        self.in_panel_texto_pdf.setMaximumWidth(320)
         panel_lateral= QVBoxLayout()
-        panel_lateral.addWidget(self.panel_texto_pdf, 1)
+        panel_lateral.addWidget(self.in_panel_texto_pdf, 1)
         self.btn_copiar_texto_pdf= QPushButton("Copiar todo el texto")
         self.btn_copiar_texto_pdf.setIcon(icono_emoji("📋"))
         self.btn_copiar_texto_pdf.setIconSize(_QSize_emoji(16, 16))
         #copia todo el texto del panel: lo selecciona entero y lo manda al portapapeles
-        self.btn_copiar_texto_pdf.clicked.connect(lambda: (self.panel_texto_pdf.selectAll(), self.panel_texto_pdf.copy()))
+        self.btn_copiar_texto_pdf.clicked.connect(lambda: (self.in_panel_texto_pdf.selectAll(), self.in_panel_texto_pdf.copy()))
         self.btn_copiar_texto_pdf.setVisible(False)
         panel_lateral.addWidget(self.btn_copiar_texto_pdf)
         cuerpo.addLayout(panel_lateral, 1)
@@ -7740,12 +7740,12 @@ class VisorEditorReportes(QWidget):
         self._paginas_pdf_editables= set()  #xrefs de páginas en blanco insertadas por el usuario
         self._pila_deshacer_pdf.clear()
         self._pila_rehacer_pdf.clear()
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setMaximum(max(1, len(self._doc_pdf)))
-        self.spin_pagina_pdf.setValue(1)
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setMaximum(max(1, len(self._doc_pdf)))
+        self.in_spin_pagina_pdf.setValue(1)
+        self.in_spin_pagina_pdf.blockSignals(False)
         self.lbl_total_paginas.setText(f"/ {len(self._doc_pdf)}")
-        self.panel_texto_pdf.setVisible(False)
+        self.in_panel_texto_pdf.setVisible(False)
         self.btn_texto_pdf.setChecked(False)
         self._renderizar_todas_paginas()
         self._mostrar_pagina("pdf")
@@ -7791,9 +7791,9 @@ class VisorEditorReportes(QWidget):
             lbl.setStyleSheet("background-color: white; border: 1px solid rgba(100, 116, 139, 90);")
             self._layout_paginas_pdf.addWidget(lbl, 0, Qt.AlignmentFlag.AlignHCenter)
             self._labels_paginas_pdf.append(lbl)
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
+        self.in_spin_pagina_pdf.blockSignals(False)
         #Orden de rasterizado: primero la página actual y sus vecinas
         #cercanas (lo que la persona está viendo o va a ver al hacer
         #scroll), y el resto en orden -así el contenido "útil" aparece casi al instante incluso en documentos largos.
@@ -7801,7 +7801,7 @@ class VisorEditorReportes(QWidget):
         self._cola_render_pdf= deque(orden)
         self._token_render_pdf= getattr(self, "_token_render_pdf", 0) + 1
         self._continuar_render_pdf_por_tandas(self._token_render_pdf)
-        if self.panel_texto_pdf.isVisible():
+        if self.in_panel_texto_pdf.isVisible():
             self._actualizar_panel_texto_pdf()
         #se difiere al siguiente ciclo de eventos, cuando el widget ya está armado
         QTimer.singleShot(0, lambda: self._pdf_desplazar_a_pagina(self._indice_pagina_pdf))
@@ -7957,24 +7957,24 @@ class VisorEditorReportes(QWidget):
                 break
         if nueva != self._indice_pagina_pdf:
             self._indice_pagina_pdf= nueva
-            self.spin_pagina_pdf.blockSignals(True)
-            self.spin_pagina_pdf.setValue(nueva + 1)
-            self.spin_pagina_pdf.blockSignals(False)
-            if self.panel_texto_pdf.isVisible():
+            self.in_spin_pagina_pdf.blockSignals(True)
+            self.in_spin_pagina_pdf.setValue(nueva + 1)
+            self.in_spin_pagina_pdf.blockSignals(False)
+            if self.in_panel_texto_pdf.isVisible():
                 pagina= self._doc_pdf[nueva]
-                self.panel_texto_pdf.setPlainText(pagina.get_text() or "(Esta página no contiene texto extraíble.)")
+                self.in_panel_texto_pdf.setPlainText(pagina.get_text() or "(Esta página no contiene texto extraíble.)")
 
     #Actualiza el panel lateral de texto extraíble con el contenido
     #de la página actual. Solo hace algo si el panel está visible y hay
     #un documento PDF abierto.
     def _actualizar_panel_texto_pdf(self):
 
-        if self._doc_pdf is None or not self.panel_texto_pdf.isVisible():
+        if self._doc_pdf is None or not self.in_panel_texto_pdf.isVisible():
             return
         try:
 
             pagina= self._doc_pdf[self._indice_pagina_pdf]
-            self.panel_texto_pdf.setPlainText(
+            self.in_panel_texto_pdf.setPlainText(
                 pagina.get_text() or "(Esta página no contiene texto extraíble.)"
             )
         except Exception:
@@ -7992,9 +7992,9 @@ class VisorEditorReportes(QWidget):
         if not self._pdf_listo():
             return
         self._indice_pagina_pdf= 0
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setValue(1)
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setValue(1)
+        self.in_spin_pagina_pdf.blockSignals(False)
         self._pdf_desplazar_a_pagina(0)
 
     def _pdf_ultima(self):
@@ -8002,9 +8002,9 @@ class VisorEditorReportes(QWidget):
         if not self._pdf_listo():
             return
         self._indice_pagina_pdf= len(self._doc_pdf) - 1
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
+        self.in_spin_pagina_pdf.blockSignals(False)
         self._pdf_desplazar_a_pagina(self._indice_pagina_pdf)
 
     def _pdf_anterior(self):
@@ -8013,9 +8013,9 @@ class VisorEditorReportes(QWidget):
             return
         if self._indice_pagina_pdf > 0:
             self._indice_pagina_pdf -= 1
-            self.spin_pagina_pdf.blockSignals(True)
-            self.spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
-            self.spin_pagina_pdf.blockSignals(False)
+            self.in_spin_pagina_pdf.blockSignals(True)
+            self.in_spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
+            self.in_spin_pagina_pdf.blockSignals(False)
             self._pdf_desplazar_a_pagina(self._indice_pagina_pdf)
 
     def _pdf_siguiente(self):
@@ -8024,9 +8024,9 @@ class VisorEditorReportes(QWidget):
             return
         if self._indice_pagina_pdf < len(self._doc_pdf) - 1:
             self._indice_pagina_pdf += 1
-            self.spin_pagina_pdf.blockSignals(True)
-            self.spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
-            self.spin_pagina_pdf.blockSignals(False)
+            self.in_spin_pagina_pdf.blockSignals(True)
+            self.in_spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
+            self.in_spin_pagina_pdf.blockSignals(False)
             self._pdf_desplazar_a_pagina(self._indice_pagina_pdf)
 
     def _pdf_ir_a_pagina(self, numero):
@@ -8120,10 +8120,10 @@ class VisorEditorReportes(QWidget):
         self._doc_pdf.close()
         self._doc_pdf= fitz.open(stream=datos, filetype="pdf")
         self._indice_pagina_pdf= min(indice_pagina, len(self._doc_pdf) - 1)
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setMaximum(len(self._doc_pdf))
-        self.spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setMaximum(len(self._doc_pdf))
+        self.in_spin_pagina_pdf.setValue(self._indice_pagina_pdf + 1)
+        self.in_spin_pagina_pdf.blockSignals(False)
         self.lbl_total_paginas.setText(f"/ {len(self._doc_pdf)}")
         self._renderizar_todas_paginas()
 
@@ -8165,9 +8165,9 @@ class VisorEditorReportes(QWidget):
             return
         self._registrar_deshacer_pdf()
         self._doc_pdf.delete_page(self._indice_pagina_pdf)
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setMaximum(max(1, len(self._doc_pdf)))
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setMaximum(max(1, len(self._doc_pdf)))
+        self.in_spin_pagina_pdf.blockSignals(False)
         self.lbl_total_paginas.setText(f"/ {len(self._doc_pdf)}")
         self._renderizar_todas_paginas()
 
@@ -8183,9 +8183,9 @@ class VisorEditorReportes(QWidget):
         #arriesgarse nunca a estropear el diseño de una página que ya traía contenido del PDF original.
         self._paginas_pdf_editables.add(nueva.xref)
         self._indice_pagina_pdf += 1
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setMaximum(len(self._doc_pdf))
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setMaximum(len(self._doc_pdf))
+        self.in_spin_pagina_pdf.blockSignals(False)
         self.lbl_total_paginas.setText(f"/ {len(self._doc_pdf)}")
         self._renderizar_todas_paginas()
 
@@ -8209,11 +8209,11 @@ class VisorEditorReportes(QWidget):
 
     def _pdf_alternar_panel_texto(self, visible):
 
-        self.panel_texto_pdf.setVisible(visible)
+        self.in_panel_texto_pdf.setVisible(visible)
         self.btn_copiar_texto_pdf.setVisible(visible)
         if visible and self._doc_pdf is not None:
             pagina= self._doc_pdf[self._indice_pagina_pdf]
-            self.panel_texto_pdf.setPlainText(pagina.get_text() or "(Esta página no contiene texto extraíble.)")
+            self.in_panel_texto_pdf.setPlainText(pagina.get_text() or "(Esta página no contiene texto extraíble.)")
 
     #Escribe texto con formato (negrita/cursiva/fuente/tamaño/color/
     #alineación) en una página -SOLO si es una página en blanco que el
@@ -8310,9 +8310,9 @@ class VisorEditorReportes(QWidget):
         except Exception as error:
             mostrar_mensaje("error", "No se pudo combinar", str(error), self._padre_dialogo())
             return
-        self.spin_pagina_pdf.blockSignals(True)
-        self.spin_pagina_pdf.setMaximum(len(self._doc_pdf))
-        self.spin_pagina_pdf.blockSignals(False)
+        self.in_spin_pagina_pdf.blockSignals(True)
+        self.in_spin_pagina_pdf.setMaximum(len(self._doc_pdf))
+        self.in_spin_pagina_pdf.blockSignals(False)
         self.lbl_total_paginas.setText(f"/ {len(self._doc_pdf)}")
         mostrar_mensaje("exito", "PDF combinado",
                        f"Se agregaron las páginas de «{os.path.basename(ruta)}» al final. "

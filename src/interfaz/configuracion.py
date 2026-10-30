@@ -1241,12 +1241,12 @@ class WizardConfiguracion(QDialog):
         self.combo_sistema_calificacion.addItems(SISTEMAS_CALIFICACION)
         conectar_tooltip_seleccion(self.combo_sistema_calificacion,
                                     "Escala y método con el que se calculan e interpretan las notas")
-        self.spin_escala= QDoubleSpinBox()
-        self.spin_escala.setRange(1, 1000)
-        self.spin_escala.setValue(100)
-        self.spin_nota_min= QDoubleSpinBox()
-        self.spin_nota_min.setRange(0, 1000)
-        self.spin_nota_min.setValue(70)
+        self.in_spin_escala= QDoubleSpinBox()
+        self.in_spin_escala.setRange(1, 1000)
+        self.in_spin_escala.setValue(100)
+        self.in_spin_nota_min= QDoubleSpinBox()
+        self.in_spin_nota_min.setRange(0, 1000)
+        self.in_spin_nota_min.setValue(70)
         self.spin_nota_min_primaria= QDoubleSpinBox()
         self.spin_nota_min_primaria.setRange(NOTA_MIN_PRIMARIA_PISO, NOTA_MIN_PRIMARIA_TECHO)
         self.spin_nota_min_primaria.setValue(NOTA_MIN_PRIMARIA_PISO)
@@ -1259,8 +1259,8 @@ class WizardConfiguracion(QDialog):
         self.combo_metodo.addItems(METODOS_CALCULO)
         conectar_tooltip_seleccion(self.combo_metodo, "Fórmula usada para calcular la nota final de una materia")
         form.addRow("Sistema de Calificación:", self.combo_sistema_calificacion)
-        form.addRow("Escala Máxima (ej. 10, 20, 100):", self.spin_escala)
-        form.addRow("Nota Mínima Aprobatoria:", self.spin_nota_min)
+        form.addRow("Escala Máxima (ej. 10, 20, 100):", self.in_spin_escala)
+        form.addRow("Nota Mínima Aprobatoria:", self.in_spin_nota_min)
         form.addRow("Nota Mínima Aprobatoria — Primaria:", self.spin_nota_min_primaria)
         form.addRow("Nota Mínima Aprobatoria — Secundaria:", self.spin_nota_min_secundaria)
         form.addRow("Método de Cálculo de Nota Final:", self.combo_metodo)
@@ -1298,33 +1298,33 @@ class WizardConfiguracion(QDialog):
         #En el Sistema Dominicano, la nota mínima aprobatoria varía entre Primaria y Secundaria (Ordenanza 04-2023,
         #MINERD): se ocultan el campo único y se muestran los dos campos por nivel en su lugar. Para cualquier otro
         #sistema se mantiene el campo único de siempre.
-        _alternar_fila_form(self.form_calificaciones, self.spin_nota_min, not dominicano)
+        _alternar_fila_form(self.form_calificaciones, self.in_spin_nota_min, not dominicano)
         _alternar_fila_form(self.form_calificaciones, self.spin_nota_min_primaria, dominicano)
         _alternar_fila_form(self.form_calificaciones, self.spin_nota_min_secundaria, dominicano)
         if escala is not None:
-            self.spin_escala.setValue(escala)
-            self.spin_escala.setEnabled(False)
+            self.in_spin_escala.setValue(escala)
+            self.in_spin_escala.setEnabled(False)
             if dominicano:
                 #A diferencia de la escala (fija en 0-100), la nota mínima por nivel SÍ queda editable: Primaria se
                 #autocompleta en 65 (piso normativo, Ordenanza 04-2023) y admite subirse hasta 70; Secundaria se autocompleta
                 #en 70 y no tiene techo normativo distinto del máximo de la escala. Ver
                 #_restablecer_nota_min_nivel_defecto (solo aplica al elegir el
                 #sistema con el mouse/teclado, no al cargar un valor guardado).
-                self.spin_nota_min.setEnabled(False)
+                self.in_spin_nota_min.setEnabled(False)
                 self.lbl_info_sistema.setText(
                     f"Escala fija 0-100, 4 Períodos (P1-P4). Nota mínima: Primaria "
                     f"{NOTA_MIN_PRIMARIA_PISO} (hasta {NOTA_MIN_PRIMARIA_TECHO}), Secundaria "
                     f"{NOTA_MIN_SECUNDARIA_PISO}. Por debajo del mínimo activa Recuperación Pedagógica.")
             else:
-                self.spin_nota_min.setValue(minima)
-                self.spin_nota_min.setEnabled(False)
+                self.in_spin_nota_min.setValue(minima)
+                self.in_spin_nota_min.setEnabled(False)
                 self.lbl_info_sistema.setText(
                     "Sistema de Estados Unidos: escala fija 0-100 (equivalente porcentual de las letras "
                     "A-F) y nota mínima aprobatoria de 60 (D-). Los boletines mostrarán la letra "
                     "correspondiente junto a la nota numérica.")
         else:
-            self.spin_escala.setEnabled(True)
-            self.spin_nota_min.setEnabled(True)
+            self.in_spin_escala.setEnabled(True)
+            self.in_spin_nota_min.setEnabled(True)
             self.lbl_info_sistema.setText(
                 "Sistema numérico personalizado: define libremente la escala máxima y la nota "
                 "mínima aprobatoria (ej. 0-10, 0-20, 0-100).")
@@ -1535,7 +1535,7 @@ class WizardConfiguracion(QDialog):
             if es_sistema_dominicano(sistema_texto):
                 nota_min_general= max(self.spin_nota_min_primaria.value(), self.spin_nota_min_secundaria.value())
             else:
-                nota_min_general= self.spin_nota_min.value()
+                nota_min_general= self.in_spin_nota_min.value()
             c.execute("""UPDATE configuracion SET
                 nombre_institucion= ?, direccion=?, telefono=?, correo=?, sitio_web=?, logo_path=?,
                 tipo_institucion= ?, escala_maxima=?, nota_minima=?, nota_minima_primaria=?, nota_minima_secundaria=?,
@@ -1545,7 +1545,7 @@ class WizardConfiguracion(QDialog):
                 (self.in_nombre.text().strip(), self.in_direccion.text().strip(),
                  self.in_telefono.text().strip(), self.in_correo.text().strip(),
                  self.in_sitio_web.text().strip(), self.logo_path,
-                 self.combo_tipo.currentText(), self.spin_escala.value(), nota_min_general,
+                 self.combo_tipo.currentText(), self.in_spin_escala.value(), nota_min_general,
                  self.spin_nota_min_primaria.value(), self.spin_nota_min_secundaria.value(),
                  self.combo_metodo.currentText(), sistema_texto,
                  self.in_anio.text().strip(),
@@ -1980,10 +1980,10 @@ class ModuloConfiguracion(QWidget):
         self.combo_tipo.addItems(TIPOS_INSTITUCION)
         self.combo_sistema_calificacion= QComboBox()
         self.combo_sistema_calificacion.addItems(SISTEMAS_CALIFICACION)
-        self.spin_escala= QDoubleSpinBox()
-        self.spin_escala.setRange(1, 1000)
-        self.spin_nota_min= QDoubleSpinBox()
-        self.spin_nota_min.setRange(0, 1000)
+        self.in_spin_escala= QDoubleSpinBox()
+        self.in_spin_escala.setRange(1, 1000)
+        self.in_spin_nota_min= QDoubleSpinBox()
+        self.in_spin_nota_min.setRange(0, 1000)
         self.spin_nota_min_primaria= QDoubleSpinBox()
         self.spin_nota_min_primaria.setRange(NOTA_MIN_PRIMARIA_PISO, NOTA_MIN_PRIMARIA_TECHO)
         self.spin_nota_min_primaria.setToolTip(
@@ -1998,8 +1998,8 @@ class ModuloConfiguracion(QWidget):
         self.combo_division.addItems(DIVISIONES_PERIODO)
         self.combo_tipo.setToolTip("Modalidad institucional; determina qué módulos adicionales se activan")
         self.combo_sistema_calificacion.setToolTip("Escala y método con el que se calculan e interpretan las notas")
-        self.spin_escala.setToolTip("Valor máximo posible de una calificación (ej. 10, 20, 100)")
-        self.spin_nota_min.setToolTip("Nota mínima para considerar una materia aprobada")
+        self.in_spin_escala.setToolTip("Valor máximo posible de una calificación (ej. 10, 20, 100)")
+        self.in_spin_nota_min.setToolTip("Nota mínima para considerar una materia aprobada")
         self.combo_metodo.setToolTip("Fórmula usada para calcular la nota final de una materia")
         self.combo_division.setToolTip("Cómo se divide el año académico (trimestres, semestres, etc.)")
         conectar_tooltip_seleccion(self.combo_tipo, self.combo_tipo.toolTip())
@@ -2008,8 +2008,8 @@ class ModuloConfiguracion(QWidget):
         conectar_tooltip_seleccion(self.combo_division, self.combo_division.toolTip())
         form.addRow("Tipo de Institución:", self.combo_tipo)
         form.addRow("Sistema de Calificación:", self.combo_sistema_calificacion)
-        form.addRow("Escala Máxima:", self.spin_escala)
-        form.addRow("Nota Mínima Aprobatoria:", self.spin_nota_min)
+        form.addRow("Escala Máxima:", self.in_spin_escala)
+        form.addRow("Nota Mínima Aprobatoria:", self.in_spin_nota_min)
         form.addRow("Nota Mínima Aprobatoria — Primaria:", self.spin_nota_min_primaria)
         form.addRow("Nota Mínima Aprobatoria — Secundaria:", self.spin_nota_min_secundaria)
         form.addRow("Método de Cálculo:", self.combo_metodo)
@@ -2282,20 +2282,20 @@ class ModuloConfiguracion(QWidget):
 
         escala, minima= _escala_y_minima_por_sistema(sistema)
         dominicano= es_sistema_dominicano(sistema)
-        _alternar_fila_form(self.form_academico, self.spin_nota_min, not dominicano)
+        _alternar_fila_form(self.form_academico, self.in_spin_nota_min, not dominicano)
         _alternar_fila_form(self.form_academico, self.spin_nota_min_primaria, dominicano)
         _alternar_fila_form(self.form_academico, self.spin_nota_min_secundaria, dominicano)
         if escala is not None:
-            self.spin_escala.setValue(escala)
-            self.spin_escala.setEnabled(False)
+            self.in_spin_escala.setValue(escala)
+            self.in_spin_escala.setEnabled(False)
             if dominicano:
-                self.spin_nota_min.setEnabled(False)
+                self.in_spin_nota_min.setEnabled(False)
             else:
-                self.spin_nota_min.setValue(minima)
-                self.spin_nota_min.setEnabled(False)
+                self.in_spin_nota_min.setValue(minima)
+                self.in_spin_nota_min.setEnabled(False)
         else:
-            self.spin_escala.setEnabled(True)
-            self.spin_nota_min.setEnabled(True)
+            self.in_spin_escala.setEnabled(True)
+            self.in_spin_nota_min.setEnabled(True)
         if dominicano:
             self.combo_division.setCurrentText("Periodos")
             self.combo_division.setEnabled(False)
@@ -2338,7 +2338,7 @@ class ModuloConfiguracion(QWidget):
                 #guarda como el mayor de los dos valores por nivel.
                 nota_min_general= max(self.spin_nota_min_primaria.value(), self.spin_nota_min_secundaria.value())
             else:
-                nota_min_general= self.spin_nota_min.value()
+                nota_min_general= self.in_spin_nota_min.value()
             criterio_lista_anterior= obtener_criterio_numero_lista()
             criterio_lista_nuevo= self.combo_criterio_lista.currentText()
             c.execute("""UPDATE configuracion SET tipo_institucion=?, escala_maxima=?, nota_minima=?,
@@ -2346,7 +2346,7 @@ class ModuloConfiguracion(QWidget):
                          metodo_calculo= ?, sistema_calificacion=?, anio_academico=?, division_periodo=?, idioma=?,
                          modulos_personalizados= ?, niveles_educativos_habilitados=?, criterio_numero_lista=?
                          WHERE id=1""",
-                      (self.combo_tipo.currentText(), self.spin_escala.value(), nota_min_general,
+                      (self.combo_tipo.currentText(), self.in_spin_escala.value(), nota_min_general,
                        self.spin_nota_min_primaria.value(), self.spin_nota_min_secundaria.value(),
                        self.combo_metodo.currentText(), sistema_texto,
                        self.in_anio.text().strip(),
@@ -3427,10 +3427,10 @@ class ModuloConfiguracion(QWidget):
         self.in_smtp_host= QLineEdit()
         limitar_campo_texto(self.in_smtp_host, 300)
         self.in_smtp_host.setPlaceholderText("smtp.gmail.com")
-        self.spin_smtp_puerto= QSpinBox()
-        self.spin_smtp_puerto.setRange(1, 65535)
-        self.spin_smtp_puerto.setValue(587)
-        self.spin_smtp_puerto.setToolTip("Puerto del servidor SMTP (ej. 587 para TLS, 465 para SSL)")
+        self.in_spin_smtp_puerto= QSpinBox()
+        self.in_spin_smtp_puerto.setRange(1, 65535)
+        self.in_spin_smtp_puerto.setValue(587)
+        self.in_spin_smtp_puerto.setToolTip("Puerto del servidor SMTP (ej. 587 para TLS, 465 para SSL)")
         self.in_smtp_usuario= QLineEdit()
         limitar_campo_texto(self.in_smtp_usuario, 300)
         self.in_smtp_usuario.setPlaceholderText("cuenta@dominio.com")
@@ -3445,7 +3445,7 @@ class ModuloConfiguracion(QWidget):
         self.combo_smtp_seguridad.addItems(["TLS", "SSL", "Ninguna"])
         conectar_tooltip_seleccion(self.combo_smtp_seguridad, "Tipo de cifrado/seguridad usado por el servidor de correo")
         form_smtp.addRow("Servidor SMTP:", self.in_smtp_host)
-        form_smtp.addRow("Puerto:", self.spin_smtp_puerto)
+        form_smtp.addRow("Puerto:", self.in_spin_smtp_puerto)
         form_smtp.addRow("Usuario SMTP:", self.in_smtp_usuario)
         form_smtp.addRow("Contraseña SMTP:", self.in_smtp_password)
         form_smtp.addRow("Remitente:", self.in_smtp_remitente)
@@ -3975,7 +3975,7 @@ class ModuloConfiguracion(QWidget):
             c= conn.cursor()
             c.execute("""UPDATE configuracion SET smtp_host=?, smtp_puerto=?, smtp_usuario=?,
                          smtp_password= ?, smtp_remitente=?, smtp_seguridad=? WHERE id=1""",
-                      (self.in_smtp_host.text().strip(), self.spin_smtp_puerto.value(),
+                      (self.in_smtp_host.text().strip(), self.in_spin_smtp_puerto.value(),
                        self.in_smtp_usuario.text().strip(), self.in_smtp_password.text(),
                        self.in_smtp_remitente.text().strip(), self.combo_smtp_seguridad.currentText()))
             conn.commit()
@@ -4202,10 +4202,10 @@ class ModuloConfiguracion(QWidget):
         fila_filtros= QGridLayout()
         fila_filtros.setHorizontalSpacing(12)
         fila_filtros.setVerticalSpacing(8)
-        self.date_auditoria_desde= QDateEdit(calendarPopup=True)
-        self.date_auditoria_desde.setDate(self._qdate_hace_dias(30))
-        self.date_auditoria_hasta= QDateEdit(calendarPopup=True)
-        self.date_auditoria_hasta.setDate(self._qdate_hoy())
+        self.in_date_auditoria_desde= QDateEdit(calendarPopup=True)
+        self.in_date_auditoria_desde.setDate(self._qdate_hace_dias(30))
+        self.in_date_auditoria_hasta= QDateEdit(calendarPopup=True)
+        self.in_date_auditoria_hasta.setDate(self._qdate_hoy())
         self.combo_auditoria_modulo= QComboBox()
         self.combo_auditoria_modulo.addItem("Todos los módulos", None)
         conectar_tooltip_seleccion(self.combo_auditoria_modulo, "Filtra la bitácora por módulo del sistema")
@@ -4213,9 +4213,9 @@ class ModuloConfiguracion(QWidget):
         self.combo_auditoria_usuario.addItem("Todos los usuarios", None)
         conectar_tooltip_seleccion(self.combo_auditoria_usuario, "Filtra la bitácora por usuario que realizó la acción")
         fila_filtros.addWidget(QLabel("Desde:"), 0, 0)
-        fila_filtros.addWidget(self.date_auditoria_desde, 0, 1)
+        fila_filtros.addWidget(self.in_date_auditoria_desde, 0, 1)
         fila_filtros.addWidget(QLabel("Hasta:"), 0, 2)
-        fila_filtros.addWidget(self.date_auditoria_hasta, 0, 3)
+        fila_filtros.addWidget(self.in_date_auditoria_hasta, 0, 3)
         fila_filtros.addWidget(QLabel("Módulo:"), 1, 0)
         fila_filtros.addWidget(self.combo_auditoria_modulo, 1, 1)
         fila_filtros.addWidget(QLabel("Usuario:"), 1, 2)
@@ -4320,8 +4320,8 @@ class ModuloConfiguracion(QWidget):
 
     def _limpiar_filtros_auditoria(self):
 
-        self.date_auditoria_desde.setDate(self._qdate_hace_dias(30))
-        self.date_auditoria_hasta.setDate(self._qdate_hoy())
+        self.in_date_auditoria_desde.setDate(self._qdate_hace_dias(30))
+        self.in_date_auditoria_hasta.setDate(self._qdate_hoy())
         self.combo_auditoria_modulo.setCurrentIndex(0)
         self.combo_auditoria_usuario.setCurrentIndex(0)
         self._cargar_auditoria()
@@ -4361,8 +4361,8 @@ class ModuloConfiguracion(QWidget):
     def _cargar_auditoria(self):
 
         self._cargar_combos_auditoria()
-        desde= self.date_auditoria_desde.date().toString("yyyy-MM-dd") + " 00:00:00"
-        hasta= self.date_auditoria_hasta.date().toString("yyyy-MM-dd") + " 23:59:59"
+        desde= self.in_date_auditoria_desde.date().toString("yyyy-MM-dd") + " 00:00:00"
+        hasta= self.in_date_auditoria_hasta.date().toString("yyyy-MM-dd") + " 23:59:59"
         modulo= self.combo_auditoria_modulo.currentData()
         usuario= self.combo_auditoria_usuario.currentData()
 
@@ -4450,8 +4450,8 @@ class ModuloConfiguracion(QWidget):
             for nivel, chk in self.chk_nivel.items():
                 chk.setChecked(nivel in niveles_guardados)
             self._actualizar_visibilidad_niveles_educativos(cfg["tipo_institucion"] or "Escuela")
-            self.spin_escala.setValue(cfg["escala_maxima"] or 100)
-            self.spin_nota_min.setValue(cfg["nota_minima"] or 70)
+            self.in_spin_escala.setValue(cfg["escala_maxima"] or 100)
+            self.in_spin_nota_min.setValue(cfg["nota_minima"] or 70)
             self.spin_nota_min_primaria.setValue(_valor_o_defecto(cfg, "nota_minima_primaria", cfg["nota_minima"] or 70))
             self.spin_nota_min_secundaria.setValue(_valor_o_defecto(cfg, "nota_minima_secundaria", cfg["nota_minima"] or 70))
             self.combo_metodo.setCurrentText(cfg["metodo_calculo"] or "Promedio Ponderado")
@@ -4497,7 +4497,7 @@ class ModuloConfiguracion(QWidget):
                 self.chk_calif_tecnicas.setChecked(getattr(self.main_window, "mostrar_calif_tecnicas", False))
                 self._actualizar_estado_calif_tecnicas()
             self.in_smtp_host.setText(cfg["smtp_host"] or "")
-            self.spin_smtp_puerto.setValue(cfg["smtp_puerto"] or 587)
+            self.in_spin_smtp_puerto.setValue(cfg["smtp_puerto"] or 587)
             self.in_smtp_usuario.setText(cfg["smtp_usuario"] or "")
             self.in_smtp_password.setText(cfg["smtp_password"] or "")
             self.in_smtp_remitente.setText(cfg["smtp_remitente"] or "")
