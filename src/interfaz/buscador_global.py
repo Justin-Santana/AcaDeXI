@@ -86,6 +86,7 @@ _UMBRAL_PALABRA_CORTA= 0.55
 def _palabra_coincide(palabra_busqueda, texto_destino_norm, palabras_destino):
 
     if len(palabra_busqueda) == 1:
+        #p: cada palabra del destino; basta con que alguna empiece por la letra suelta buscada.
         return any(p.startswith(palabra_busqueda) for p in palabras_destino)
     if palabra_busqueda in texto_destino_norm:
         return True
@@ -126,10 +127,13 @@ def _coincidencia_fuzzy(texto_busqueda, texto_destino):
         return False
     busqueda_norm= _normalizar_texto(texto_busqueda)
     destino_norm= _normalizar_texto(texto_destino)
+    #p: cada palabra de la búsqueda normalizada; se descartan las vacías.
     palabras_busqueda= [p for p in busqueda_norm.split() if p]
     if not palabras_busqueda:
         return False
+    #p: cada palabra del destino normalizado; se descartan las vacías.
     palabras_destino= [p for p in destino_norm.split() if p]
+    #p: cada palabra de la búsqueda; todas deben coincidir con el destino para aceptar el resultado.
     return all(_palabra_coincide(p, destino_norm, palabras_destino) for p in palabras_busqueda)
 
 
@@ -219,6 +223,8 @@ def _buscar_modulos(main_window, texto):
         puntaje= max(_puntaje_relevancia(texto, nombre),
                       _puntaje_relevancia(texto, texto_destino) - 0.5)
         coincidencias.append((puntaje, ("Módulos", nombre, nombre, None, _icono_categoria(nombre))))
+    #par es (puntaje, resultado): se ordena por puntaje de mayor a menor. r es el resultado de cada par;
+    #solo se agregan los mejores de la categoría.
     coincidencias.sort(key=lambda par: par[0], reverse=True)
     resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
     return resultados
@@ -367,9 +373,11 @@ def buscar_global(main_window, texto):
                 partes_busqueda.append(carrera_nombre)
             if nivel_nombre:
                 partes_busqueda.append(nivel_nombre)
+            #p: cada parte de texto no vacía; se unen en un solo texto para comparar con la búsqueda.
             texto_concatenado= " ".join(p for p in partes_busqueda if p)
 
             if _coincidencia_fuzzy(texto, texto_concatenado):
+                #p: cada trozo de detalle no vacío; se unen con ' · ' para mostrar en el resultado.
                 detalle= " · ".join(p for p in (
                     f"{grado_nombre} {seccion_nombre}".strip(),
                     especialidad_nombre, carrera_nombre) if p)
@@ -387,6 +395,8 @@ def buscar_global(main_window, texto):
                 coincidencias.append((_puntaje_relevancia(texto, texto_concatenado),
                                        ("Estudiantes", etiqueta, destino_estudiantes,
                                         fila["matricula"] or fila["nombre"], _icono_categoria(destino_estudiantes))))
+        #Aquí y en cada bloque de categoría siguiente: par=(puntaje, resultado) para ordenar por relevancia
+        #y r=resultado que se agrega a la lista final (solo los mejores de la categoría).
         coincidencias.sort(key=lambda par: par[0], reverse=True)
         resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
 
@@ -491,6 +501,7 @@ def buscar_global(main_window, texto):
             if _coincidencia_fuzzy(texto, texto_concatenado):
                 fecha_fmt= formatear_fecha(fila["fecha_entrega"], main_window)
                 etiqueta= fila["titulo"]
+                #p: cada dato de detalle no vacío (materia, categoría); se unen con ' · '.
                 detalle= " · ".join(p for p in (fila["materia_nombre"], fila["categoria"]) if p)
                 if detalle:
                     etiqueta += f" — {detalle}"
@@ -578,6 +589,7 @@ def buscar_global(main_window, texto):
                                   f"{fila['ubicacion'] or ''} {fila['categoria_nombre'] or ''} "
                                   f"{fila['estado'] or ''} material inventario equipo")
             if _coincidencia_fuzzy(texto, texto_concatenado):
+                #p: cada dato de detalle no vacío (categoría, ubicación); se unen con ' · '.
                 detalle= " · ".join(p for p in (fila["categoria_nombre"], fila["ubicacion"]) if p)
                 etiqueta= fila["nombre"] + (f" ({fila['codigo']})" if fila["codigo"] else "")
                 if detalle:
@@ -612,6 +624,7 @@ def buscar_global(main_window, texto):
             texto_concatenado= (f"{fila['materia_nombre'] or ''} {grupo} {fila['dia'] or ''} "
                                   f"{fila['aula_nombre'] or ''} clase horario")
             if _coincidencia_fuzzy(texto, texto_concatenado):
+                #p: cada dato de la franja no vacío (día, hora inicio, hora fin); se unen con ' · '.
                 franja= " · ".join(p for p in (fila["dia"], fila["hora_inicio"], fila["hora_fin"]) if p)
                 etiqueta= f"{fila['materia_nombre'] or 'Sin materia'}"
                 if grupo:

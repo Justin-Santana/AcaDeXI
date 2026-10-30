@@ -46,6 +46,7 @@ TAM_PAGINA_REPORTES= 25
 def _hex_a_rgba(color_hex, alpha):
 
     color_hex= (color_hex or "#2563EB").lstrip("#")
+    #r, g, b: canales rojo, verde y azul (0 a 255) sacados del color hex para armar el rgba.
     r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
@@ -203,6 +204,7 @@ class AnilloProgreso(QWidget):
 
         return self._valor
 
+    #v: valor (0 a 100) que la animación le va dando a la propiedad 'valor'; se limita a ese rango.
     def _poner_valor(self, v):
 
         self._valor= max(0.0, min(100.0, v))
@@ -284,6 +286,7 @@ class MiniBarras(QWidget):
 
         return self._progreso
 
+    #v: avance actual que la animación le da a la propiedad 'progreso'.
     def _poner_progreso(self, v):
 
         self._progreso= v
@@ -437,6 +440,7 @@ class TarjetaKPI(QFrame):
         anim.setEndValue(valor_final)
         anim.setDuration(500)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor intermedio de la animación; se muestra entero en la etiqueta junto con el sufijo.
         anim.valueChanged.connect(lambda v: self.lbl_valor.setText(f"{int(v)}{sufijo}"))
         anim.start()
         self._anim_valor= anim
@@ -970,6 +974,7 @@ class ModuloReportes(QWidget):
 
         debounce.timeout.connect(_al_disparar_debounce)
         panel["_debounce"]= debounce
+        #_t: texto escrito en el buscador (no se usa); cada cambio solo reinicia el temporizador debounce.
         panel["buscar"].textChanged.connect(lambda _t: debounce.start())
 
         if panel.get("combo_nivel") is not None:
@@ -980,6 +985,7 @@ class ModuloReportes(QWidget):
                     self._cargar_combo_secciones(panel["combo_seccion"], panel["combo_curso"], panel.get("combo_nivel"))
                 panel["paginacion"].reiniciar()
                 recargar_fn()
+            #_i: índice elegido en el combo (no se usa); solo avisa al manejador. Igual en los combos siguientes.
             panel["combo_nivel"].currentIndexChanged.connect(lambda _i: _en_cambio_nivel())
 
         if panel.get("combo_curso") is not None:
@@ -1010,6 +1016,7 @@ class ModuloReportes(QWidget):
 
                 panel["paginacion"].reiniciar()
                 recargar_fn()
+            #_i: índice elegido (no se usa); ambos combos técnicos llaman al mismo manejador de filtro.
             panel["combo_filtro_especialidad_rep"].currentIndexChanged.connect(
                 lambda _i: _en_cambio_filtro_tecnico_rep())
             panel["combo_filtro_carrera_rep"].currentIndexChanged.connect(
@@ -1300,6 +1307,7 @@ class ModuloReportes(QWidget):
         ruta, _= QFileDialog.getSaveFileName(self, "Exportar Reporte", "reporte_institucional.csv", "CSV (*.csv)")
         if not ruta:
             return
+        #f: archivo CSV abierto para escritura; el writer vuelca ahí los indicadores.
         with open(ruta, "w", newline="", encoding="utf-8") as f:
             writer= csv.writer(f)
             writer.writerow(["Indicador", "Valor"])
@@ -1372,6 +1380,7 @@ class ModuloReportes(QWidget):
         fila_botones.addWidget(btn_actualizar)
 
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_riesgo, self, titulo="Detalle del Estudiante en Riesgo")
+        #*_: argumentos de la señal que se descartan; el doble clic en una fila pulsa el botón de detalle.
         self.tabla_riesgo.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
@@ -1422,6 +1431,7 @@ class ModuloReportes(QWidget):
 
         with tabla_pausada(self.tabla_riesgo):
             self.tabla_riesgo.setRowCount(len(pagina))
+            #f: fila (registro de la consulta) del estudiante en riesgo que se pinta en la fila i de la tabla.
             for i, f in enumerate(pagina):
                 self.tabla_riesgo.setItem(i, 0, QTableWidgetItem(f"{f['nombre']} {f['apellidos'] or ''}"))
                 self.tabla_riesgo.setItem(i, 1, QTableWidgetItem(f"{f['promedio']:.2f}"))
@@ -1489,6 +1499,7 @@ class ModuloReportes(QWidget):
         fila_botones.addWidget(btn_actualizar)
 
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_excelencia, self, titulo="Detalle del Estudiante Destacado")
+        #*_: argumentos de la señal que se descartan; el doble clic en una fila pulsa el botón de detalle.
         self.tabla_excelencia.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
@@ -1523,6 +1534,7 @@ class ModuloReportes(QWidget):
 
         #El "puesto" se calcula sobre el ranking COMPLETO antes de filtrar, para que no cambie según lo que el usuario
         #esté buscando.
+        #f: fila del ranking; se arma un dict id de estudiante -> puesto (posición + 1).
         puestos= {f["id"]: i + 1 for i, f in enumerate(filas)}
 
         filas_filtradas= self._aplicar_filtros_estudiante(filas, panel)
@@ -1532,6 +1544,7 @@ class ModuloReportes(QWidget):
 
         with tabla_pausada(self.tabla_excelencia):
             self.tabla_excelencia.setRowCount(len(pagina))
+            #f: fila del estudiante destacado de la página actual, pintada en la fila i de la tabla.
             for i, f in enumerate(pagina):
                 self.tabla_excelencia.setItem(i, 0, QTableWidgetItem(str(puestos.get(f["id"], "—"))))
                 self.tabla_excelencia.setItem(i, 1, QTableWidgetItem(f"{f['nombre']} {f['apellidos'] or ''}"))
@@ -1604,6 +1617,7 @@ class ModuloReportes(QWidget):
         fila_botones.addWidget(btn_actualizar)
 
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_asistencia, self, titulo="Detalle de Asistencia del Estudiante")
+        #*_: argumentos de la señal que se descartan; el doble clic en una fila pulsa el botón de detalle.
         self.tabla_asistencia.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
@@ -1643,6 +1657,7 @@ class ModuloReportes(QWidget):
 
         with tabla_pausada(self.tabla_asistencia):
             self.tabla_asistencia.setRowCount(len(pagina))
+            #f: fila de asistencia de un estudiante; se calcula su porcentaje y se pinta en la fila i.
             for i, f in enumerate(pagina):
                 presentes= f["presentes"] or 0
                 ausencias= f["ausencias"] or 0
@@ -1714,7 +1729,9 @@ class ModuloReportes(QWidget):
         debounce.setInterval(180)
         debounce.timeout.connect(_recargar)
         panel["_debounce"]= debounce
+        #_t: texto del buscador (no se usa); cada cambio solo reinicia el temporizador debounce.
         panel["buscar"].textChanged.connect(lambda _t: debounce.start())
+        #_i: índice elegido en el combo (no se usa); solo dispara la recarga.
         panel["combo_especialidad"].currentIndexChanged.connect(lambda _i: _recargar())
 
         def _limpiar():
@@ -1736,6 +1753,7 @@ class ModuloReportes(QWidget):
         fila_botones.addWidget(btn_actualizar)
 
         btn_detalle= agregar_boton_detalle(fila_botones, self.tabla_rendimiento_tecnico, self, titulo="Detalle de Rendimiento Técnico")
+        #*_: argumentos de la señal que se descartan; el doble clic en una fila pulsa el botón de detalle.
         self.tabla_rendimiento_tecnico.doubleClicked.connect(lambda *_: btn_detalle.click())
 
         fila_botones.addStretch()
@@ -1788,12 +1806,14 @@ class ModuloReportes(QWidget):
         #la C.F. de cada estudiante como promedio ponderado (igual criterio que 📐 Calificaciones Técnicas). Solo se
         #cuenta un estudiante como "evaluado" si tiene al menos un RA calificado en esa materia.
         agrupado= {}
+        #f: fila de un RA calificado; se agrupa por (materia, estudiante) con su nota y peso.
         for f in filas_ra:
             clave= (f["materia_id"], f["estudiante_id"])
             agrupado.setdefault(clave, []).append((f["nota"], f["peso"] or 0))
 
         por_materia= {}
         for (materia_id, estudiante_id), notas_pesos in agrupado.items():
+            #p: peso de cada nota; n: nota. C.F. ponderada, o promedio simple si los pesos suman 0.
             suma_pesos= sum(p for _, p in notas_pesos)
             cf= (sum(n * p for n, p in notas_pesos) / suma_pesos) if suma_pesos > 0\
                 else (sum(n for n, _ in notas_pesos) / len(notas_pesos))
@@ -1815,6 +1835,7 @@ class ModuloReportes(QWidget):
                 "aprobados": aprobados,
                 "reprobados": evaluados - aprobados,
             })
+        #f: dict de resumen de una materia; ordena por especialidad y luego por nombre de materia.
         resultado.sort(key=lambda f: (f["especialidad"], f["materia"]))
         return resultado
 
@@ -1847,6 +1868,7 @@ class ModuloReportes(QWidget):
 
         with tabla_pausada(self.tabla_rendimiento_tecnico):
             self.tabla_rendimiento_tecnico.setRowCount(len(pagina))
+            #f: dict de rendimiento de una materia técnica de la página actual, pintado en la fila i.
             for i, f in enumerate(pagina):
                 self.tabla_rendimiento_tecnico.setItem(i, 0, QTableWidgetItem(f["especialidad"]))
                 self.tabla_rendimiento_tecnico.setItem(i, 1, QTableWidgetItem(f["materia"]))
@@ -1887,6 +1909,7 @@ class ModuloReportes(QWidget):
                           "Aprobados vs. Reprobados (Técnica)", ["Aprobados", "Reprobados"],
                           [total_aprobados, total_reprobados],
                           [colors.HexColor("#22C55E"), colors.HexColor("#EF4444")])
+        #f: dict de resumen de una materia; se ordena por promedio descendente para tomar las 8 mejores.
         top_materias= sorted(filas, key=lambda f: f["promedio"], reverse=True)[:8]
         categorias= [top_materia["materia"][:12] for top_materia in top_materias]
         valores= [top_materia["promedio"] for top_materia in top_materias]
@@ -1971,6 +1994,7 @@ class ModuloReportes(QWidget):
         pie.width= min(ancho, alto) - 60
         pie.height= pie.width
         pie.data= valores
+        #e: etiqueta y v: valor de cada porción; la leyenda queda como 'etiqueta (valor)'.
         pie.labels= [f"{e} ({v})" for e, v in zip(etiquetas, valores)]
         pie.simpleLabels= 1
         pie.slices.strokeWidth= 0.5
@@ -2129,6 +2153,7 @@ class ModuloReportes(QWidget):
         self._dibujar_pie(cvs, Drawing, Pie, colors, 50, y - 220, 250, 240,
                           "Distribución de Asistencia", estados, conteos, colores_estados)
         if por_seccion:
+            #f: fila de asistencia de una sección; se usa su nombre (12 caracteres) y su % de presentes.
             categorias= [f["seccion_nombre"][:12] if f["seccion_nombre"] else "—" for f in por_seccion][:8]
             valores= [round((f["presentes"] / f["total"]) * 100, 1) if f["total"] else 0
                       for f in por_seccion][:8]
@@ -2419,6 +2444,7 @@ class ModuloReportes(QWidget):
             for ruta in self._rutas_recientes_reportes[:5]:
                 btn_rec= QPushButton(f"📄 {os.path.basename(ruta)}")
                 btn_rec.setCursor(Qt.CursorShape.PointingHandCursor)
+                #r: ruta del reporte reciente, fijada como valor por defecto para que cada botón abra la suya.
                 btn_rec.clicked.connect(lambda _=False, r=ruta: self._terminar_de_abrir_editor(r))
                 fila_rec= QHBoxLayout()
                 fila_rec.addStretch()
@@ -2473,6 +2499,7 @@ class ModuloReportes(QWidget):
             #Los reportes que se exportaron desde otras pestañas ANTES de que este editor existiera (ver
             #_registrar_archivo_reciente) se le pasan ahora, para que aparezcan en su combo de "Archivos recientes" como si
             #siempre hubiera estado abierto.
+            #r: ruta de un reporte exportado antes de crear el editor; se agrega a sus archivos recientes.
             for r in reversed(self._rutas_recientes_reportes):
                 self.visor_editor.agregar_reciente(r)
             self.visor_editor.abrir_archivo(ruta)

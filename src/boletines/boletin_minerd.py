@@ -359,6 +359,8 @@ def resumen_asistencia(estudiante_id, seccion_id, periodos):
         conteos= {fila["estado"]: fila["n"] for fila in c.fetchall()}
         resultado[periodo["id"]]= {
             "asistencia": conteos.get("Presente", 0),
+            #v: cantidad de registros de cada estado; k: el estado.
+            #Suma las ausencias (todo estado distinto de Presente).
             "ausencia": sum(v for k, v in conteos.items() if k != "Presente"),
         }
     conn.close()
@@ -396,6 +398,8 @@ def construir_boletin_general(estudiante_id, metodo="Promedio Ponderado", anio_a
 
         if primaria:
             area["rp"]= _recuperacion_pedagogica_area(estudiante_id, materia["id"], periodos)
+            #v: cada nota de recuperación pedagógica del área.
+            #tiene_rp es True si alguna no es None.
             area["tiene_rp"]= any(v is not None for v in area["rp"])
         else:
             cascada= _cascada_evaluacion(estudiante_id, materia["id"], anio) if dominicano else {}
@@ -632,6 +636,8 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
             cvs.drawCentredString(cx + COL_PERIODO / 2, fila2_y - 10, periodo["nombre"])
             et_local= etiqueta
             idx_local= i
+            #Lambda de celda: a es el área (dict) de la materia; devuelve la nota formateada del grupo et
+            #en el período ix. et e ix se fijan por defecto para que cada columna conserve los suyos.
             columnas.append((cx, COL_PERIODO,
                               lambda a, et=et_local, ix=idx_local: _fmt(a["grilla"]["grupos"].get(et, [None] * n_periodos)[ix]),
                               False))
@@ -648,6 +654,8 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
         cvs.setFont("Helvetica-Bold", 6)
         cvs.drawCentredString(cx + COL_PERIODO / 2, fila2_y - 10, f"PC{i + 1}")
         ix= i
+        #Lambda de celda: a es el área; devuelve el promedio de competencias (PC) del período ix,
+        #formateado.
         columnas.append((cx, COL_PERIODO, lambda a, ix=ix: _fmt(a["grilla"]["pc"][ix] if ix < len(a["grilla"]["pc"]) else None), False))
     x += ancho_pc
 
@@ -657,6 +665,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
     cvs.setFillColorRGB(0, 0, 0)
     _dibujar_texto_multilinea(cvs, "CALIFICACIÓN FINAL DEL ÁREA", x + COL_CF / 2, fila1_y - alto_doble / 2 + 3,
                               COL_CF - 4, alto_doble - 6, tamano_inicial=6)
+    #Lambda de celda: a es el área; devuelve la calificación final del área, formateada.
     columnas.append((x, COL_CF, lambda a: _fmt(a["grilla"]["final"]), True))
     x += COL_CF
 
@@ -673,6 +682,7 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
             _dibujar_texto_ajustado(cvs, etiqueta_sub, x + COL_CASCADA / 2, fila2_y - 10, COL_CASCADA - 2,
                                     tamano_inicial= 5.5)
             clave_local= clave
+            #Lambda de celda: a es el área; devuelve el valor k (fijado por defecto) de su desglose.
             columnas.append((x, COL_CASCADA, lambda a, k=clave_local: _fmt(a["desglose"].get(k)), False))
             x += COL_CASCADA
 
@@ -693,6 +703,8 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
         cvs.setFont("Helvetica-Bold", 6.5)
         cvs.drawCentredString(cx + COL_AR / 2, fila2_y - 10, letra)
         letra_local= letra
+        #Lambda de celda: a es el área; devuelve 'X' si su situación final coincide con la letra L
+        #(A o R), si no vacío.
         columnas.append((cx, COL_AR, lambda a, L=letra_local: ("X" if a["situacion"] == L else ""), False))
 
     y= fila2_y - 14
@@ -737,6 +749,8 @@ def dibujar_boletin_secundaria_oficial(cvs, institucion, boletin, colores=None):
         cx += w
     y -= 12
     total_asist, total_ausen= 0, 0
+    #v: datos de asistencia de cada período.
+    #hay_datos_asistencia es True si alguno tiene asistencia registrada.
     hay_datos_asistencia= any(v.get("asistencia") is not None for v in boletin["asistencia"].values())
     for periodo in periodos:
         datos_p= boletin["asistencia"].get(periodo["id"], {})

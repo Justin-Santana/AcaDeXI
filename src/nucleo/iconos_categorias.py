@@ -60,6 +60,9 @@ from src.nucleo.iconos_emoji import (_r, _pluma, _sin_pluma, _linea, _rect_redon
 
 
 #CATEGORÍAS
+#Patrón de las funciones _cat_* y _nat_* (monocromo): reciben el QPainter `p` (en algunas se llama
+#`pintor`, es lo mismo) ya activo sobre el pixmap creado por _nuevo_lienzo; `size` es el lado en
+#píxeles del lienzo cuadrado y `color` el único color del trazo. Las coordenadas son fracciones 0-1 de size.
 #Barras ascendentes: rendimiento académico en alza.
 def _cat_rendimiento(p, size, color):
 
@@ -108,6 +111,7 @@ def _cat_comprension(pintor, size, color):
 def _cat_esfuerzo(pintor, size, color):
 
     path= QPainterPath()
+    #s: alias corto de size para escalar las coordenadas fraccionarias del contorno.
     s= size
     path.moveTo(0.50 * s, 0.10 * s)
     path.cubicTo(0.74 * s, 0.32 * s, 0.68 * s, 0.48 * s, 0.58 * s, 0.40 * s)
@@ -246,6 +250,7 @@ def _cat_seguimiento(pintor, size, color):
 def _cat_disciplinario(pintor, size, color):
 
     path= QPainterPath()
+    #s: alias corto de size para escalar las coordenadas fraccionarias del contorno.
     s= size
     path.moveTo(0.5 * s, 0.10 * s)
     path.lineTo(0.82 * s, 0.22 * s)
@@ -357,6 +362,7 @@ def pixmap_categoria(clave, color, size=20):
     llave_cache= (clave_norm, color, size)
     if llave_cache in _cache_categoria:
         return _cache_categoria[llave_cache]
+    #pix: pixmap transparente y p: QPainter abierto sobre él (los dibujos pintan con p; se cierra en el finally).
     pix, p= _nuevo_lienzo(size)
     dibujar= _DISPATCH.get(clave_norm, _cat_generico)
     try:
@@ -374,6 +380,8 @@ def icono_categoria(clave, color, size=20):
     return QIcon(pixmap_categoria(clave, color, size))
 
 
+#Patrón de las funciones _catc_* (multicolor): igual que las _cat_* pero sin parámetro `color`, porque
+#cada dibujo trae sus colores fijos. `p`/`pintor` es el QPainter activo y `size` el lado del lienzo en px.
 #Versión multicolor (ver docstring del módulo, sección 2)
 def _catc_rendimiento(p, size):
 
@@ -400,6 +408,7 @@ def _catc_comprension(p, size):
 def _catc_esfuerzo(pintor, size):
 
     path= QPainterPath()
+    #s: alias corto de size para escalar las coordenadas fraccionarias del contorno.
     s= size
     path.moveTo(0.50 * s, 0.10 * s)
     path.cubicTo(0.74 * s, 0.32 * s, 0.68 * s, 0.48 * s, 0.58 * s, 0.40 * s)
@@ -587,6 +596,7 @@ def pixmap_categoria_color(clave, size=20):
     llave_cache= (clave_norm, size)
     if llave_cache in _cache_categoria_color:
         return _cache_categoria_color[llave_cache]
+    #pix: pixmap transparente y p: QPainter abierto sobre él (los dibujos pintan con p; se cierra en el finally).
     pix, p= _nuevo_lienzo(size)
     dibujar= _DISPATCH_COLOR.get(clave_norm, _catc_generico)
     try:
@@ -604,6 +614,8 @@ def icono_categoria_color(clave, size=20):
     return QIcon(pixmap_categoria_color(clave, size))
 
 
+#Patrón de las funciones _matc_*: igual que las _catc_* (`p`/`pintor` es el QPainter activo y `size` el lado
+#del lienzo en px; los colores van fijos dentro de cada dibujo).
 #3. MATERIALES (ver sección 3 del docstring del módulo)
 #Dibujos reutilizados TAL CUAL desde iconos_emoji.py (misma composición que usan sus emojis equivalentes
 #-📚🧪🔧🖥📷🎨📦-, así se ven consistentes con
@@ -634,6 +646,7 @@ def _matc_musica(pintor, size):
     pintor.setBrush(Qt.BrushStyle.NoBrush)
     pintor.drawLine(QPointF(0.43 * size, 0.71 * size), QPointF(0.43 * size, 0.18 * size))
     bandera= QPainterPath()
+    #s: alias corto de size para escalar las coordenadas fraccionarias de la bandera de la corchea.
     s= size
     bandera.moveTo(0.43 * s, 0.18 * s)
     bandera.cubicTo(0.62 * s, 0.24 * s, 0.66 * s, 0.38 * s, 0.54 * s, 0.48 * s)
@@ -643,6 +656,7 @@ def _matc_musica(pintor, size):
 #Silueta simple de camiseta -uniformes y vestuario.
 def _matc_uniforme(pintor, size):
 
+    #s: alias corto de size para escalar las coordenadas fraccionarias de la silueta.
     s= size
     color, borde= "#06B6D4", "#0E7490"
     path= QPainterPath()
@@ -819,6 +833,7 @@ def pixmap_categoria_material(valor, size=20):
         pix= pixmap_emoji(valor, size)  #ya cacheado dentro de iconos_emoji.py
         _cache_categoria_material[llave_cache]= pix
         return pix
+    #pix: pixmap transparente y p: QPainter abierto sobre él (se pinta con p y se cierra en el finally).
     pix, p= _nuevo_lienzo(size)
     try:
 

@@ -200,6 +200,8 @@ def _menos(pintor, size, color, ancho=2.4, y=0.5, medio=0.24):
     pintor.drawLine(QPointF((0.5 - medio) * size, y * size), QPointF((0.5 + medio) * size, y * size))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _estrella(p, size, x0, y0, x1, y1, color, borde=None, puntas=5):
 
     cx, cy= (x0 + x1) / 2, (y0 + y1) / 2
@@ -290,6 +292,8 @@ def _llave(pintor, size, color="#EAB308"):
     pintor.drawLine(QPointF(0.80 * size, 0.44 * size), QPointF(0.80 * size, 0.56 * size))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _carpeta(p, size, color="#F5B942", abierta=False):
 
     _rect_redondeado(p, size, 0.10, 0.22, 0.46, 0.34, color, radio=0.06)
@@ -301,6 +305,8 @@ def _carpeta(p, size, color="#F5B942", abierta=False):
     _rect_redondeado(p, size, 0.10, 0.34, 0.90, 0.40, color, radio=0.02)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _documento(p, size, color_pagina="#F8FAFC", color_borde="#94A3B8", color_esquina="#3B82F6", lineas=True):
 
     _poligono(p, size, [(0.24, 0.10), (0.64, 0.10), (0.80, 0.26), (0.80, 0.90), (0.24, 0.90)],
@@ -327,6 +333,8 @@ def _nota_completiva(pintor, size):
 #Registrar Nota Extraordinaria: hoja de examen + insignia de estrella,
 #para lo "fuera de lo ordinario" -una convocatoria que no es parte del
 #ciclo regular de evaluaciones-.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _nota_extraordinaria(p, size):
 
     _documento(p, size, color_esquina="#F59E0B")
@@ -337,6 +345,8 @@ def _nota_extraordinaria(p, size):
 #Registrar Nota Especial: hoja de examen + insignia de escudo, para un
 #caso particular con condiciones propias -mismo lenguaje visual que el
 #resto de "excepciones/protegido" de la app-.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _nota_especial(p, size):
 
     _documento(p, size, color_esquina="#8B5CF6")
@@ -351,6 +361,8 @@ def _nota_especial(p, size):
 #gráfico de tendencia ascendente (📈) que en el resto de la app se usa
 #para "promedio/desempeño" -un concepto distinto- y que aquí no dejaba
 #claro que el KPI cuenta calificaciones ya guardadas.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _registro_notas_kpi(p, size, color="#10B981"):
 
     borde= "#065F46"
@@ -380,6 +392,8 @@ def _libro(pintor, size, color="#3B82F6", color_borde="#1E3A8A"):
     pintor.drawLine(QPointF(0.50 * size, 0.24 * size), QPointF(0.50 * size, 0.86 * size))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _persona(p, size, n=1, color="#3B82F6", graduado=False):
 
     def _dibujar_una(cx, escala, color_piel="#3B82F6"):
@@ -399,6 +413,8 @@ def _persona(p, size, n=1, color="#3B82F6", graduado=False):
         _dibujar_una(0.66, 0.82, "#F97316")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _casa(p, size, color_techo="#EF4444", color_pared="#F8FAFC"):
 
     _poligono(p, size, [(0.5, 0.12), (0.90, 0.46), (0.10, 0.46)], color_techo)
@@ -406,6 +422,8 @@ def _casa(p, size, color_techo="#EF4444", color_pared="#F8FAFC"):
     _rect_redondeado(p, size, 0.44, 0.62, 0.56, 0.88, "#B45309", radio=0.02)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _edificio(p, size, color="#64748B", ventanas="#BFDBFE"):
 
     _rect_redondeado(p, size, 0.22, 0.14, 0.78, 0.90, color, radio=0.03)
@@ -423,12 +441,16 @@ def _escuela(pintor, size):
     _poligono(pintor, size, [(0.5, 0.02), (0.66, 0.07), (0.5, 0.12)], "#EF4444")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _hospital(p, size):
 
     _rect_redondeado(p, size, 0.18, 0.20, 0.82, 0.90, "#F8FAFC", radio=0.04, borde="#94A3B8")
     _mas(p, size, "#EF4444", ancho=4.2, y0=0.48, medio=0.16)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _castillo(p, size):
 
     _rect_redondeado(p, size, 0.20, 0.42, 0.80, 0.90, "#8B5CF6", radio=0.02)
@@ -437,6 +459,8 @@ def _castillo(p, size):
     _poligono(p, size, [(0.5, 0.10), (0.66, 0.30), (0.34, 0.30)], "#7C3AED")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _bombilla(p, size):
 
     _disco(p, size, 0.28, 0.14, 0.72, 0.58, "#FDE047", borde="#CA8A04")
@@ -445,6 +469,8 @@ def _bombilla(p, size):
         _linea(p, size, 0.40, y, 0.60, y, "#64748B", 2.0)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _engranaje(p, size, color="#64748B"):
 
     cx, cy, r_ext, r_int= 0.5, 0.5, 0.34, 0.24
@@ -574,6 +600,8 @@ def _archivo_vista_edicion(pintor, size):
     pintor.restore()
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _papelera(p, size):
 
     _poligono(p, size, [(0.24, 0.28), (0.76, 0.28), (0.70, 0.90), (0.30, 0.90)], "#94A3B8", borde="#475569")
@@ -583,6 +611,8 @@ def _papelera(p, size):
         _linea(p, size, x, 0.38, x, 0.80, "#475569", 1.4)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _disquete(p, size):
 
     _rect_redondeado(p, size, 0.14, 0.14, 0.86, 0.86, "#3B82F6", radio=0.08, borde="#1E40AF")
@@ -591,6 +621,8 @@ def _disquete(p, size):
     _rect_redondeado(p, size, 0.26, 0.52, 0.74, 0.84, "white", radio=0.02)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _disco_optico(p, size):
 
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, "#CBD5E1", borde="#64748B")
@@ -598,6 +630,8 @@ def _disco_optico(p, size):
     _disco(p, size, 0.46, 0.46, 0.54, 0.54, "white")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _campana(p, size, color="#EAB308"):
 
     _poligono(p, size, [(0.30, 0.70), (0.36, 0.30), (0.5, 0.16), (0.64, 0.30), (0.70, 0.70)], color, borde="#A16207")
@@ -623,6 +657,8 @@ def _ojo(pintor, size, cerrado=False):
         _disco(pintor, size, 0.46, 0.46, 0.54, 0.54, "#1E293B")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _camara(p, size):
 
     _rect_redondeado(p, size, 0.14, 0.32, 0.86, 0.82, "#334155", radio=0.08)
@@ -643,6 +679,7 @@ def _eslabon(pintor, size, color="#94A3B8"):
 def _corazon(pintor, size, color="#EF4444"):
 
     path= QPainterPath()
+    #s= alias de size (lado en píxeles del lienzo): escala las coordenadas 0..1 del trazado.
     s= size
     path.moveTo(0.5 * s, 0.30 * s)
     path.cubicTo(0.5 * s, 0.14 * s, 0.16 * s, 0.14 * s, 0.16 * s, 0.38 * s)
@@ -654,6 +691,8 @@ def _corazon(pintor, size, color="#EF4444"):
     pintor.drawPath(path)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _bandera(p, size, color="#EF4444"):
 
     _linea(p, size, 0.22, 0.10, 0.22, 0.90, "#64748B", 2.4)
@@ -671,6 +710,8 @@ def _trofeo(pintor, size):
     pintor.drawArc(_r(size, 0.66, 0.20, 0.94, 0.46), -90 * 16, 180 * 16)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _diana(p, size):
 
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, "#EF4444", borde="#7F1D1D")
@@ -715,6 +756,8 @@ def _paleta(pintor, size):
         _disco(pintor, size, cx - 0.07, cy - 0.07, cx + 0.07, cy + 0.07, c)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _brujula(p, size):
 
     _disco(p, size, 0.10, 0.10, 0.90, 0.90, "#E2E8F0", borde="#64748B")
@@ -732,6 +775,8 @@ def _nube(pintor, size, color="#E2E8F0"):
     pintor.drawRect(_r(size, 0.24, 0.58, 0.80, 0.80))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _sol(p, size):
 
     _disco(p, size, 0.28, 0.28, 0.72, 0.72, "#FBBF24")
@@ -760,6 +805,7 @@ def _telefono(pintor, size, color="#22C55E"):
     pintor.rotate(-45)
     pintor.translate(-size * 0.5, -size * 0.5)
     path= QPainterPath()
+    #s= alias de size (lado en píxeles del lienzo): escala las coordenadas 0..1 del trazado.
     s= size
     path.moveTo(0.20 * s, 0.30 * s)
     path.cubicTo(0.10 * s, 0.40 * s, 0.10 * s, 0.50 * s, 0.20 * s, 0.60 * s)
@@ -780,6 +826,8 @@ def _telefono(pintor, size, color="#22C55E"):
     pintor.restore()
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _escudo(p, size, color="#3B82F6"):
 
     _poligono(p, size, [(0.5, 0.10), (0.84, 0.22), (0.84, 0.52), (0.5, 0.90), (0.16, 0.52), (0.16, 0.22)],
@@ -787,6 +835,8 @@ def _escudo(p, size, color="#3B82F6"):
     _check(p, size, "white", x0=0.34, y0=0.50, x1=0.46, y1=0.62, x2=0.68, y2=0.36, ancho=2.6)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _impresora(p, size):
 
     _rect_redondeado(p, size, 0.16, 0.36, 0.84, 0.62, "#64748B", radio=0.06)
@@ -795,6 +845,8 @@ def _impresora(p, size):
     _disco(p, size, 0.68, 0.44, 0.74, 0.50, "#22C55E")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _enchufe(p, size):
 
     _rect_redondeado(p, size, 0.30, 0.18, 0.70, 0.56, "#1E293B", radio=0.10)
@@ -812,6 +864,8 @@ def _lentes(pintor, size):
     pintor.drawLine(QPointF(0.42 * size, 0.48 * size), QPointF(0.58 * size, 0.48 * size))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _maletin(p, size):
 
     _rect_redondeado(p, size, 0.42, 0.14, 0.58, 0.26, "#78350F", radio=0.02, borde="#78350F")
@@ -834,6 +888,8 @@ def _cohete(pintor, size):
     pintor.restore()
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _paquete(p, size):
 
     _rect_redondeado(p, size, 0.14, 0.28, 0.86, 0.86, "#D6A15A", radio=0.04, borde="#92652A")
@@ -841,6 +897,8 @@ def _paquete(p, size):
     _linea(p, size, 0.5, 0.44, 0.5, 0.86, "#92652A", 1.4)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pantalla(p, size):
 
     _rect_redondeado(p, size, 0.10, 0.16, 0.90, 0.66, "#334155", radio=0.05)
@@ -849,6 +907,8 @@ def _pantalla(p, size):
     _rect_redondeado(p, size, 0.26, 0.76, 0.74, 0.84, "#475569", radio=0.03)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _ventana_app(p, size):
 
     _rect_redondeado(p, size, 0.12, 0.16, 0.88, 0.84, "#E2E8F0", radio=0.06, borde="#64748B")
@@ -897,6 +957,8 @@ def _balanza(pintor, size):
 #como una puerta real, y la flecha -el mismo lenguaje visual que usan
 #los iconos de "exportar"/"salir" en el resto de la app- deja clara la
 #ACCIÓN (salir/cerrar sesión), no solo el objeto.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _puerta_salida(p, size):
 
     color_marco= "#78350F"
@@ -919,6 +981,7 @@ def _puerta_salida(p, size):
 def _pieza_rompecabezas(pintor, size, color="#8B5CF6"):
 
     path= QPainterPath()
+    #s= alias de size (lado en píxeles del lienzo): escala las coordenadas 0..1 del trazado.
     s= size
     path.moveTo(0.20 * s, 0.20 * s)
     path.lineTo(0.46 * s, 0.20 * s)
@@ -938,6 +1001,8 @@ def _pieza_rompecabezas(pintor, size, color="#8B5CF6"):
     pintor.drawPath(path)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _menu_hamburguesa(p, size, color="#475569"):
 
     for y in (0.30, 0.50, 0.70):
@@ -948,6 +1013,8 @@ def _menu_hamburguesa(p, size, color="#475569"):
 #"panel de control"/"dashboard"-, cada uno en un color distinto para que
 #no se confunda con "reportes"/"calificaciones" (que ya usan el gráfico
 #de barras 📊).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _panel_dashboard(p, size):
 
     _rect_redondeado(p, size, 0.12, 0.12, 0.56, 0.46, "#6366F1", radio=0.10)
@@ -956,6 +1023,8 @@ def _panel_dashboard(p, size):
     _rect_redondeado(p, size, 0.12, 0.54, 0.88, 0.88, "#0EA5E9", radio=0.10)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _calendario(p, size, color_top="#EF4444"):
 
     _rect_redondeado(p, size, 0.14, 0.20, 0.86, 0.88, "white", radio=0.04, borde="#94A3B8")
@@ -967,6 +1036,8 @@ def _calendario(p, size, color_top="#EF4444"):
             _disco(p, size, fx, fy, fx + 0.06, fy + 0.06, "#CBD5E1")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _reloj(p, size):
 
     _disco(p, size, 0.12, 0.12, 0.88, 0.88, "white", borde="#334155")
@@ -978,6 +1049,8 @@ def _reloj(p, size):
 #Reloj de arena para estados de 'cargando/procesando' -reemplazo del
 #emoji ⏳, con la misma silueta reconocible (dos triángulos) pero en el
 #trazo plano y monocromo-de-acento de esta librería.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _reloj_arena(p, size, color_marco="#94A3B8", color_arena="#F59E0B"):
 
     marco_sup= [(0.24, 0.10), (0.76, 0.10), (0.76, 0.16), (0.24, 0.16)]
@@ -992,6 +1065,8 @@ def _reloj_arena(p, size, color_marco="#94A3B8", color_arena="#F59E0B"):
     _poligono(p, size, arena_abajo, color_arena)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _grafico_barras(p, size):
 
     colores= ("#3B82F6", "#22C55E", "#F59E0B")
@@ -1012,6 +1087,8 @@ def _grafico_lineas(pintor, size, color="#22C55E"):
     _poligono(pintor, size, [(0.80, 0.24), (0.70, 0.24), (0.80, 0.10)], color)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _sobre(p, size):
 
     _rect_redondeado(p, size, 0.12, 0.24, 0.88, 0.76, "white", radio=0.04, borde="#3B82F6")
@@ -1046,6 +1123,8 @@ def _bandeja_flecha(pintor, size, color, hacia_abajo=True):
 #"Exportar" (antes era verde; ahora ambos comparten color porque son la
 #misma familia de acción -mover datos-, y solo el sentido de la flecha
 #distingue una de otra).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _icono_importar(p, size):
 
     _bandeja_flecha(p, size, "#3B82F6", hacia_abajo=True)
@@ -1053,6 +1132,8 @@ def _icono_importar(p, size):
 
 #"Exportar": flecha saliendo de una bandeja, en azul (igual espíritu
 #de color que ya usaba la flecha de 📤 antes de este cambio).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _icono_exportar(p, size):
 
     _bandeja_flecha(p, size, "#3B82F6", hacia_abajo=False)
@@ -1061,6 +1142,7 @@ def _icono_exportar(p, size):
 def _pin_ubicacion(pintor, size, color="#EF4444"):
 
     path= QPainterPath()
+    #s= alias de size (lado en píxeles del lienzo): escala las coordenadas 0..1 del trazado.
     s= size
     path.moveTo(0.5 * s, 0.90 * s)
     path.cubicTo(0.5 * s, 0.90 * s, 0.80 * s, 0.58 * s, 0.80 * s, 0.38 * s)
@@ -1074,6 +1156,8 @@ def _pin_ubicacion(pintor, size, color="#EF4444"):
     _disco(pintor, size, 0.40, 0.28, 0.60, 0.48, "white")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _mapa(p, size):
 
     _poligono(p, size, [(0.10, 0.20), (0.36, 0.12), (0.64, 0.20), (0.90, 0.12), (0.90, 0.80),
@@ -1083,6 +1167,8 @@ def _mapa(p, size):
     _pin_ubicacion(p, size, "#EF4444")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _semaforo(p, size):
 
     _rect_redondeado(p, size, 0.32, 0.10, 0.68, 0.90, "#1E293B", radio=0.10)
@@ -1097,6 +1183,8 @@ def _prohibido(pintor, size):
     pintor.drawLine(QPointF(0.26 * size, 0.26 * size), QPointF(0.74 * size, 0.74 * size))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _construccion(p, size):
 
     for i, x0 in enumerate((0.10, 0.30, 0.50, 0.70)):
@@ -1104,6 +1192,8 @@ def _construccion(p, size):
         _rect_redondeado(p, size, x0, 0.40, x0 + 0.20, 0.56, color, radio=0.0)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _chispas(p, size, color="#FBBF24"):
 
     _estrella(p, size, 0.36, 0.16, 0.64, 0.44, color, puntas=4)
@@ -1114,6 +1204,7 @@ def _chispas(p, size, color="#FBBF24"):
 def _gota(pintor, size, color="#3B82F6"):
 
     path= QPainterPath()
+    #s= alias de size (lado en píxeles del lienzo): escala las coordenadas 0..1 del trazado.
     s= size
     path.moveTo(0.5 * s, 0.12 * s)
     path.cubicTo(0.72 * s, 0.42 * s, 0.82 * s, 0.58 * s, 0.82 * s, 0.68 * s)
@@ -1144,6 +1235,8 @@ def _sonrisa(pintor, size, color="#FBBF24"):
     pintor.drawArc(_r(size, 0.30, 0.46, 0.70, 0.76), 200 * 16, 140 * 16)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _manos_saludo(p, size):
 
     _rect_redondeado(p, size, 0.10, 0.40, 0.48, 0.62, "#F59E0B", radio=0.3)
@@ -1184,6 +1277,8 @@ def _foto_recortar(pintor, size):
     _disco(pintor, size, cx0 + 0.02, cy1 - 0.12, cx0 + 0.12, cy1 - 0.02, "#3B82F6")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _dividir(p, size, color="#475569"):
 
     _linea(p, size, 0.22, 0.5, 0.78, 0.5, color, 2.6)
@@ -1191,6 +1286,8 @@ def _dividir(p, size, color="#475569"):
     _disco(p, size, 0.46, 0.68, 0.54, 0.76, color)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _control_deslizante(p, size):
 
     _linea(p, size, 0.16, 0.5, 0.84, 0.5, "#94A3B8", 3.0)
@@ -1200,6 +1297,8 @@ def _control_deslizante(p, size):
 #Cuatro escuadras en las esquinas apuntando hacia afuera: mismo icono
 #'expandir/pantalla completa' de cualquier reproductor de video, hecho a
 #mano como el resto (nada de glifo crudo de la fuente del sistema).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pantalla_completa(p, size, color="#475569"):
 
     largo= 0.22
@@ -1214,11 +1313,15 @@ def _pantalla_completa(p, size, color="#475569"):
     _linea(p, size, 0.86, 0.86, 0.86, 0.86 - largo, color, grosor)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _flecha_abajo_pequena(p, size, color="#475569"):
 
     _poligono(p, size, [(0.30, 0.38), (0.70, 0.38), (0.5, 0.66)], color)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _tarjeta_indice(p, size):
 
     _rect_redondeado(p, size, 0.12, 0.20, 0.80, 0.80, "white", radio=0.04, borde="#94A3B8")
@@ -1235,17 +1338,23 @@ def _fuente_texto(pintor, size, color="#334155"):
     pintor.drawLine(QPointF(0.34 * size, 0.60 * size), QPointF(0.66 * size, 0.60 * size))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _explosion(p, size, color="#F97316"):
 
     _estrella(p, size, 0.10, 0.10, 0.90, 0.90, color, puntas=8)
     _estrella(p, size, 0.26, 0.26, 0.74, 0.74, "#FDE047", puntas=6)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _reciclaje(p, size, color="#22C55E"):
 
     _flechas_circulares(p, size, color, "#16A34A")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pergamino(p, size):
 
     _rect_redondeado(p, size, 0.18, 0.18, 0.82, 0.82, "#FDE68A", radio=0.02, borde="#B45309")
@@ -1255,6 +1364,8 @@ def _pergamino(p, size):
     _disco(p, size, 0.14, 0.74, 0.24, 0.84, "#FDE68A", borde="#B45309")
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _archivador(p, size):
 
     _rect_redondeado(p, size, 0.14, 0.14, 0.86, 0.86, "#94A3B8", radio=0.05, borde="#475569")
@@ -1269,6 +1380,7 @@ def _tubo_ensayo(pintor, size):
     pintor.setBrush(QBrush(QColor("#E2E8F0")))
     pintor.setPen(_pluma("#94A3B8", 1.6))
     path= QPainterPath()
+    #s= alias de size (lado en píxeles del lienzo): escala las coordenadas 0..1 del trazado.
     s= size
     path.moveTo(0.40 * s, 0.10 * s)
     path.lineTo(0.40 * s, 0.62 * s)
@@ -1289,6 +1401,8 @@ def _tubo_ensayo(pintor, size):
     pintor.restore()
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _clip_tablero(p, size):
 
     _rect_redondeado(p, size, 0.16, 0.16, 0.84, 0.88, "#E2E8F0", radio=0.05, borde="#64748B")
@@ -1304,6 +1418,8 @@ def _clip_tablero(p, size):
 #apuntes -pensado para leerse claramente como "una persona dando clase",
 #a diferencia del intento anterior (una ficha de color junto a un
 #rectángulo) que no se distinguía de un bloque abstracto.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _profesor(p, size, color="#0D9488"):
 
     #Patas del atril de la pizarra.
@@ -1347,6 +1463,8 @@ def _estudiante_riesgo(pintor, size):
 #Varias fichas de curso superpuestas, cada una con su propio
 #'grupo' de estudiantes -para 'Secciones/Grupos'-, en vez del edificio
 #de escuela (🏫) que se confundía con 'Institución'.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _secciones_grupos(p, size):
 
     _rect_redondeado(p, size, 0.08, 0.34, 0.46, 0.64, "#FDE68A", radio=0.08, borde="#B45309")
@@ -1388,6 +1506,8 @@ def _auditoria(pintor, size):
 #Libro abierto con una bombilla de idea encima -para 'Tutorial'-,
 #distinta del gorro de graduación (dentro de 🎓) y de la bombilla sola
 #(💡, ideas genéricas).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _tutorial_guia(p, size):
 
     _libro(p, size, color="#8B5CF6", color_borde="#5B21B6")
@@ -1417,6 +1537,8 @@ def _excusa_justificante(pintor, size):
 #Cruz médica clásica sobre una placa redondeada -para 'Licencia
 #Médica'-, en el morado propio de este estado (para no confundirse con
 #la cruz roja de emergencias/errores que ya usa la app en otros lados).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _licencia_medica(p, size):
 
     _rect_redondeado(p, size, 0.08, 0.08, 0.92, 0.92, "#8B5CF6", radio=0.22, borde="#5B21B6")
@@ -1428,6 +1550,8 @@ def _licencia_medica(p, size):
 #en vez de una llave (que remite a contraseñas/acceso, no a un permiso
 #de ausencia). Palma y dedos en tono piel con un pequeño distintivo
 #cian (el color propio de este estado) en la muñeca.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _permiso_mano(p, size):
 
     #Muñeca / brazalete distintivo (color del estado).
@@ -1481,6 +1605,8 @@ def _vinculacion(pintor, size):
 #"Boletín / Promedios"-, distinta tanto del documento genérico (📄)
 #como del gráfico de tendencia suelto (📈, que ya usan otras pestañas
 #de calificaciones).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _boletin_promedios(p, size):
 
     _rect_redondeado(p, size, 0.12, 0.10, 0.88, 0.90, "#F8FAFC", radio=0.08, borde="#94A3B8")
@@ -1581,6 +1707,17 @@ def _f(fn):
     return fn
 
 
+#Tabla emoji -> dibujo. Cada lambda recibe pintor= QPainter donde se dibuja y tamano= lado en píxeles
+#del lienzo cuadrado (se invoca como dibujar(p, size) en pixmap_emoji); devuelve el resultado de la
+#función auxiliar o, si es una tupla, ejecuta varios dibujos en orden (el último queda encima).
+#Las auxiliares (_flecha, _panel_dashboard...) usan size para pasar fracciones 0..1 a píxeles.
+#Panel y flechas: _flecha(pintor, tamano, color, angulo_deg) dibuja una flecha recta (0=derecha,
+#-90=arriba, 90=abajo, 180=izquierda); _flecha_curva y _flechas_circulares: deshacer/rehacer, refrescar.
+#Estado, símbolos y puntos: _disco/_check/_cruz/_mas/_menos/_estrella/_poligono pintan círculos,
+#marcas y formas básicas en un color fijo (verde ok, rojo error o eliminar, azul acción).
+#Resto de familias (personas, edificios, candados, documentos, libros, gráficos, nube...):
+#cada lambda solo delega en la función _xxx(pintor, tamano) que dibuja ese objeto; varios emojis
+#parecidos comparten dibujo y cambian solo el color o un flag (p. ej. _libro, _candado, _carpeta).
 _REGISTRO= {
     #Panel / Dashboard
     "▦": lambda pintor, tamano: _panel_dashboard(pintor, tamano),
@@ -1826,6 +1963,8 @@ def _confeti(pintor, tamano):
 #Sinónimos con clave duplicada válidos por diccionario (Python solo se queda con la última definición si se
 #repite la clave literal, así que
 #los siguientes se agregan explícitamente después para que ambos existan):
+#Desde aquí, cada _REGISTRO.setdefault(clave, lambda pintor, tamano: _xxx(...)) añade un icono
+#con la misma firma (pintor= QPainter, tamano= lado en px) solo si la clave aún no existe en la tabla.
 _REGISTRO.setdefault("📜", lambda pintor, tamano: _pergamino(pintor, tamano))
 #Glifo privado (área de uso privado Unicode) para FILTROS:
 #align-justify puro, sin lupa, tal como pide el diseño.
@@ -1945,6 +2084,8 @@ def _desempeno_individual(pintor, size):
 #Competencia: representa con claridad "esto computa un resultado a
 #partir de tus notas", a diferencia de una lupa (buscar) o de chispas
 #genéricas (que no comunican ninguna acción concreta).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _calculadora(p, size):
 
     _rect_redondeado(p, size, 0.16, 0.06, 0.84, 0.94, "#1E293B", radio=0.10, borde="#0F172A")
@@ -2070,6 +2211,8 @@ _REGISTRO.setdefault(EMOJI_BOLETIN_TECNICO, lambda pintor, tamano: _boletin_tecn
 #absoluto -6 pestañas sin setTabIcon-) usaban emojis genéricos (🛠 martillo+destornillador, 🏫 escuela, 💼
 #maletín) que no comunicaban nada específico de Educación Técnico-Profesional. Cada uno de estos se diseñó para
 #representar su concepto concreto y no confundirse entre sí.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado.
+#r= radio del hexágono, en fracción de size (0 a 1).
 def _hexagono(p, size, cx, cy, r, color, borde=None, rot=90):
 
     pts= []
@@ -2102,6 +2245,8 @@ def _talleres_laboratorios(pintor, size):
 #"Áreas Técnicas"-: cada hexágono representa un área/especialidad
 #técnica distinta agrupada bajo el mismo programa, a diferencia del
 #edificio de escuela genérico (🏫) que no distingue "varias áreas".
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _areas_tecnicas(p, size):
 
     _hexagono(p, size, 0.36, 0.42, 0.26, "#38BDF8", borde="#0369A1")
@@ -2189,6 +2334,8 @@ def _entregas_tab(pintor, size):
 #(grados, curriculum) y el libro abierto los parámetros de materias/
 #grados/periodos que se configuran ahí, en vez del genérico 🎓 que la
 #app ya reserva para "estudiante".
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _academico_tab(p, size):
 
     _poligono(p, size, [(0.08, 0.60), (0.50, 0.72), (0.50, 0.90), (0.08, 0.78)], "#F8FAFC", borde="#94A3B8")
@@ -2203,6 +2350,8 @@ def _academico_tab(p, size):
 #la persona doble distingue la gestión multiusuario del 👤 solitario
 #de "Mi Cuenta", y la insignia violeta (distinta del escudo verde de
 #permisos/seguridad) representa los ROLES asignados a cada quien.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _usuarios_roles_tab(p, size):
 
     _disco(p, size, 0.48, 0.10, 0.74, 0.36, "#94A3B8")
@@ -2235,6 +2384,8 @@ def _auditoria_tab(pintor, size):
 
 
 #Edificio universitario con tres accesos: Facultades.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _facultades_universidad_tab(p, size):
 
     _poligono(p, size, [(0.08, 0.34), (0.50, 0.10), (0.92, 0.34)], "#4F46E5", borde="#3730A3")
@@ -2245,6 +2396,8 @@ def _facultades_universidad_tab(p, size):
 
 
 #Ruta académica con meta: Carreras.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _carreras_universidad_tab(p, size):
 
     _linea(p, size, 0.16, 0.78, 0.43, 0.55, "#0EA5E9", 3.0)
@@ -2255,6 +2408,8 @@ def _carreras_universidad_tab(p, size):
 
 
 #Malla de asignaturas conectadas: Malla Curricular.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pensum_universidad_tab(p, size):
 
     for y in (0.20, 0.48, 0.76):
@@ -2290,6 +2445,8 @@ _REGISTRO.setdefault(EMOJI_TAB_PENSUM, lambda pintor, tamano: _pensum_universida
 #la base de datos local que se mueve.
 
 #Silueta de nube (carpeta sincronizada por cliente de nube).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _nube_sincronizacion(p, size):
 
     _rect_redondeado(p, size, 0.20, 0.16, 0.80, 0.34, "#E2E8F0", radio=0.08)
@@ -2298,6 +2455,8 @@ def _nube_sincronizacion(p, size):
 
 
 #Monitor/servidor (conexión directa al backend vía OAuth/API).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _servidor_directo(p, size):
 
     _rect_redondeado(p, size, 0.22, 0.02, 0.78, 0.30, "#64748B", radio=0.05, borde="#334155")
@@ -2306,6 +2465,8 @@ def _servidor_directo(p, size):
 
 
 #Cilindro estilizado: la base de datos local que se envía/recibe.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _base_datos_local(p, size):
 
     _rect_redondeado(p, size, 0.14, 0.76, 0.86, 0.96, "#0EA5E9", radio=0.06, borde="#075985")
@@ -2313,6 +2474,8 @@ def _base_datos_local(p, size):
 
 
 #Flecha gruesa de dirección (verde arriba = envía, azul abajo = recibe).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _flecha_sincronizacion(p, size, hacia_arriba, color, borde):
 
     if hacia_arriba:
@@ -2325,6 +2488,8 @@ def _flecha_sincronizacion(p, size, hacia_arriba, color, borde):
 
 #Nube + flecha verde hacia arriba + base de datos -"Subir Cambios":
 #los datos locales de este equipo viajan hacia la carpeta sincronizada.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _sync_subir(p, size):
 
     _nube_sincronizacion(p, size)
@@ -2334,6 +2499,8 @@ def _sync_subir(p, size):
 
 #Nube + flecha azul hacia abajo + base de datos -"Descargar Novedades":
 #los cambios que otros equipos subieron a la carpeta llegan a este equipo.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _sync_descargar(p, size):
 
     _nube_sincronizacion(p, size)
@@ -2344,6 +2511,8 @@ def _sync_descargar(p, size):
 #Servidor + flecha verde hacia arriba + base de datos -"Subir (directo)":
 #como Subir Cambios, pero hablando directo con el backend/API (Drive,
 #Dropbox, OneDrive, servidor institucional) en vez de la carpeta local.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _sync_subir_directo(p, size):
 
     _servidor_directo(p, size)
@@ -2353,6 +2522,8 @@ def _sync_subir_directo(p, size):
 
 #Servidor + flecha azul hacia abajo + base de datos -"Descargar (directo)":
 #espejo de Subir (directo), trayendo cambios directo desde el backend.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _sync_descargar_directo(p, size):
 
     _servidor_directo(p, size)
@@ -2393,27 +2564,37 @@ def _chevron_paginacion(pintor, size, hacia_izquierda, x0=0.36, x1=0.64):
 
 
 #Barra vertical gris del salto-a-extremo (|◀ / ▶|).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _barra_extremo_paginacion(p, size, pos_x):
 
     _rect_redondeado(p, size, pos_x, 0.20, pos_x + 0.11, 0.80, "#64748B", radio=0.045)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pag_primera(p, size):
 
     _barra_extremo_paginacion(p, size, 0.10)
     _chevron_paginacion(p, size, True, 0.40, 0.66)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pag_anterior(p, size):
 
     _chevron_paginacion(p, size, True, 0.32, 0.68)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pag_siguiente(p, size):
 
     _chevron_paginacion(p, size, False, 0.32, 0.68)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _pag_ultima(p, size):
 
     _barra_extremo_paginacion(p, size, 0.79)
@@ -2436,6 +2617,8 @@ _REGISTRO.setdefault(EMOJI_PAG_ULTIMA, lambda pintor, tamano: _pag_ultima(pintor
 #que desambigua la operación de un vistazo.
 
 #Marco + cuadrícula 3x3 que representa la hoja de cálculo.
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _cuadricula_hoja(p, size, color="#94A3B8"):
 
     for y in (0.08, 0.36, 0.64, 0.92):
@@ -2445,6 +2628,8 @@ def _cuadricula_hoja(p, size, color="#94A3B8"):
 
 
 #Banda central de la cuadrícula (fila o columna afectada).
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _banda_hoja(p, size, color):
 
     _rect_redondeado(p, size, 0.09, 0.37, 0.91, 0.63, color, radio=0.02)
@@ -2461,6 +2646,8 @@ def _signo_operacion(pintor, size, insertar):
         pintor.drawLine(QPointF(0.77 * size, 0.69 * size), QPointF(0.77 * size, 0.85 * size))
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _insertar_fila_hoja(p, size):
 
     _banda_hoja(p, size, "#BBF7D0")
@@ -2468,6 +2655,8 @@ def _insertar_fila_hoja(p, size):
     _signo_operacion(p, size, True)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _eliminar_fila_hoja(p, size):
 
     _banda_hoja(p, size, "#FECACA")
@@ -2475,6 +2664,8 @@ def _eliminar_fila_hoja(p, size):
     _signo_operacion(p, size, False)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _insertar_columna_hoja(p, size):
 
     _rect_redondeado(p, size, 0.37, 0.09, 0.63, 0.91, "#BBF7D0", radio=0.02)
@@ -2482,6 +2673,8 @@ def _insertar_columna_hoja(p, size):
     _signo_operacion(p, size, True)
 
 
+#p= QPainter donde se dibuja; size= lado en píxeles del lienzo cuadrado
+#(las coordenadas 0..1 son fracciones de size).
 def _eliminar_columna_hoja(p, size):
 
     _rect_redondeado(p, size, 0.37, 0.09, 0.63, 0.91, "#FECACA", radio=0.02)
@@ -2629,6 +2822,7 @@ def pixmap_emoji(caracter, size=TAMANO_DEFECTO):
     clave= (caracter, size)
     if clave in _cache_pixmap:
         return _cache_pixmap[clave]
+    #p= QPainter que dibuja sobre `pix`; se pasa a la función de dibujo y se cierra con p.end().
     pix, p= _nuevo_lienzo(size)
     dibujar= _REGISTRO.get(caracter)
     try:

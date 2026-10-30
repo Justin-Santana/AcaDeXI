@@ -44,6 +44,7 @@ def _aplicar_fuente_emoji(label, tamano_pt=None):
 def _hex_a_rgba(hex_color, alpha):
 
     hex_color= hex_color.lstrip("#")
+    #r, g, b: componentes rojo, verde y azul (0-255) leídos del color hexadecimal de 6 dígitos.
     r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
@@ -1168,6 +1169,7 @@ class ModuloDashboard(QWidget):
                          LEFT JOIN materia_profesores ON materia_profesores.materia_id = materias.id
                          WHERE materias.profesor_id=? OR materia_profesores.profesor_id=?""",
                       (profesor_id, profesor_id))
+            #f: cada fila de la consulta; se toma su id para listar las materias del docente (o [-1] si no hay).
             materias_docente= [f["id"] for f in c.fetchall()] or [-1]
             ph= ",".join("?" for _ in materias_docente)
 
@@ -1303,6 +1305,7 @@ class ModuloDashboard(QWidget):
                 WHERE fecha BETWEEN ? AND ?
                 GROUP BY fecha
             """, (lunes_str, domingo_str))
+        #f: cada fila de asistencia de la semana; se indexa por su fecha para buscarla luego por día.
         filas_semana= {f["fecha"]: f for f in c.fetchall()}
         dias_es= ["L", "M", "X", "J", "V", "S", "D"]
         datos_semana= []
@@ -1316,6 +1319,7 @@ class ModuloDashboard(QWidget):
                 pct= 0.0
             datos_semana.append((dias_es[i], pct))
         self.grafico_semanal.poner_datos(datos_semana)
+        #v: porcentaje de asistencia de cada día (el segundo valor de la tupla); se promedian los 7.
         promedio_semana= round(sum(v for _, v in datos_semana) / len(datos_semana), 1) if datos_semana else 0.0
         self.lbl_promedio_semanal.setText(f"Promedio de la semana: {promedio_semana}%")
 
@@ -1346,6 +1350,7 @@ class ModuloDashboard(QWidget):
             """, (lunes_str, domingo_str))
         filas_secciones= c.fetchall()
         datos_secciones= []
+        #f: cada fila por sección (id, etiqueta, presentes y total); se calcula su % de asistencia.
         for f in filas_secciones:
             if not f["total"]:
                 continue
@@ -1353,6 +1358,7 @@ class ModuloDashboard(QWidget):
             etiqueta= f["etiqueta"] or "Sin sección"
             datos_secciones.append((f["seccion_id"], etiqueta, pct))
         #Las secciones con menor asistencia primero: son las que más atención necesitan.
+        #Lambda: d es una tupla (seccion_id, etiqueta, pct); devuelve d[2], el %, como clave de orden.
         datos_secciones.sort(key=lambda d: d[2])
         datos_secciones= datos_secciones[:8]
         self.panel_barras_seccion.poner_datos(datos_secciones)
@@ -1367,6 +1373,7 @@ class ModuloDashboard(QWidget):
             c.execute("SELECT fecha, modulo, accion, usuario FROM auditoria ORDER BY id DESC LIMIT 10")
             filas_actividad= c.fetchall()
             self.tabla_actividad.setRowCount(len(filas_actividad))
+            #f: cada registro de auditoría; i es su número de fila en la tabla de actividad.
             for i, f in enumerate(filas_actividad):
                 color= _COLORES_MODULO.get(f["modulo"], "#64748B")
                 self.tabla_actividad.setItem(i, 0, QTableWidgetItem(

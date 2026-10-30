@@ -343,6 +343,7 @@ def _leer_paquete_xlsx(ruta):
             "Este archivo no es un paquete válido de Estudiantes/Cursos de AcaDeXI "
             "(falta la hoja 'Info').")
     hoja_info= wb["Info"]
+    #v: cada celda de la fila de encabezados de la hoja Info; se pasa a texto minúsculo sin espacios.
     encabezados_info= [str(v or "").strip().lower() for v in next(hoja_info.iter_rows(values_only=True), [])]
     valores_info= next(hoja_info.iter_rows(min_row=2, max_row=2, values_only=True), None)
     if not valores_info or "tipo" not in encabezados_info:
@@ -367,6 +368,7 @@ def _leer_paquete_xlsx(ruta):
         claves= [str(encabezado or "").strip() for encabezado in encabezados]
         registros= []
         for cruda in filas_iter:
+            #v: cada celda de la fila cruda; la fila se omite si todas están vacías (None o '').
             if not any(v not in (None, "") for v in cruda):
                 continue
             registros.append({claves[i]: (cruda[i] if i < len(cruda) else None)
@@ -379,6 +381,7 @@ def _leer_paquete_xlsx(ruta):
 #Los paquetes antiguos no incluían 'aulas' ni 'especialidades'; se omiten sin error.
 def _leer_paquete_json(ruta):
 
+    #f: manejador del archivo .json abierto para lectura; se vuelca con json.load.
     with open(ruta, "r", encoding="utf-8") as f:
         paquete= json.load(f)
     if paquete.get("tipo") != TIPO_PAQUETE:

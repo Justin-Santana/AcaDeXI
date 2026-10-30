@@ -35,6 +35,7 @@ CARGOS_SUGERIDOS= ["Director", "Subdirector", "Coordinador Académico", "Coordin
 def _hex_a_rgba(color_hex, alpha):
 
     color_hex= (color_hex or "#2563EB").lstrip("#")
+    #r, g, b: componentes rojo, verde y azul (0-255) del color hexadecimal de 6 dígitos.
     r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r}, {g}, {b}, {alpha})"
 
@@ -618,6 +619,7 @@ class ModuloPersonal(QWidget):
         #foto en grande está el botón "Ver Ampliada" — no se usa doble clic aquí porque el diálogo de selección, al ser
         #modal, se comería el segundo clic.
         self.lbl_foto.setToolTip("Clic para elegir foto")
+        #Lambda: evento es el evento de ratón del clic (no se usa); el clic en la foto abre el selector.
         self.lbl_foto.mousePressEvent= lambda evento: self._elegir_foto()
         fila_foto.addWidget(self.lbl_foto)
 
@@ -676,6 +678,7 @@ class ModuloPersonal(QWidget):
         self._temporizador_busqueda.setSingleShot(True)
         self._temporizador_busqueda.setInterval(150)
         self._temporizador_busqueda.timeout.connect(self._filtro_cambio)
+        #Lambda: _t es el texto escrito (no se usa); cada tecla reinicia el temporizador de búsqueda.
         self.in_buscar.textChanged.connect(lambda _t: self._temporizador_busqueda.start())
 
         #Filtros de Cargo y Estado: viven en la ventanita de "☰ Filtros" (ver _construir_dialogo_filtros), no apilados
@@ -891,6 +894,7 @@ class ModuloPersonal(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM personal_administrativo WHERE id=?", (id_p,))
+        #f: fila del registro de personal a editar (None si ya no existe); de ella se llenan los campos.
         f= c.fetchone()
         conn.close()
         if not f:
@@ -968,6 +972,7 @@ class ModuloPersonal(QWidget):
         self.lbl_vacio.setVisible(len(filtradas) == 0)
         with tabla_pausada(self.tabla):
             self.tabla.setRowCount(len(pagina))
+            #i: número de fila de la tabla; f: registro de personal de la página actual que se dibuja ahí.
             for i, f in enumerate(pagina):
                 self.tabla.setItem(i, 0, QTableWidgetItem(str(f["id"])))
                 item_foto= QTableWidgetItem()
@@ -1017,12 +1022,15 @@ class ModuloPersonal(QWidget):
             if not cargo:
                 continue
             conteo_cargos[cargo]= conteo_cargos.get(cargo, 0) + 1
+        #Lambda: kv es un par (cargo, cantidad); ordena por la cantidad (kv[1]) de mayor a menor.
         top_cargos= sorted(conteo_cargos.items(), key=lambda kv: kv[1], reverse=True)[:5]
         self.barras_cargos.establecer_datos(top_cargos, animar=animar)
 
         con_foto= [fila for fila in filas
                     if (fila["foto"] if "foto" in fila.keys() else None) and os.path.exists(fila["foto"])]
+        #Lambda: f es un registro de personal; ordena por su id para quedarse con los 5 más recientes.
         con_foto= sorted(con_foto, key=lambda f: f["id"], reverse=True)[:5]
+        #f: cada registro con foto; p: cada pixmap circular generado (se descartan los que fallaron).
         pixmaps= [p for p in (obtener_pixmap_circular_cacheado(f["foto"], 32) for f in con_foto) if p is not None]
         if pixmaps:
             restantes= max(0, len(filas) - len(pixmaps))
@@ -1342,6 +1350,7 @@ class ModuloPersonal(QWidget):
     #animación de conteo, en vez de un cambio brusco de texto.
     def _animar_contador(self, valor_final):
 
+        #v: cantidad de personas a mostrar; devuelve el texto del chip con singular o plural.
         def texto(v):
 
             return f"{html_icono_emoji('🗂', 15)} {v} persona" + ("s" if v != 1 else "")
@@ -1356,6 +1365,7 @@ class ModuloPersonal(QWidget):
         anim.setEndValue(valor_final)
         anim.setDuration(350)
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #Lambda: v es el valor actual de la animación (decimal); actualiza el chip con ese número entero.
         anim.valueChanged.connect(lambda v: self.chip_contador.setText(texto(int(v))))
         anim.start()
         self._anim_contador= anim  #referencia viva mientras corre la animación

@@ -93,6 +93,8 @@ def _rgba(color_hex, alpha):
     color_hex= (color_hex or "#000000").lstrip("#")
     if len(color_hex) < 6:
         color_hex= "000000"
+    #r, g, b: canales rojo, verde y azul (0-255) leídos del color hexadecimal.
+    ##Se usan para armar el texto rgba(...).
     r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
     return f"rgba({r},{g},{b},{alpha})"
 
@@ -292,6 +294,8 @@ class EtiquetaContadorClicable(QLabel):
         self._anim= QVariantAnimation(self)
         self._anim.setDuration(420)
         self._anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        #v: valor actual de la animación (0 hasta el total); se convierte a entero y se muestra como
+        #texto del contador.
         self._anim.valueChanged.connect(lambda v: self._refrescar_texto(int(v)))
         self._refrescar_texto(0)
         self.establecer_activa(False)
@@ -824,6 +828,8 @@ class ModuloBancoTareas(QWidget):
         temporizador.setSingleShot(True)
         temporizador.setInterval(150)
         temporizador.timeout.connect(callback_filtro)
+        #_t: texto nuevo del campo (no se usa); lambda que solo reinicia el temporizador de búsqueda
+        #diferida.
         in_campo.textChanged.connect(lambda _t: temporizador.start())
 
         self._iconos_busqueda= getattr(self, "_iconos_busqueda", [])
@@ -852,6 +858,8 @@ class ModuloBancoTareas(QWidget):
         self.etiquetas_leyenda_tareas= {}
         for clave, etiqueta_txt, color in SEGMENTOS_TAREAS:
             lbl= EtiquetaContadorClicable(etiqueta_txt, color)
+            #c: clave del segmento de la leyenda, fijada con c=clave en cada vuelta; filtra tareas
+            #por ese segmento.
             lbl.clicada.connect(lambda c=clave: self._alternar_filtro_tareas(c))
             leyenda.addWidget(lbl)
             self.etiquetas_leyenda_tareas[clave]= lbl
@@ -1143,6 +1151,8 @@ class ModuloBancoTareas(QWidget):
         self.combo_filtro_cat_curso= QComboBox()
         self.combo_filtro_cat_curso.currentIndexChanged.connect(self._curso_filtro_cat_cambio)
         self.combo_filtro_cat_seccion= QComboBox()
+        #_: índice nuevo del combo (no se usa); lambda que solo llama a _filtro_cat_cambio sin
+        #argumentos.
         self.combo_filtro_cat_seccion.currentIndexChanged.connect(lambda _: self._filtro_cat_cambio())
         self.lbl_filtro_cat_especialidad= QLabel("Área Técnica:")
         self.combo_filtro_cat_especialidad= QComboBox()
@@ -1156,6 +1166,8 @@ class ModuloBancoTareas(QWidget):
             "Filtrar tareas por la carrera a la que están restringidas (Universidad)")
         self.lbl_filtro_cat_materia= QLabel("Materia (opcional):")
         self.combo_filtro_cat_materia= QComboBox()
+        #_: índice nuevo del combo (no se usa); lambda que solo llama a _filtro_cat_cambio sin
+        #argumentos.
         self.combo_filtro_cat_materia.currentIndexChanged.connect(lambda _: self._filtro_cat_cambio())
         self._construir_dialogo_filtros_tareas()
 
@@ -1696,10 +1708,15 @@ class ModuloBancoTareas(QWidget):
         conn= obtener_conexion()
         c= conn.cursor()
         c.execute("SELECT * FROM tareas WHERE id=?", (id_t,))
+        #f: fila de la tarea (SELECT * FROM tareas) con sus datos; None si no existe.
         f= c.fetchone()
         c.execute("SELECT competencia_id FROM tarea_competencia WHERE tarea_id=?", (id_t,))
+        #r: cada fila de tarea_competencia; se guarda su competencia_id en la lista de competencias
+        #seleccionadas.
         self._ce_tarea_seleccionadas= [r["competencia_id"] for r in c.fetchall()]
         c.execute("SELECT resultado_aprendizaje_id FROM tarea_ra WHERE tarea_id=?", (id_t,))
+        #r: cada fila de tarea_ra; se guarda su resultado_aprendizaje_id en la lista de RA
+        #seleccionados.
         self._ra_tarea_seleccionadas= [r["resultado_aprendizaje_id"] for r in c.fetchall()]
         conn.close()
         if not f:
@@ -1895,6 +1912,8 @@ class ModuloBancoTareas(QWidget):
         materia_id_f= (self.combo_filtro_cat_materia.currentData()
                         if hasattr(self, "combo_filtro_cat_materia") else None)
 
+        #f: fila de tarea a evaluar; devuelve True si cumple los filtros de curso, sección, área,
+        #carrera y materia.
         def _pasa_filtro_alcance(f):
 
             try:
@@ -1930,6 +1949,8 @@ class ModuloBancoTareas(QWidget):
         try:
 
             self.tabla_tareas.setRowCount(len(pagina))
+            #i: número de fila de la tabla; f: fila (registro) de la tarea de la página actual que
+            #se pinta en ella.
             for i, f in enumerate(pagina):
                 self.tabla_tareas.setItem(i, 0, QTableWidgetItem(str(f["id"])))
                 nombre_materia= f["materia_nombre"] or ""
@@ -2061,6 +2082,8 @@ class ModuloBancoTareas(QWidget):
         self.etiquetas_leyenda_entregas= {}
         for clave, etiqueta_txt, color in SEGMENTOS_ENTREGAS:
             lbl= EtiquetaContadorClicable(etiqueta_txt, color)
+            #c: clave del segmento de la leyenda, fijada con c=clave en cada vuelta; filtra entregas
+            #por ese segmento.
             lbl.clicada.connect(lambda c=clave: self._alternar_filtro_entregas(c))
             leyenda.addWidget(lbl)
             self.etiquetas_leyenda_entregas[clave]= lbl
@@ -2858,6 +2881,8 @@ class ModuloBancoTareas(QWidget):
             self.main_window, seccion_id_f, especialidad_id_f, carrera_id_f)
         self.tabla_entregas.setColumnHidden(0, not mostrar_columna_numero)
         if mostrar_columna_numero:
+            #f: fila de entrega; la lambda devuelve la clave de orden (sin número al final, luego
+            #por número de lista).
             filas= sorted(filas, key=lambda f: (
                 self._valor_columna(f, "numero_lista_est") is None,
                 self._valor_columna(f, "numero_lista_est") or 0))
@@ -2871,6 +2896,8 @@ class ModuloBancoTareas(QWidget):
         try:
 
             self.tabla_entregas.setRowCount(len(pagina))
+            #i: número de fila de la tabla; f: fila (registro) de la entrega de la página actual que
+            #se pinta en ella.
             for i, f in enumerate(pagina):
                 if mostrar_columna_numero:
                     numero_lista= self._valor_columna(f, "numero_lista_est")
@@ -2986,6 +3013,8 @@ class ModuloBancoTareas(QWidget):
         #Resultado de Aprendizaje — ver calificaciones_tecnicas.py. La tarea debe estar vinculada a al menos un RA.
         if self._materia_es_tecnica(entrega["materia_id"]):
             c.execute("SELECT resultado_aprendizaje_id FROM tarea_ra WHERE tarea_id=?", (entrega["tarea_id"],))
+            #r: cada fila de tarea_ra; se guarda su resultado_aprendizaje_id (RA vinculados a la
+            #tarea).
             ra_ids= [r["resultado_aprendizaje_id"] for r in c.fetchall()]
             if not ra_ids:
                 conn.close()
@@ -3047,6 +3076,8 @@ class ModuloBancoTareas(QWidget):
         #Competencia sin que el docente repita el trabajo.
         if es_sistema_dominicano(_sistema_calificacion_actual()):
             c.execute("SELECT competencia_id FROM tarea_competencia WHERE tarea_id=?", (entrega["tarea_id"],))
+            #r: cada fila de tarea_competencia; se guarda su competencia_id (competencias vinculadas
+            #a la tarea).
             competencia_ids= [r["competencia_id"] for r in c.fetchall()]
             c.execute("DELETE FROM calificacion_competencia WHERE calificacion_id=?", (calificacion_id,))
             for competencia_id in competencia_ids:
