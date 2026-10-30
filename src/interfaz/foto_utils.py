@@ -16,6 +16,32 @@ from PySide6.QtCore import QSize as _QSize_emoji
 from src.nucleo.iconos_emoji import icono_emoji
 
 
+#Flujo completo: abre selector de archivo -> diálogo de recorte -> guarda en carpeta_destino.
+#Devuelve la ruta del archivo guardado, o None si el usuario cancela.
+def seleccionar_y_recortar_foto(parent, carpeta_destino, prefijo="foto"):
+
+    ruta_origen, _= QFileDialog.getOpenFileName(
+        parent, "Seleccionar Fotografía", "", "Imágenes (*.png *.jpg *.jpeg *.bmp)")
+    if not ruta_origen:
+        return None
+
+    try:
+
+        dialogo= DialogoRecorteFoto(ruta_origen, parent)
+        if dialogo.exec() != QDialog.DialogCode.Accepted:
+            return None
+
+        os.makedirs(carpeta_destino, exist_ok=True)
+        nombre_archivo= f"{prefijo}_{uuid.uuid4().hex[:10]}.png"
+        destino= os.path.join(carpeta_destino, nombre_archivo)
+        imagen_final= dialogo.imagen_recortada or QImage(ruta_origen)
+        imagen_final.save(destino, "PNG")
+        return destino
+    except Exception as error:
+        mostrar_mensaje("error", "Error", f"No se pudo procesar la fotografía:\n{error}", parent)
+        return None
+
+
 #Ventana emergente que muestra una fotografía ampliada.
 class VisorFotoDialog(QDialog):
 
@@ -155,29 +181,3 @@ class DialogoRecorteFoto(QDialog):
         else:
             self.imagen_recortada= self.imagen_original
         self.accept()
-
-
-#Flujo completo: abre selector de archivo -> diálogo de recorte -> guarda en carpeta_destino.
-#Devuelve la ruta del archivo guardado, o None si el usuario cancela.
-def seleccionar_y_recortar_foto(parent, carpeta_destino, prefijo="foto"):
-
-    ruta_origen, _= QFileDialog.getOpenFileName(
-        parent, "Seleccionar Fotografía", "", "Imágenes (*.png *.jpg *.jpeg *.bmp)")
-    if not ruta_origen:
-        return None
-
-    try:
-
-        dialogo= DialogoRecorteFoto(ruta_origen, parent)
-        if dialogo.exec() != QDialog.DialogCode.Accepted:
-            return None
-
-        os.makedirs(carpeta_destino, exist_ok=True)
-        nombre_archivo= f"{prefijo}_{uuid.uuid4().hex[:10]}.png"
-        destino= os.path.join(carpeta_destino, nombre_archivo)
-        imagen_final= dialogo.imagen_recortada or QImage(ruta_origen)
-        imagen_final.save(destino, "PNG")
-        return destino
-    except Exception as error:
-        mostrar_mensaje("error", "Error", f"No se pudo procesar la fotografía:\n{error}", parent)
-        return None

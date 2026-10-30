@@ -80,6 +80,17 @@ ORDEN_AREAS_PRIMARIA= [
 ]
 
 
+#PDF — SECUNDARIA (grilla transpuesta + cascada + asistencia + leyenda)
+COL_LABEL= 130
+
+COL_PERIODO= 22
+
+COL_CF= 34
+
+COL_CASCADA= 26
+
+COL_AR= 20
+
 def _ordenar_areas_curricular(materias, primaria):
 
     orden= ORDEN_AREAS_PRIMARIA if primaria else ORDEN_AREAS_SECUNDARIA
@@ -552,14 +563,6 @@ def _firmas(cvs, ancho, margen, y_base, institucion, etiqueta_izq, etiqueta_der)
     cvs.setFont("Helvetica", 7.5)
     cvs.drawCentredString(x_izq + ancho_firma / 2, y_base - 10, etiqueta_izq)
     cvs.drawCentredString(x_der + ancho_firma / 2, y_base - 10, etiqueta_der)
-
-
-#PDF — SECUNDARIA (grilla transpuesta + cascada + asistencia + leyenda)
-COL_LABEL= 130
-COL_PERIODO= 22
-COL_CF= 34
-COL_CASCADA= 26
-COL_AR= 20
 
 
 def _ancho_pagina_secundaria(n_grupos, n_periodos):

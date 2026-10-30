@@ -19,6 +19,10 @@ import sqlite3
 from src.nucleo.bd import obtener_carpeta_datos
 
 
+#Igual que SANDBOX_TUTORIAL_ACTIVO de bd.py (ver tutoriales.py): mientras esté en True, RUTA_BD apunta a
+#una copia de práctica y no al archivo real del docente.
+SANDBOX_TUTORIAL_ACTIVO= False
+
 def _ruta_bd():
 
     #La carpeta va aparte para no chocar con acadexi.db si las dos ediciones conviven en un equipo
@@ -30,11 +34,6 @@ def _ruta_bd():
 
 
 RUTA_BD= _ruta_bd()
-
-#Igual que SANDBOX_TUTORIAL_ACTIVO de bd.py (ver tutoriales.py): mientras esté en True, RUTA_BD apunta a
-#una copia de práctica y no al archivo real del docente.
-SANDBOX_TUTORIAL_ACTIVO= False
-
 
 #main_window no se usa acá, pero se recibe porque así la llama todo el resto del código.
 def obtener_conexion(main_window=None):

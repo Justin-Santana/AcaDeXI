@@ -22,131 +22,6 @@ _DURACION_SCROLL= 320
 _ESPERA_SCROLL= 90  #ms: espera a que el layout asiente tras cargar datos
 
 
-#Franja constante que indica que hay un registro en edición.
-class BannerEdicion(QFrame):
-
-    def __init__(self, parent=None):
-
-        super().__init__(parent)
-        self.setObjectName("BannerEdicion")
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(34)
-        lay= QHBoxLayout(self)
-        lay.setContentsMargins(10, 4, 10, 4)
-        lay.setSpacing(8)
-        self.lbl_icono= QLabel()
-        self.lbl_icono.setPixmap(pixmap_emoji("✏", 15))
-        self.lbl_icono.setFixedSize(18, 18)
-        self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lbl_texto= QLabel("")
-        self.lbl_texto.setStyleSheet("font-weight: 600;")
-        lay.addWidget(self.lbl_icono)
-        lay.addWidget(self.lbl_texto)
-        lay.addStretch()
-        self._anim_fade= None
-        self._anim_scroll= None
-        self.hide()
-
-    def activar(self, texto):
-
-        self.lbl_texto.setText(texto)
-        self._aplicar_estilo()
-        if not self.isVisible():
-            self.show()
-            #Fundido de entrada (una sola vez por activación, muy barato)
-            try:
-
-                from PySide6.QtWidgets import QGraphicsOpacityEffect
-                efecto= QGraphicsOpacityEffect(self)
-                self.setGraphicsEffect(efecto)
-                anim= QPropertyAnimation(efecto, b"opacity", self)
-                anim.setDuration(_DURACION_FADE)
-                anim.setStartValue(0.0)
-                anim.setEndValue(1.0)
-                anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-                #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
-                anim.finished.connect(lambda: self.setGraphicsEffect(None))
-                anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
-                self._anim_fade= anim
-            except Exception:
-                self.setGraphicsEffect(None)
-
-    def desactivar(self):
-
-        self.hide()
-
-    def changeEvent(self, evento):
-
-        super().changeEvent(evento)
-        #_aplicar_estilo() se llamaba solo desde activar() -al mostrar el
-        #banner por primera vez para un formulario-, así que si el usuario cambiaba de tema con el banner YA abierto
-        #(formulario en edición mientras se togglea modo claro/oscuro), el color se quedaba congelado con el que tenía
-        #al momento de aparecer, aunque el resto de la app sí se hubiera puesto al día.
-        ##Cuando main_window cambia de tema, aplica un nuevo stylesheet sobre sí misma (ver main.py ▸
-        #_aplicar_estilos_globales_tema), y Qt propaga eso como un StyleChange también hacia los descendientes -aunque,
-        #como este banner, tengan su propio stylesheet puesto-, para que puedan recalcular lo que dependa de reglas
-        #heredadas. Enganchando ese evento, el banner se repinta solo, sin que main.py (ni cada módulo con un
-        #formulario) tenga que acordarse de este widget en particular.
-        ##Guard de reentrancia: _aplicar_estilo() llama a self.setStyleSheet(), que a su vez DISPARA otro StyleChange
-        #sobre sí mismo -sin este guard, quedaría llamándose a sí mismo sin parar.
-        if evento.type() in (QEvent.Type.StyleChange, QEvent.Type.PaletteChange):
-            if not getattr(self, "_actualizando_estilo_por_tema", False):
-                self._actualizando_estilo_por_tema= True
-                try:
-
-                    self._aplicar_estilo()
-                finally:
-                    self._actualizando_estilo_por_tema= False
-
-    def _aplicar_estilo(self):
-
-        #Antes se tomaba el color de texto de self.palette().color(WindowText), asumiendo que reflejaría el tema activo
-        #-pero un QFrame anclado dentro de un formulario no siempre hereda una paleta actualizada al
-        #vuelo (ver el mismo problema que resuelve formato_hora.py subiendo
-        #la cadena de padres en vez de confiar en la paleta local), así que en modo oscuro el texto podía quedar oscuro
-        #sobre el fondo azulado translúcido del banner -difícil de leer-. Ahora se sube por la cadena de padres
-        #buscando main_window.modo_oscuro directamente (la misma fuente de verdad que usa el resto de la app para
-        #pintar sus temas), y se fija el color en consecuencia: blanco en modo oscuro, negro en modo claro -igual que
-        #el resto de "etiquetas planas" de la app (ver main_window._aplicar_estilos_globales_tema,
-        #"color_etiqueta_plana")-. El texto además pasa a bold (antes 600, ahora 700) para que el banner se note más de
-        #un vistazo -el color solo no bastaba para que resaltara lo suficiente sobre el fondo-.
-        color_txt= "#FFFFFF" if self._modo_oscuro_activo() else "#000000"
-        self.setStyleSheet(f"""
-            QFrame#BannerEdicion {{
-                background-color: rgba(37, 99, 235, 0.10);
-                border: 1px solid rgba(37, 99, 235, 0.45);
-                border-radius: 8px;
-            }}
-            QFrame#BannerEdicion QLabel {{
-                color: {color_txt};
-                background: transparent;
-                border: none;
-            }}
-        """)
-        self.lbl_texto.setStyleSheet(f"color: {color_txt}; font-weight: 700;")
-
-    #Sube por la cadena de padres reales del widget (no por
-    #main_window/parentWidget encadenados a mano, sino directamente
-    #parentWidget() -el banner vive insertado dentro del layout del
-    #propio formulario-) buscando el primer ancestro con un atributo
-    #`modo_oscuro` (main_window lo tiene siempre). Si no se encuentra
-    #ninguno -banner huérfano, o llamado antes de insertarse en un
-    #árbol real-, se cae a la paleta activa como respaldo, igual que
-    #antes.
-    def _modo_oscuro_activo(self):
-
-        vistos= set()
-        actual= self.parentWidget()
-        while actual is not None and id(actual) not in vistos:
-            vistos.add(id(actual))
-            if hasattr(actual, "modo_oscuro"):
-                return bool(actual.modo_oscuro)
-            actual= actual.parentWidget()
-        #Respaldo: como antes, se infiere del brillo del color de texto que trae la paleta activa (si es un color
-        #claro, se asume tema oscuro de fondo).
-        return self.palette().color(QPalette.ColorRole.WindowText).lightness() > 128
-
-
 #True si `lay` (o un layout anidado) contiene directamente `widget`.
 def _contiene(lay, widget, prof=0):
 
@@ -331,3 +206,128 @@ def desactivar_modo_edicion(ancla):
     b= _banner_de(padre)
     if b is not None:
         b.desactivar()
+
+
+#Franja constante que indica que hay un registro en edición.
+class BannerEdicion(QFrame):
+
+    def __init__(self, parent=None):
+
+        super().__init__(parent)
+        self.setObjectName("BannerEdicion")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setFixedHeight(34)
+        lay= QHBoxLayout(self)
+        lay.setContentsMargins(10, 4, 10, 4)
+        lay.setSpacing(8)
+        self.lbl_icono= QLabel()
+        self.lbl_icono.setPixmap(pixmap_emoji("✏", 15))
+        self.lbl_icono.setFixedSize(18, 18)
+        self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lbl_texto= QLabel("")
+        self.lbl_texto.setStyleSheet("font-weight: 600;")
+        lay.addWidget(self.lbl_icono)
+        lay.addWidget(self.lbl_texto)
+        lay.addStretch()
+        self._anim_fade= None
+        self._anim_scroll= None
+        self.hide()
+
+    def activar(self, texto):
+
+        self.lbl_texto.setText(texto)
+        self._aplicar_estilo()
+        if not self.isVisible():
+            self.show()
+            #Fundido de entrada (una sola vez por activación, muy barato)
+            try:
+
+                from PySide6.QtWidgets import QGraphicsOpacityEffect
+                efecto= QGraphicsOpacityEffect(self)
+                self.setGraphicsEffect(efecto)
+                anim= QPropertyAnimation(efecto, b"opacity", self)
+                anim.setDuration(_DURACION_FADE)
+                anim.setStartValue(0.0)
+                anim.setEndValue(1.0)
+                anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+                #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
+                anim.finished.connect(lambda: self.setGraphicsEffect(None))
+                anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+                self._anim_fade= anim
+            except Exception:
+                self.setGraphicsEffect(None)
+
+    def desactivar(self):
+
+        self.hide()
+
+    def changeEvent(self, evento):
+
+        super().changeEvent(evento)
+        #_aplicar_estilo() se llamaba solo desde activar() -al mostrar el
+        #banner por primera vez para un formulario-, así que si el usuario cambiaba de tema con el banner YA abierto
+        #(formulario en edición mientras se togglea modo claro/oscuro), el color se quedaba congelado con el que tenía
+        #al momento de aparecer, aunque el resto de la app sí se hubiera puesto al día.
+        ##Cuando main_window cambia de tema, aplica un nuevo stylesheet sobre sí misma (ver main.py ▸
+        #_aplicar_estilos_globales_tema), y Qt propaga eso como un StyleChange también hacia los descendientes -aunque,
+        #como este banner, tengan su propio stylesheet puesto-, para que puedan recalcular lo que dependa de reglas
+        #heredadas. Enganchando ese evento, el banner se repinta solo, sin que main.py (ni cada módulo con un
+        #formulario) tenga que acordarse de este widget en particular.
+        ##Guard de reentrancia: _aplicar_estilo() llama a self.setStyleSheet(), que a su vez DISPARA otro StyleChange
+        #sobre sí mismo -sin este guard, quedaría llamándose a sí mismo sin parar.
+        if evento.type() in (QEvent.Type.StyleChange, QEvent.Type.PaletteChange):
+            if not getattr(self, "_actualizando_estilo_por_tema", False):
+                self._actualizando_estilo_por_tema= True
+                try:
+
+                    self._aplicar_estilo()
+                finally:
+                    self._actualizando_estilo_por_tema= False
+
+    def _aplicar_estilo(self):
+
+        #Antes se tomaba el color de texto de self.palette().color(WindowText), asumiendo que reflejaría el tema activo
+        #-pero un QFrame anclado dentro de un formulario no siempre hereda una paleta actualizada al
+        #vuelo (ver el mismo problema que resuelve formato_hora.py subiendo
+        #la cadena de padres en vez de confiar en la paleta local), así que en modo oscuro el texto podía quedar oscuro
+        #sobre el fondo azulado translúcido del banner -difícil de leer-. Ahora se sube por la cadena de padres
+        #buscando main_window.modo_oscuro directamente (la misma fuente de verdad que usa el resto de la app para
+        #pintar sus temas), y se fija el color en consecuencia: blanco en modo oscuro, negro en modo claro -igual que
+        #el resto de "etiquetas planas" de la app (ver main_window._aplicar_estilos_globales_tema,
+        #"color_etiqueta_plana")-. El texto además pasa a bold (antes 600, ahora 700) para que el banner se note más de
+        #un vistazo -el color solo no bastaba para que resaltara lo suficiente sobre el fondo-.
+        color_txt= "#FFFFFF" if self._modo_oscuro_activo() else "#000000"
+        self.setStyleSheet(f"""
+            QFrame#BannerEdicion {{
+                background-color: rgba(37, 99, 235, 0.10);
+                border: 1px solid rgba(37, 99, 235, 0.45);
+                border-radius: 8px;
+            }}
+            QFrame#BannerEdicion QLabel {{
+                color: {color_txt};
+                background: transparent;
+                border: none;
+            }}
+        """)
+        self.lbl_texto.setStyleSheet(f"color: {color_txt}; font-weight: 700;")
+
+    #Sube por la cadena de padres reales del widget (no por
+    #main_window/parentWidget encadenados a mano, sino directamente
+    #parentWidget() -el banner vive insertado dentro del layout del
+    #propio formulario-) buscando el primer ancestro con un atributo
+    #`modo_oscuro` (main_window lo tiene siempre). Si no se encuentra
+    #ninguno -banner huérfano, o llamado antes de insertarse en un
+    #árbol real-, se cae a la paleta activa como respaldo, igual que
+    #antes.
+    def _modo_oscuro_activo(self):
+
+        vistos= set()
+        actual= self.parentWidget()
+        while actual is not None and id(actual) not in vistos:
+            vistos.add(id(actual))
+            if hasattr(actual, "modo_oscuro"):
+                return bool(actual.modo_oscuro)
+            actual= actual.parentWidget()
+        #Respaldo: como antes, se infiere del brillo del color de texto que trae la paleta activa (si es un color
+        #claro, se asume tema oscuro de fondo).
+        return self.palette().color(QPalette.ColorRole.WindowText).lightness() > 128

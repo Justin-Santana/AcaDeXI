@@ -40,6 +40,90 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, EMOJI_COPIA_SEGU
 from src.nucleo.rutas import obtener_carpeta_raiz
 
 
+TIPOS_INSTITUCION= ["Escuela", "Politécnico", "Universidad", "Personalizado"]
+
+DIVISIONES_PERIODO= ["Trimestres", "Cuatrimestres", "Semestres", "Bimestres", "Periodos"]
+
+METODOS_CALCULO= ["Promedio Simple", "Promedio Ponderado", "Mayor Nota", "Suma de Puntos"]
+
+IDIOMAS= ["Español", "Inglés", "Portugués"]
+
+SISTEMA_DOMINICANO= "República Dominicana (P1-P4, Currículo por Competencias)"
+
+SISTEMAS_CALIFICACION= ["Numérico (Personalizado)", "Estados Unidos (Letras A-F, GPA 4.0)", SISTEMA_DOMINICANO]
+
+#Competencias Fundamentales del currículo dominicano (MINERD), usadas en el "Desempeño Individual del
+#Estudiante" del Informe de Aprendizaje / Boletín.
+COMPETENCIAS_FUNDAMENTALES_RD= [
+    "Ética y Ciudadana",
+    "Comunicativa",
+    "Pensamiento Lógico, Creativo y Crítico",
+    "Resolución de Problemas",
+    "Científica y Tecnológica",
+    "Ambiental y de la Salud",
+    "Desarrollo Personal y Espiritual",
+]
+
+NOMBRES_PERIODOS_RD= ["P1", "P2", "P3", "P4"]
+
+#Niveles de desempeño de la evaluación cualitativa por Competencias Fundamentales (Ordenanza 04-2023, Sistema
+#de Evaluación de los Aprendizajes, MINERD). "Sin Evaluar (NE)" es el estado inicial/neutro: NUNCA debe usarse
+#como si fuera un nivel logrado, es solo un marcador de que el docente todavía no ha registrado ese renglón.
+NIVEL_SIN_EVALUAR_RD= "Sin Evaluar (NE)"
+
+NIVELES_DESEMPENO_RD= [NIVEL_SIN_EVALUAR_RD, "Destacado", "Logrado", "En Proceso", "Insuficiente"]
+
+#Bandas numéricas oficiales de cada nivel (referencial, para mostrarlas como ayuda en pantalla).
+BANDAS_DESEMPENO_RD= {
+    "Destacado": (89, 100),
+    "Logrado": (77, 88),
+    "En Proceso": (65, 76),
+    "Insuficiente": (0, 64),
+}
+
+#Colores de apoyo visual para distinguir cada nivel de un vistazo (evita que todas las filas se vean idénticas,
+#que fue el problema reportado en la pantalla de Desempeño Individual).
+COLORES_NIVEL_DESEMPENO_RD= {
+    NIVEL_SIN_EVALUAR_RD: "#6B7280",   #gris - pendiente
+    "Destacado": "#10B981",            #verde
+    "Logrado": "#3B82F6",              #azul
+    "En Proceso": "#F59E0B",           #ámbar
+    "Insuficiente": "#EF4444",         #rojo
+}
+
+#Niveles educativos que distingue AcaDeXI para la nota mínima aprobatoria del Sistema Dominicano (Ordenanza
+#04-2023, MINERD). Nivel Inicial/Preescolar queda deliberadamente fuera: no es una opción válida aquí y no
+#tiene lógica propia en ningún módulo de la app.
+NIVELES_EDUCATIVOS= ["Primaria", "Secundaria"]
+
+#Piso/techo de la nota mínima aprobatoria por nivel, Sistema Dominicano (Ordenanza 04-2023, MINERD —
+#confirmado: Primaria 65). Los spinboxes de Primaria/Secundaria (wizard y Configuración > Calificaciones) usan
+#estos límites: al elegir el Sistema Dominicano se autocompletan con el piso de cada nivel, y no se puede
+#escribir un valor fuera de [piso, techo]. Para Secundaria no hay techo normativo distinto del máximo de la
+#escala, así que se deja abierto por arriba (solo con piso).
+NOTA_MIN_PRIMARIA_PISO= 65
+
+NOTA_MIN_PRIMARIA_TECHO= 70
+
+NOTA_MIN_SECUNDARIA_PISO= 70
+
+NOTA_MIN_SECUNDARIA_TECHO= 1000
+
+#Nivel académico transversal (Primaria / Secundaria / Preparatoria / Universidad) — dimensión académica
+#reutilizada por TODOS los módulos que trabajan con estudiantes, cursos, secciones o carreras. Única lógica
+#coherente: qué niveles existen (NIVELES_ACADEMICOS), qué niveles ofrece ESTA institución
+#(niveles_academicos_habilitados), y si algo (típicamente, componente técnico) es válido para un nivel/ciclo
+#dado (puede_tener_componente_tecnico). Todo lo demás (filtros de Estudiantes, combos de Materias/Politécnico,
+#Buscador global, etc.) debe llamar a estas funciones en vez de repetir la regla por su cuenta.
+NIVELES_ACADEMICOS= ["Primaria", "Secundaria", "Preparatoria", "Universidad"]
+
+#Dentro de Secundaria, República Dominicana distingue dos ciclos; el segundo es el único que puede tener
+#modalidad técnico-profesional. Esto vive como constante separada (no mezclada en NIVELES_ACADEMICOS) porque es
+#una subdivisión de UN nivel, no un nivel más -así el resto del sistema (fuera de este archivo y de
+#materias.py/calificaciones_tecnicas.py) puede seguir pensando en 4 niveles simples sin tener que conocer el
+#ciclo.
+CICLOS_SECUNDARIA= ["Primer Ciclo", "Segundo Ciclo"]
+
 #Utilidades visuales (solo estética/animación — no tocan datos ni lógica)
 #Convierte '#RRGGBB' a 'rgba(r, g, b, a)' para usar en hojas de estilo.
 def _hex_a_rgba(hex_color, alpha):
@@ -90,77 +174,6 @@ def _normalizar(texto):
     descompuesto= unicodedata.normalize("NFKD", str(texto))
     sin_acentos= "".join(c for c in descompuesto if not unicodedata.combining(c))
     return sin_acentos.lower()
-
-
-#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-#(mismo diseño que horario.py).
-class IconoLupa(QWidget):
-
-    def __init__(self, parent=None):
-
-        super().__init__(parent)
-        self.setFixedSize(17, 17)
-        self._color= "#64748B"
-
-    def establecer_color(self, color):
-
-        self._color= color
-        self.update()
-
-    def paintEvent(self, evento):
-
-        painter= QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen= QPen(QColor(self._color), 1.7)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawEllipse(QRectF(1.5, 1.5, 9.5, 9.5))
-        painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
-
-
-#Filtro de eventos reutilizable: al pasar el mouse sobre un botón o tarjeta,
-#'eleva' suavemente su sombra (más difusa y con más separación) y la vuelve a
-#bajar al salir. Es puramente decorativo — no intercepta ni modifica clics.
-class _RealceHover(QObject):
-
-    def __init__(self, blur_normal=0, blur_hover=22, offset_hover=6, parent=None):
-
-        super().__init__(parent)
-        self._blur_normal= blur_normal
-        self._blur_hover= blur_hover
-        self._offset_hover= offset_hover
-
-    def eventFilter(self, objeto, evento):
-
-        tipo= evento.type()
-        if tipo == QEvent.Type.Enter and objeto.isEnabled():
-            self._animar(objeto, self._blur_hover)
-        elif tipo == QEvent.Type.Leave:
-            self._animar(objeto, self._blur_normal)
-        return False
-
-    def _animar(self, widget, destino_blur):
-
-        efecto= widget.graphicsEffect()
-        if not isinstance(efecto, QGraphicsDropShadowEffect):
-            efecto= QGraphicsDropShadowEffect(widget)
-            efecto.setColor(QColor(0, 0, 0, 90))
-            efecto.setOffset(0, 2)
-            efecto.setBlurRadius(self._blur_normal)
-            widget.setGraphicsEffect(efecto)
-        anim= QPropertyAnimation(efecto, b"blurRadius", widget)
-        anim.setDuration(200)
-        anim.setStartValue(efecto.blurRadius())
-        anim.setEndValue(destino_blur)
-        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
-        offset_anim= QPropertyAnimation(efecto, b"yOffset", widget)
-        offset_anim.setDuration(200)
-        offset_anim.setStartValue(efecto.yOffset())
-        offset_anim.setEndValue(self._offset_hover if destino_blur == self._blur_hover else 2)
-        offset_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        offset_anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
 
 #Aplica un fundido de entrada (opacidad 0→1) a `widget`. Se usa al cambiar
@@ -263,108 +276,6 @@ def conectar_tooltip_seleccion(combo, texto_base=""):
     _refrescar_tooltips_items()
 
 
-#QTabWidget que garantiza la navegación entre pestañas con las flechas
-#izquierda/derecha del teclado.
-#
-#QTabBar ya trae esto "de fábrica", pero solo funciona si la barra de
-#pestañas tiene el foco de teclado en ese momento — y en la práctica eso
-#no siempre pasa (por ejemplo si el foco quedó en otro control de la
-#pestaña, o si algo más arriba en la jerarquía de widgets no lo deja
-#llegar). Esta clase lo resuelve de dos formas: 1) le da foco explícito a
-#la barra apenas se hace clic en una pestaña, para que las flechas
-#funcionen de inmediato después; y 2) maneja Left/Right ella misma como
-#respaldo — Qt propaga los eventos de teclado no consumidos hacia el
-#widget padre, así que aunque el foco esté en cualquier otro punto sin
-#uso propio de las flechas (un botón, una etiqueta, el área en blanco de
-#la pestaña...), el evento termina llegando aquí de todos modos.
-class TabWidgetNavegable(QTabWidget):
-
-    def __init__(self, parent=None):
-
-        super().__init__(parent)
-        self.tabBar().setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        #Lambda: _i es el índice de la pestaña pulsada (no se usa); da el foco a la barra de pestañas.
-        self.tabBarClicked.connect(lambda _i: self.tabBar().setFocus())
-        #Mismo problema que QStackedWidget: por defecto, el tamaño mínimo de un QTabWidget se calcula tomando en cuenta
-        #TODAS sus pestañas, no solo la que está visible. Si una pestaña que el usuario nunca
-        #abrió (p. ej. "Entregas") contiene un combo que se llena con
-        #texto largo (títulos de tareas), su ancho mínimo se filtra igual y ensancha la pestaña visible ("Catálogo de
-        #Tareas"), aunque esa pestaña por sí sola quepa perfecto. Esto hace que solo se considere la pestaña actual, y
-        #se refresca al cambiar de pestaña.
-        #Lambda: _i es el índice de la pestaña nueva (no se usa); recalcula el tamaño al cambiar.
-        self.currentChanged.connect(lambda _i: self.updateGeometry())
-        #Ver _enganchar_botones_scroll: evita que las flechitas de scroll de la barra se vayan "manchando" con el uso
-        #repetido.
-        self._botones_scroll_enganchados= set()
-        self.tabBar().installEventFilter(self)
-
-    def eventFilter(self, objeto, evento):
-
-        if objeto is self.tabBar() and evento.type() == QEvent.Type.ChildPolished:
-            self._enganchar_botones_scroll()
-        return super().eventFilter(objeto, evento)
-
-    #Qt crea sus propias flechitas de scroll (QToolButton) como hijas
-    #del QTabBar SOLO cuando las pestañas no caben todas y hacen falta -
-    #no existen desde el principio, aparecen sobre la marcha. Se
-    #"enganchan" apenas aparecen para forzar un repintado COMPLETO y
-    #limpio de la barra cada vez que se usan.
-    #
-    #Por qué hace falta: estas ventanas son translúcidas
-    #(WA_TranslucentBackground) para el efecto de fondo difuminado. En
-    #esa configuración Qt a veces optimiza el repintado dibujando solo
-    #el rectángulo "dañado" (el botón) sin limpiar antes ese pedazo del
-    #backing store -así que los píxeles semitransparentes del borde
-    #redondeado (antialiasing) se van componiendo unos sobre otros con
-    #cada clic. Con el uso repetido (mantener presionado también cuenta:
-    #el autorepeat dispara 'clicked' varias veces por segundo) ese
-    #residuo se acumula hasta volverse un bloque sólido que tapa la
-    #flecha -exactamente el bug reportado. Forzar un repaint() síncrono
-    #de TODA la barra en cada clic impide que el residuo llegue a
-    #acumularse: cada uso deja la barra perfectamente limpia otra vez,
-    #sin cambiar en nada cómo se ve.
-    def _enganchar_botones_scroll(self):
-
-        for boton in self.tabBar().findChildren(QToolButton):
-            if boton in self._botones_scroll_enganchados:
-                continue
-            self._botones_scroll_enganchados.add(boton)
-            boton.clicked.connect(self._repintar_barra_limpia)
-
-    def _repintar_barra_limpia(self):
-
-        barra= self.tabBar()
-        QTimer.singleShot(0, barra.repaint)
-
-    def sizeHint(self):
-
-        w= self.currentWidget()
-        if w is None:
-            return super().sizeHint()
-        cromo= super().sizeHint()
-        return QSize(w.sizeHint().width(), cromo.height())
-
-    def minimumSizeHint(self):
-
-        w= self.currentWidget()
-        if w is None:
-            return super().minimumSizeHint()
-        cromo= super().minimumSizeHint()
-        #Ancho: solo el de la pestaña actualmente visible (así una pestaña nunca abierta, como "Entregas", no infla a
-        #las demás). Alto: se conserva el de Qt para no romper la barra de pestañas.
-        return QSize(w.minimumSizeHint().width(), cromo.height())
-
-    def keyPressEvent(self, evento):
-
-        if self.count() > 1 and evento.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
-            paso= -1 if evento.key() == Qt.Key.Key_Left else 1
-            self.setCurrentIndex((self.currentIndex() + paso) % self.count())
-            self.tabBar().setFocus()
-            evento.accept()
-            return
-        super().keyPressEvent(evento)
-
-
 #QSS para las flechitas ('«' '»') que Qt agrega solas a la derecha de un
 #QTabBar cuando las pestañas no caben todas en el ancho disponible.
 #
@@ -419,112 +330,6 @@ def estilo_flechas_navegacion_tabs(accent, accent_hover, bg_panel, bg_boton, acc
     """
 
 
-#Contenedor de sección con aspecto de 'tarjeta' moderna: encabezado con
-#icono + título (y descripción opcional), sombra suave que se eleva al pasar
-#el mouse, y un layout interno (`contenido`) donde el código existente agrega
-#sus widgets/formularios tal cual los tenía. Es solo un contenedor visual:
-#no cambia qué controles existen ni cómo funcionan.
-class TarjetaSeccion(QFrame):
-
-    def __init__(self, icono="", titulo="", descripcion=None, parent=None):
-
-        super().__init__(parent)
-        self.setObjectName("TarjetaSeccion")
-        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
-
-        self._sombra= QGraphicsDropShadowEffect(self)
-        self._sombra.setBlurRadius(14)
-        self._sombra.setOffset(0, 3)
-        self._sombra.setColor(QColor(0, 0, 0, 50))
-        self.setGraphicsEffect(self._sombra)
-
-        raiz= QVBoxLayout(self)
-        raiz.setContentsMargins(20, 16, 20, 18)
-        raiz.setSpacing(10)
-
-        if titulo:
-            fila_titulo= QHBoxLayout()
-            fila_titulo.setSpacing(10)
-            if icono:
-                self.lbl_icono= QLabel()
-                self.lbl_icono.setPixmap(pixmap_emoji(icono, 22))
-                self.lbl_icono.setObjectName("TarjetaSeccionBadge")
-                self.lbl_icono.setFixedSize(34, 34)
-                self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                fila_titulo.addWidget(self.lbl_icono)
-            self.lbl_titulo= QLabel(titulo)
-            self.lbl_titulo.setObjectName("TarjetaSeccionTitulo")
-            fila_titulo.addWidget(self.lbl_titulo, 1)
-            raiz.addLayout(fila_titulo)
-
-        if descripcion:
-            self.lbl_desc= QLabel(descripcion)
-            self.lbl_desc.setObjectName("DescModulo")
-            self.lbl_desc.setWordWrap(True)
-            raiz.addWidget(self.lbl_desc)
-
-        self.contenido= QVBoxLayout()
-        self.contenido.setSpacing(10)
-        raiz.addLayout(self.contenido)
-
-    def aplicar_paleta(self, bg_panel, borde, txt_prim, txt_sec, accent, modo_oscuro):
-
-        self.setStyleSheet(f"""
-            QFrame#TarjetaSeccion {{
-                background-color: {bg_panel};
-                border: 1px solid {borde};
-                border-radius: 14px;
-            }}
-        """)
-        if hasattr(self, "lbl_titulo"):
-            self.lbl_titulo.setStyleSheet(
-                f"color: {txt_prim}; font-size: 15px; font-weight: 700; background: transparent;")
-        if hasattr(self, "lbl_icono"):
-            alpha= 0.24 if modo_oscuro else 0.13
-            self.lbl_icono.setStyleSheet(
-                f"background-color: {_hex_a_rgba(accent, alpha)}; border-radius: 17px; "
-                f"font-size: 15px; color: {accent};")
-
-    def enterEvent(self, evento):
-
-        self._animar_sombra(24)
-        super().enterEvent(evento)
-
-    def leaveEvent(self, evento):
-
-        self._animar_sombra(14)
-        super().leaveEvent(evento)
-
-    def _animar_sombra(self, destino):
-
-        anim= QPropertyAnimation(self._sombra, b"blurRadius", self)
-        anim.setDuration(220)
-        anim.setStartValue(self._sombra.blurRadius())
-        anim.setEndValue(destino)
-        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
-
-TIPOS_INSTITUCION= ["Escuela", "Politécnico", "Universidad", "Personalizado"]
-DIVISIONES_PERIODO= ["Trimestres", "Cuatrimestres", "Semestres", "Bimestres", "Periodos"]
-METODOS_CALCULO= ["Promedio Simple", "Promedio Ponderado", "Mayor Nota", "Suma de Puntos"]
-IDIOMAS= ["Español", "Inglés", "Portugués"]
-SISTEMA_DOMINICANO= "República Dominicana (P1-P4, Currículo por Competencias)"
-SISTEMAS_CALIFICACION= ["Numérico (Personalizado)", "Estados Unidos (Letras A-F, GPA 4.0)", SISTEMA_DOMINICANO]
-
-#Competencias Fundamentales del currículo dominicano (MINERD), usadas en el "Desempeño Individual del
-#Estudiante" del Informe de Aprendizaje / Boletín.
-COMPETENCIAS_FUNDAMENTALES_RD= [
-    "Ética y Ciudadana",
-    "Comunicativa",
-    "Pensamiento Lógico, Creativo y Crítico",
-    "Resolución de Problemas",
-    "Científica y Tecnológica",
-    "Ambiental y de la Salud",
-    "Desarrollo Personal y Espiritual",
-]
-NOMBRES_PERIODOS_RD= ["P1", "P2", "P3", "P4"]
-
-
 #Centra `dialogo` sobre su ventana padre (o sobre la pantalla si no hay
 #padre visible) y se asegura de que aparezca POR ENCIMA de todas las demás
 #ventanas de la app, aunque el usuario haya cambiado de ventana mientras
@@ -576,50 +381,10 @@ def _preguntar_abrir_carpeta(parent, ruta, titulo, mensaje):
     if caja.clickedButton() is btn_abrir:
         _abrir_carpeta_contenedora(ruta)
 
-#Niveles de desempeño de la evaluación cualitativa por Competencias Fundamentales (Ordenanza 04-2023, Sistema
-#de Evaluación de los Aprendizajes, MINERD). "Sin Evaluar (NE)" es el estado inicial/neutro: NUNCA debe usarse
-#como si fuera un nivel logrado, es solo un marcador de que el docente todavía no ha registrado ese renglón.
-NIVEL_SIN_EVALUAR_RD= "Sin Evaluar (NE)"
-NIVELES_DESEMPENO_RD= [NIVEL_SIN_EVALUAR_RD, "Destacado", "Logrado", "En Proceso", "Insuficiente"]
-
-#Bandas numéricas oficiales de cada nivel (referencial, para mostrarlas como ayuda en pantalla).
-BANDAS_DESEMPENO_RD= {
-    "Destacado": (89, 100),
-    "Logrado": (77, 88),
-    "En Proceso": (65, 76),
-    "Insuficiente": (0, 64),
-}
-
-#Colores de apoyo visual para distinguir cada nivel de un vistazo (evita que todas las filas se vean idénticas,
-#que fue el problema reportado en la pantalla de Desempeño Individual).
-COLORES_NIVEL_DESEMPENO_RD= {
-    NIVEL_SIN_EVALUAR_RD: "#6B7280",   #gris - pendiente
-    "Destacado": "#10B981",            #verde
-    "Logrado": "#3B82F6",              #azul
-    "En Proceso": "#F59E0B",           #ámbar
-    "Insuficiente": "#EF4444",         #rojo
-}
-
 
 def es_sistema_dominicano(sistema):
 
     return sistema == SISTEMA_DOMINICANO
-
-
-#Niveles educativos que distingue AcaDeXI para la nota mínima aprobatoria del Sistema Dominicano (Ordenanza
-#04-2023, MINERD). Nivel Inicial/Preescolar queda deliberadamente fuera: no es una opción válida aquí y no
-#tiene lógica propia en ningún módulo de la app.
-NIVELES_EDUCATIVOS= ["Primaria", "Secundaria"]
-
-#Piso/techo de la nota mínima aprobatoria por nivel, Sistema Dominicano (Ordenanza 04-2023, MINERD —
-#confirmado: Primaria 65). Los spinboxes de Primaria/Secundaria (wizard y Configuración > Calificaciones) usan
-#estos límites: al elegir el Sistema Dominicano se autocompletan con el piso de cada nivel, y no se puede
-#escribir un valor fuera de [piso, techo]. Para Secundaria no hay techo normativo distinto del máximo de la
-#escala, así que se deja abierto por arriba (solo con piso).
-NOTA_MIN_PRIMARIA_PISO= 65
-NOTA_MIN_PRIMARIA_TECHO= 70
-NOTA_MIN_SECUNDARIA_PISO= 70
-NOTA_MIN_SECUNDARIA_TECHO= 1000
 
 
 #Lee `campo` de `fila` (sqlite3.Row o dict) tolerando que la columna no
@@ -671,22 +436,6 @@ def _alternar_fila_form(form, campo_widget, visible):
     etiqueta= form.labelForField(campo_widget)
     if etiqueta is not None:
         etiqueta.setVisible(visible)
-
-
-#Nivel académico transversal (Primaria / Secundaria / Preparatoria / Universidad) — dimensión académica
-#reutilizada por TODOS los módulos que trabajan con estudiantes, cursos, secciones o carreras. Única lógica
-#coherente: qué niveles existen (NIVELES_ACADEMICOS), qué niveles ofrece ESTA institución
-#(niveles_academicos_habilitados), y si algo (típicamente, componente técnico) es válido para un nivel/ciclo
-#dado (puede_tener_componente_tecnico). Todo lo demás (filtros de Estudiantes, combos de Materias/Politécnico,
-#Buscador global, etc.) debe llamar a estas funciones en vez de repetir la regla por su cuenta.
-NIVELES_ACADEMICOS= ["Primaria", "Secundaria", "Preparatoria", "Universidad"]
-
-#Dentro de Secundaria, República Dominicana distingue dos ciclos; el segundo es el único que puede tener
-#modalidad técnico-profesional. Esto vive como constante separada (no mezclada en NIVELES_ACADEMICOS) porque es
-#una subdivisión de UN nivel, no un nivel más -así el resto del sistema (fuera de este archivo y de
-#materias.py/calificaciones_tecnicas.py) puede seguir pensando en 4 niveles simples sin tener que conocer el
-#ciclo.
-CICLOS_SECUNDARIA= ["Primer Ciclo", "Segundo Ciclo"]
 
 
 #Niveles que ESTA institución realmente ofrece, según su
@@ -794,6 +543,265 @@ def _escala_y_minima_por_sistema(sistema):
     if sistema == SISTEMA_DOMINICANO:
         return 100, 70
     return None, None
+
+
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que horario.py).
+class IconoLupa(QWidget):
+
+    def __init__(self, parent=None):
+
+        super().__init__(parent)
+        self.setFixedSize(17, 17)
+        self._color= "#64748B"
+
+    def establecer_color(self, color):
+
+        self._color= color
+        self.update()
+
+    def paintEvent(self, evento):
+
+        painter= QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pen= QPen(QColor(self._color), 1.7)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawEllipse(QRectF(1.5, 1.5, 9.5, 9.5))
+        painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
+
+
+#Filtro de eventos reutilizable: al pasar el mouse sobre un botón o tarjeta,
+#'eleva' suavemente su sombra (más difusa y con más separación) y la vuelve a
+#bajar al salir. Es puramente decorativo — no intercepta ni modifica clics.
+class _RealceHover(QObject):
+
+    def __init__(self, blur_normal=0, blur_hover=22, offset_hover=6, parent=None):
+
+        super().__init__(parent)
+        self._blur_normal= blur_normal
+        self._blur_hover= blur_hover
+        self._offset_hover= offset_hover
+
+    def eventFilter(self, objeto, evento):
+
+        tipo= evento.type()
+        if tipo == QEvent.Type.Enter and objeto.isEnabled():
+            self._animar(objeto, self._blur_hover)
+        elif tipo == QEvent.Type.Leave:
+            self._animar(objeto, self._blur_normal)
+        return False
+
+    def _animar(self, widget, destino_blur):
+
+        efecto= widget.graphicsEffect()
+        if not isinstance(efecto, QGraphicsDropShadowEffect):
+            efecto= QGraphicsDropShadowEffect(widget)
+            efecto.setColor(QColor(0, 0, 0, 90))
+            efecto.setOffset(0, 2)
+            efecto.setBlurRadius(self._blur_normal)
+            widget.setGraphicsEffect(efecto)
+        anim= QPropertyAnimation(efecto, b"blurRadius", widget)
+        anim.setDuration(200)
+        anim.setStartValue(efecto.blurRadius())
+        anim.setEndValue(destino_blur)
+        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+        offset_anim= QPropertyAnimation(efecto, b"yOffset", widget)
+        offset_anim.setDuration(200)
+        offset_anim.setStartValue(efecto.yOffset())
+        offset_anim.setEndValue(self._offset_hover if destino_blur == self._blur_hover else 2)
+        offset_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        offset_anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+
+
+#QTabWidget que garantiza la navegación entre pestañas con las flechas
+#izquierda/derecha del teclado.
+#
+#QTabBar ya trae esto "de fábrica", pero solo funciona si la barra de
+#pestañas tiene el foco de teclado en ese momento — y en la práctica eso
+#no siempre pasa (por ejemplo si el foco quedó en otro control de la
+#pestaña, o si algo más arriba en la jerarquía de widgets no lo deja
+#llegar). Esta clase lo resuelve de dos formas: 1) le da foco explícito a
+#la barra apenas se hace clic en una pestaña, para que las flechas
+#funcionen de inmediato después; y 2) maneja Left/Right ella misma como
+#respaldo — Qt propaga los eventos de teclado no consumidos hacia el
+#widget padre, así que aunque el foco esté en cualquier otro punto sin
+#uso propio de las flechas (un botón, una etiqueta, el área en blanco de
+#la pestaña...), el evento termina llegando aquí de todos modos.
+class TabWidgetNavegable(QTabWidget):
+
+    def __init__(self, parent=None):
+
+        super().__init__(parent)
+        self.tabBar().setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        #Lambda: _i es el índice de la pestaña pulsada (no se usa); da el foco a la barra de pestañas.
+        self.tabBarClicked.connect(lambda _i: self.tabBar().setFocus())
+        #Mismo problema que QStackedWidget: por defecto, el tamaño mínimo de un QTabWidget se calcula tomando en cuenta
+        #TODAS sus pestañas, no solo la que está visible. Si una pestaña que el usuario nunca
+        #abrió (p. ej. "Entregas") contiene un combo que se llena con
+        #texto largo (títulos de tareas), su ancho mínimo se filtra igual y ensancha la pestaña visible ("Catálogo de
+        #Tareas"), aunque esa pestaña por sí sola quepa perfecto. Esto hace que solo se considere la pestaña actual, y
+        #se refresca al cambiar de pestaña.
+        #Lambda: _i es el índice de la pestaña nueva (no se usa); recalcula el tamaño al cambiar.
+        self.currentChanged.connect(lambda _i: self.updateGeometry())
+        #Ver _enganchar_botones_scroll: evita que las flechitas de scroll de la barra se vayan "manchando" con el uso
+        #repetido.
+        self._botones_scroll_enganchados= set()
+        self.tabBar().installEventFilter(self)
+
+    def eventFilter(self, objeto, evento):
+
+        if objeto is self.tabBar() and evento.type() == QEvent.Type.ChildPolished:
+            self._enganchar_botones_scroll()
+        return super().eventFilter(objeto, evento)
+
+    #Qt crea sus propias flechitas de scroll (QToolButton) como hijas
+    #del QTabBar SOLO cuando las pestañas no caben todas y hacen falta -
+    #no existen desde el principio, aparecen sobre la marcha. Se
+    #"enganchan" apenas aparecen para forzar un repintado COMPLETO y
+    #limpio de la barra cada vez que se usan.
+    #
+    #Por qué hace falta: estas ventanas son translúcidas
+    #(WA_TranslucentBackground) para el efecto de fondo difuminado. En
+    #esa configuración Qt a veces optimiza el repintado dibujando solo
+    #el rectángulo "dañado" (el botón) sin limpiar antes ese pedazo del
+    #backing store -así que los píxeles semitransparentes del borde
+    #redondeado (antialiasing) se van componiendo unos sobre otros con
+    #cada clic. Con el uso repetido (mantener presionado también cuenta:
+    #el autorepeat dispara 'clicked' varias veces por segundo) ese
+    #residuo se acumula hasta volverse un bloque sólido que tapa la
+    #flecha -exactamente el bug reportado. Forzar un repaint() síncrono
+    #de TODA la barra en cada clic impide que el residuo llegue a
+    #acumularse: cada uso deja la barra perfectamente limpia otra vez,
+    #sin cambiar en nada cómo se ve.
+    def _enganchar_botones_scroll(self):
+
+        for boton in self.tabBar().findChildren(QToolButton):
+            if boton in self._botones_scroll_enganchados:
+                continue
+            self._botones_scroll_enganchados.add(boton)
+            boton.clicked.connect(self._repintar_barra_limpia)
+
+    def _repintar_barra_limpia(self):
+
+        barra= self.tabBar()
+        QTimer.singleShot(0, barra.repaint)
+
+    def sizeHint(self):
+
+        w= self.currentWidget()
+        if w is None:
+            return super().sizeHint()
+        cromo= super().sizeHint()
+        return QSize(w.sizeHint().width(), cromo.height())
+
+    def minimumSizeHint(self):
+
+        w= self.currentWidget()
+        if w is None:
+            return super().minimumSizeHint()
+        cromo= super().minimumSizeHint()
+        #Ancho: solo el de la pestaña actualmente visible (así una pestaña nunca abierta, como "Entregas", no infla a
+        #las demás). Alto: se conserva el de Qt para no romper la barra de pestañas.
+        return QSize(w.minimumSizeHint().width(), cromo.height())
+
+    def keyPressEvent(self, evento):
+
+        if self.count() > 1 and evento.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right):
+            paso= -1 if evento.key() == Qt.Key.Key_Left else 1
+            self.setCurrentIndex((self.currentIndex() + paso) % self.count())
+            self.tabBar().setFocus()
+            evento.accept()
+            return
+        super().keyPressEvent(evento)
+
+
+#Contenedor de sección con aspecto de 'tarjeta' moderna: encabezado con
+#icono + título (y descripción opcional), sombra suave que se eleva al pasar
+#el mouse, y un layout interno (`contenido`) donde el código existente agrega
+#sus widgets/formularios tal cual los tenía. Es solo un contenedor visual:
+#no cambia qué controles existen ni cómo funcionan.
+class TarjetaSeccion(QFrame):
+
+    def __init__(self, icono="", titulo="", descripcion=None, parent=None):
+
+        super().__init__(parent)
+        self.setObjectName("TarjetaSeccion")
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+
+        self._sombra= QGraphicsDropShadowEffect(self)
+        self._sombra.setBlurRadius(14)
+        self._sombra.setOffset(0, 3)
+        self._sombra.setColor(QColor(0, 0, 0, 50))
+        self.setGraphicsEffect(self._sombra)
+
+        raiz= QVBoxLayout(self)
+        raiz.setContentsMargins(20, 16, 20, 18)
+        raiz.setSpacing(10)
+
+        if titulo:
+            fila_titulo= QHBoxLayout()
+            fila_titulo.setSpacing(10)
+            if icono:
+                self.lbl_icono= QLabel()
+                self.lbl_icono.setPixmap(pixmap_emoji(icono, 22))
+                self.lbl_icono.setObjectName("TarjetaSeccionBadge")
+                self.lbl_icono.setFixedSize(34, 34)
+                self.lbl_icono.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                fila_titulo.addWidget(self.lbl_icono)
+            self.lbl_titulo= QLabel(titulo)
+            self.lbl_titulo.setObjectName("TarjetaSeccionTitulo")
+            fila_titulo.addWidget(self.lbl_titulo, 1)
+            raiz.addLayout(fila_titulo)
+
+        if descripcion:
+            self.lbl_desc= QLabel(descripcion)
+            self.lbl_desc.setObjectName("DescModulo")
+            self.lbl_desc.setWordWrap(True)
+            raiz.addWidget(self.lbl_desc)
+
+        self.contenido= QVBoxLayout()
+        self.contenido.setSpacing(10)
+        raiz.addLayout(self.contenido)
+
+    def aplicar_paleta(self, bg_panel, borde, txt_prim, txt_sec, accent, modo_oscuro):
+
+        self.setStyleSheet(f"""
+            QFrame#TarjetaSeccion {{
+                background-color: {bg_panel};
+                border: 1px solid {borde};
+                border-radius: 14px;
+            }}
+        """)
+        if hasattr(self, "lbl_titulo"):
+            self.lbl_titulo.setStyleSheet(
+                f"color: {txt_prim}; font-size: 15px; font-weight: 700; background: transparent;")
+        if hasattr(self, "lbl_icono"):
+            alpha= 0.24 if modo_oscuro else 0.13
+            self.lbl_icono.setStyleSheet(
+                f"background-color: {_hex_a_rgba(accent, alpha)}; border-radius: 17px; "
+                f"font-size: 15px; color: {accent};")
+
+    def enterEvent(self, evento):
+
+        self._animar_sombra(24)
+        super().enterEvent(evento)
+
+    def leaveEvent(self, evento):
+
+        self._animar_sombra(14)
+        super().leaveEvent(evento)
+
+    def _animar_sombra(self, destino):
+
+        anim= QPropertyAnimation(self._sombra, b"blurRadius", self)
+        anim.setDuration(220)
+        anim.setStartValue(self._sombra.blurRadius())
+        anim.setEndValue(destino)
+        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
 
 #Indicador de progreso del wizard (stepper dibujado a mano)

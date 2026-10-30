@@ -23,6 +23,57 @@ MAX_VISIBLES= 5
 _avisos_por_ventana= {}
 
 
+_vigilantes= {}
+
+#Reposiciona la pila entera: el más viejo abajo, los nuevos arriba
+def _acomodar(ventana):
+
+    y= ventana.height() - MARGEN
+    for aviso in _avisos_por_ventana.get(ventana, []):
+        aviso.adjustSize()
+        y-= aviso.height()
+        aviso.move(max(ventana.width() - aviso.width() - MARGEN, 0), max(y, 0))
+        aviso.raise_()
+        y-= SEPARACION
+
+
+def mostrar_toast(widget, texto, tipo="info", accion=None, texto_accion="", duracion=4000):
+
+    if widget is None or not texto:
+        return None
+
+    ventana= widget if isinstance(widget, QWidget) and widget.parentWidget() is None else widget.window()
+    avisos= _avisos_por_ventana.setdefault(ventana, [])
+
+    for existente in avisos:
+        if existente.texto == texto:
+            existente._temporizador.start(duracion)
+            return existente
+
+    if ventana not in _vigilantes:
+        vigilante= _VigilaTamano(ventana)
+        ventana.installEventFilter(vigilante)
+        _vigilantes[ventana]= vigilante
+        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
+        ventana.destroyed.connect(lambda *_: _olvidar_ventana(ventana))
+
+    #Si hay demasiados, se descarta el más viejo
+    while len(avisos) >= MAX_VISIBLES:
+        avisos[0].cerrar()
+
+    aviso= _Aviso(ventana, texto, tipo, accion, texto_accion, duracion)
+    avisos.append(aviso)
+    aviso.mostrar()
+    _acomodar(ventana)
+    return aviso
+
+
+def _olvidar_ventana(ventana):
+
+    _avisos_por_ventana.pop(ventana, None)
+    _vigilantes.pop(ventana, None)
+
+
 class _Aviso(QFrame):
 
     def __init__(self, ventana, texto, tipo, accion, texto_accion, duracion):
@@ -104,18 +155,6 @@ class _Aviso(QFrame):
         _acomodar(self.ventana)
 
 
-#Reposiciona la pila entera: el más viejo abajo, los nuevos arriba
-def _acomodar(ventana):
-
-    y= ventana.height() - MARGEN
-    for aviso in _avisos_por_ventana.get(ventana, []):
-        aviso.adjustSize()
-        y-= aviso.height()
-        aviso.move(max(ventana.width() - aviso.width() - MARGEN, 0), max(y, 0))
-        aviso.raise_()
-        y-= SEPARACION
-
-
 #Escucha el cambio de tamaño de la ventana para que los avisos sigan pegados a la esquina
 class _VigilaTamano(QObject):
 
@@ -124,43 +163,3 @@ class _VigilaTamano(QObject):
         if evento.type() == QEvent.Type.Resize:
             _acomodar(objeto)
         return False
-
-
-_vigilantes= {}
-
-
-def mostrar_toast(widget, texto, tipo="info", accion=None, texto_accion="", duracion=4000):
-
-    if widget is None or not texto:
-        return None
-
-    ventana= widget if isinstance(widget, QWidget) and widget.parentWidget() is None else widget.window()
-    avisos= _avisos_por_ventana.setdefault(ventana, [])
-
-    for existente in avisos:
-        if existente.texto == texto:
-            existente._temporizador.start(duracion)
-            return existente
-
-    if ventana not in _vigilantes:
-        vigilante= _VigilaTamano(ventana)
-        ventana.installEventFilter(vigilante)
-        _vigilantes[ventana]= vigilante
-        #*_: el índice que trae doubleClicked no se usa; el doble clic equivale a pulsar el botón de detalle
-        ventana.destroyed.connect(lambda *_: _olvidar_ventana(ventana))
-
-    #Si hay demasiados, se descarta el más viejo
-    while len(avisos) >= MAX_VISIBLES:
-        avisos[0].cerrar()
-
-    aviso= _Aviso(ventana, texto, tipo, accion, texto_accion, duracion)
-    avisos.append(aviso)
-    aviso.mostrar()
-    _acomodar(ventana)
-    return aviso
-
-
-def _olvidar_ventana(ventana):
-
-    _avisos_por_ventana.pop(ventana, None)
-    _vigilantes.pop(ventana, None)

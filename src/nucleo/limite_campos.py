@@ -14,6 +14,27 @@ LIMITE_CAMPO_CORTO= 300    #nombre, dirección, correo, código
 LIMITE_CAMPO_LARGO= 5000   #observaciones, descripciones, notas
 
 
+#Aplica el límite que corresponde según el tipo de campo. Se puede llamar dos veces sobre el mismo
+#widget: la segunda vez solo cambia el límite, no agrega otro vigilante.
+def limitar_campo_texto(widget, max_length=None):
+
+    if isinstance(widget, QLineEdit):
+        widget.setMaxLength(max_length or LIMITE_CAMPO_CORTO)
+        return widget
+
+    if isinstance(widget, (QTextEdit, QPlainTextEdit)):
+
+        limite= max_length or LIMITE_CAMPO_LARGO
+        limitador= getattr(widget, "limitador_de_texto", None)
+
+        if limitador is None:
+            widget.limitador_de_texto= LimitadorDeTexto(widget, limite)
+        else:
+            limitador.limite= limite
+
+    return widget
+
+
 #Se mete dentro de un QTextEdit o QPlainTextEdit y vigila que el texto no pase del límite, por dos
 #caminos: recorta lo que se pega y, si el texto creció de otra forma (autocompletado, código,
 #deshacer), lo corta después.
@@ -68,24 +89,3 @@ class LimitadorDeTexto:
 
         cursor.setPosition(min(posicion, self.limite))
         self.widget.setTextCursor(cursor)
-
-
-#Aplica el límite que corresponde según el tipo de campo. Se puede llamar dos veces sobre el mismo
-#widget: la segunda vez solo cambia el límite, no agrega otro vigilante.
-def limitar_campo_texto(widget, max_length=None):
-
-    if isinstance(widget, QLineEdit):
-        widget.setMaxLength(max_length or LIMITE_CAMPO_CORTO)
-        return widget
-
-    if isinstance(widget, (QTextEdit, QPlainTextEdit)):
-
-        limite= max_length or LIMITE_CAMPO_LARGO
-        limitador= getattr(widget, "limitador_de_texto", None)
-
-        if limitador is None:
-            widget.limitador_de_texto= LimitadorDeTexto(widget, limite)
-        else:
-            limitador.limite= limite
-
-    return widget

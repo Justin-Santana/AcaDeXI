@@ -151,14 +151,6 @@ _MAPA= [
 ]
 
 
-#Minúsculas y sin tildes, para que 'Cálcular' == 'calcular'.
-def _normalizar(texto):
-
-    texto= texto.strip().lower()
-    texto= unicodedata.normalize('NFD', texto)
-    return ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
-
-
 #Cache: texto normalizado -> QIcon (evita rebuscar el mapa mil veces)
 _cache_texto= {}
 
@@ -174,6 +166,15 @@ _cache_patrones= {}
 _PATRONES_EXCEPCION= {
     'nuevo': r'(?<!de )\bnuevo',
 }
+
+_instalado= False
+
+#Minúsculas y sin tildes, para que 'Cálcular' == 'calcular'.
+def _normalizar(texto):
+
+    texto= texto.strip().lower()
+    texto= unicodedata.normalize('NFD', texto)
+    return ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
 
 
 #Compila (con cache) el patrón para `kw`: coincide solo si `kw`
@@ -210,6 +211,19 @@ def icono_para_texto(texto):
             break
     _cache_texto[clave]= icono
     return icono
+
+
+#Instala el filtro UNA sola vez sobre la aplicación.
+def instalar_iconos_automaticos(app):
+
+    global _instalado
+    if _instalado:
+        return
+    filtro= _Iconizador()
+    #Referencia viva en la propia app para que no lo recoja el GC
+    app._iconizador_auto= filtro
+    app.installEventFilter(filtro)
+    _instalado= True
 
 
 #Filtro de eventos global: rellena los iconos que falten.
@@ -333,21 +347,3 @@ class _Iconizador(QObject):
         except RuntimeError:
             pass  #el widget C++ ya fue destruido; no importa
         return False
-
-
-_instalado= False
-
-
-#Instala el filtro UNA sola vez sobre la aplicación.
-def instalar_iconos_automaticos(app):
-
-    global _instalado
-    if _instalado:
-        return
-    filtro= _Iconizador()
-    #Referencia viva en la propia app para que no lo recoja el GC
-    app._iconizador_auto= filtro
-    app.installEventFilter(filtro)
-    _instalado= True
-
-

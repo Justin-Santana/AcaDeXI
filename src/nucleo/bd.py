@@ -4,6 +4,56 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
+_ruta_wal_configurada= None
+
+# -----------------------------------------
+# sandbox del tutorial detallado (ver tutoriales.py)
+# -----------------------------------------
+#mientras está activo, RUTA_BD apunta temporalmente a una copia desechable del archivo
+#real (para que los pasos "haz esto de verdad" del tutorial no toquen la
+#base institucional). Esta bandera existe solo para que operaciones que
+#el usuario podría disparar manualmente en paralelo (backup, subir/bajar
+#de Sincronización) se nieguen con un aviso claro en vez de terminar
+#respaldando o sincronizando por error la copia de práctica.
+SANDBOX_TUTORIAL_ACTIVO= False
+
+#En República Dominicana el MINERD no publica un criterio único de
+#numeración para el "libro de clases" de cada aula -cada centro define el
+#suyo internamente-, así que en vez de imponer un solo criterio fijo,
+#AcaDeXI deja elegir entre las prácticas más comunes documentadas (ver
+#informe adjunto): orden alfabético (por Apellidos o por Nombre, según
+#convenga a la institución), orden de ingreso/matrícula, o manejo
+#totalmente manual (para el centro que ya trae su propia numeración de
+#otro sistema y no quiere que AcaDeXI se la reordene).
+CRITERIO_APELLIDOS_NOMBRE= "Apellidos y Nombre"
+
+CRITERIO_NOMBRE_APELLIDOS= "Nombre y Apellidos"
+
+CRITERIO_ORDEN_MATRICULA= "Orden de Matrícula (fecha de ingreso)"
+
+CRITERIO_MANUAL= "Manual (no reordenar automáticamente)"
+
+CRITERIOS_NUMERO_LISTA= [
+    CRITERIO_APELLIDOS_NOMBRE,
+    CRITERIO_NOMBRE_APELLIDOS,
+    CRITERIO_ORDEN_MATRICULA,
+    CRITERIO_MANUAL,
+]
+
+DESCRIPCION_CRITERIO_NUMERO_LISTA= {
+    CRITERIO_APELLIDOS_NOMBRE: "Alfabético por Primer Apellido y luego Nombre (la convención más común "
+                                "en la región, la misma del Libro de Clases).",
+    CRITERIO_NOMBRE_APELLIDOS: "Alfabético por Primer Nombre y luego Apellidos.",
+    CRITERIO_ORDEN_MATRICULA: "Según el orden en que cada estudiante fue registrado en el sistema "
+                               "(el ID interno, que solo crece), sin importar el alfabeto.",
+    CRITERIO_MANUAL: "AcaDeXI no reordena nada automáticamente; el número de cada estudiante solo "
+                      "cambia si tú lo editas a mano.",
+}
+
+MAX_INTENTOS_LOGIN= 5
+
+MINUTOS_BLOQUEO_LOGIN= 15
+
 try:
 
     from argon2 import PasswordHasher
@@ -55,18 +105,7 @@ def obtener_carpeta_datos():
 
 
 RUTA_BD= os.path.join(obtener_carpeta_datos(), "acadexi.db")
-_ruta_wal_configurada= None
 
-# -----------------------------------------
-# sandbox del tutorial detallado (ver tutoriales.py)
-# -----------------------------------------
-#mientras está activo, RUTA_BD apunta temporalmente a una copia desechable del archivo
-#real (para que los pasos "haz esto de verdad" del tutorial no toquen la
-#base institucional). Esta bandera existe solo para que operaciones que
-#el usuario podría disparar manualmente en paralelo (backup, subir/bajar
-#de Sincronización) se nieguen con un aviso claro en vez de terminar
-#respaldando o sincronizando por error la copia de práctica.
-SANDBOX_TUTORIAL_ACTIVO= False
 
 # -----------------------------------------
 # BD base institucional
@@ -207,36 +246,6 @@ def verificar_contrasena(password: str, hashed: str) -> bool:
 # -----------------------------------------
 # número de lista (numeración de estudiantes dentro de su sección)
 # -----------------------------------------
-#En República Dominicana el MINERD no publica un criterio único de
-#numeración para el "libro de clases" de cada aula -cada centro define el
-#suyo internamente-, así que en vez de imponer un solo criterio fijo,
-#AcaDeXI deja elegir entre las prácticas más comunes documentadas (ver
-#informe adjunto): orden alfabético (por Apellidos o por Nombre, según
-#convenga a la institución), orden de ingreso/matrícula, o manejo
-#totalmente manual (para el centro que ya trae su propia numeración de
-#otro sistema y no quiere que AcaDeXI se la reordene).
-CRITERIO_APELLIDOS_NOMBRE= "Apellidos y Nombre"
-CRITERIO_NOMBRE_APELLIDOS= "Nombre y Apellidos"
-CRITERIO_ORDEN_MATRICULA= "Orden de Matrícula (fecha de ingreso)"
-CRITERIO_MANUAL= "Manual (no reordenar automáticamente)"
-
-CRITERIOS_NUMERO_LISTA= [
-    CRITERIO_APELLIDOS_NOMBRE,
-    CRITERIO_NOMBRE_APELLIDOS,
-    CRITERIO_ORDEN_MATRICULA,
-    CRITERIO_MANUAL,
-]
-
-DESCRIPCION_CRITERIO_NUMERO_LISTA= {
-    CRITERIO_APELLIDOS_NOMBRE: "Alfabético por Primer Apellido y luego Nombre (la convención más común "
-                                "en la región, la misma del Libro de Clases).",
-    CRITERIO_NOMBRE_APELLIDOS: "Alfabético por Primer Nombre y luego Apellidos.",
-    CRITERIO_ORDEN_MATRICULA: "Según el orden en que cada estudiante fue registrado en el sistema "
-                               "(el ID interno, que solo crece), sin importar el alfabeto.",
-    CRITERIO_MANUAL: "AcaDeXI no reordena nada automáticamente; el número de cada estudiante solo "
-                      "cambia si tú lo editas a mano.",
-}
-
 
 #Lee el criterio de numeración configurado (ver CRITERIOS_NUMERO_LISTA).
 #Devuelve CRITERIO_APELLIDOS_NOMBRE si la instalación aún no tiene nada
@@ -366,8 +375,6 @@ def recalcular_numeros_lista_todas_secciones(criterio=None):
 # -----------------------------------------
 # protección contra fuerza bruta en el login
 # -----------------------------------------
-MAX_INTENTOS_LOGIN= 5
-MINUTOS_BLOQUEO_LOGIN= 15
 
 
 #Revisa si la cuenta `username` está bloqueada por demasiados intentos

@@ -33,6 +33,21 @@ from src.nucleo.bd import RUTA_BD, obtener_conexion, existe_bd_base, RUTA_BD_BAS
 from src.interfaz.ventana_principal import CONFIG_PATH
 
 
+#Instalador para docentes/personal (AcaDeXI_Docentes_Setup.exe) Este .exe se compila UNA SOLA VEZ con Inno
+#Setup a partir del script
+#AcaDeXI_Docentes.iss (incluido junto al código fuente) y se coloca junto
+#al ejecutable de la app (obtener_carpeta_raiz()). AcaDeXI no lo compila en tiempo de ejecución: la app solo lo
+#LOCALIZA y lo COPIA a la carpeta que el Administrador elija, listo para distribuir junto con los .acdx.
+NOMBRE_SETUP_DOCENTES= "AcaDeXI_Docentes_Setup.exe"
+
+#Instalador para Single Teacher (AcaDeXI_SingleTeacher_Setup.exe)
+NOMBRE_SETUP_SINGLE_TEACHER= "AcaDeXI_SingleTeacher_Setup.exe"
+
+#Instalador para Side Stepper (AcaDeXI_SideStepper_Setup.exe)
+NOMBRE_SETUP_SIDE_STEPPER= "AcaDeXI_SideStepper_Setup.exe"
+
+NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER= "permisos_side_stepper.json"
+
 #Se lanza cuando se pide empaquetar 'la BD Base' y todavía no se ha
 #guardado ninguna (ver bd.guardar_bd_base_desde_actual), y no se autorizó
 #explícitamente usar la BD actual como reemplazo.
@@ -287,14 +302,6 @@ Listo. No verás el asistente de configuración.
     return ruta_zip
 
 
-#Instalador para docentes/personal (AcaDeXI_Docentes_Setup.exe) Este .exe se compila UNA SOLA VEZ con Inno
-#Setup a partir del script
-#AcaDeXI_Docentes.iss (incluido junto al código fuente) y se coloca junto
-#al ejecutable de la app (obtener_carpeta_raiz()). AcaDeXI no lo compila en tiempo de ejecución: la app solo lo
-#LOCALIZA y lo COPIA a la carpeta que el Administrador elija, listo para distribuir junto con los .acdx.
-NOMBRE_SETUP_DOCENTES= "AcaDeXI_Docentes_Setup.exe"
-
-
 #Ruta esperada del instalador para Docentes/Personal ya compilado,
 #junto al ejecutable/código de la aplicación.
 def ruta_instalador_docentes():
@@ -406,15 +413,6 @@ def _copiar_instalador_generico(origen, nombre_archivo, ruta_destino):
         "el problema persiste, elige una carpeta distinta a la del propio programa como "
         "destino."
     ) from ultimo_error
-
-
-#Instalador para Single Teacher (AcaDeXI_SingleTeacher_Setup.exe)
-NOMBRE_SETUP_SINGLE_TEACHER= "AcaDeXI_SingleTeacher_Setup.exe"
-
-
-#Instalador para Side Stepper (AcaDeXI_SideStepper_Setup.exe)
-NOMBRE_SETUP_SIDE_STEPPER= "AcaDeXI_SideStepper_Setup.exe"
-NOMBRE_PAQUETE_PERMISOS_SIDE_STEPPER= "permisos_side_stepper.json"
 
 
 def ruta_instalador_side_stepper():

@@ -28,6 +28,28 @@ from src.nucleo.iconos import aplicar_icono_cabecera
 _FUENTES_EMOJI= ["Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji"]
 
 
+_COLORES_MODULO= {
+    "Estudiantes": "#6366F1",
+    "Profesores": "#0D9488",
+    "Personal": "#0D9488",
+    "Materias": "#8B5CF6",
+    "Secciones": "#F59E0B",
+    "Asistencia": "#10B981",
+    "Calificaciones": "#EC4899",
+    "Configuración": "#64748B",
+    "Configuracion": "#64748B",
+    "Sistema": "#475569",
+    "Horario": "#3B82F6",
+    "Calendario": "#3B82F6",
+    "Observaciones": "#F97316",
+    "Banco de Tareas": "#14B8A6",
+    "Reportes": "#0891B2",
+    "Sincronización": "#0EA5E9",
+}
+
+_PALETA_MODULO_RESPALDO= ["#6366F1", "#0D9488", "#8B5CF6", "#F59E0B",
+                           "#10B981", "#EC4899", "#3B82F6", "#F97316"]
+
 def _aplicar_fuente_emoji(label, tamano_pt=None):
 
     fuente= label.font()
@@ -58,34 +80,30 @@ def _color_por_umbral_asistencia(valor):
     return "#EF4444"
 
 
-_COLORES_MODULO= {
-    "Estudiantes": "#6366F1",
-    "Profesores": "#0D9488",
-    "Personal": "#0D9488",
-    "Materias": "#8B5CF6",
-    "Secciones": "#F59E0B",
-    "Asistencia": "#10B981",
-    "Calificaciones": "#EC4899",
-    "Configuración": "#64748B",
-    "Configuracion": "#64748B",
-    "Sistema": "#475569",
-    "Horario": "#3B82F6",
-    "Calendario": "#3B82F6",
-    "Observaciones": "#F97316",
-    "Banco de Tareas": "#14B8A6",
-    "Reportes": "#0891B2",
-    "Sincronización": "#0EA5E9",
-}
-_PALETA_MODULO_RESPALDO= ["#6366F1", "#0D9488", "#8B5CF6", "#F59E0B",
-                           "#10B981", "#EC4899", "#3B82F6", "#F97316"]
-
-
 def _color_para_modulo(nombre):
 
     if nombre in _COLORES_MODULO:
         return _COLORES_MODULO[nombre]
     idx= sum(ord(ch) for ch in (nombre or "?")) % len(_PALETA_MODULO_RESPALDO)
     return _PALETA_MODULO_RESPALDO[idx]
+
+
+#Helpers de celdas para la tabla de actividad (QTableWidgetItem simples: setCellWidget() daba filas con alto 0
+#en este entorno, así que se evita por completo)
+def _item_modulo(modulo, color):
+
+    item= QTableWidgetItem(f"●  {modulo}")
+    item.setForeground(QColor(color))
+    fuente= item.font()
+    fuente.setBold(True)
+    item.setFont(fuente)
+    return item
+
+
+def _item_usuario(nombre):
+
+    nombre= nombre or "Sistema"
+    return QTableWidgetItem(nombre)
 
 
 #Widgets visuales personalizados
@@ -617,24 +635,6 @@ class PanelDetalleAsistencia(QWidget):
         self._borde= borde
         for fila in self._filas.values():
             fila.aplicar_color_nombre(color_texto, bg_panel, borde)
-
-
-#Helpers de celdas para la tabla de actividad (QTableWidgetItem simples: setCellWidget() daba filas con alto 0
-#en este entorno, así que se evita por completo)
-def _item_modulo(modulo, color):
-
-    item= QTableWidgetItem(f"●  {modulo}")
-    item.setForeground(QColor(color))
-    fuente= item.font()
-    fuente.setBold(True)
-    item.setFont(fuente)
-    return item
-
-
-def _item_usuario(nombre):
-
-    nombre= nombre or "Sistema"
-    return QTableWidgetItem(nombre)
 
 
 #Módulo principal del dashboard

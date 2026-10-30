@@ -65,6 +65,35 @@ ESTADOS_MATERIAL= ["Disponible", "Agotado", "En mantenimiento", "De baja"]
 TIPOS_MOVIMIENTO= ["Préstamo", "Devolución", "Baja", "Ingreso de inventario"]
 
 
+#QSS del bloque QToolTip con la paleta del tema/modo activo de la
+#app (mismos colores que usa el módulo en actualizar_tema). Devuelve ""
+#si no hay paleta disponible (p. ej. pruebas sin main_window): en ese
+#caso el diálogo conserva el estilo nativo, sin romper nada.
+def _qss_tooltip_tema(main_window):
+
+    mw= main_window
+    paletas= getattr(mw, "theme_palettes", None) if mw is not None else None
+    if not paletas:
+        return ""
+    tema_actual= getattr(mw, "tema_actual", "Colorful (Multicolor)")
+    paleta= paletas.get(tema_actual) or paletas.get("Colorful (Multicolor)")
+    if not paleta:
+        return ""
+    idx= 1 if getattr(mw, "modo_oscuro", True) else 0
+    bg_panel= paleta["display_bg"][idx]
+    bg_borde= paleta["btn_num_bg"][idx]
+    txt_prim= paleta["text_primary"][idx]
+    return f"""
+        QToolTip {{
+            background-color: {bg_panel};
+            color: {txt_prim};
+            border: 1px solid {bg_borde};
+            padding: 6px 10px;
+            border-radius: 6px;
+        }}
+    """
+
+
 #Base de los diálogos de este módulo: garantiza que la ventana se
 #abra CENTRADA sobre la ventana principal de la app (igual que las
 #ventanas de los demás módulos, ver iconos.centrar_y_al_frente).
@@ -108,35 +137,6 @@ class _DialogoCentrado(QDialog):
         if not self._centrado_inicial:
             self._centrado_inicial= True
             centrar_y_al_frente(self, self.parent())
-
-
-#QSS del bloque QToolTip con la paleta del tema/modo activo de la
-#app (mismos colores que usa el módulo en actualizar_tema). Devuelve ""
-#si no hay paleta disponible (p. ej. pruebas sin main_window): en ese
-#caso el diálogo conserva el estilo nativo, sin romper nada.
-def _qss_tooltip_tema(main_window):
-
-    mw= main_window
-    paletas= getattr(mw, "theme_palettes", None) if mw is not None else None
-    if not paletas:
-        return ""
-    tema_actual= getattr(mw, "tema_actual", "Colorful (Multicolor)")
-    paleta= paletas.get(tema_actual) or paletas.get("Colorful (Multicolor)")
-    if not paleta:
-        return ""
-    idx= 1 if getattr(mw, "modo_oscuro", True) else 0
-    bg_panel= paleta["display_bg"][idx]
-    bg_borde= paleta["btn_num_bg"][idx]
-    txt_prim= paleta["text_primary"][idx]
-    return f"""
-        QToolTip {{
-            background-color: {bg_panel};
-            color: {txt_prim};
-            border: 1px solid {bg_borde};
-            padding: 6px 10px;
-            border-radius: 6px;
-        }}
-    """
 
 
 class ModuloMateriales(QWidget):

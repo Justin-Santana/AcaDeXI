@@ -154,6 +154,8 @@ COL_ESTADO= 6
 COL_PROXIMA= 7
 
 
+_cache_punto= {}
+
 def _texto_categorias(claves_csv):
 
     claves= [c for c in (claves_csv or "").split(",") if c]
@@ -249,9 +251,6 @@ def _colores_tema(main_window):
     except Exception:
         return {"bg_panel": "#FFFFFF", "bg_btn": "#E2E8F0", "bg_track": "#FFFFFF", "txt_prim": "#0F172A",
                 "txt_sec": "#64748B", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
-
-
-_cache_punto= {}
 
 
 #Pequeño círculo sólido de `color_hex` (cacheado), usado como icono de

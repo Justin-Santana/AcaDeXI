@@ -70,6 +70,12 @@ COLUMNAS= {
 }
 
 
+#El archivo seleccionado no es un paquete de Estudiantes/Cursos válido.
+class _PaqueteInvalido(Exception):
+
+    pass
+
+
 #IDs de materias/secciones/grados/aulas/especialidades relacionados con un
 #profesor específico (como titular o como co-docente vía materia_profesores),
 #para poder generar un paquete acotado solo a lo que ese profesor imparte.
@@ -322,12 +328,6 @@ def importar_paquete_docente(main_window, parent=None):
                    "Coordinación/Administración.", parent)
     if hasattr(main_window, "refrescar_modulo_actual"):
         main_window.refrescar_modulo_actual()
-
-
-#El archivo seleccionado no es un paquete de Estudiantes/Cursos válido.
-class _PaqueteInvalido(Exception):
-
-    pass
 
 
 def _leer_paquete_xlsx(ruta):

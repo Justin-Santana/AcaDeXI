@@ -82,6 +82,21 @@ _cache_fabricas_modulos= {}
 _cache_fabricas_modulos_single_teacher= {}
 
 
+#Instancia única Sin esto, abrir el acceso directo dos veces (doble clic accidental, "Abrir al iniciar sesión
+#de Windows" + acceso directo manual, etc.) lanza dos procesos completos de AcaDeXI, cada uno con su propio
+#icono de bandeja: por eso a veces se ven 2 iconos, y cuando uno de los dos procesos termina (o Windows repinta
+#la bandeja) uno de ellos "se desvanece" sin que el usuario haya hecho nada. También duplica el consumo de
+#RAM/CPU en segundo plano, que es justo lo que no queremos si la app va a vivir minimizada a la bandeja.
+#
+#QSharedMemory actúa como candado: el primer proceso lo reserva y lo mantiene mientras viva; si el proceso
+#muere (incluso por un crash), el sistema operativo libera el segmento automáticamente, así que no deja un
+#"candado fantasma" que impida volver a abrir la app.
+#
+#QLocalServer/QLocalSocket es el canal para que, si alguien intenta abrir una segunda copia, en vez de arrancar
+#en silencio (o abortar sin decir nada) se le pida a la instancia YA abierta que se restaure y se traiga al
+#frente, que es lo que el usuario espera.
+_ID_INSTANCIA_UNICA= "AcaDeXI-instancia-unica-a3f9c2"
+
 #Resuelve y memoriza la clase de una página de navegación. Ramifica
 #por edición ANTES que nada: "Configuración" es la única excepción
 #compartida por full/docentes/side_stepper (usa siempre
@@ -114,20 +129,146 @@ def _obtener_fabrica_modulo(nombre):
     _cache_fabricas_modulos[nombre]= fabrica
     return fabrica
 
-#Instancia única Sin esto, abrir el acceso directo dos veces (doble clic accidental, "Abrir al iniciar sesión
-#de Windows" + acceso directo manual, etc.) lanza dos procesos completos de AcaDeXI, cada uno con su propio
-#icono de bandeja: por eso a veces se ven 2 iconos, y cuando uno de los dos procesos termina (o Windows repinta
-#la bandeja) uno de ellos "se desvanece" sin que el usuario haya hecho nada. También duplica el consumo de
-#RAM/CPU en segundo plano, que es justo lo que no queremos si la app va a vivir minimizada a la bandeja.
-#
-#QSharedMemory actúa como candado: el primer proceso lo reserva y lo mantiene mientras viva; si el proceso
-#muere (incluso por un crash), el sistema operativo libera el segmento automáticamente, así que no deja un
-#"candado fantasma" que impida volver a abrir la app.
-#
-#QLocalServer/QLocalSocket es el canal para que, si alguien intenta abrir una segunda copia, en vez de arrancar
-#en silencio (o abortar sin decir nada) se le pida a la instancia YA abierta que se restaure y se traiga al
-#frente, que es lo que el usuario espera.
-_ID_INSTANCIA_UNICA= "AcaDeXI-instancia-unica-a3f9c2"
+def _hex_a_rgba(hex_color, alpha):
+
+    hex_color= hex_color.lstrip("#")
+    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    return f"rgba({r}, {g}, {b}, {alpha})"
+
+
+def wizard_completado():
+
+    if edicion_actual() == "single_teacher":
+        try:
+
+            from src.nucleo import bd_single_teacher
+            return bd_single_teacher.wizard_completado()
+        except Exception:
+            return False
+    try:
+
+        conn= obtener_conexion()
+        c= conn.cursor()
+        c.execute("SELECT wizard_completado FROM configuracion WHERE id=1")
+        fila= c.fetchone()
+        conn.close()
+        return bool(fila and fila["wizard_completado"])
+    except Exception:
+        return False
+
+
+#Punto de entrada de la aplicación (lo invoca el main.py de la raíz).
+def main():
+
+    #Silencia únicamente el aviso de Windows "Unable to set geometry"
+    #que Qt imprime cuando, al reposicionar/centrar un diálogo (por
+    #ejemplo el recorte de foto), el sistema ajusta la ventana 1-2px
+    #para respetar el tamaño mínimo que Windows exige para su marco.
+    #Es un aviso puramente cosmético -no cambia el comportamiento ni
+    #el tamaño real visible del diálogo-, así que en vez de dejarlo
+    #ensuciar la consola en cada cierre se descarta aquí. Cualquier
+    #otro mensaje de Qt (advertencias/errores que sí importan) se
+    #sigue imprimiendo con normalidad.
+    def _filtrar_avisos_qt_inofensivos(tipo_msg, contexto, mensaje):
+
+        if "Unable to set geometry" in mensaje and "QWindowsWindow" in mensaje:
+            return
+        if tipo_msg == QtMsgType.QtDebugMsg:
+            return
+        sys.stderr.write(mensaje + "\n")
+
+    qInstallMessageHandler(_filtrar_avisos_qt_inofensivos)
+
+    app= QApplication(sys.argv)
+
+    _filtro_tooltips_frescos= _FiltroTooltipsFrescos(app)
+    app.installEventFilter(_filtro_tooltips_frescos)
+
+    _guarda_instancia= GuardaInstanciaUnica()
+    if not _guarda_instancia.es_primera_instancia:
+        #Ya hay una copia de AcaDeXI corriendo (posiblemente minimizada a la bandeja): le avisamos que se muestre y
+        #este proceso nuevo termina de inmediato, sin crear una segunda ventana ni un segundo icono de bandeja.
+        _guarda_instancia.avisar_instancia_existente()
+        sys.exit(0)
+
+    #Crea las tablas si no existen y aplica las migraciones de esquema (columnas nuevas, índices, etc.) ANTES de
+    #abrir cualquier ventana. Sin esto, la base de datos se queda con el esquema viejo y módulos como Observaciones
+    #fallan con "no such column" al intentar usar columnas que bd.py agrega dinámicamente (materia_id, naturaleza,
+    #...).
+    inicializar_bd()
+
+    app.setWindowIcon(icono_app())
+    #Iconización automática y coherente de TODA la app: un filtro global que asigna (sin sobreescribir los
+    #manuales) un icono vectorial a cualquier botón/pestaña/diálogo que quede sin uno, según su texto y con un
+    #único mapa semántico compartido por todos los módulos.
+    from src.nucleo.iconos_auto import instalar_iconos_automaticos
+    instalar_iconos_automaticos(app)
+    #Crítico para el patrón "bandeja de sistema": sin esto, Qt cerraría la app automáticamente en cuanto se oculta
+    #la última ventana visible (justo lo que hace closeEvent al minimizar a la bandeja), matando el proceso aunque
+    #el usuario nunca pidió "Salir".
+    app.setQuitOnLastWindowClosed(False)
+
+    #Traduce al español los diálogos NATIVOS de Qt (el selector de color, el selector de archivos del sistema,
+    #etc.), que por defecto vienen en inglés porque Qt trae sus propios textos separados de los nuestros. Si el
+    #paquete de idioma no está disponible en la instalación de Qt del usuario, simplemente no se instala el
+    #traductor y esos diálogos se ven en inglés como hasta ahora (no rompe nada).
+    _traductor_qt= QTranslator(app)
+    _ruta_traducciones= QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+    if _traductor_qt.load(QLocale("es_ES"), "qtbase", "_", _ruta_traducciones):
+        app.installTranslator(_traductor_qt)
+
+    window= MainWindow()
+    #Mantenemos viva la referencia al guarda en la propia ventana para que no la recoja el recolector de basura
+    #(QLocalServer dejaría de escuchar) y para poder restaurar la ventana cuando alguien intente abrir una segunda
+    #copia de la app.
+    window._guarda_instancia= _guarda_instancia
+    _guarda_instancia.escuchar_segundas_instancias(window._restaurar_desde_bandeja)
+
+    _edicion= edicion_actual()
+    if not wizard_completado() and _edicion == "full":
+        wizard= WizardConfiguracion(window)
+        if wizard.exec() != wizard.DialogCode.Accepted:
+            sys.exit(0)
+        window.recargar_modulos_dinamicos()
+        window.requerir_login= True
+        window.guardar_configuracion()
+    elif not wizard_completado() and _edicion == "single_teacher":
+        from src.interfaz.single_teacher_ui import WizardSingleTeacher
+        wizard= WizardSingleTeacher(window)
+        if wizard.exec() != wizard.DialogCode.Accepted:
+            sys.exit(0)
+        window.recargar_modulos_dinamicos()
+        window.requerir_login= False
+        window.guardar_configuracion()
+    elif not wizard_completado() and _edicion == "side_stepper":
+        #TODO: WizardSideStepper (side_stepper_config.py) aún no verificado contra este código rediseñado -cae al
+        #wizard institucional genérico mientras tanto, igual que "docentes" nunca lo necesita.
+        wizard= WizardConfiguracion(window)
+        if wizard.exec() != wizard.DialogCode.Accepted:
+            sys.exit(0)
+        window.recargar_modulos_dinamicos()
+        window.requerir_login= True
+        window.guardar_configuracion()
+    elif _edicion == "single_teacher":
+        window.requerir_login= False
+
+    if window.requerir_login:
+        if not window.mostrar_login():
+            sys.exit(0)
+    elif _edicion == "single_teacher":
+        #Sin login (un solo docente, dueño de un solo archivo): el enganche normal de ofrecer_tutoriales_tras_login()
+        #vive DENTRO de
+        #mostrar_login(), que aquí nunca se llama.
+        ofrecer_tutoriales_tras_login(window)
+
+    try:
+
+        ejecutar_backup_automatico_al_iniciar()
+    except Exception as error:
+        print(f"Backup automático fallido: {error}")
+
+    window.abrir_con_fundido()
+    sys.exit(app.exec())
 
 
 #Garantiza que solo haya un proceso de AcaDeXI corriendo a la vez.
@@ -188,13 +329,6 @@ class GuardaInstanciaUnica:
         socket.readAll()
         if callable(self._al_segunda_instancia):
             self._al_segunda_instancia()
-
-
-def _hex_a_rgba(hex_color, alpha):
-
-    hex_color= hex_color.lstrip("#")
-    r, g, b= int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
-    return f"rgba({r}, {g}, {b}, {alpha})"
 
 
 #Punto circular animado (respira) que indica sesión activa.
@@ -2676,27 +2810,6 @@ class MainWindow(QMainWindow):
         QApplication.instance().quit()
 
 
-def wizard_completado():
-
-    if edicion_actual() == "single_teacher":
-        try:
-
-            from src.nucleo import bd_single_teacher
-            return bd_single_teacher.wizard_completado()
-        except Exception:
-            return False
-    try:
-
-        conn= obtener_conexion()
-        c= conn.cursor()
-        c.execute("SELECT wizard_completado FROM configuracion WHERE id=1")
-        fila= c.fetchone()
-        conn.close()
-        return bool(fila and fila["wizard_completado"])
-    except Exception:
-        return False
-
-
 #Corrige un problema de caché de estilo del propio Qt: el widget
 #QToolTip es UNO SOLO, compartido por toda la aplicación y reutilizado
 #para cada tooltip que se muestra. Cuando el mouse pasa RÁPIDO de un
@@ -2746,117 +2859,3 @@ class _FiltroTooltipsFrescos(QObject):
             if watched is self._ultimo_widget:
                 self._ultimo_widget= None
         return False
-
-
-#Punto de entrada de la aplicación (lo invoca el main.py de la raíz).
-def main():
-
-    #Silencia únicamente el aviso de Windows "Unable to set geometry"
-    #que Qt imprime cuando, al reposicionar/centrar un diálogo (por
-    #ejemplo el recorte de foto), el sistema ajusta la ventana 1-2px
-    #para respetar el tamaño mínimo que Windows exige para su marco.
-    #Es un aviso puramente cosmético -no cambia el comportamiento ni
-    #el tamaño real visible del diálogo-, así que en vez de dejarlo
-    #ensuciar la consola en cada cierre se descarta aquí. Cualquier
-    #otro mensaje de Qt (advertencias/errores que sí importan) se
-    #sigue imprimiendo con normalidad.
-    def _filtrar_avisos_qt_inofensivos(tipo_msg, contexto, mensaje):
-
-        if "Unable to set geometry" in mensaje and "QWindowsWindow" in mensaje:
-            return
-        if tipo_msg == QtMsgType.QtDebugMsg:
-            return
-        sys.stderr.write(mensaje + "\n")
-
-    qInstallMessageHandler(_filtrar_avisos_qt_inofensivos)
-
-    app= QApplication(sys.argv)
-
-    _filtro_tooltips_frescos= _FiltroTooltipsFrescos(app)
-    app.installEventFilter(_filtro_tooltips_frescos)
-
-    _guarda_instancia= GuardaInstanciaUnica()
-    if not _guarda_instancia.es_primera_instancia:
-        #Ya hay una copia de AcaDeXI corriendo (posiblemente minimizada a la bandeja): le avisamos que se muestre y
-        #este proceso nuevo termina de inmediato, sin crear una segunda ventana ni un segundo icono de bandeja.
-        _guarda_instancia.avisar_instancia_existente()
-        sys.exit(0)
-
-    #Crea las tablas si no existen y aplica las migraciones de esquema (columnas nuevas, índices, etc.) ANTES de
-    #abrir cualquier ventana. Sin esto, la base de datos se queda con el esquema viejo y módulos como Observaciones
-    #fallan con "no such column" al intentar usar columnas que bd.py agrega dinámicamente (materia_id, naturaleza,
-    #...).
-    inicializar_bd()
-
-    app.setWindowIcon(icono_app())
-    #Iconización automática y coherente de TODA la app: un filtro global que asigna (sin sobreescribir los
-    #manuales) un icono vectorial a cualquier botón/pestaña/diálogo que quede sin uno, según su texto y con un
-    #único mapa semántico compartido por todos los módulos.
-    from src.nucleo.iconos_auto import instalar_iconos_automaticos
-    instalar_iconos_automaticos(app)
-    #Crítico para el patrón "bandeja de sistema": sin esto, Qt cerraría la app automáticamente en cuanto se oculta
-    #la última ventana visible (justo lo que hace closeEvent al minimizar a la bandeja), matando el proceso aunque
-    #el usuario nunca pidió "Salir".
-    app.setQuitOnLastWindowClosed(False)
-
-    #Traduce al español los diálogos NATIVOS de Qt (el selector de color, el selector de archivos del sistema,
-    #etc.), que por defecto vienen en inglés porque Qt trae sus propios textos separados de los nuestros. Si el
-    #paquete de idioma no está disponible en la instalación de Qt del usuario, simplemente no se instala el
-    #traductor y esos diálogos se ven en inglés como hasta ahora (no rompe nada).
-    _traductor_qt= QTranslator(app)
-    _ruta_traducciones= QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
-    if _traductor_qt.load(QLocale("es_ES"), "qtbase", "_", _ruta_traducciones):
-        app.installTranslator(_traductor_qt)
-
-    window= MainWindow()
-    #Mantenemos viva la referencia al guarda en la propia ventana para que no la recoja el recolector de basura
-    #(QLocalServer dejaría de escuchar) y para poder restaurar la ventana cuando alguien intente abrir una segunda
-    #copia de la app.
-    window._guarda_instancia= _guarda_instancia
-    _guarda_instancia.escuchar_segundas_instancias(window._restaurar_desde_bandeja)
-
-    _edicion= edicion_actual()
-    if not wizard_completado() and _edicion == "full":
-        wizard= WizardConfiguracion(window)
-        if wizard.exec() != wizard.DialogCode.Accepted:
-            sys.exit(0)
-        window.recargar_modulos_dinamicos()
-        window.requerir_login= True
-        window.guardar_configuracion()
-    elif not wizard_completado() and _edicion == "single_teacher":
-        from src.interfaz.single_teacher_ui import WizardSingleTeacher
-        wizard= WizardSingleTeacher(window)
-        if wizard.exec() != wizard.DialogCode.Accepted:
-            sys.exit(0)
-        window.recargar_modulos_dinamicos()
-        window.requerir_login= False
-        window.guardar_configuracion()
-    elif not wizard_completado() and _edicion == "side_stepper":
-        #TODO: WizardSideStepper (side_stepper_config.py) aún no verificado contra este código rediseñado -cae al
-        #wizard institucional genérico mientras tanto, igual que "docentes" nunca lo necesita.
-        wizard= WizardConfiguracion(window)
-        if wizard.exec() != wizard.DialogCode.Accepted:
-            sys.exit(0)
-        window.recargar_modulos_dinamicos()
-        window.requerir_login= True
-        window.guardar_configuracion()
-    elif _edicion == "single_teacher":
-        window.requerir_login= False
-
-    if window.requerir_login:
-        if not window.mostrar_login():
-            sys.exit(0)
-    elif _edicion == "single_teacher":
-        #Sin login (un solo docente, dueño de un solo archivo): el enganche normal de ofrecer_tutoriales_tras_login()
-        #vive DENTRO de
-        #mostrar_login(), que aquí nunca se llama.
-        ofrecer_tutoriales_tras_login(window)
-
-    try:
-
-        ejecutar_backup_automatico_al_iniciar()
-    except Exception as error:
-        print(f"Backup automático fallido: {error}")
-
-    window.abrir_con_fundido()
-    sys.exit(app.exec())

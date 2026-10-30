@@ -147,6 +147,51 @@ def _item_oculto(texto):
     return item
 
 
+def _sistema_calificacion_actual():
+
+    conn= obtener_conexion()
+    c= conn.cursor()
+    c.execute("SELECT sistema_calificacion FROM configuracion WHERE id=1")
+    cfg= c.fetchone()
+    conn.close()
+    return cfg["sistema_calificacion"] if cfg else "Numérico (Personalizado)"
+
+
+#Usado por observaciones.py para decidir si vale la pena ofrecer
+#'Marcar entrega' -no tiene sentido mostrar el botón si la materia
+#todavía no tiene ninguna tarea cargada en el Banco de Tareas.
+def _hay_tareas_activas_en_materia(materia_id):
+
+    if materia_id is None:
+        return False
+    conn= obtener_conexion()
+    c= conn.cursor()
+    c.execute("SELECT 1 FROM tareas WHERE materia_id=? AND estado='Activa' LIMIT 1", (materia_id,))
+    hay= c.fetchone() is not None
+    conn.close()
+    return hay
+
+
+#Crea o actualiza la fila de `tarea_entregas` de este estudiante para
+#esa tarea (mismo UPSERT por (tarea_id, estudiante_id) que usa el resto
+#del módulo), a partir de un ajuste hecho desde Observaciones.
+def guardar_ajuste_entrega(main_window, estudiante_id, tarea_id, estado, texto_obs):
+
+    conn= obtener_conexion()
+    c= conn.cursor()
+    fecha_real= datetime.now().strftime("%Y-%m-%d") if estado == "Entregada" else None
+    c.execute("""INSERT INTO tarea_entregas (tarea_id, estudiante_id, estado_entrega, fecha_entrega_real, observacion)
+                 VALUES (?,?,?,?,?)
+                 ON CONFLICT(tarea_id, estudiante_id) DO UPDATE SET
+                    estado_entrega= excluded.estado_entrega, fecha_entrega_real=excluded.fecha_entrega_real,
+                    observacion= excluded.observacion""",
+              (tarea_id, estudiante_id, estado, fecha_real, f"Ajuste por observación: {texto_obs[:80]}"))
+    conn.commit()
+    conn.close()
+    registrar_auditoria("Banco de Tareas", "Marcó entrega desde una observación", main_window.usuario_actual,
+                         f"Estudiante ID {estudiante_id} - Tarea ID {tarea_id} - Estado {estado}")
+
+
 #Barra de progreso segmentada y animada — reemplaza a las tarjetas KPI.
 #Cada segmento representa una categoría (p. ej. Vencidas/Por vencer/Vigentes/
 #Archivadas) como un tramo de color cuyo ancho se anima suavemente cuando
@@ -399,16 +444,6 @@ class CintaAlerta(QFrame):
         super().mousePressEvent(evento)
 
 
-def _sistema_calificacion_actual():
-
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("SELECT sistema_calificacion FROM configuracion WHERE id=1")
-    cfg= c.fetchone()
-    conn.close()
-    return cfg["sistema_calificacion"] if cfg else "Numérico (Personalizado)"
-
-
 #Selector múltiple de Competencias Fundamentales (MINERD) para una tarea.
 class DialogoCompetencias(QDialog):
 
@@ -642,41 +677,6 @@ class DialogoAjusteEntrega(QDialog):
     def datos(self):
 
         return {"tarea_id": self.combo_tarea.currentData(), "estado": self.combo_estado.currentData()}
-
-
-#Usado por observaciones.py para decidir si vale la pena ofrecer
-#'Marcar entrega' -no tiene sentido mostrar el botón si la materia
-#todavía no tiene ninguna tarea cargada en el Banco de Tareas.
-def _hay_tareas_activas_en_materia(materia_id):
-
-    if materia_id is None:
-        return False
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("SELECT 1 FROM tareas WHERE materia_id=? AND estado='Activa' LIMIT 1", (materia_id,))
-    hay= c.fetchone() is not None
-    conn.close()
-    return hay
-
-
-#Crea o actualiza la fila de `tarea_entregas` de este estudiante para
-#esa tarea (mismo UPSERT por (tarea_id, estudiante_id) que usa el resto
-#del módulo), a partir de un ajuste hecho desde Observaciones.
-def guardar_ajuste_entrega(main_window, estudiante_id, tarea_id, estado, texto_obs):
-
-    conn= obtener_conexion()
-    c= conn.cursor()
-    fecha_real= datetime.now().strftime("%Y-%m-%d") if estado == "Entregada" else None
-    c.execute("""INSERT INTO tarea_entregas (tarea_id, estudiante_id, estado_entrega, fecha_entrega_real, observacion)
-                 VALUES (?,?,?,?,?)
-                 ON CONFLICT(tarea_id, estudiante_id) DO UPDATE SET
-                    estado_entrega= excluded.estado_entrega, fecha_entrega_real=excluded.fecha_entrega_real,
-                    observacion= excluded.observacion""",
-              (tarea_id, estudiante_id, estado, fecha_real, f"Ajuste por observación: {texto_obs[:80]}"))
-    conn.commit()
-    conn.close()
-    registrar_auditoria("Banco de Tareas", "Marcó entrega desde una observación", main_window.usuario_actual,
-                         f"Estudiante ID {estudiante_id} - Tarea ID {tarea_id} - Estado {estado}")
 
 
 class ModuloBancoTareas(QWidget):

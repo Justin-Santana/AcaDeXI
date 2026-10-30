@@ -53,6 +53,96 @@ from src.nucleo.iconos_emoji import icono_emoji
 _DB_PATH_REAL= bd.RUTA_BD
 
 
+#CONTENIDO — Modo Rápido (solo lectura). Cada entrada: (icono, nombre_modulo_en_self.modulos, texto_corto) 
+#`nombre_modulo=None` identifica elementos de interfaz general (barra de búsqueda, perfil, tema) que existen
+#para todos los roles por igual, fuera de cualquier módulo del menú -ver _CONTENIDO_INTERFAZ_GENERAL más abajo.
+_CONTENIDO_INTERFAZ_GENERAL= [
+    ("@buscador", None, "Buscador Global (arriba, en la barra lateral): escribe un nombre, matrícula, "
+                 "materia o incluso el nombre de un módulo y presiona Enter para ir directo ahí."),
+    ("@perfil", None, "Tu perfil (arriba a la izquierda): tu nombre y tu rol, con un clic en la foto "
+                 "para cambiarla o volver a usar tus iniciales."),
+    ("@tema", None, "Modo claro/oscuro: se cambia con un clic desde el pie del menú lateral y se "
+                 "recuerda para la próxima vez que inicies sesión."),
+]
+
+CONTENIDO_GENERAL= [
+    ("", "Dashboard", "Tu vistazo rápido: matrícula, asistencia del día y lo pendiente de un solo golpe."),
+    *_CONTENIDO_INTERFAZ_GENERAL,
+    ("", "Estudiantes", "La ficha completa de cada estudiante: datos, curso/sección, tutores y foto."),
+    ("", "Profesores", "El directorio de docentes y qué materias/secciones tiene asignadas cada uno."),
+    ("", "Personal", "El personal administrativo y de apoyo que no da clases."),
+    ("", "Materias", "Catálogo de materias, sus créditos y quién las imparte por sección."),
+    ("", "Asistencia", "Pase de lista por sección, con reportes de ausencias e inasistencias."),
+    ("", "Calificaciones", "Registro de notas por periodo, con historial de cambios."),
+    ("", "Politécnico", "Especialidades técnicas y sus estudiantes, si tu institución las maneja."),
+    ("", "Calificaciones Técnicas", "Evaluación de competencias técnicas por Resultado de Aprendizaje."),
+    ("", "Universidad", "Carreras, semestres y matrícula, si tu institución es de nivel universitario."),
+    ("", "Banco de Tareas", "Tareas asignadas y sus entregas, calificables desde el mismo lugar."),
+    ("", "Horario", "El horario de clases por sección, con sus bloques y aulas."),
+    ("", "Calendario", "Eventos institucionales: exámenes, actividades, reuniones."),
+    ("", "Observaciones", "Anotaciones de conducta o seguimiento por estudiante."),
+    ("", "Materiales", "Inventario de recursos: biblioteca, laboratorio, equipos y préstamos."),
+    ("", "Psicología", "Seguimiento psicológico y conductual por estudiante (edición Side Stepper)."),
+    ("", "Reportes", "Boletines, constancias y reportes exportables en PDF."),
+    ("", "Copias de Seguridad", "Respaldo manual de toda la base de datos institucional, cuando lo actives."),
+    ("", "Sincronización", "Mantén la base de datos al día entre varios equipos."),
+    ("", "Configuración", "Datos de la institución, apariencia, usuarios y seguridad."),
+]
+
+CONTENIDO_DOCENTE= [
+    ("", "Mis Materias", "Las materias que impartes, con tu horario semanal a la vista."),
+    *_CONTENIDO_INTERFAZ_GENERAL,
+    ("", "Mis Estudiantes", "Tus estudiantes, con notas locales que solo tú ves (nunca se envían a Dirección)."),
+    ("", "Asistencia", "Pase de lista de tus secciones, con reportes de ausencias e inasistencias."),
+    ("", "Calificaciones", "Registro de notas por periodo, con historial de cambios."),
+    ("", "Calificaciones Técnicas", "Evaluación de competencias técnicas, si activaste esta opción."),
+    ("", "Banco de Tareas", "Crea tareas y califica las entregas de tus estudiantes."),
+    ("", "Horario", "Agrega bloques a tu horario personal, aunque Dirección aún no los haya cargado."),
+    ("", "Calendario", "Consulta eventos institucionales que te afecten."),
+    ("", "Reportes", "Genera boletines y constancias de tus estudiantes."),
+    ("", "Observaciones", "Registra observaciones de conducta o seguimiento."),
+    ("", "Copias de Seguridad", "Respalda tu copia local y sincroniza cuando Dirección actualice datos."),
+]
+
+#El rol Estudiante es de SOLO LECTURA (ver permisos.puede_editar): su tutorial no habla de "registrar" ni
+#"guardar" nada, solo de dónde encontrar su propia información.
+CONTENIDO_ESTUDIANTE= [
+    ("", "Dashboard", "Tu vistazo rápido al entrar: un resumen de tu situación académica."),
+    *_CONTENIDO_INTERFAZ_GENERAL,
+    ("", "Calificaciones", "Tus notas por periodo y tu boletín, con el historial de cambios."),
+    ("", "Calificaciones Técnicas", "Tu evaluación de competencias técnicas, si tu institución las maneja."),
+    ("", "Asistencia", "Tu registro de asistencia, con tus inasistencias marcadas."),
+]
+
+#Contenido y pasos — Single Teacher (Pieza 5 del prompt de arquitectura de las 4 ediciones). no pasan por
+#_filtrar_contenido/_filtrar_pasos: esas dos funciones consultan main_window.nav_list/modulos institucionales
+#-Single Teacher tiene su propio menú fijo (single_teacher_ui.py, Pieza 3), sin RBAC ni variación posible entre
+#instalaciones, así que se muestra tal cual. Los textos de botón deben calzar EXACTAMENTE con los de
+#single_teacher_ui.py -si cambias uno allá, actualiza aquí también.
+CONTENIDO_SINGLE_TEACHER= [
+    ("", None, "Eres dueño directo de tus datos: no hay ninguna Dirección/Coordinación por encima. "
+               "Tú creas tus propios cursos, estudiantes y materias desde cero."),
+    *_CONTENIDO_INTERFAZ_GENERAL,
+    ("", None, "Estudiantes: la ficha de cada uno de tus estudiantes, con curso y datos de contacto."),
+    ("", None, "Materias: las materias que tú mismo defines, sin depender de que nadie más las cree."),
+    ("", None, "Asistencia: pase de lista de tus cursos, con reportes de ausencias."),
+    ("", None, "Calificaciones: registro de notas por periodo, con tu propio sistema de evaluación."),
+    ("", None, "Banco de Tareas: crea tareas y califica las entregas."),
+    ("", None, "Secuencias Didácticas: planifica tus unidades con el esquema del MINERD y expórtalas a Word."),
+    ("", None, "Horario: tu horario de clases, con sus bloques y aulas."),
+    ("", None, "Observaciones: anotaciones de conducta o seguimiento por estudiante."),
+    ("", None, "Reportes: exporta a Excel o intercambia datos con otra instalación de AcaDeXI -por "
+               "ejemplo, si te incorporas formalmente a una institución más adelante."),
+]
+
+#Iconos de interfaz general (dibujados con QPainter)  Los pasos "de interfaz general" (buscador, perfil, tema
+#-ver _CONTENIDO_INTERFAZ_GENERAL) no pertenecen a ningún módulo del menú, así que `aplicar_icono_cabecera` no
+#tiene un icono de módulo que mostrarles y el paso se queda sin ningún indicador visual. En vez de recurrir a
+#un emoji (que además renderiza distinto según el sistema operativo/fuente instalada), se dibuja un icono
+#vectorial simple con QPainter para cada uno de los tres casos, reconocidos por el marcador "@nombre" en el
+#campo `icono` de la tupla de contenido.
+ICONOS_INTERFAZ_GENERAL= ("@buscador", "@perfil", "@tema")
+
 #Motor de base de datos según `tipo` de tutorial: "single_teacher"
 #vive sobre bd_single_teacher.py (archivo aparte); todos los demás
 #("general", "docente", "side_stepper") viven sobre bd.py.
@@ -269,69 +359,6 @@ def _limpiar_sandboxes_huerfanos(dias=2):
                 pass
     except OSError:
         pass
-
-
-#CONTENIDO — Modo Rápido (solo lectura). Cada entrada: (icono, nombre_modulo_en_self.modulos, texto_corto) 
-#`nombre_modulo=None` identifica elementos de interfaz general (barra de búsqueda, perfil, tema) que existen
-#para todos los roles por igual, fuera de cualquier módulo del menú -ver _CONTENIDO_INTERFAZ_GENERAL más abajo.
-_CONTENIDO_INTERFAZ_GENERAL= [
-    ("@buscador", None, "Buscador Global (arriba, en la barra lateral): escribe un nombre, matrícula, "
-                 "materia o incluso el nombre de un módulo y presiona Enter para ir directo ahí."),
-    ("@perfil", None, "Tu perfil (arriba a la izquierda): tu nombre y tu rol, con un clic en la foto "
-                 "para cambiarla o volver a usar tus iniciales."),
-    ("@tema", None, "Modo claro/oscuro: se cambia con un clic desde el pie del menú lateral y se "
-                 "recuerda para la próxima vez que inicies sesión."),
-]
-
-CONTENIDO_GENERAL= [
-    ("", "Dashboard", "Tu vistazo rápido: matrícula, asistencia del día y lo pendiente de un solo golpe."),
-    *_CONTENIDO_INTERFAZ_GENERAL,
-    ("", "Estudiantes", "La ficha completa de cada estudiante: datos, curso/sección, tutores y foto."),
-    ("", "Profesores", "El directorio de docentes y qué materias/secciones tiene asignadas cada uno."),
-    ("", "Personal", "El personal administrativo y de apoyo que no da clases."),
-    ("", "Materias", "Catálogo de materias, sus créditos y quién las imparte por sección."),
-    ("", "Asistencia", "Pase de lista por sección, con reportes de ausencias e inasistencias."),
-    ("", "Calificaciones", "Registro de notas por periodo, con historial de cambios."),
-    ("", "Politécnico", "Especialidades técnicas y sus estudiantes, si tu institución las maneja."),
-    ("", "Calificaciones Técnicas", "Evaluación de competencias técnicas por Resultado de Aprendizaje."),
-    ("", "Universidad", "Carreras, semestres y matrícula, si tu institución es de nivel universitario."),
-    ("", "Banco de Tareas", "Tareas asignadas y sus entregas, calificables desde el mismo lugar."),
-    ("", "Horario", "El horario de clases por sección, con sus bloques y aulas."),
-    ("", "Calendario", "Eventos institucionales: exámenes, actividades, reuniones."),
-    ("", "Observaciones", "Anotaciones de conducta o seguimiento por estudiante."),
-    ("", "Materiales", "Inventario de recursos: biblioteca, laboratorio, equipos y préstamos."),
-    ("", "Psicología", "Seguimiento psicológico y conductual por estudiante (edición Side Stepper)."),
-    ("", "Reportes", "Boletines, constancias y reportes exportables en PDF."),
-    ("", "Copias de Seguridad", "Respaldo manual de toda la base de datos institucional, cuando lo actives."),
-    ("", "Sincronización", "Mantén la base de datos al día entre varios equipos."),
-    ("", "Configuración", "Datos de la institución, apariencia, usuarios y seguridad."),
-]
-
-CONTENIDO_DOCENTE= [
-    ("", "Mis Materias", "Las materias que impartes, con tu horario semanal a la vista."),
-    *_CONTENIDO_INTERFAZ_GENERAL,
-    ("", "Mis Estudiantes", "Tus estudiantes, con notas locales que solo tú ves (nunca se envían a Dirección)."),
-    ("", "Asistencia", "Pase de lista de tus secciones, con reportes de ausencias e inasistencias."),
-    ("", "Calificaciones", "Registro de notas por periodo, con historial de cambios."),
-    ("", "Calificaciones Técnicas", "Evaluación de competencias técnicas, si activaste esta opción."),
-    ("", "Banco de Tareas", "Crea tareas y califica las entregas de tus estudiantes."),
-    ("", "Horario", "Agrega bloques a tu horario personal, aunque Dirección aún no los haya cargado."),
-    ("", "Calendario", "Consulta eventos institucionales que te afecten."),
-    ("", "Reportes", "Genera boletines y constancias de tus estudiantes."),
-    ("", "Observaciones", "Registra observaciones de conducta o seguimiento."),
-    ("", "Copias de Seguridad", "Respalda tu copia local y sincroniza cuando Dirección actualice datos."),
-]
-
-#El rol Estudiante es de SOLO LECTURA (ver permisos.puede_editar): su tutorial no habla de "registrar" ni
-#"guardar" nada, solo de dónde encontrar su propia información.
-CONTENIDO_ESTUDIANTE= [
-    ("", "Dashboard", "Tu vistazo rápido al entrar: un resumen de tu situación académica."),
-    *_CONTENIDO_INTERFAZ_GENERAL,
-    ("", "Calificaciones", "Tus notas por periodo y tu boletín, con el historial de cambios."),
-    ("", "Calificaciones Técnicas", "Tu evaluación de competencias técnicas, si tu institución las maneja."),
-    ("", "Asistencia", "Tu registro de asistencia, con tus inasistencias marcadas."),
-]
-
 
 
 #CONTENIDO — Modo Detallado (interactivo). Cada paso: (icono, nombre_modulo, titulo, texto,
@@ -643,27 +670,6 @@ PASOS_ESTUDIANTE= [
 ]
 
 
-#Contenido y pasos — Single Teacher (Pieza 5 del prompt de arquitectura de las 4 ediciones). no pasan por
-#_filtrar_contenido/_filtrar_pasos: esas dos funciones consultan main_window.nav_list/modulos institucionales
-#-Single Teacher tiene su propio menú fijo (single_teacher_ui.py, Pieza 3), sin RBAC ni variación posible entre
-#instalaciones, así que se muestra tal cual. Los textos de botón deben calzar EXACTAMENTE con los de
-#single_teacher_ui.py -si cambias uno allá, actualiza aquí también.
-CONTENIDO_SINGLE_TEACHER= [
-    ("", None, "Eres dueño directo de tus datos: no hay ninguna Dirección/Coordinación por encima. "
-               "Tú creas tus propios cursos, estudiantes y materias desde cero."),
-    *_CONTENIDO_INTERFAZ_GENERAL,
-    ("", None, "Estudiantes: la ficha de cada uno de tus estudiantes, con curso y datos de contacto."),
-    ("", None, "Materias: las materias que tú mismo defines, sin depender de que nadie más las cree."),
-    ("", None, "Asistencia: pase de lista de tus cursos, con reportes de ausencias."),
-    ("", None, "Calificaciones: registro de notas por periodo, con tu propio sistema de evaluación."),
-    ("", None, "Banco de Tareas: crea tareas y califica las entregas."),
-    ("", None, "Secuencias Didácticas: planifica tus unidades con el esquema del MINERD y expórtalas a Word."),
-    ("", None, "Horario: tu horario de clases, con sus bloques y aulas."),
-    ("", None, "Observaciones: anotaciones de conducta o seguimiento por estudiante."),
-    ("", None, "Reportes: exporta a Excel o intercambia datos con otra instalación de AcaDeXI -por "
-               "ejemplo, si te incorporas formalmente a una institución más adelante."),
-]
-
 PASOS_SINGLE_TEACHER= [
     ("", "Dashboard", "Tu punto de partida",
      "Cuántos estudiantes, cursos y materias tienes, y cuántos registraste presentes hoy.",
@@ -717,6 +723,208 @@ PASOS_SINGLE_TEACHER= [
 ]
 
 
+#Extrae (bg, texto, accent, accent_hv) de la paleta activa, con
+#respaldo fijo si `main_window` no trae theme_palettes (p. ej. en tests).
+def _colores_tema(main_window):
+
+    try:
+
+        paleta= main_window.theme_palettes.get(main_window.tema_actual, {})
+        idx= 1 if getattr(main_window, "modo_oscuro", True) else 0
+        bg= paleta.get("display_bg", ("#FFFFFF", "#1E293B"))[idx]
+        txt= paleta.get("text_primary", ("#0F172A", "#F8FAFC"))[idx]
+        accent= paleta.get("btn_op_bg", ("#6366F1", "#4F46E5"))[idx]
+        accent_hv= paleta.get("btn_op_hover", ("#4F46E5", "#4338CA"))[idx]
+        return bg, txt, accent, accent_hv
+    except Exception:
+        return "#FFFFFF", "#0F172A", "#6366F1", "#4F46E5"
+
+
+#ORQUESTADOR — llamado desde main.py (mostrar_login) y desde Configuración ▸ Mi Cuenta ("Ver tutorial de
+#nuevo")
+#Fuente de verdad REAL de qué módulos ve este usuario ahora mismo.
+#
+#Antes se repetía aquí la regla de permisos.modulo_visible(rol, nombre),
+#que solo mira la tabla PERMISOS_TECHO por rol -y por eso se quedaba
+#corta en varios casos reales: no sabe si "Politécnico"/"Universidad"
+#existen para el tipo de institución configurado (main_window solo
+#agrega esos módulos a self.modulos si corresponde -ver
+#main._construir_modulos_info), no sabe si un Profesor activó su
+#preferencia personal de "Calificaciones Técnicas", y no sabe si
+#"Copias de Seguridad" está encendido para roles gerenciales (un
+#interruptor aparte, ver mostrar_backups_gerenciales()). Como resultado,
+#el tour podía anunciar un paso de "Politécnico" en una institución que
+#ni siquiera tiene ese módulo -y quedarse sin poder navegar a ningún
+#lado, muy confuso.
+#
+#Preguntarle directamente al menú lateral YA CONSTRUIDO (main_window.
+#nav_list, ya actualizado por _aplicar_permisos_por_rol() antes de
+#ofrecer cualquier tutorial -ver mostrar_login() en main.py) es la única
+#forma de que el tutorial nunca se desincronice de esas reglas, estén
+#donde estén definidas: si el usuario no lo ve en el menú, el tutorial
+#tampoco se lo ofrece; si lo ve, se lo ofrece.
+#
+#`nombre=None` identifica los pasos "de interfaz general" (buscador,
+#perfil, tema...) y el paso de cierre: no pertenecen a ningún módulo
+#del menú, así que son visibles para todos siempre.
+def _modulo_visible_ahora(main_window, nombre):
+
+    if nombre is None:
+        return True
+    modulos= getattr(main_window, "modulos", None)
+    nav_list= getattr(main_window, "nav_list", None)
+    if not modulos or nav_list is None:
+        #Sin ventana real construida todavía (p. ej. algún test unitario que arma un main_window mínimo): no se
+        #descarta nada por defecto.
+        return modulo_visible(getattr(main_window, "rol_actual", None), nombre)
+    if nombre not in modulos:
+        return False
+    item= nav_list.item(modulos.index(nombre))
+    return item is not None and not item.isHidden()
+
+
+def _filtrar_contenido(main_window, lista):
+
+    return [t for t in lista if _modulo_visible_ahora(main_window, t[1])]
+
+
+def _filtrar_pasos(main_window, lista):
+
+    #p: cada paso (tupla) de la lista; p[1] es el nombre del módulo y se conserva solo si es visible.
+    return [p for p in lista if _modulo_visible_ahora(main_window, p[1])]
+
+
+def _lanzar(main_window, tipo, titulo_carrusel, contenido_rapido, pasos_detallado, marcar_visto):
+
+    #El rol Estudiante no tiene el módulo "Configuración" en su menú (ver permisos.PERMISOS_TECHO), así que no
+    #puede relanzarlo manualmente; por eso el texto de la pantalla de elección varía según el rol. En cualquier
+    #caso, la oferta SOLO se hace una vez por usuario: el flag se marca al completar, al saltar o incluso al salir
+    #a medias del
+    #detallado (ver más abajo).
+    puede_repetir_manualmente= _modulo_visible_ahora(main_window, "Configuración")
+    texto_repetir= (
+        "Puedes verlo ahora en el modo que prefieras, o saltarlo — siempre podrás repetirlo desde "
+        "Configuración ▸ Mi Cuenta." if puede_repetir_manualmente else
+        "Puedes verlo ahora en el modo que prefieras, o saltarlo por esta vez."
+    )
+    dialogo_eleccion= PantallaEleccionTutorial(
+        main_window, "¿Quieres un recorrido por AcaDeXI?", texto_repetir,
+        mostrar_detallado=bool(pasos_detallado))
+    dialogo_eleccion.exec()
+    eleccion= dialogo_eleccion.resultado
+
+    if eleccion == PantallaEleccionTutorial.RAPIDO:
+        TutorialRapidoDialog(main_window, contenido_rapido, titulo_carrusel).exec()
+        marcar_visto(main_window, True)
+    elif eleccion == PantallaEleccionTutorial.DETALLADO:
+        if not _activar_sandbox(main_window, tipo):
+            mostrar_mensaje(
+                "advertencia", "No se pudo preparar el modo práctica",
+                "El Tutorial Detallado necesita crear una copia temporal de la base de datos para "
+                "practicar sin afectar tus datos reales, y no se pudo crear ahora mismo (revisa el "
+                "espacio en disco o los permisos de la carpeta de datos de AcaDeXI). Puedes intentarlo "
+                "de nuevo más tarde desde Configuración ▸ Mi Cuenta, o usar el Modo Rápido mientras tanto.",
+                main_window)
+            return
+        #A partir de aquí bd.RUTA_BD ya apunta al sandbox: el asistente solo tiene que navegar y validar, no le
+        #concierne dónde escribe
+        #obtener_conexion().
+        asistente= AsistenteSpotlight(main_window, pasos_detallado, tipo)
+        #El tutorial solo se RECOMIENDA una vez por usuario: aunque se salga del recorrido a medias, al cerrarse el
+        #asistente (finalizado se emite tanto al completar como al salir) se marca como "visto". La señal llega DESPUÉS
+        #de que _cerrar restauró la BD real, así que el flag se escribe en la base de verdad y no en la copia de
+        #práctica. Sigue pudiendo repetirse manualmente desde Configuración ▸ Mi Cuenta.
+        asistente.finalizado.connect(lambda: marcar_visto(main_window, True))
+        #Completarlo lo marca igualmente (ver _terminar); ya sea completado o abandonado, el resultado es el mismo: se
+        #ofreció una sola vez.
+    elif eleccion == PantallaEleccionTutorial.SALTAR:
+        #"Saltar por ahora": se marca como visto SIEMPRE (también para el rol Estudiante, que no puede repetirlo
+        #manualmente desde Configuración): el tutorial se RECOMIENDA una sola vez por usuario. Si el rol puede
+        #repetirlo manualmente, queda accesible en Configuración ▸ Mi Cuenta.
+        marcar_visto(main_window, True)
+
+
+#tipo: "general", "docente", "single_teacher" o "side_stepper". Si
+#`forzar=True` (botón "Ver tutorial de nuevo" en Configuración), se
+#muestra sin importar el flag de "visto".
+#
+#El rol Estudiante usa tipo="general" también (mismo flag de "visto" por
+#cuenta, mismo mecanismo de sandbox/elección) pero con SU PROPIO
+#contenido -CONTENIDO_ESTUDIANTE/PASOS_ESTUDIANTE-, ya que es de solo
+#lectura: no tendría sentido pedirle "agrega un estudiante de prueba" a
+#quien no puede escribir nada en el sistema (ver permisos.puede_editar).
+def ofrecer_tutorial(main_window, tipo, forzar=False):
+
+    if tipo == "general":
+        if not forzar and tutorial_general_visto(main_window):
+            return
+        rol= getattr(main_window, "rol_actual", None)
+        if rol == "Estudiante":
+            contenido_base, pasos_base= CONTENIDO_ESTUDIANTE, PASOS_ESTUDIANTE
+        else:
+            contenido_base, pasos_base= CONTENIDO_GENERAL, PASOS_GENERAL
+        contenido= _filtrar_contenido(main_window, contenido_base)
+        pasos= _filtrar_pasos(main_window, pasos_base)
+        _lanzar(main_window, "general", "Tutorial General de AcaDeXI", contenido, pasos,
+                marcar_tutorial_general_visto)
+    elif tipo == "docente":
+        if not forzar and tutorial_docente_visto(main_window):
+            return
+        contenido= _filtrar_contenido(main_window, CONTENIDO_DOCENTE)
+        pasos= _filtrar_pasos(main_window, PASOS_DOCENTE)
+        _lanzar(main_window, "docente", "Tutorial del Sistema", contenido, pasos,
+                marcar_tutorial_docente_visto)
+    elif tipo == "single_teacher":
+        if not forzar and tutorial_single_teacher_visto(main_window):
+            return
+        #Sin _filtrar_contenido/_filtrar_pasos a propósito: ver el docstring de CONTENIDO_SINGLE_TEACHER más arriba.
+        _lanzar(main_window, "single_teacher", "Bienvenido a AcaDeXI Single Teacher",
+                CONTENIDO_SINGLE_TEACHER, PASOS_SINGLE_TEACHER, marcar_tutorial_single_teacher_visto)
+    elif tipo == "side_stepper":
+        if not forzar and tutorial_side_stepper_visto(main_window):
+            return
+        #Side Stepper SÍ reutiliza el filtrado dinámico normal: comparte el esquema/UI de bd.py con Full Institutional,
+        #así que el menú ya refleja exactamente los módulos que permisos.
+        #obtener_permisos_side_stepper() le otorgó a este rol (ver
+        #permisos.modulo_visible). Reutilizar CONTENIDO_GENERAL/ PASOS_GENERAL como base, filtrados, da automáticamente
+        #"el contenido correcto para lo que esta persona puede ver".
+        contenido= _filtrar_contenido(main_window, CONTENIDO_GENERAL)
+        pasos= _filtrar_pasos(main_window, PASOS_GENERAL)
+        _lanzar(main_window, "side_stepper", "Bienvenido a AcaDeXI Side Stepper", contenido, pasos,
+                marcar_tutorial_side_stepper_visto)
+
+
+#Punto de enganche único desde mostrar_login(): decide cuál(es) par(es)
+#ofrecer según el rol Y la edición, respetando que son independientes
+#entre sí. Single Teacher y Side Stepper se resuelven por EDICIÓN, antes
+#que por rol: un Side Stepper con un rol personalizado (ver permisos.py)
+#no necesariamente coincide con ROLES_GERENCIALES/"Administrativo", así
+#que decidir por edición primero es lo único que no se queda corto con
+#un rol nuevo que la app no anticipó.
+def ofrecer_tutoriales_tras_login(main_window):
+
+    _limpiar_sandboxes_huerfanos()
+    try:
+
+        from src.nucleo.edicion import edicion_actual
+        edicion= edicion_actual()
+    except Exception:
+        edicion= "full"
+
+    if edicion == "single_teacher":
+        ofrecer_tutorial(main_window, "single_teacher")
+        return
+    if edicion == "side_stepper":
+        ofrecer_tutorial(main_window, "side_stepper")
+        return
+
+    rol= getattr(main_window, "rol_actual", None)
+    if rol == "Profesor":
+        ofrecer_tutorial(main_window, "docente")
+    if rol in ROLES_GERENCIALES or rol in ("Administrativo", "Estudiante"):
+        ofrecer_tutorial(main_window, "general")
+
+
 #Tarjeta de elección (Rápido / Detallado)
 class _TarjetaModo(QFrame):
 
@@ -755,23 +963,6 @@ class _TarjetaModo(QFrame):
         if evento.button() == Qt.MouseButton.LeftButton:
             self.elegida.emit()
         super().mousePressEvent(evento)
-
-
-#Extrae (bg, texto, accent, accent_hv) de la paleta activa, con
-#respaldo fijo si `main_window` no trae theme_palettes (p. ej. en tests).
-def _colores_tema(main_window):
-
-    try:
-
-        paleta= main_window.theme_palettes.get(main_window.tema_actual, {})
-        idx= 1 if getattr(main_window, "modo_oscuro", True) else 0
-        bg= paleta.get("display_bg", ("#FFFFFF", "#1E293B"))[idx]
-        txt= paleta.get("text_primary", ("#0F172A", "#F8FAFC"))[idx]
-        accent= paleta.get("btn_op_bg", ("#6366F1", "#4F46E5"))[idx]
-        accent_hv= paleta.get("btn_op_hover", ("#4F46E5", "#4338CA"))[idx]
-        return bg, txt, accent, accent_hv
-    except Exception:
-        return "#FFFFFF", "#0F172A", "#6366F1", "#4F46E5"
 
 
 #2 tarjetas: Modo Rápido / Modo Detallado, + "Saltar por ahora".
@@ -850,15 +1041,6 @@ class PantallaEleccionTutorial(QDialog):
 
         self.resultado= resultado
         self.accept()
-
-
-#Iconos de interfaz general (dibujados con QPainter)  Los pasos "de interfaz general" (buscador, perfil, tema
-#-ver _CONTENIDO_INTERFAZ_GENERAL) no pertenecen a ningún módulo del menú, así que `aplicar_icono_cabecera` no
-#tiene un icono de módulo que mostrarles y el paso se queda sin ningún indicador visual. En vez de recurrir a
-#un emoji (que además renderiza distinto según el sistema operativo/fuente instalada), se dibuja un icono
-#vectorial simple con QPainter para cada uno de los tres casos, reconocidos por el marcador "@nombre" en el
-#campo `icono` de la tupla de contenido.
-ICONOS_INTERFAZ_GENERAL= ("@buscador", "@perfil", "@tema")
 
 
 #Icono vectorial de 72x72 dibujado a mano con QPainter, para los
@@ -2335,188 +2517,3 @@ class AsistenteSpotlight(QWidget):
             self.main_window.cambiar_vista(fila_dashboard)
         self.finalizado.emit()
         self.deleteLater()
-
-
-#ORQUESTADOR — llamado desde main.py (mostrar_login) y desde Configuración ▸ Mi Cuenta ("Ver tutorial de
-#nuevo")
-#Fuente de verdad REAL de qué módulos ve este usuario ahora mismo.
-#
-#Antes se repetía aquí la regla de permisos.modulo_visible(rol, nombre),
-#que solo mira la tabla PERMISOS_TECHO por rol -y por eso se quedaba
-#corta en varios casos reales: no sabe si "Politécnico"/"Universidad"
-#existen para el tipo de institución configurado (main_window solo
-#agrega esos módulos a self.modulos si corresponde -ver
-#main._construir_modulos_info), no sabe si un Profesor activó su
-#preferencia personal de "Calificaciones Técnicas", y no sabe si
-#"Copias de Seguridad" está encendido para roles gerenciales (un
-#interruptor aparte, ver mostrar_backups_gerenciales()). Como resultado,
-#el tour podía anunciar un paso de "Politécnico" en una institución que
-#ni siquiera tiene ese módulo -y quedarse sin poder navegar a ningún
-#lado, muy confuso.
-#
-#Preguntarle directamente al menú lateral YA CONSTRUIDO (main_window.
-#nav_list, ya actualizado por _aplicar_permisos_por_rol() antes de
-#ofrecer cualquier tutorial -ver mostrar_login() en main.py) es la única
-#forma de que el tutorial nunca se desincronice de esas reglas, estén
-#donde estén definidas: si el usuario no lo ve en el menú, el tutorial
-#tampoco se lo ofrece; si lo ve, se lo ofrece.
-#
-#`nombre=None` identifica los pasos "de interfaz general" (buscador,
-#perfil, tema...) y el paso de cierre: no pertenecen a ningún módulo
-#del menú, así que son visibles para todos siempre.
-def _modulo_visible_ahora(main_window, nombre):
-
-    if nombre is None:
-        return True
-    modulos= getattr(main_window, "modulos", None)
-    nav_list= getattr(main_window, "nav_list", None)
-    if not modulos or nav_list is None:
-        #Sin ventana real construida todavía (p. ej. algún test unitario que arma un main_window mínimo): no se
-        #descarta nada por defecto.
-        return modulo_visible(getattr(main_window, "rol_actual", None), nombre)
-    if nombre not in modulos:
-        return False
-    item= nav_list.item(modulos.index(nombre))
-    return item is not None and not item.isHidden()
-
-
-def _filtrar_contenido(main_window, lista):
-
-    return [t for t in lista if _modulo_visible_ahora(main_window, t[1])]
-
-
-def _filtrar_pasos(main_window, lista):
-
-    #p: cada paso (tupla) de la lista; p[1] es el nombre del módulo y se conserva solo si es visible.
-    return [p for p in lista if _modulo_visible_ahora(main_window, p[1])]
-
-
-def _lanzar(main_window, tipo, titulo_carrusel, contenido_rapido, pasos_detallado, marcar_visto):
-
-    #El rol Estudiante no tiene el módulo "Configuración" en su menú (ver permisos.PERMISOS_TECHO), así que no
-    #puede relanzarlo manualmente; por eso el texto de la pantalla de elección varía según el rol. En cualquier
-    #caso, la oferta SOLO se hace una vez por usuario: el flag se marca al completar, al saltar o incluso al salir
-    #a medias del
-    #detallado (ver más abajo).
-    puede_repetir_manualmente= _modulo_visible_ahora(main_window, "Configuración")
-    texto_repetir= (
-        "Puedes verlo ahora en el modo que prefieras, o saltarlo — siempre podrás repetirlo desde "
-        "Configuración ▸ Mi Cuenta." if puede_repetir_manualmente else
-        "Puedes verlo ahora en el modo que prefieras, o saltarlo por esta vez."
-    )
-    dialogo_eleccion= PantallaEleccionTutorial(
-        main_window, "¿Quieres un recorrido por AcaDeXI?", texto_repetir,
-        mostrar_detallado=bool(pasos_detallado))
-    dialogo_eleccion.exec()
-    eleccion= dialogo_eleccion.resultado
-
-    if eleccion == PantallaEleccionTutorial.RAPIDO:
-        TutorialRapidoDialog(main_window, contenido_rapido, titulo_carrusel).exec()
-        marcar_visto(main_window, True)
-    elif eleccion == PantallaEleccionTutorial.DETALLADO:
-        if not _activar_sandbox(main_window, tipo):
-            mostrar_mensaje(
-                "advertencia", "No se pudo preparar el modo práctica",
-                "El Tutorial Detallado necesita crear una copia temporal de la base de datos para "
-                "practicar sin afectar tus datos reales, y no se pudo crear ahora mismo (revisa el "
-                "espacio en disco o los permisos de la carpeta de datos de AcaDeXI). Puedes intentarlo "
-                "de nuevo más tarde desde Configuración ▸ Mi Cuenta, o usar el Modo Rápido mientras tanto.",
-                main_window)
-            return
-        #A partir de aquí bd.RUTA_BD ya apunta al sandbox: el asistente solo tiene que navegar y validar, no le
-        #concierne dónde escribe
-        #obtener_conexion().
-        asistente= AsistenteSpotlight(main_window, pasos_detallado, tipo)
-        #El tutorial solo se RECOMIENDA una vez por usuario: aunque se salga del recorrido a medias, al cerrarse el
-        #asistente (finalizado se emite tanto al completar como al salir) se marca como "visto". La señal llega DESPUÉS
-        #de que _cerrar restauró la BD real, así que el flag se escribe en la base de verdad y no en la copia de
-        #práctica. Sigue pudiendo repetirse manualmente desde Configuración ▸ Mi Cuenta.
-        asistente.finalizado.connect(lambda: marcar_visto(main_window, True))
-        #Completarlo lo marca igualmente (ver _terminar); ya sea completado o abandonado, el resultado es el mismo: se
-        #ofreció una sola vez.
-    elif eleccion == PantallaEleccionTutorial.SALTAR:
-        #"Saltar por ahora": se marca como visto SIEMPRE (también para el rol Estudiante, que no puede repetirlo
-        #manualmente desde Configuración): el tutorial se RECOMIENDA una sola vez por usuario. Si el rol puede
-        #repetirlo manualmente, queda accesible en Configuración ▸ Mi Cuenta.
-        marcar_visto(main_window, True)
-
-
-#tipo: "general", "docente", "single_teacher" o "side_stepper". Si
-#`forzar=True` (botón "Ver tutorial de nuevo" en Configuración), se
-#muestra sin importar el flag de "visto".
-#
-#El rol Estudiante usa tipo="general" también (mismo flag de "visto" por
-#cuenta, mismo mecanismo de sandbox/elección) pero con SU PROPIO
-#contenido -CONTENIDO_ESTUDIANTE/PASOS_ESTUDIANTE-, ya que es de solo
-#lectura: no tendría sentido pedirle "agrega un estudiante de prueba" a
-#quien no puede escribir nada en el sistema (ver permisos.puede_editar).
-def ofrecer_tutorial(main_window, tipo, forzar=False):
-
-    if tipo == "general":
-        if not forzar and tutorial_general_visto(main_window):
-            return
-        rol= getattr(main_window, "rol_actual", None)
-        if rol == "Estudiante":
-            contenido_base, pasos_base= CONTENIDO_ESTUDIANTE, PASOS_ESTUDIANTE
-        else:
-            contenido_base, pasos_base= CONTENIDO_GENERAL, PASOS_GENERAL
-        contenido= _filtrar_contenido(main_window, contenido_base)
-        pasos= _filtrar_pasos(main_window, pasos_base)
-        _lanzar(main_window, "general", "Tutorial General de AcaDeXI", contenido, pasos,
-                marcar_tutorial_general_visto)
-    elif tipo == "docente":
-        if not forzar and tutorial_docente_visto(main_window):
-            return
-        contenido= _filtrar_contenido(main_window, CONTENIDO_DOCENTE)
-        pasos= _filtrar_pasos(main_window, PASOS_DOCENTE)
-        _lanzar(main_window, "docente", "Tutorial del Sistema", contenido, pasos,
-                marcar_tutorial_docente_visto)
-    elif tipo == "single_teacher":
-        if not forzar and tutorial_single_teacher_visto(main_window):
-            return
-        #Sin _filtrar_contenido/_filtrar_pasos a propósito: ver el docstring de CONTENIDO_SINGLE_TEACHER más arriba.
-        _lanzar(main_window, "single_teacher", "Bienvenido a AcaDeXI Single Teacher",
-                CONTENIDO_SINGLE_TEACHER, PASOS_SINGLE_TEACHER, marcar_tutorial_single_teacher_visto)
-    elif tipo == "side_stepper":
-        if not forzar and tutorial_side_stepper_visto(main_window):
-            return
-        #Side Stepper SÍ reutiliza el filtrado dinámico normal: comparte el esquema/UI de bd.py con Full Institutional,
-        #así que el menú ya refleja exactamente los módulos que permisos.
-        #obtener_permisos_side_stepper() le otorgó a este rol (ver
-        #permisos.modulo_visible). Reutilizar CONTENIDO_GENERAL/ PASOS_GENERAL como base, filtrados, da automáticamente
-        #"el contenido correcto para lo que esta persona puede ver".
-        contenido= _filtrar_contenido(main_window, CONTENIDO_GENERAL)
-        pasos= _filtrar_pasos(main_window, PASOS_GENERAL)
-        _lanzar(main_window, "side_stepper", "Bienvenido a AcaDeXI Side Stepper", contenido, pasos,
-                marcar_tutorial_side_stepper_visto)
-
-
-#Punto de enganche único desde mostrar_login(): decide cuál(es) par(es)
-#ofrecer según el rol Y la edición, respetando que son independientes
-#entre sí. Single Teacher y Side Stepper se resuelven por EDICIÓN, antes
-#que por rol: un Side Stepper con un rol personalizado (ver permisos.py)
-#no necesariamente coincide con ROLES_GERENCIALES/"Administrativo", así
-#que decidir por edición primero es lo único que no se queda corto con
-#un rol nuevo que la app no anticipó.
-def ofrecer_tutoriales_tras_login(main_window):
-
-    _limpiar_sandboxes_huerfanos()
-    try:
-
-        from src.nucleo.edicion import edicion_actual
-        edicion= edicion_actual()
-    except Exception:
-        edicion= "full"
-
-    if edicion == "single_teacher":
-        ofrecer_tutorial(main_window, "single_teacher")
-        return
-    if edicion == "side_stepper":
-        ofrecer_tutorial(main_window, "side_stepper")
-        return
-
-    rol= getattr(main_window, "rol_actual", None)
-    if rol == "Profesor":
-        ofrecer_tutorial(main_window, "docente")
-    if rol in ROLES_GERENCIALES or rol in ("Administrativo", "Estudiante"):
-        ofrecer_tutorial(main_window, "general")

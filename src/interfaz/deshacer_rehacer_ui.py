@@ -31,6 +31,16 @@ from src.nucleo.feedback import mostrar_toast
 MAX_NIVELES= 10
 
 
+def _traducir_error(mensaje):
+
+    m= str(mensaje)
+    if "UNIQUE" in m.upper():
+        return "ya existe otro registro con los mismos datos únicos"
+    if "FOREIGN KEY" in m.upper():
+        return "un registro relacionado ya no existe"
+    return m[:90]
+
+
 class GestorDeshacer(QObject):
 
     def __init__(self, pagina, main_window, refrescar=None, nombre="registro",
@@ -233,13 +243,3 @@ class GestorDeshacer(QObject):
         self._refrescar_pagina()
         mostrar_toast(self._pagina, f"Rehecho: {etiqueta.rstrip('.')}.", "exito",
                       accion= self.deshacer, texto_accion="Deshacer")
-
-
-def _traducir_error(mensaje):
-
-    m= str(mensaje)
-    if "UNIQUE" in m.upper():
-        return "ya existe otro registro con los mismos datos únicos"
-    if "FOREIGN KEY" in m.upper():
-        return "un registro relacionado ya no existe"
-    return m[:90]

@@ -81,6 +81,81 @@ FUENTES_DISPONIBLES= [
 ]
 
 
+#Roles de datos propios que se guardan en cada QTableWidgetItem, además
+#del texto visible (DisplayRole) que ya usa Qt:
+ROL_CRUDO= int(Qt.ItemDataRole.UserRole) + 1        #contenido tal cual se escribió/leyó
+
+ROL_FORMATO_NUM= int(Qt.ItemDataRole.UserRole) + 2  #"moneda" | "porcentaje" | "fecha" | None
+
+ROL_VALOR_CACHE= int(Qt.ItemDataRole.UserRole) + 3  #último resultado que Excel calculó (respaldo)
+
+ROL_TAMANO_BASE= int(Qt.ItemDataRole.UserRole) + 4  #tamaño de letra "real" (100%) de la celda, para el zoom
+
+ROL_ES_CUADRO_TEXTO= int(Qt.ItemDataRole.UserRole) + 5  #True si la celda es la alternativa a un cuadro de texto flotante
+
+ROL_HIPERVINCULO= int(Qt.ItemDataRole.UserRole) + 6  #URL del hipervínculo de la celda, o None
+
+ROL_FILA_ORIGEN= int(Qt.ItemDataRole.UserRole) + 7  #fila donde estaba una celda ANTES de ordenar (para traducir referencias)
+
+#Paletas de acento disponibles para el tema PROPIO del editor de reportes.
+_TEMAS_ACENTO_EDITOR= [
+    ("Azul", "#2563EB"), ("Violeta", "#7C3AED"), ("Verde", "#059669"),
+    ("Naranja", "#D97706"), ("Rosa", "#DB2777"), ("Turquesa", "#0891B2"),
+    ("Índigo", "#4F46E5"), ("Esmeralda", "#10B981"), ("Rojo", "#DC2626"),
+    ("Ámbar", "#F59E0B"), ("Fucsia", "#C026D3"), ("Cian", "#06B6D4"),
+    ("Lima", "#65A30D"), ("Coral", "#F97316"), ("Grafito", "#475569"),
+    ("Vino", "#9F1239"),
+]
+
+#Seguridad de hipervínculos
+#QDesktopServices.openUrl() delega en el manejador del sistema operativo
+#para lo que sea que diga el esquema de la URL -no es un navegador, así
+#que no hay sandbox propio. Un esquema sin filtrar puede:
+#- abrir/ejecutar un archivo local o un .exe/.bat/.lnk vía "file://",
+#- forzar una autenticación SMB (fuga de hash NTLM) vía una ruta UNC
+#"file://\\servidor-atacante\recurso",
+#- invocar un esquema personalizado registrado por otra app instalada
+#(ha habido cadenas de RCE reales abusando de esquemas como "ms-msdt:" o "search-ms:" en documentos
+#maliciosos). Los enlaces que llegan a este editor NO siempre los escribe la persona que los abre: también se
+#cargan automáticamente desde un PDF o un XLSX
+#importado (ver get_links()/celda.hyperlink más abajo), así que no basta
+#con confiar en quien los tipeó -hay que filtrar el esquema en TODOS los puntos de entrada y, otra vez, justo
+#antes de abrir cualquier enlace.
+ESQUEMAS_ENLACE_PERMITIDOS= {"http", "https", "mailto"}
+
+_PATRON_TOKEN_FORMULA= re.compile(r"""
+      (?P<WS>\s+)
+    | (?P<RANGE>\$?[A-Za-z]{1,3}\$?\d+:\$?[A-Za-z]{1,3}\$?\d+)
+    | (?P<FUNC>[A-Za-zÁÉÍÓÚÑ_][A-Za-zÁÉÍÓÚÑ_.0-9]*(?=\())
+    | (?P<CELL>\$?[A-Za-z]{1,3}\$?\d+)
+    | (?P<NUM>\d+(?:\.\d+)?)
+    | (?P<STR>"(?:[^"\\]|\\.)*")
+    | (?P<NAME>[A-Za-zÁÉÍÓÚÑ_][A-Za-zÁÉÍÓÚÑ_.0-9]*)
+    | (?P<OP><>|<=|>=|[+\-*/^&=<>%])
+    | (?P<LPAREN>\()
+    | (?P<RPAREN>\))
+    | (?P<COMMA>[,;])
+""", re.VERBOSE)
+
+#Representa un error de fórmula al estilo Excel (#¡DIV/0!, #¡REF!, ...).
+#Se usa tanto como excepción (para cortar la evaluación) como valor
+#(el resultado final que queda mostrado en la celda).
+class _ErrorFormulaValor(Exception):
+
+    def __init__(self, codigo):
+
+        super().__init__(codigo)
+        self.codigo= codigo
+
+    def __str__(self):
+
+        return self.codigo
+
+    def __repr__(self):
+
+        return self.codigo
+
+
 def _extension(ruta):
 
     return os.path.splitext(ruta)[1].lower().lstrip(".")
@@ -181,42 +256,6 @@ def _elegir_color_con_icono(color_inicial, parent, titulo=""):
 #fórmula al editar.
 #============================================================
 
-#Roles de datos propios que se guardan en cada QTableWidgetItem, además
-#del texto visible (DisplayRole) que ya usa Qt:
-ROL_CRUDO= int(Qt.ItemDataRole.UserRole) + 1        #contenido tal cual se escribió/leyó
-ROL_FORMATO_NUM= int(Qt.ItemDataRole.UserRole) + 2  #"moneda" | "porcentaje" | "fecha" | None
-ROL_VALOR_CACHE= int(Qt.ItemDataRole.UserRole) + 3  #último resultado que Excel calculó (respaldo)
-ROL_TAMANO_BASE= int(Qt.ItemDataRole.UserRole) + 4  #tamaño de letra "real" (100%) de la celda, para el zoom
-ROL_ES_CUADRO_TEXTO= int(Qt.ItemDataRole.UserRole) + 5  #True si la celda es la alternativa a un cuadro de texto flotante
-ROL_HIPERVINCULO= int(Qt.ItemDataRole.UserRole) + 6  #URL del hipervínculo de la celda, o None
-ROL_FILA_ORIGEN= int(Qt.ItemDataRole.UserRole) + 7  #fila donde estaba una celda ANTES de ordenar (para traducir referencias)
-
-#Paletas de acento disponibles para el tema PROPIO del editor de reportes.
-_TEMAS_ACENTO_EDITOR= [
-    ("Azul", "#2563EB"), ("Violeta", "#7C3AED"), ("Verde", "#059669"),
-    ("Naranja", "#D97706"), ("Rosa", "#DB2777"), ("Turquesa", "#0891B2"),
-    ("Índigo", "#4F46E5"), ("Esmeralda", "#10B981"), ("Rojo", "#DC2626"),
-    ("Ámbar", "#F59E0B"), ("Fucsia", "#C026D3"), ("Cian", "#06B6D4"),
-    ("Lima", "#65A30D"), ("Coral", "#F97316"), ("Grafito", "#475569"),
-    ("Vino", "#9F1239"),
-]
-
-#Seguridad de hipervínculos
-#QDesktopServices.openUrl() delega en el manejador del sistema operativo
-#para lo que sea que diga el esquema de la URL -no es un navegador, así
-#que no hay sandbox propio. Un esquema sin filtrar puede:
-#- abrir/ejecutar un archivo local o un .exe/.bat/.lnk vía "file://",
-#- forzar una autenticación SMB (fuga de hash NTLM) vía una ruta UNC
-#"file://\\servidor-atacante\recurso",
-#- invocar un esquema personalizado registrado por otra app instalada
-#(ha habido cadenas de RCE reales abusando de esquemas como "ms-msdt:" o "search-ms:" en documentos
-#maliciosos). Los enlaces que llegan a este editor NO siempre los escribe la persona que los abre: también se
-#cargan automáticamente desde un PDF o un XLSX
-#importado (ver get_links()/celda.hyperlink más abajo), así que no basta
-#con confiar en quien los tipeó -hay que filtrar el esquema en TODOS los puntos de entrada y, otra vez, justo
-#antes de abrir cualquier enlace.
-ESQUEMAS_ENLACE_PERMITIDOS= {"http", "https", "mailto"}
-
 
 def _esquema_enlace(url_texto):
 
@@ -251,25 +290,6 @@ def abrir_enlace_externo(url_texto, padre=None):
         "Si confías en el origen de este documento, copia la dirección manualmente para revisarla.",
         padre)
     return False
-
-
-#Representa un error de fórmula al estilo Excel (#¡DIV/0!, #¡REF!, ...).
-#Se usa tanto como excepción (para cortar la evaluación) como valor
-#(el resultado final que queda mostrado en la celda).
-class _ErrorFormulaValor(Exception):
-
-    def __init__(self, codigo):
-
-        super().__init__(codigo)
-        self.codigo= codigo
-
-    def __str__(self):
-
-        return self.codigo
-
-    def __repr__(self):
-
-        return self.codigo
 
 
 #'A' -> 0, 'B' -> 1, ..., 'Z' -> 25, 'AA' -> 26 ... (inverso de _letra_columna).
@@ -776,21 +796,6 @@ _FUNCIONES_FORMULA= {
 }
 
 
-_PATRON_TOKEN_FORMULA= re.compile(r"""
-      (?P<WS>\s+)
-    | (?P<RANGE>\$?[A-Za-z]{1,3}\$?\d+:\$?[A-Za-z]{1,3}\$?\d+)
-    | (?P<FUNC>[A-Za-zÁÉÍÓÚÑ_][A-Za-zÁÉÍÓÚÑ_.0-9]*(?=\())
-    | (?P<CELL>\$?[A-Za-z]{1,3}\$?\d+)
-    | (?P<NUM>\d+(?:\.\d+)?)
-    | (?P<STR>"(?:[^"\\]|\\.)*")
-    | (?P<NAME>[A-Za-zÁÉÍÓÚÑ_][A-Za-zÁÉÍÓÚÑ_.0-9]*)
-    | (?P<OP><>|<=|>=|[+\-*/^&=<>%])
-    | (?P<LPAREN>\()
-    | (?P<RPAREN>\))
-    | (?P<COMMA>[,;])
-""", re.VERBOSE)
-
-
 def _tokenizar_formula(texto):
 
     tokens= []
@@ -804,6 +809,29 @@ def _tokenizar_formula(texto):
             tokens.append((tipo, coincidencia.group(tipo)))
         pos= coincidencia.end()
     return tokens
+
+
+#Lee la paleta/tema activo de la ventana principal (mismo criterio que
+#usa reportes.py) para que el editor -y en particular el recuadro que
+#aparece al escribir sobre una celda- respete el tema y el modo claro/
+#oscuro elegidos en vez de quedarse con colores fijos.
+def _colores_tema(main_window):
+
+    try:
+
+        paleta= main_window.theme_palettes[main_window.tema_actual]
+        idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
+        return {
+            "bg_panel": paleta["display_bg"][idx],
+            "bg_btn": paleta["btn_num_bg"][idx],
+            "txt_prim": paleta["text_primary"][idx],
+            "txt_sec": paleta["text_secondary"][idx],
+            "accent": paleta["btn_op_bg"][idx],
+            "accent_hv": paleta["btn_op_hover"][idx],
+        }
+    except Exception:
+        return {"bg_panel": "#FFFFFF", "bg_btn": "#E2E8F0", "txt_prim": "#0F172A",
+                "txt_sec": "#64748B", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
 #Parser recursivo-descendente de expresiones de fórmula (precedencia:
@@ -1732,29 +1760,6 @@ class _DialogoRedimensionarImagen(QDialog):
     def valores(self):
 
         return self.spin_ancho.value(), self.spin_alto.value()
-
-
-#Lee la paleta/tema activo de la ventana principal (mismo criterio que
-#usa reportes.py) para que el editor -y en particular el recuadro que
-#aparece al escribir sobre una celda- respete el tema y el modo claro/
-#oscuro elegidos en vez de quedarse con colores fijos.
-def _colores_tema(main_window):
-
-    try:
-
-        paleta= main_window.theme_palettes[main_window.tema_actual]
-        idx= 1 if getattr(main_window, "modo_oscuro", False) else 0
-        return {
-            "bg_panel": paleta["display_bg"][idx],
-            "bg_btn": paleta["btn_num_bg"][idx],
-            "txt_prim": paleta["text_primary"][idx],
-            "txt_sec": paleta["text_secondary"][idx],
-            "accent": paleta["btn_op_bg"][idx],
-            "accent_hv": paleta["btn_op_hover"][idx],
-        }
-    except Exception:
-        return {"bg_panel": "#FFFFFF", "bg_btn": "#E2E8F0", "txt_prim": "#0F172A",
-                "txt_sec": "#64748B", "accent": "#2563EB", "accent_hv": "#1D4ED8"}
 
 
 #QLabel que recorta su texto con «…» cuando no cabe en el ancho
@@ -8650,4 +8655,3 @@ class VisorEditorReportes(QWidget):
             doc= QTextDocument()
             doc.setHtml(html)
             doc.print_(printer)
-

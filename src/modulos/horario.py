@@ -66,6 +66,8 @@ _COLORES_DEFECTO= {
 }
 
 
+_CACHE_INDICE_COLOR_AUTOMATICO= {}
+
 def _minutos(hora_txt):
 
     try:
@@ -74,9 +76,6 @@ def _minutos(hora_txt):
         return int(h) * 60 + int(m)
     except Exception:
         return 0
-
-
-_CACHE_INDICE_COLOR_AUTOMATICO= {}
 
 
 #Color para una materia/nota. Si el docente personalizó ese color
@@ -157,6 +156,13 @@ def _pixmap_circulo_mas_menos(expandido, diametro=18):
         painter.drawLine(QPointF(centro, centro - brazo), QPointF(centro, centro + brazo))
     painter.end()
     return pixmap
+
+
+def _con_alfa(hex_color, alfa):
+
+    color= QColor(hex_color)
+    color.setAlpha(alfa)
+    return color
 
 
 class PanelDesplegable(QWidget):
@@ -949,13 +955,6 @@ class VistaSemanalHorario(QWidget):
         if item.get("aula_nombre"):
             partes.append(f"{html_icono_emoji('📍')} {item['aula_nombre']}")
         return "<br>".join(partes)
-
-
-def _con_alfa(hex_color, alfa):
-
-    color= QColor(hex_color)
-    color.setAlpha(alfa)
-    return color
 
 
 #Módulo principal

@@ -63,6 +63,32 @@ def _animar_entrada_geometria(widget, offset_y=16, duracion=260, retraso=0):
     QTimer.singleShot(retraso, anim.start)
 
 
+#Botón redondeado, moderno y divertido que abre un diálogo con la explicación
+#de la pantalla, en vez de un párrafo largo siempre visible.
+def _boton_info(texto, callback):
+
+    btn= QPushButton(texto)
+    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+    btn.setStyleSheet("""
+        QPushButton {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6366F1, stop:1 #8B5CF6);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 7px 16px;
+            font-weight: 600;
+        }
+        QPushButton:hover {
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #4F46E5, stop:1 #7C3AED);
+        }
+        QPushButton:pressed {
+            background: #4338CA;
+        }
+    """)
+    btn.clicked.connect(callback)
+    return btn
+
+
 #Layout de flujo (envuelve tarjetas a la siguiente línea según el ancho
 #disponible). Recalcula posiciones sin recrear widgets, así que reflowar
 #con el resize de la ventana es barato incluso con varias decenas de tarjetas.
@@ -141,31 +167,6 @@ class FlowLayout(QLayout):
             alto_linea= max(alto_linea, item.sizeHint().height())
         return y + alto_linea - rect.y()
 
-
-#Botón redondeado, moderno y divertido que abre un diálogo con la explicación
-#de la pantalla, en vez de un párrafo largo siempre visible.
-def _boton_info(texto, callback):
-
-    btn= QPushButton(texto)
-    btn.setCursor(Qt.CursorShape.PointingHandCursor)
-    btn.setStyleSheet("""
-        QPushButton {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #6366F1, stop:1 #8B5CF6);
-            color: white;
-            border: none;
-            border-radius: 16px;
-            padding: 7px 16px;
-            font-weight: 600;
-        }
-        QPushButton:hover {
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #4F46E5, stop:1 #7C3AED);
-        }
-        QPushButton:pressed {
-            background: #4338CA;
-        }
-    """)
-    btn.clicked.connect(callback)
-    return btn
 
 #Widgets visuales de "mis materias"
 #Pastilla con ícono + número animado (cuenta hacia el valor nuevo) + etiqueta.

@@ -18,6 +18,18 @@ from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QPixmap
 from src.nucleo.rutas import obtener_carpeta_raiz, obtener_carpeta_iconos
 
 
+NOMBRE_LOGO= "AcaDeXI_logo.png"
+
+_AQUI= obtener_carpeta_raiz()
+
+_CARPETA_ICONOS= obtener_carpeta_iconos()
+
+_cache_ruta_logo= None
+
+_cache_pixmap_logo= None
+
+_ya_mostrada_en_esta_sesion_de_app= False
+
 def _hex_a_rgba(hex_color, alpha):
 
     hex_color= hex_color.lstrip("#")
@@ -28,10 +40,6 @@ def _hex_a_rgba(hex_color, alpha):
 #Búsqueda del logo de la app (AcaDeXI_logo.png), con la misma filosofía de búsqueda por carpetas candidatas que
 #usa iconos.py: carpeta "iconos", carpeta "_internal" (PyInstaller --onedir) y, además, la propia carpeta donde
 #vive este archivo.
-
-NOMBRE_LOGO= "AcaDeXI_logo.png"
-_AQUI= obtener_carpeta_raiz()
-_CARPETA_ICONOS= obtener_carpeta_iconos()
 
 
 #Genera, en orden de prioridad, las carpetas donde puede estar el
@@ -63,10 +71,6 @@ def _carpetas_candidatas_logo():
     return resultado
 
 
-_cache_ruta_logo= None
-_cache_pixmap_logo= None
-
-
 def _ruta_logo():
 
     global _cache_ruta_logo
@@ -91,6 +95,27 @@ def _pixmap_logo_base():
         ruta= _ruta_logo()
         _cache_pixmap_logo= QPixmap(ruta) if ruta else QPixmap()
     return _cache_pixmap_logo if not _cache_pixmap_logo.isNull() else None
+
+
+#Muestra la animación de bienvenida tras un login exitoso.
+#
+#Sólo se muestra UNA vez por cada apertura del programa: si el usuario
+#cierra sesión y vuelve a iniciar sesión sin cerrar la app, esta
+#llamada no hace nada (la bandera vive en memoria del proceso, así que
+#se reinicia sola la próxima vez que se abra la app de verdad).
+#
+#Bloquea brevemente (con un QEventLoop local, igual que un diálogo
+#modal) para que la secuencia se vea completa antes de que el flujo de
+#main.py continúe hacia la apertura de la ventana principal.
+def mostrar_bienvenida_animada(main_window, nombre, rol):
+
+    global _ya_mostrada_en_esta_sesion_de_app
+    if _ya_mostrada_en_esta_sesion_de_app:
+        return
+    _ya_mostrada_en_esta_sesion_de_app= True
+
+    splash= SplashBienvenida(main_window, nombre or "usuario", rol or "")
+    splash.mostrar_y_esperar()
 
 
 #El logo de la app con un anillo de progreso alrededor y una entrada
@@ -451,27 +476,3 @@ class SplashBienvenida(QWidget):
         if self._loop.isRunning():
             self._loop.quit()
         self.close()
-
-
-_ya_mostrada_en_esta_sesion_de_app= False
-
-
-#Muestra la animación de bienvenida tras un login exitoso.
-#
-#Sólo se muestra UNA vez por cada apertura del programa: si el usuario
-#cierra sesión y vuelve a iniciar sesión sin cerrar la app, esta
-#llamada no hace nada (la bandera vive en memoria del proceso, así que
-#se reinicia sola la próxima vez que se abra la app de verdad).
-#
-#Bloquea brevemente (con un QEventLoop local, igual que un diálogo
-#modal) para que la secuencia se vea completa antes de que el flujo de
-#main.py continúe hacia la apertura de la ventana principal.
-def mostrar_bienvenida_animada(main_window, nombre, rol):
-
-    global _ya_mostrada_en_esta_sesion_de_app
-    if _ya_mostrada_en_esta_sesion_de_app:
-        return
-    _ya_mostrada_en_esta_sesion_de_app= True
-
-    splash= SplashBienvenida(main_window, nombre or "usuario", rol or "")
-    splash.mostrar_y_esperar()

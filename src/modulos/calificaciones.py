@@ -47,6 +47,8 @@ CATEGORIAS= ["Examen", "Práctica", "Tarea", "Participación", "Proyecto", "Exam
 ESTADOS_PUBLICACION= ["Borrador", "Pendiente", "Publicada"]
 
 
+_SIN_CARGAR= object()  #centinela: distingue "todavía no consultado" de "consultado y dio None/todos permitidos"
+
 #Reemplaza el texto del placeholder (ítem 0, sin dato asociado) de un
 #combo de Curso/Sección/Estudiante. Ajuste puramente visual y LOCAL a
 #ciertas pestañas de Calificaciones (Boletín, Historial Académico,
@@ -121,9 +123,6 @@ def _registrar_historial_cambio(tabla_origen, registro_id, estudiante_id, campo,
     c.execute(sql, fila)
     conn.commit()
     conn.close()
-
-_SIN_CARGAR= object()  #centinela: distingue "todavía no consultado" de "consultado y dio None/todos permitidos"
-
 
 #Capa visual — componentes reutilizables (tarjetas, anillo, barra, animaciones)  IMPORTANTE: ninguno de estos
 #widgets usa QGraphicsEffect (ni sombra ni opacidad permanente). Los QGraphicsEffect de Qt son notoriamente
@@ -243,6 +242,213 @@ def _normalizar_busqueda(texto):
     descompuesto= unicodedata.normalize("NFKD", texto)
     sin_acentos= "".join(c for c in descompuesto if not unicodedata.combining(c))
     return sin_acentos.casefold().strip()
+
+
+#Contenedor con fondo sutil y bordes redondeados para agrupar visualmente
+#una fila de tarjetas/gráficos de resumen (en vez de dejarlas flotando sueltas
+#sobre el fondo de la pestaña, como antes). El color real se aplica desde
+#actualizar_tema(), vía el objectName, así respeta claro/oscuro igual que
+#el resto del módulo.
+def _crear_panel_dashboard():
+
+    panel= QFrame()
+    panel.setObjectName("PanelDashboard")
+    lay= QHBoxLayout(panel)
+    lay.setContentsMargins(16, 14, 16, 14)
+    lay.setSpacing(16)
+    return panel
+
+
+def _sistema_calificacion_actual():
+
+    conn= obtener_conexion()
+    c= conn.cursor()
+    c.execute("SELECT sistema_calificacion FROM configuracion WHERE id=1")
+    cfg= c.fetchone()
+    conn.close()
+    return cfg["sistema_calificacion"] if cfg else "Numérico (Personalizado)"
+
+
+def calcular_nota_final(calificaciones, metodo):
+
+    if not calificaciones:
+        return None
+    if metodo == "Promedio Simple":
+        return sum(c["valor"] for c in calificaciones) / len(calificaciones)
+    if metodo == "Mayor Nota":
+        return max(c["valor"] for c in calificaciones)
+    if metodo == "Suma de Puntos":
+        return sum(c["valor"] * (c["peso"] / 100 if c["peso"] else 1) for c in calificaciones)
+    total_peso= sum(c["peso"] for c in calificaciones)
+    if total_peso <= 0:
+        return sum(c["valor"] for c in calificaciones) / len(calificaciones)
+    return sum(c["valor"] * (c["peso"] / total_peso) for c in calificaciones)
+
+
+def _datos_institucion():
+
+    conn= obtener_conexion()
+    c= conn.cursor()
+    c.execute("""SELECT nombre_institucion, logo_path, direccion, telefono, correo,
+                 firma_path, pie_pagina FROM configuracion WHERE id=1""")
+    cfg= c.fetchone()
+    conn.close()
+    if not cfg:
+        return {"nombre": "AcaDeXI", "logo": None, "direccion": "", "telefono": "", "correo": "",
+                "firma": None, "pie_pagina": ""}
+    return {
+        "nombre": cfg["nombre_institucion"] or "AcaDeXI",
+        "logo": cfg["logo_path"] if cfg["logo_path"] and os.path.exists(cfg["logo_path"]) else None,
+        "direccion": cfg["direccion"] or "",
+        "telefono": cfg["telefono"] or "",
+        "correo": cfg["correo"] or "",
+        "firma": cfg["firma_path"] if cfg["firma_path"] and os.path.exists(cfg["firma_path"]) else None,
+        "pie_pagina": cfg["pie_pagina"] or "",
+    }
+
+
+def _dibujar_encabezado(cvs, ancho, alto, institucion, subtitulo):
+
+    from reportlab.lib.utils import ImageReader
+    y= alto - 55
+    if institucion["logo"]:
+        try:
+
+            img= ImageReader(institucion["logo"])
+            iw, ih= img.getSize()
+            alto_img= 50
+            ancho_img= alto_img * (iw / ih)
+            cvs.drawImage(img, 50, y - 30, width=ancho_img, height=alto_img,
+                          preserveAspectRatio= True, mask='auto')
+        except Exception:
+            pass
+    cvs.setFont("Helvetica-Bold", 16)
+    cvs.drawCentredString(ancho / 2, y, institucion["nombre"])
+    y -= 20
+    if institucion["direccion"] or institucion["telefono"] or institucion["correo"]:
+        cvs.setFont("Helvetica", 8)
+        linea= "  |   ".join(x for x in (institucion["direccion"], institucion["telefono"], institucion["correo"]) if x)
+        cvs.drawCentredString(ancho / 2, y, linea)
+        y -= 18
+    cvs.setFont("Helvetica-Bold", 13)
+    cvs.drawCentredString(ancho / 2, y, subtitulo)
+    y -= 25
+    return y
+
+
+def _dibujar_pie_pagina(cvs, ancho, institucion, incluir_firma=True):
+
+    from reportlab.lib.utils import ImageReader
+    y_firma= 95
+    if incluir_firma and institucion.get("firma"):
+        try:
+
+            img= ImageReader(institucion["firma"])
+            iw, ih= img.getSize()
+            alto_img= 40
+            ancho_img= alto_img * (iw / ih)
+            x_firma= ancho - 60 - ancho_img
+            cvs.drawImage(img, x_firma, y_firma, width=ancho_img, height=alto_img,
+                          preserveAspectRatio= True, mask='auto')
+            cvs.setFont("Helvetica", 8)
+            cvs.line(x_firma, y_firma - 4, x_firma + ancho_img, y_firma - 4)
+            cvs.drawCentredString(x_firma + ancho_img / 2, y_firma - 14, "Firma Autorizada")
+        except Exception:
+            pass
+    cvs.setFont("Helvetica", 7.5)
+    cvs.setFillGray(0.4)
+    cvs.line(50, 60, ancho - 50, 60)
+    pie_texto= institucion.get("pie_pagina") or ""
+    if pie_texto:
+        cvs.drawCentredString(ancho / 2, 48, pie_texto)
+    cvs.drawCentredString(ancho / 2, 36, f"Documento generado por AcaDeXI el {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    cvs.setFillGray(0)
+
+
+#Divide `texto` en líneas que no excedan `ancho_max` puntos con la
+#fuente/tamaño dados, partiendo siempre por palabra completa (nunca a
+#mitad de una). Evita el problema de nombres de materia largos
+#desbordando la celda o teniendo que truncarlos con "..." -en vez de
+#eso la fila simplemente crece lo que haga falta.
+def _envolver_texto(cvs, texto, fuente, tamano, ancho_max):
+
+    palabras= (texto or "").split()
+    if not palabras:
+        return [""]
+    lineas= []
+    actual= palabras[0]
+    for palabra in palabras[1:]:
+        candidata= f"{actual} {palabra}"
+        if cvs.stringWidth(candidata, fuente, tamano) <= ancho_max:
+            actual= candidata
+        else:
+            lineas.append(actual)
+            actual= palabra
+    lineas.append(actual)
+    return lineas
+
+
+#Para celdas de UNA sola línea (estado, encabezados de tarjeta) que no
+#pueden crecer en alto: si el texto no cabe, lo recorta con "…" en vez de
+#dejar que reportlab lo dibuje encimado o fuera de la celda.
+def _recortar_a_ancho(cvs, texto, fuente, tamano, ancho_max):
+
+    texto= texto or ""
+    if cvs.stringWidth(texto, fuente, tamano) <= ancho_max:
+        return texto
+    while texto and cvs.stringWidth(texto + "…", fuente, tamano) > ancho_max:
+        texto= texto[:-1]
+    return (texto + "…") if texto else ""
+
+
+#Devuelve las Competencias Específicas (codigo, descripcion...) definidas en el
+#currículo para una materia+grado, en el orden en que deben dibujarse en pantalla.
+#Motor dinámico: no hay columnas fijas CE1/CE2/CE3, se itera lo que exista.
+def competencias_de_materia_grado(materia_id, grado_id, solo_activas=True):
+
+    if materia_id is None or grado_id is None:
+        return []
+    conn= obtener_conexion()
+    c= conn.cursor()
+    condicion_estado= "AND estado='Activa'" if solo_activas else ""
+    c.execute(f"""SELECT * FROM competencias_especificas
+                 WHERE materia_id=? AND grado_id=? {condicion_estado}
+                 ORDER BY orden, codigo""", (materia_id, grado_id))
+    filas= [dict(fila) for fila in c.fetchall()]
+    conn.close()
+    return filas
+
+
+def grado_de_estudiante(estudiante_id):
+
+    if estudiante_id is None:
+        return None
+    conn= obtener_conexion()
+    c= conn.cursor()
+    c.execute("""SELECT secciones.grado_id FROM estudiantes
+                 LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
+                 WHERE estudiantes.id=?""", (estudiante_id,))
+    fila= c.fetchone()
+    conn.close()
+    return fila["grado_id"] if fila else None
+
+
+#Grados en los que se imparte una materia, según los horarios ya armados
+#(una materia puede darse en varios grados: distintas CE por cada uno).
+def grados_de_materia(materia_id):
+
+    if materia_id is None:
+        return []
+    conn= obtener_conexion()
+    c= conn.cursor()
+    c.execute("""SELECT DISTINCT grados.id, grados.nombre FROM horarios
+                 LEFT JOIN secciones ON horarios.seccion_id = secciones.id
+                 LEFT JOIN grados ON secciones.grado_id = grados.id
+                 WHERE horarios.materia_id=? AND grados.id IS NOT NULL
+                 ORDER BY grados.orden, grados.nombre""", (materia_id,))
+    filas= [dict(fila) for fila in c.fetchall()]
+    conn.close()
+    return filas
 
 
 #Barra de búsqueda con el mismo diseño visual que configuracion.py:
@@ -673,21 +879,6 @@ class BarraSegmentada(QWidget):
         painter.setBrush(brillo)
         painter.drawRect(QRectF(rect.left(), rect.top(), rect.width(), rect.height() * 0.55))
         painter.setClipping(False)
-
-
-#Contenedor con fondo sutil y bordes redondeados para agrupar visualmente
-#una fila de tarjetas/gráficos de resumen (en vez de dejarlas flotando sueltas
-#sobre el fondo de la pestaña, como antes). El color real se aplica desde
-#actualizar_tema(), vía el objectName, así respeta claro/oscuro igual que
-#el resto del módulo.
-def _crear_panel_dashboard():
-
-    panel= QFrame()
-    panel.setObjectName("PanelDashboard")
-    lay= QHBoxLayout(panel)
-    lay.setContentsMargins(16, 14, 16, 14)
-    lay.setSpacing(16)
-    return panel
 
 
 #Anillo multi-segmento ('donut') pintado a mano: reparte el 100% entre
@@ -1176,190 +1367,6 @@ class LineaTendencia(QWidget):
             painter.drawEllipse(pts_totales[-1], 4.4, 4.4)
             painter.setBrush(self._color)
             painter.drawEllipse(pts_totales[-1], 2.6, 2.6)
-
-
-def _sistema_calificacion_actual():
-
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("SELECT sistema_calificacion FROM configuracion WHERE id=1")
-    cfg= c.fetchone()
-    conn.close()
-    return cfg["sistema_calificacion"] if cfg else "Numérico (Personalizado)"
-def calcular_nota_final(calificaciones, metodo):
-
-    if not calificaciones:
-        return None
-    if metodo == "Promedio Simple":
-        return sum(c["valor"] for c in calificaciones) / len(calificaciones)
-    if metodo == "Mayor Nota":
-        return max(c["valor"] for c in calificaciones)
-    if metodo == "Suma de Puntos":
-        return sum(c["valor"] * (c["peso"] / 100 if c["peso"] else 1) for c in calificaciones)
-    total_peso= sum(c["peso"] for c in calificaciones)
-    if total_peso <= 0:
-        return sum(c["valor"] for c in calificaciones) / len(calificaciones)
-    return sum(c["valor"] * (c["peso"] / total_peso) for c in calificaciones)
-def _datos_institucion():
-
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("""SELECT nombre_institucion, logo_path, direccion, telefono, correo,
-                 firma_path, pie_pagina FROM configuracion WHERE id=1""")
-    cfg= c.fetchone()
-    conn.close()
-    if not cfg:
-        return {"nombre": "AcaDeXI", "logo": None, "direccion": "", "telefono": "", "correo": "",
-                "firma": None, "pie_pagina": ""}
-    return {
-        "nombre": cfg["nombre_institucion"] or "AcaDeXI",
-        "logo": cfg["logo_path"] if cfg["logo_path"] and os.path.exists(cfg["logo_path"]) else None,
-        "direccion": cfg["direccion"] or "",
-        "telefono": cfg["telefono"] or "",
-        "correo": cfg["correo"] or "",
-        "firma": cfg["firma_path"] if cfg["firma_path"] and os.path.exists(cfg["firma_path"]) else None,
-        "pie_pagina": cfg["pie_pagina"] or "",
-    }
-def _dibujar_encabezado(cvs, ancho, alto, institucion, subtitulo):
-
-    from reportlab.lib.utils import ImageReader
-    y= alto - 55
-    if institucion["logo"]:
-        try:
-
-            img= ImageReader(institucion["logo"])
-            iw, ih= img.getSize()
-            alto_img= 50
-            ancho_img= alto_img * (iw / ih)
-            cvs.drawImage(img, 50, y - 30, width=ancho_img, height=alto_img,
-                          preserveAspectRatio= True, mask='auto')
-        except Exception:
-            pass
-    cvs.setFont("Helvetica-Bold", 16)
-    cvs.drawCentredString(ancho / 2, y, institucion["nombre"])
-    y -= 20
-    if institucion["direccion"] or institucion["telefono"] or institucion["correo"]:
-        cvs.setFont("Helvetica", 8)
-        linea= "  |   ".join(x for x in (institucion["direccion"], institucion["telefono"], institucion["correo"]) if x)
-        cvs.drawCentredString(ancho / 2, y, linea)
-        y -= 18
-    cvs.setFont("Helvetica-Bold", 13)
-    cvs.drawCentredString(ancho / 2, y, subtitulo)
-    y -= 25
-    return y
-def _dibujar_pie_pagina(cvs, ancho, institucion, incluir_firma=True):
-
-    from reportlab.lib.utils import ImageReader
-    y_firma= 95
-    if incluir_firma and institucion.get("firma"):
-        try:
-
-            img= ImageReader(institucion["firma"])
-            iw, ih= img.getSize()
-            alto_img= 40
-            ancho_img= alto_img * (iw / ih)
-            x_firma= ancho - 60 - ancho_img
-            cvs.drawImage(img, x_firma, y_firma, width=ancho_img, height=alto_img,
-                          preserveAspectRatio= True, mask='auto')
-            cvs.setFont("Helvetica", 8)
-            cvs.line(x_firma, y_firma - 4, x_firma + ancho_img, y_firma - 4)
-            cvs.drawCentredString(x_firma + ancho_img / 2, y_firma - 14, "Firma Autorizada")
-        except Exception:
-            pass
-    cvs.setFont("Helvetica", 7.5)
-    cvs.setFillGray(0.4)
-    cvs.line(50, 60, ancho - 50, 60)
-    pie_texto= institucion.get("pie_pagina") or ""
-    if pie_texto:
-        cvs.drawCentredString(ancho / 2, 48, pie_texto)
-    cvs.drawCentredString(ancho / 2, 36, f"Documento generado por AcaDeXI el {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    cvs.setFillGray(0)
-
-
-#Divide `texto` en líneas que no excedan `ancho_max` puntos con la
-#fuente/tamaño dados, partiendo siempre por palabra completa (nunca a
-#mitad de una). Evita el problema de nombres de materia largos
-#desbordando la celda o teniendo que truncarlos con "..." -en vez de
-#eso la fila simplemente crece lo que haga falta.
-def _envolver_texto(cvs, texto, fuente, tamano, ancho_max):
-
-    palabras= (texto or "").split()
-    if not palabras:
-        return [""]
-    lineas= []
-    actual= palabras[0]
-    for palabra in palabras[1:]:
-        candidata= f"{actual} {palabra}"
-        if cvs.stringWidth(candidata, fuente, tamano) <= ancho_max:
-            actual= candidata
-        else:
-            lineas.append(actual)
-            actual= palabra
-    lineas.append(actual)
-    return lineas
-
-
-#Para celdas de UNA sola línea (estado, encabezados de tarjeta) que no
-#pueden crecer en alto: si el texto no cabe, lo recorta con "…" en vez de
-#dejar que reportlab lo dibuje encimado o fuera de la celda.
-def _recortar_a_ancho(cvs, texto, fuente, tamano, ancho_max):
-
-    texto= texto or ""
-    if cvs.stringWidth(texto, fuente, tamano) <= ancho_max:
-        return texto
-    while texto and cvs.stringWidth(texto + "…", fuente, tamano) > ancho_max:
-        texto= texto[:-1]
-    return (texto + "…") if texto else ""
-
-
-#Devuelve las Competencias Específicas (codigo, descripcion...) definidas en el
-#currículo para una materia+grado, en el orden en que deben dibujarse en pantalla.
-#Motor dinámico: no hay columnas fijas CE1/CE2/CE3, se itera lo que exista.
-def competencias_de_materia_grado(materia_id, grado_id, solo_activas=True):
-
-    if materia_id is None or grado_id is None:
-        return []
-    conn= obtener_conexion()
-    c= conn.cursor()
-    condicion_estado= "AND estado='Activa'" if solo_activas else ""
-    c.execute(f"""SELECT * FROM competencias_especificas
-                 WHERE materia_id=? AND grado_id=? {condicion_estado}
-                 ORDER BY orden, codigo""", (materia_id, grado_id))
-    filas= [dict(fila) for fila in c.fetchall()]
-    conn.close()
-    return filas
-
-
-def grado_de_estudiante(estudiante_id):
-
-    if estudiante_id is None:
-        return None
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("""SELECT secciones.grado_id FROM estudiantes
-                 LEFT JOIN secciones ON estudiantes.seccion_id = secciones.id
-                 WHERE estudiantes.id=?""", (estudiante_id,))
-    fila= c.fetchone()
-    conn.close()
-    return fila["grado_id"] if fila else None
-
-
-#Grados en los que se imparte una materia, según los horarios ya armados
-#(una materia puede darse en varios grados: distintas CE por cada uno).
-def grados_de_materia(materia_id):
-
-    if materia_id is None:
-        return []
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("""SELECT DISTINCT grados.id, grados.nombre FROM horarios
-                 LEFT JOIN secciones ON horarios.seccion_id = secciones.id
-                 LEFT JOIN grados ON secciones.grado_id = grados.id
-                 WHERE horarios.materia_id=? AND grados.id IS NOT NULL
-                 ORDER BY grados.orden, grados.nombre""", (materia_id,))
-    filas= [dict(fila) for fila in c.fetchall()]
-    conn.close()
-    return filas
 
 
 #Permite marcar con cuáles Competencias Específicas (CE) del currículo de la

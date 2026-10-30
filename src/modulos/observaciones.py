@@ -167,6 +167,37 @@ _MESES_LARGO= ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "
                 "septiembre", "octubre", "noviembre", "diciembre"]
 
 
+#Tabla de registros — columnas y helpers de contenido Reemplaza la antigua lista de "tarjetas" (QFrame apiladas
+#+ animación de entrada geometry-based) por una QTableWidget real: escalable con muchos registros, con las
+#barras de scroll nativas de la tabla en vez de estirar la página, y sin el bugueo visual que sufría la línea
+#de tiempo (tarjetas gestionadas por un layout mientras a la vez se les forzaba una geometría animada). El
+#lenguaje visual de las tarjetas (icono+color por naturaleza, marca de destacada, categorías como chips) se
+#conserva, pero con iconos vectoriales
+#MULTICOLOR (ver iconos_categorias.py) en vez de emojis de texto: la
+#columna "Tipo" y la columna "Categorías" muestran icono + color + nombre por naturaleza/categoría, y cada fila
+#se tiñe suavemente con el color de su naturaleza (ver `_color_fila_qcolor` y `_cargar_tabla`).
+COL_ID= 0
+
+COL_NUMERO= 1
+
+COL_TIPO= 2
+
+COL_DESTACADA= 3
+
+COL_ESTUDIANTE= 4
+
+COL_GRADO= 5
+
+COL_SECCION= 6
+
+COL_FECHA= 7
+
+COL_CATEGORIAS= 8
+
+COL_DESCRIPCION= 9
+
+ENCABEZADOS_TABLA= ["ID", "No.", "Tipo", "", "Estudiante", "Curso", "Sección", "Fecha", "Categorías", "Descripción"]
+
 #Utilidades visuales — puramente estéticas, no tocan datos ni lógica. Cada módulo de AcaDeXI mantiene su propia
 #copia pequeña de estas (mismo criterio que estudiantes.py / profesores.py / asistencia.py) en vez de importar
 #entre módulos de funcionalidad.
@@ -265,7 +296,6 @@ def _hora_exacta(fecha_str, main_window=None):
     return formatear_hora(dt.strftime("%H:%M"), main_window)
 
 
-
 #Fundido de entrada (fade-in) reutilizable — mismo patrón que
 #asistencia.py para el contenido general del módulo.
 def _animar_aparicion(widget, duracion=280):
@@ -281,6 +311,84 @@ def _animar_aparicion(widget, duracion=280):
     #lambda sin argumentos: la señal no trae datos y aquí se necesita una llamada ya armada
     anim.finished.connect(lambda: widget.setGraphicsEffect(None))
     anim.start()
+
+
+#Igual que `_hex_a_rgba` pero devuelve un QColor real (no un string
+#CSS), porque QTableWidgetItem.setBackground necesita un QBrush/QColor:
+#es lo que tiñe cada fila de la tabla con el color de su naturaleza.
+def _color_fila_qcolor(color_hex, alpha_255):
+
+    color_hex= (color_hex or "#64748B").lstrip("#")
+    if len(color_hex) < 6:
+        color_hex= "64748B"
+    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
+    return QColor(r, g, b, alpha_255)
+
+
+#'Rendimiento académico · Reconocimiento / logro' (o '—' si no tiene
+#ninguna). Se usa como texto alternativo -tooltip, diálogo de detalle,
+#exportaciones- allí donde no aplica un icono (ver también
+#`_widget_categorias_fila`, que es lo que se ve en la tabla).
+def _texto_categorias_fila(fila):
+
+    claves= [c for c in (fila["categorias"] or "").split(",") if c]
+    partes= []
+    for clave in claves:
+        info= CATEGORIAS_POR_CLAVE.get(clave)
+        if info:
+            _c, etiqueta_c, _p= info
+            partes.append(etiqueta_c)
+    return " · ".join(partes) if partes else "—"
+
+
+#Fila de icono + ETIQUETA -uno por categoría- para la columna
+#"Categorías" de la tabla. Antes solo mostraba el icono (monocromo) y la
+#etiqueta quedaba escondida en el tooltip, así que dos categorías con
+#forma parecida a tamaño chico eran difíciles de distinguir sin pasar el
+#mouse por encima. Ahora cada icono es MULTICOLOR (ver
+#`pixmap_categoria_color` en iconos_categorias.py) y va acompañado de su
+#nombre corto, visible siempre -el tooltip se conserva solo como refuerzo
+#para el nombre completo, no como único lugar donde aparece el texto.
+def _widget_categorias_fila(fila, color_texto="#64748B"):
+
+    claves= [c for c in (fila["categorias"] or "").split(",") if c]
+    if not claves:
+        lbl= QLabel("—")
+        lbl.setStyleSheet(f"color: {color_texto};")
+        return lbl
+
+    contenedor= QWidget()
+    lay= QHBoxLayout(contenedor)
+    lay.setContentsMargins(2, 0, 2, 0)
+    lay.setSpacing(10)
+    etiquetas= []
+    for clave in claves:
+        info= CATEGORIAS_POR_CLAVE.get(clave)
+        if not info:
+            continue
+        _c, etiqueta_c, _p= info
+        grupo= QWidget()
+        lay_grupo= QHBoxLayout(grupo)
+        lay_grupo.setContentsMargins(0, 0, 0, 0)
+        lay_grupo.setSpacing(4)
+        lbl_icono= QLabel()
+        lbl_icono.setPixmap(pixmap_categoria_color(clave, 17))
+        lay_grupo.addWidget(lbl_icono)
+        lbl_texto= QLabel()
+        lbl_texto.setStyleSheet(f"color: {color_texto}; font-size: 11px;")
+        #Con varias categorías largas en una fila angosta, el texto se cortaba a mitad de palabra contra el borde de la
+        #celda (sin indicar que seguía habiendo más). Se limita el ancho y se elide con "…"; el tooltip de abajo sigue
+        #mostrando el nombre completo.
+        lbl_texto.setMaximumWidth(150)
+        lbl_texto.setText(lbl_texto.fontMetrics().elidedText(
+            etiqueta_c, Qt.TextElideMode.ElideRight, 150))
+        lay_grupo.addWidget(lbl_texto)
+        grupo.setToolTip(etiqueta_c)
+        lay.addWidget(grupo)
+        etiquetas.append(etiqueta_c)
+    lay.addStretch()
+    contenedor.setToolTip(" · ".join(etiquetas))
+    return contenedor
 
 
 #Layout de flujo: envuelve los chips a la siguiente línea según el ancho
@@ -943,106 +1051,6 @@ class CintaAlerta(QFrame):
         if evento.button() == Qt.MouseButton.LeftButton:
             self.clicada.emit()
         super().mousePressEvent(evento)
-
-
-#Tabla de registros — columnas y helpers de contenido Reemplaza la antigua lista de "tarjetas" (QFrame apiladas
-#+ animación de entrada geometry-based) por una QTableWidget real: escalable con muchos registros, con las
-#barras de scroll nativas de la tabla en vez de estirar la página, y sin el bugueo visual que sufría la línea
-#de tiempo (tarjetas gestionadas por un layout mientras a la vez se les forzaba una geometría animada). El
-#lenguaje visual de las tarjetas (icono+color por naturaleza, marca de destacada, categorías como chips) se
-#conserva, pero con iconos vectoriales
-#MULTICOLOR (ver iconos_categorias.py) en vez de emojis de texto: la
-#columna "Tipo" y la columna "Categorías" muestran icono + color + nombre por naturaleza/categoría, y cada fila
-#se tiñe suavemente con el color de su naturaleza (ver `_color_fila_qcolor` y `_cargar_tabla`).
-COL_ID= 0
-COL_NUMERO= 1
-COL_TIPO= 2
-COL_DESTACADA= 3
-COL_ESTUDIANTE= 4
-COL_GRADO= 5
-COL_SECCION= 6
-COL_FECHA= 7
-COL_CATEGORIAS= 8
-COL_DESCRIPCION= 9
-ENCABEZADOS_TABLA= ["ID", "No.", "Tipo", "", "Estudiante", "Curso", "Sección", "Fecha", "Categorías", "Descripción"]
-
-
-#Igual que `_hex_a_rgba` pero devuelve un QColor real (no un string
-#CSS), porque QTableWidgetItem.setBackground necesita un QBrush/QColor:
-#es lo que tiñe cada fila de la tabla con el color de su naturaleza.
-def _color_fila_qcolor(color_hex, alpha_255):
-
-    color_hex= (color_hex or "#64748B").lstrip("#")
-    if len(color_hex) < 6:
-        color_hex= "64748B"
-    r, g, b= int(color_hex[0:2], 16), int(color_hex[2:4], 16), int(color_hex[4:6], 16)
-    return QColor(r, g, b, alpha_255)
-
-
-#'Rendimiento académico · Reconocimiento / logro' (o '—' si no tiene
-#ninguna). Se usa como texto alternativo -tooltip, diálogo de detalle,
-#exportaciones- allí donde no aplica un icono (ver también
-#`_widget_categorias_fila`, que es lo que se ve en la tabla).
-def _texto_categorias_fila(fila):
-
-    claves= [c for c in (fila["categorias"] or "").split(",") if c]
-    partes= []
-    for clave in claves:
-        info= CATEGORIAS_POR_CLAVE.get(clave)
-        if info:
-            _c, etiqueta_c, _p= info
-            partes.append(etiqueta_c)
-    return " · ".join(partes) if partes else "—"
-
-
-#Fila de icono + ETIQUETA -uno por categoría- para la columna
-#"Categorías" de la tabla. Antes solo mostraba el icono (monocromo) y la
-#etiqueta quedaba escondida en el tooltip, así que dos categorías con
-#forma parecida a tamaño chico eran difíciles de distinguir sin pasar el
-#mouse por encima. Ahora cada icono es MULTICOLOR (ver
-#`pixmap_categoria_color` en iconos_categorias.py) y va acompañado de su
-#nombre corto, visible siempre -el tooltip se conserva solo como refuerzo
-#para el nombre completo, no como único lugar donde aparece el texto.
-def _widget_categorias_fila(fila, color_texto="#64748B"):
-
-    claves= [c for c in (fila["categorias"] or "").split(",") if c]
-    if not claves:
-        lbl= QLabel("—")
-        lbl.setStyleSheet(f"color: {color_texto};")
-        return lbl
-
-    contenedor= QWidget()
-    lay= QHBoxLayout(contenedor)
-    lay.setContentsMargins(2, 0, 2, 0)
-    lay.setSpacing(10)
-    etiquetas= []
-    for clave in claves:
-        info= CATEGORIAS_POR_CLAVE.get(clave)
-        if not info:
-            continue
-        _c, etiqueta_c, _p= info
-        grupo= QWidget()
-        lay_grupo= QHBoxLayout(grupo)
-        lay_grupo.setContentsMargins(0, 0, 0, 0)
-        lay_grupo.setSpacing(4)
-        lbl_icono= QLabel()
-        lbl_icono.setPixmap(pixmap_categoria_color(clave, 17))
-        lay_grupo.addWidget(lbl_icono)
-        lbl_texto= QLabel()
-        lbl_texto.setStyleSheet(f"color: {color_texto}; font-size: 11px;")
-        #Con varias categorías largas en una fila angosta, el texto se cortaba a mitad de palabra contra el borde de la
-        #celda (sin indicar que seguía habiendo más). Se limita el ancho y se elide con "…"; el tooltip de abajo sigue
-        #mostrando el nombre completo.
-        lbl_texto.setMaximumWidth(150)
-        lbl_texto.setText(lbl_texto.fontMetrics().elidedText(
-            etiqueta_c, Qt.TextElideMode.ElideRight, 150))
-        lay_grupo.addWidget(lbl_texto)
-        grupo.setToolTip(etiqueta_c)
-        lay.addWidget(grupo)
-        etiquetas.append(etiqueta_c)
-    lay.addStretch()
-    contenedor.setToolTip(" · ".join(etiquetas))
-    return contenedor
 
 
 #Módulo principal

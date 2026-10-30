@@ -26,6 +26,8 @@ PALETA_SERIES= ["#6366F1", "#F97316", "#14B8A6", "#EC4899", "#8B5CF6",
                   "#0EA5E9", "#F59E0B", "#22C55E", "#EF4444", "#D946EF"]
 
 
+_CACHE_PUNTOS= {}
+
 #Utilidades visuales — puramente estéticas, no tocan datos ni lógica.
 def _hex_a_rgba(color_hex, alpha):
 
@@ -37,9 +39,6 @@ def _hex_a_rgba(color_hex, alpha):
 def _color_serie(indice):
 
     return PALETA_SERIES[indice % len(PALETA_SERIES)]
-
-
-_CACHE_PUNTOS= {}
 
 
 #Pequeño círculo sólido dibujado con QPainter (mismo color que la

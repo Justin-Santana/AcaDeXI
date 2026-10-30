@@ -48,6 +48,45 @@ def _tabla_solo_lectura(tabla):
     tabla.horizontalHeader().setStretchLastSection(True)
 
 
+def _recargar_combo_cursos(main_window, combo):
+
+    conn= db.obtener_conexion(main_window)
+    c= conn.cursor()
+    c.execute("SELECT id, nombre FROM secciones ORDER BY nombre")
+    _combo_agregar_filas(combo, c.fetchall())
+    conn.close()
+
+
+def _recargar_combo_materias(main_window, combo):
+
+    conn= db.obtener_conexion(main_window)
+    c= conn.cursor()
+    c.execute("SELECT id, nombre FROM materias ORDER BY nombre")
+    _combo_agregar_filas(combo, c.fetchall())
+    conn.close()
+
+
+def _recargar_combo_periodos(main_window, combo):
+
+    conn= db.obtener_conexion(main_window)
+    c= conn.cursor()
+    c.execute("SELECT id, nombre FROM periodos ORDER BY orden")
+    filas= c.fetchall()
+    conn.close()
+    if not filas:
+        #Single Teacher no pasa por ningún wizard institucional que precargue periodos: se crean 2 por defecto la
+        #primera vez que algún módulo los necesita, para no obligar al docente a crear periodos manualmente antes de
+        #poder registrar su primera nota.
+        conn= db.obtener_conexion(main_window)
+        c= conn.cursor()
+        c.execute("INSERT INTO periodos (nombre, orden) VALUES ('Periodo 1', 1), ('Periodo 2', 2)")
+        conn.commit()
+        c.execute("SELECT id, nombre FROM periodos ORDER BY orden")
+        filas= c.fetchall()
+        conn.close()
+    _combo_agregar_filas(combo, filas)
+
+
 #DASHBOARD
 class ModuloDashboardST(QWidget):
 
@@ -186,15 +225,6 @@ class DialogoGestionarCursos(QDialog):
         conn.commit()
         conn.close()
         self._cargar_tabla()
-
-
-def _recargar_combo_cursos(main_window, combo):
-
-    conn= db.obtener_conexion(main_window)
-    c= conn.cursor()
-    c.execute("SELECT id, nombre FROM secciones ORDER BY nombre")
-    _combo_agregar_filas(combo, c.fetchall())
-    conn.close()
 
 
 #ESTUDIANTES
@@ -487,36 +517,6 @@ class ModuloMateriasST(QWidget):
         conn.commit()
         conn.close()
         self._cargar_tabla()
-
-
-def _recargar_combo_materias(main_window, combo):
-
-    conn= db.obtener_conexion(main_window)
-    c= conn.cursor()
-    c.execute("SELECT id, nombre FROM materias ORDER BY nombre")
-    _combo_agregar_filas(combo, c.fetchall())
-    conn.close()
-
-
-def _recargar_combo_periodos(main_window, combo):
-
-    conn= db.obtener_conexion(main_window)
-    c= conn.cursor()
-    c.execute("SELECT id, nombre FROM periodos ORDER BY orden")
-    filas= c.fetchall()
-    conn.close()
-    if not filas:
-        #Single Teacher no pasa por ningún wizard institucional que precargue periodos: se crean 2 por defecto la
-        #primera vez que algún módulo los necesita, para no obligar al docente a crear periodos manualmente antes de
-        #poder registrar su primera nota.
-        conn= db.obtener_conexion(main_window)
-        c= conn.cursor()
-        c.execute("INSERT INTO periodos (nombre, orden) VALUES ('Periodo 1', 1), ('Periodo 2', 2)")
-        conn.commit()
-        c.execute("SELECT id, nombre FROM periodos ORDER BY orden")
-        filas= c.fetchall()
-        conn.close()
-    _combo_agregar_filas(combo, filas)
 
 
 #ASISTENCIA

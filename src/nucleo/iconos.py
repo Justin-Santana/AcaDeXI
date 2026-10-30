@@ -12,18 +12,86 @@ from src.nucleo.rutas import obtener_carpeta_iconos
 # -----------------------------------------
 # bus de eventos de exito
 # -----------------------------------------
-#un solo objeto vivo durante toda la app. Se emite cada vez que un módulo reporta una operación
-#exitosa con mostrar_mensaje("exito", ...), y lo escucha tutoriales.py para saber que la acción
-#ocurrió de verdad, no que el usuario solo hizo clic en un botón.
-class _BusEventosUI(QObject):
-
-    exito_reportado= Signal(object, str, str)   #(parent, titulo, texto)
-
-
-eventos_ui= _BusEventosUI()
-
 CARPETA_ICONOS= obtener_carpeta_iconos()
 
+#para cada módulo, los nombres de archivo que se aceptan como su icono, en orden de preferencia.
+#un módulo con lista vacía no tiene icono propio todavía y sigue mostrando su emoji de respaldo.
+ALIAS_ICONOS_SIDEBAR= {
+    "Dashboard": ["dashboard"],
+    "Estudiantes": ["estudiantes"],
+    "Mis Estudiantes": ["estudiantes"],
+    "Profesores": ["profesores", "prefesoresico", "profesoresico"],
+    "Personal": ["personal"],
+    "Materias": ["mismaterias", "materias"],
+    "Mis Materias": ["mismaterias", "materias"],
+    "Materiales": ["materiales"],
+    "Asistencia": ["asistencia"],
+    "Calificaciones": ["calificaciones"],
+    "Calificaciones Técnicas": ["calificacionestecnicas"],
+    "Politécnico": ["politecnico"],
+    "Universidad": ["universidad"],
+    "Banco de Tareas": ["bancodetareas"],
+    "Secuencias Didácticas": ["secuencias", "secuenciasdidacticas"],
+    "Horario": ["horario"],
+    "Calendario": ["calendaria", "calendario"],
+    "Observaciones": ["observaciones"],
+    "Psicología": ["psicologia"],
+    "Reportes": ["reportes"],
+    "Copias de Seguridad": ["backup", "copiasdeseguridad"],
+    "Sincronización": ["sincronizacion"],
+    "Configuración": ["configuracion"],
+}
+
+_EXTENSIONES_IMAGEN= (".png", ".jpg", ".jpeg", ".bmp", ".ico")
+
+_indice_sidebar_icons= None
+
+_cache_pixmap_sidebar= {}
+
+# -----------------------------------------
+# iconos de la app
+# -----------------------------------------
+ICONO_APP= "schoolsys.ico"
+
+LOGO_APP_GRANDE= "AcaDeXI_logo.png"       #el escudo grande, no el .ico de la ventana
+
+ICONO_OK= "correctico.ico"
+
+ICONO_ERROR= "eroico.ico"
+
+ICONO_WARNING= "warningico.ico"
+
+ICONO_LOGIN= "loginico.ico"
+
+ICONO_DETALLE= "detalleico.ico"
+
+ICONO_SETTING= "settingico.ico"
+
+ICONO_TABLA= "tableico.ico"
+
+ICONO_ASISTENTE= "asistenteico.ico"      #asistente de sincronización
+
+ICONO_BUSQUEDA= "busquedaico.ico"        #búsqueda global
+
+ICONO_CARGA= "cargaico.ico"              #diálogos que procesan o recalculan un archivo
+
+ICONO_COLOR= "colorico.ico"              #selección de color
+
+ICONO_RECORTE= "imagenrecortico.ico"     #foto: ver y recortar
+
+ICONO_INFO= "infoico.ico"                #mensajes informativos
+
+ICONO_SETUP= "setupico.ico"              #asistente de configuración inicial
+
+ICONO_TUTORIAL= "tutorial.ico"           #tutorial guiado
+
+ICONO_DOCUMENTO= "documentico.ico"       #documentos y paquetes .acdx o pdf
+
+ICONO_FILTRO= "filtradoico.ico"          #ventanita de filtros
+
+_cache= {}
+
+_cache_pixmap_logo_app= {}
 
 # -----------------------------------------
 # carpetas donde puede estar la carpeta "iconos"
@@ -87,39 +155,6 @@ def _normalizar_clave(texto):
     sin_acentos= unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
 
     return re.sub(r"[^a-z0-9]", "", sin_acentos.lower())
-
-
-#para cada módulo, los nombres de archivo que se aceptan como su icono, en orden de preferencia.
-#un módulo con lista vacía no tiene icono propio todavía y sigue mostrando su emoji de respaldo.
-ALIAS_ICONOS_SIDEBAR= {
-    "Dashboard": ["dashboard"],
-    "Estudiantes": ["estudiantes"],
-    "Mis Estudiantes": ["estudiantes"],
-    "Profesores": ["profesores", "prefesoresico", "profesoresico"],
-    "Personal": ["personal"],
-    "Materias": ["mismaterias", "materias"],
-    "Mis Materias": ["mismaterias", "materias"],
-    "Materiales": ["materiales"],
-    "Asistencia": ["asistencia"],
-    "Calificaciones": ["calificaciones"],
-    "Calificaciones Técnicas": ["calificacionestecnicas"],
-    "Politécnico": ["politecnico"],
-    "Universidad": ["universidad"],
-    "Banco de Tareas": ["bancodetareas"],
-    "Secuencias Didácticas": ["secuencias", "secuenciasdidacticas"],
-    "Horario": ["horario"],
-    "Calendario": ["calendaria", "calendario"],
-    "Observaciones": ["observaciones"],
-    "Psicología": ["psicologia"],
-    "Reportes": ["reportes"],
-    "Copias de Seguridad": ["backup", "copiasdeseguridad"],
-    "Sincronización": ["sincronizacion"],
-    "Configuración": ["configuracion"],
-}
-
-_EXTENSIONES_IMAGEN= (".png", ".jpg", ".jpeg", ".bmp", ".ico")
-_indice_sidebar_icons= None
-_cache_pixmap_sidebar= {}
 
 
 #escanea TODAS las carpetas candidatas, sin detenerse en la primera que exista, y arma
@@ -283,33 +318,6 @@ def aplicar_icono_cabecera(label, nombre_modulo, tamano=30):
     label.setPixmap(QPixmap())
 
 
-# -----------------------------------------
-# iconos de la app
-# -----------------------------------------
-ICONO_APP= "schoolsys.ico"
-LOGO_APP_GRANDE= "AcaDeXI_logo.png"       #el escudo grande, no el .ico de la ventana
-
-ICONO_OK= "correctico.ico"
-ICONO_ERROR= "eroico.ico"
-ICONO_WARNING= "warningico.ico"
-ICONO_LOGIN= "loginico.ico"
-ICONO_DETALLE= "detalleico.ico"
-ICONO_SETTING= "settingico.ico"
-ICONO_TABLA= "tableico.ico"
-ICONO_ASISTENTE= "asistenteico.ico"      #asistente de sincronización
-ICONO_BUSQUEDA= "busquedaico.ico"        #búsqueda global
-ICONO_CARGA= "cargaico.ico"              #diálogos que procesan o recalculan un archivo
-ICONO_COLOR= "colorico.ico"              #selección de color
-ICONO_RECORTE= "imagenrecortico.ico"     #foto: ver y recortar
-ICONO_INFO= "infoico.ico"                #mensajes informativos
-ICONO_SETUP= "setupico.ico"              #asistente de configuración inicial
-ICONO_TUTORIAL= "tutorial.ico"           #tutorial guiado
-ICONO_DOCUMENTO= "documentico.ico"       #documentos y paquetes .acdx o pdf
-ICONO_FILTRO= "filtradoico.ico"          #ventanita de filtros
-
-_cache= {}
-
-
 #busca el archivo del icono en las carpetas candidatas y lo deja en caché. Si no aparece devuelve
 #un QIcon vacío, que Qt dibuja como nada.
 def obtener_icono(nombre_archivo):
@@ -333,9 +341,6 @@ def obtener_icono(nombre_archivo):
 def icono_app():
 
     return obtener_icono(ICONO_APP)
-
-
-_cache_pixmap_logo_app= {}
 
 
 #el escudo grande, para cuando la institución todavía no cargó su propio logo en el login. No es
@@ -539,3 +544,14 @@ def mostrar_mensaje(tipo, titulo, texto, parent=None):
         eventos_ui.exito_reportado.emit(parent, titulo, texto)
 
     return resultado
+
+
+#un solo objeto vivo durante toda la app. Se emite cada vez que un módulo reporta una operación
+#exitosa con mostrar_mensaje("exito", ...), y lo escucha tutoriales.py para saber que la acción
+#ocurrió de verdad, no que el usuario solo hizo clic en un botón.
+class _BusEventosUI(QObject):
+
+    exito_reportado= Signal(object, str, str)   #(parent, titulo, texto)
+
+
+eventos_ui= _BusEventosUI()

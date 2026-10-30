@@ -37,6 +37,13 @@ from src.nucleo.bd import obtener_conexion, RUTA_BD
 from src.interfaz.configuracion import conectar_tooltip_seleccion
 from src.nucleo.iconos import aplicar_icono_ventana, ICONO_DOCUMENTO
 
+#Diálogo: generar perfil (.acdx) — usado desde Configuración → Usuarios
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
+    QPushButton, QComboBox, QFileDialog, QCheckBox)
+from PySide6.QtCore import Qt
+from src.nucleo.limite_campos import limitar_campo_texto
+from PySide6.QtCore import QSize as _QSize_emoji
+from src.nucleo.iconos_emoji import icono_emoji
 EXTENSION= ".acdx"
 
 _CLAVE_APP= b"AcaDeXI-perfil-institucional-clave-embebida-2026"
@@ -44,6 +51,21 @@ _fernet= Fernet(base64.urlsafe_b64encode(_CLAVE_APP.ljust(32, b"0")[:32]))
 
 PIN_MINIMO= 4
 
+
+MODOS_TRABAJO= ["Local", "Nube sincronizada", "Servidor institucional", "Sin conexión (offline)"]
+
+TOOLTIPS_MODOS_TRABAJO= {
+    "Local": "La base de datos vive solo en este equipo. No se sincroniza con nadie más; "
+             "ideal para un único usuario o equipo que no comparte datos en tiempo real.",
+    "Nube sincronizada": "La base de datos se guarda en una carpeta local que a su vez sincroniza "
+             "un servicio externo (Google Drive, OneDrive, Dropbox, etc.). Varios equipos pueden "
+             "compartir los datos, pero la sincronización depende de ese servicio.",
+    "Servidor institucional": "La base de datos se sincroniza directamente contra un servidor propio "
+             "de la institución (ver Sincronización Directa). Requiere URL y token configurados.",
+    "Sin conexión (offline)": "El equipo trabaja de forma completamente aislada, sin ningún tipo de "
+             "sincronización automática ni carpeta compartida. Los datos solo se mueven manualmente "
+             "(backups, exportaciones, etc.).",
+}
 
 #Deriva una clave Fernet a partir de un PIN + salt aleatoria (única por
 #archivo). PBKDF2 con muchas iteraciones hace que adivinar el PIN por
@@ -84,22 +106,6 @@ def descifrar_password_perfil(datos, pin):
         return Fernet(clave).decrypt(token.encode("ascii")).decode("utf-8")
     except Exception:
         raise ValueError("PIN incorrecto: no se pudo descifrar la contraseña de este perfil.")
-
-
-MODOS_TRABAJO= ["Local", "Nube sincronizada", "Servidor institucional", "Sin conexión (offline)"]
-
-TOOLTIPS_MODOS_TRABAJO= {
-    "Local": "La base de datos vive solo en este equipo. No se sincroniza con nadie más; "
-             "ideal para un único usuario o equipo que no comparte datos en tiempo real.",
-    "Nube sincronizada": "La base de datos se guarda en una carpeta local que a su vez sincroniza "
-             "un servicio externo (Google Drive, OneDrive, Dropbox, etc.). Varios equipos pueden "
-             "compartir los datos, pero la sincronización depende de ese servicio.",
-    "Servidor institucional": "La base de datos se sincroniza directamente contra un servidor propio "
-             "de la institución (ver Sincronización Directa). Requiere URL y token configurados.",
-    "Sin conexión (offline)": "El equipo trabaja de forma completamente aislada, sin ningún tipo de "
-             "sincronización automática ni carpeta compartida. Los datos solo se mueven manualmente "
-             "(backups, exportaciones, etc.).",
-}
 
 
 #Asigna a cada ítem del combo un tooltip que explica qué implica ese modo de trabajo.
@@ -313,15 +319,6 @@ def aplicar_bd_base(datos):
             pass  #El logotipo es un extra: si falla, la BD Base ya quedó aplicada igual.
 
     return ruta_backup
-
-
-#Diálogo: generar perfil (.acdx) — usado desde Configuración → Usuarios
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QComboBox, QFileDialog, QCheckBox)
-from PySide6.QtCore import Qt
-from src.nucleo.limite_campos import limitar_campo_texto
-from PySide6.QtCore import QSize as _QSize_emoji
-from src.nucleo.iconos_emoji import icono_emoji
 
 
 class DialogoGenerarPerfil(QDialog):

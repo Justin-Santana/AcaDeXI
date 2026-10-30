@@ -46,6 +46,44 @@ from src.nucleo.formato_hora import formatear_fecha
 from src.nucleo.limite_campos import limitar_campo_texto
 
 
+#Umbral de similitud por PALABRA (no por frase completa) para tolerar errores de tipeo. Con palabras cortas (3
+#letras o menos) se relaja, porque un solo carácter de diferencia ya representa un porcentaje alto del texto.
+_UMBRAL_PALABRA= 0.72
+
+_UMBRAL_PALABRA_CORTA= 0.55
+
+#Sinónimos comunes en español/RD para cada módulo, para que escribir "notas" encuentre "Calificaciones",
+#"faltas" encuentre "Asistencia", etc., aunque el texto no coincida literalmente con el nombre que aparece en
+#el menú lateral. No se muestran al usuario (la etiqueta siempre usa el nombre real del módulo): solo se usan
+#puertas adentro para ampliar qué encuentra la búsqueda.
+_ALIAS_MODULOS= {
+    "Dashboard": "inicio resumen panel",
+    "Calificaciones": "notas boletin boletines",
+    "Calificaciones Técnicas": "notas boletin tecnicas",
+    "Asistencia": "faltas inasistencia inasistencias",
+    "Banco de Tareas": "tareas asignaciones actividades",
+    "Horario": "clases",
+    "Configuración": "ajustes preferencias config",
+    "Copias de Seguridad": "backup backups respaldo respaldos",
+    "Sincronización": "sync",
+    "Reportes": "informes estadisticas",
+    "Personal": "administrativo administrativa staff",
+    "Observaciones": "disciplina disciplinarias incidencias anotaciones",
+    "Materiales": "inventario biblioteca laboratorio equipos prestamos préstamos recursos",
+    "Psicología": "psicologo psicologa psicólogo psicóloga casos terapia conductual",
+    "Universidad": "facultades carreras pensum malla curricular",
+    "Politécnico": "especialidades areas técnicas empresas pasantias pasantías talleres",
+}
+
+#Tope de resultados a MOSTRAR por categoría, aplicado DESPUÉS de filtrar (ya no antes, como el viejo LIMIT 25
+#en SQL que descartaba registros sin siquiera revisarlos). Esto solo evita que la lista crezca sin límite; no
+#afecta qué tan a fondo se busca.
+MAX_RESULTADOS_POR_CATEGORIA= 30
+
+MODULO_ROLE= Qt.ItemDataRole.UserRole
+
+TEXTO_BUSCAR_ROLE= Qt.ItemDataRole.UserRole + 1
+
 #Normaliza texto: convierte a minúsculas y elimina acentos.
 def _normalizar_texto(texto):
 
@@ -56,12 +94,6 @@ def _normalizar_texto(texto):
         c for c in unicodedata.normalize('NFKD', texto)
         if not unicodedata.combining(c)
     )
-
-
-#Umbral de similitud por PALABRA (no por frase completa) para tolerar errores de tipeo. Con palabras cortas (3
-#letras o menos) se relaja, porque un solo carácter de diferencia ya representa un porcentaje alto del texto.
-_UMBRAL_PALABRA= 0.72
-_UMBRAL_PALABRA_CORTA= 0.55
 
 
 #True si `palabra_busqueda` (ya normalizada) aparece dentro del texto
@@ -162,30 +194,6 @@ def _modulo_visible_materias(rol, restringido):
     return modulo_visible(rol, nombre)
 
 
-#Sinónimos comunes en español/RD para cada módulo, para que escribir "notas" encuentre "Calificaciones",
-#"faltas" encuentre "Asistencia", etc., aunque el texto no coincida literalmente con el nombre que aparece en
-#el menú lateral. No se muestran al usuario (la etiqueta siempre usa el nombre real del módulo): solo se usan
-#puertas adentro para ampliar qué encuentra la búsqueda.
-_ALIAS_MODULOS= {
-    "Dashboard": "inicio resumen panel",
-    "Calificaciones": "notas boletin boletines",
-    "Calificaciones Técnicas": "notas boletin tecnicas",
-    "Asistencia": "faltas inasistencia inasistencias",
-    "Banco de Tareas": "tareas asignaciones actividades",
-    "Horario": "clases",
-    "Configuración": "ajustes preferencias config",
-    "Copias de Seguridad": "backup backups respaldo respaldos",
-    "Sincronización": "sync",
-    "Reportes": "informes estadisticas",
-    "Personal": "administrativo administrativa staff",
-    "Observaciones": "disciplina disciplinarias incidencias anotaciones",
-    "Materiales": "inventario biblioteca laboratorio equipos prestamos préstamos recursos",
-    "Psicología": "psicologo psicologa psicólogo psicóloga casos terapia conductual",
-    "Universidad": "facultades carreras pensum malla curricular",
-    "Politécnico": "especialidades areas técnicas empresas pasantias pasantías talleres",
-}
-
-
 #Busca por nombre de módulo (o alguno de sus sinónimos en _ALIAS_MODULOS)
 #para poder saltar directo a él escribiendo, por ejemplo, "calificaciones",
 #"banco de tareas" u "horario", sin tener que ir a buscarlo en el menú
@@ -228,15 +236,6 @@ def _buscar_modulos(main_window, texto):
     coincidencias.sort(key=lambda par: par[0], reverse=True)
     resultados.extend(r for _, r in coincidencias[:MAX_RESULTADOS_POR_CATEGORIA])
     return resultados
-
-
-#Tope de resultados a MOSTRAR por categoría, aplicado DESPUÉS de filtrar (ya no antes, como el viejo LIMIT 25
-#en SQL que descartaba registros sin siquiera revisarlos). Esto solo evita que la lista crezca sin límite; no
-#afecta qué tan a fondo se busca.
-MAX_RESULTADOS_POR_CATEGORIA= 30
-
-MODULO_ROLE= Qt.ItemDataRole.UserRole
-TEXTO_BUSCAR_ROLE= Qt.ItemDataRole.UserRole + 1
 
 
 #Icono por defecto para cada categoría de resultado, usado cuando el propio resultado no trae uno más

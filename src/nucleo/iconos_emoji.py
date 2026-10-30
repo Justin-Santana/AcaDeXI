@@ -57,6 +57,411 @@ _widgets_filtro_boton= weakref.WeakSet()
 _widgets_filtro_pixmap= weakref.WeakKeyDictionary()  #widget -> tamaño pedido
 
 
+#Tabla emoji -> dibujo. Cada lambda recibe pintor= QPainter donde se dibuja y tamano= lado en píxeles
+#del lienzo cuadrado (se invoca como dibujar(p, size) en pixmap_emoji); devuelve el resultado de la
+#función auxiliar o, si es una tupla, ejecuta varios dibujos en orden (el último queda encima).
+#Las auxiliares (_flecha, _panel_dashboard...) usan size para pasar fracciones 0..1 a píxeles.
+#Panel y flechas: _flecha(pintor, tamano, color, angulo_deg) dibuja una flecha recta (0=derecha,
+#-90=arriba, 90=abajo, 180=izquierda); _flecha_curva y _flechas_circulares: deshacer/rehacer, refrescar.
+#Estado, símbolos y puntos: _disco/_check/_cruz/_mas/_menos/_estrella/_poligono pintan círculos,
+#marcas y formas básicas en un color fijo (verde ok, rojo error o eliminar, azul acción).
+#Resto de familias (personas, edificios, candados, documentos, libros, gráficos, nube...):
+#cada lambda solo delega en la función _xxx(pintor, tamano) que dibuja ese objeto; varios emojis
+#parecidos comparten dibujo y cambian solo el color o un flag (p. ej. _libro, _candado, _carpeta).
+_REGISTRO= {
+    #Panel / Dashboard
+    "▦": lambda pintor, tamano: _panel_dashboard(pintor, tamano),
+    "⛶": lambda pintor, tamano: _pantalla_completa(pintor, tamano),
+
+    #Flechas / navegación
+    "←": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", 180),
+    "→": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", 0),
+    "↔": lambda pintor, tamano: (_flecha(pintor, tamano, "#475569", 0, cx=0.65), _flecha(pintor, tamano, "#475569", 180, cx=0.35)),
+    "↑": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", -90),
+    "↓": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", 90),
+    "↗": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", -45),
+    "➡": lambda pintor, tamano: _flecha(pintor, tamano, "#3B82F6", 0),
+    "⬅": lambda pintor, tamano: _flecha(pintor, tamano, "#3B82F6", 180),
+    "⬆": lambda pintor, tamano: _flecha(pintor, tamano, "#22C55E", -90),
+    "⬇": lambda pintor, tamano: _flecha(pintor, tamano, "#EF4444", 90),
+    "↩": lambda pintor, tamano: _flecha_curva(pintor, tamano, "#475569", "undo"),
+    "↶": lambda pintor, tamano: _flecha_curva(pintor, tamano, "#475569", "undo"),
+    "↷": lambda pintor, tamano: _flecha_curva(pintor, tamano, "#475569", "redo"),
+    "⇪": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", -90, largo=0.28),
+    "↺": lambda pintor, tamano: _flechas_circulares(pintor, tamano, "#3B82F6", "#60A5FA"),
+    "🔁": lambda pintor, tamano: _flechas_circulares(pintor, tamano, "#22C55E", "#4ADE80"),
+    "🔄": lambda pintor, tamano: _flechas_circulares(pintor, tamano, "#3B82F6", "#60A5FA"),
+    "♻": lambda pintor, tamano: _reciclaje(pintor, tamano),
+    "⏳": lambda pintor, tamano: _reloj_arena(pintor, tamano),
+    "⌛": lambda pintor, tamano: _reloj_arena(pintor, tamano, color_arena="#EF4444"),
+
+    #Estado / confirmación
+    "✅": lambda pintor, tamano: (_disco(pintor, tamano, 0.08, 0.08, 0.92, 0.92, "#22C55E"), _check(pintor, tamano, "white")),
+    "✓": lambda pintor, tamano: _check(pintor, tamano, "#22C55E", ancho=3.0),
+    "✔": lambda pintor, tamano: _check(pintor, tamano, "#22C55E", ancho=3.0),
+    "❌": lambda pintor, tamano: (_disco(pintor, tamano, 0.08, 0.08, 0.92, 0.92, "#EF4444"), _cruz(pintor, tamano, "white")),
+    "✖": lambda pintor, tamano: _cruz(pintor, tamano, "#EF4444", ancho=3.0),
+    "✕": lambda pintor, tamano: _cruz(pintor, tamano, "#EF4444", ancho=3.0),
+    "⚠": lambda pintor, tamano: _triangulo_alerta(pintor, tamano),
+    "❕": lambda pintor, tamano: _triangulo_alerta(pintor, tamano),
+    "🚨": lambda pintor, tamano: (_disco(pintor, tamano, 0.16, 0.10, 0.84, 0.78, "#EF4444", borde="#7F1D1D"),
+                        _rect_redondeado(pintor, tamano, 0.30, 0.78, 0.70, 0.90, "#1E293B", radio=0.1)),
+    "🚫": lambda pintor, tamano: _prohibido(pintor, tamano),
+    "⛔": lambda pintor, tamano: _prohibido(pintor, tamano),
+    "🚦": lambda pintor, tamano: _semaforo(pintor, tamano),
+    "🚧": lambda pintor, tamano: _construccion(pintor, tamano),
+
+    #Símbolos
+    "➕": lambda pintor, tamano: _mas(pintor, tamano, "#22C55E"),
+    "➖": lambda pintor, tamano: _menos(pintor, tamano, "#EF4444"),
+    "➗": lambda pintor, tamano: _dividir(pintor, tamano),
+    "✂": lambda pintor, tamano: _tijeras(pintor, tamano),
+    "⭐": lambda pintor, tamano: _estrella(pintor, tamano, 0.10, 0.10, 0.90, 0.90, "#FBBF24", borde="#CA8A04"),
+    "🌟": lambda pintor, tamano: (_estrella(pintor, tamano, 0.14, 0.14, 0.86, 0.86, "#FBBF24", borde="#CA8A04"), _chispas(pintor, tamano)),
+    "✨": lambda pintor, tamano: _chispas(pintor, tamano),
+    "🔘": lambda pintor, tamano: (_disco(pintor, tamano, 0.14, 0.14, 0.86, 0.86, "white", borde="#64748B"),
+                        _disco(pintor, tamano, 0.34, 0.34, 0.66, 0.66, "#3B82F6")),
+    "🔲": lambda pintor, tamano: _rect_redondeado(pintor, tamano, 0.18, 0.18, 0.82, 0.82, "#334155", radio=0.10),
+
+    #Puntos de color (semáforos de estado, indicadores)
+    "🔴": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#EF4444", borde="#991B1B"),
+    "🟢": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#22C55E", borde="#166534"),
+    "🟠": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#F97316", borde="#9A3412"),
+    "🔵": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#3B82F6", borde="#1E3A8A"),
+    "🔷": lambda pintor, tamano: _poligono(pintor, tamano, [(0.5, 0.10), (0.90, 0.5), (0.5, 0.90), (0.10, 0.5)], "#3B82F6", borde="#1E3A8A"),
+    "🔹": lambda pintor, tamano: _poligono(pintor, tamano, [(0.5, 0.24), (0.76, 0.5), (0.5, 0.76), (0.24, 0.5)], "#60A5FA"),
+    "⚪": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#F1F5F9", borde="#94A3B8"),
+
+    #Ojos / visibilidad
+    "👁": lambda pintor, tamano: _ojo(pintor, tamano),
+    "🙈": lambda pintor, tamano: _ojo(pintor, tamano, cerrado=True),
+    "👓": lambda pintor, tamano: _lentes(pintor, tamano),
+
+    #Manos / gestos
+    "👆": lambda pintor, tamano: _flecha(pintor, tamano, "#F59E0B", -90, largo=0.24, ancho_cabeza=0.14),
+    "👇": lambda pintor, tamano: _flecha(pintor, tamano, "#F59E0B", 90, largo=0.24, ancho_cabeza=0.14),
+    "🤝": lambda pintor, tamano: _manos_saludo(pintor, tamano),
+
+    #Personas
+    "👤": lambda pintor, tamano: _persona(pintor, tamano, 1, "#64748B"),
+    "👥": lambda pintor, tamano: _persona(pintor, tamano, 2),
+    "👨": lambda pintor, tamano: _persona(pintor, tamano, 1, "#3B82F6"),
+    "🧑": lambda pintor, tamano: _persona(pintor, tamano, 1, "#F59E0B"),
+    "🎓": lambda pintor, tamano: _persona(pintor, tamano, 1, "#1D4ED8", graduado=True),
+
+    #Edificios
+    "🏠": lambda pintor, tamano: _casa(pintor, tamano),
+    "🏫": lambda pintor, tamano: _escuela(pintor, tamano),
+    "🏢": lambda pintor, tamano: _edificio(pintor, tamano),
+    "🏥": lambda pintor, tamano: _hospital(pintor, tamano),
+    "🏛": lambda pintor, tamano: _castillo(pintor, tamano),
+    "🚪": lambda pintor, tamano: _puerta_salida(pintor, tamano),
+
+    #Candados / seguridad / llaves
+    "🔒": lambda pintor, tamano: _candado(pintor, tamano),
+    "🔐": lambda pintor, tamano: _candado(pintor, tamano, color_cuerpo="#4F46E5", color_arco="#818CF8"),
+    "🔓": lambda pintor, tamano: _candado(pintor, tamano, abierto=True),
+    "🔑": lambda pintor, tamano: _llave(pintor, tamano),
+    "🛡": lambda pintor, tamano: _escudo(pintor, tamano),
+
+    #Documentos / carpetas / libros
+    "📁": lambda pintor, tamano: _carpeta(pintor, tamano),
+    "📂": lambda pintor, tamano: _carpeta(pintor, tamano, abierta=True),
+    "🗂": lambda pintor, tamano: _carpeta(pintor, tamano, color="#38BDF8", abierta=True),
+    "🗄": lambda pintor, tamano: _archivador(pintor, tamano),
+    "📄": lambda pintor, tamano: _documento(pintor, tamano),
+    "📃": lambda pintor, tamano: _documento(pintor, tamano, lineas=False),
+    "📋": lambda pintor, tamano: _clip_tablero(pintor, tamano),
+    "🗒": lambda pintor, tamano: _documento(pintor, tamano, color_esquina="#F59E0B"),
+    "📝": lambda pintor, tamano: (_documento(pintor, tamano, lineas=False), _lapiz(pintor, tamano)),
+    "📇": lambda pintor, tamano: _tarjeta_indice(pintor, tamano),
+    "📜": lambda pintor, tamano: _pergamino(pintor, tamano),
+    "📔": lambda pintor, tamano: _libro(pintor, tamano, "#EF4444", "#7F1D1D"),
+    "📖": lambda pintor, tamano: _libro(pintor, tamano, "#F59E0B", "#92400E"),
+    "📗": lambda pintor, tamano: _libro(pintor, tamano, "#22C55E", "#166534"),
+    "📘": lambda pintor, tamano: _libro(pintor, tamano, "#3B82F6", "#1E3A8A"),
+    "📙": lambda pintor, tamano: _libro(pintor, tamano, "#F97316", "#9A3412"),
+    "📚": lambda pintor, tamano: _libro(pintor, tamano, "#8B5CF6", "#5B21B6"),
+    "🗺": lambda pintor, tamano: _mapa(pintor, tamano),
+    "📜🗺": None,
+
+    #Edición
+    "✏": lambda pintor, tamano: _lapiz(pintor, tamano),
+    "✎": lambda pintor, tamano: _lapiz(pintor, tamano),
+    "✍": lambda pintor, tamano: _lapiz(pintor, tamano),
+    "🖌": lambda pintor, tamano: _lapiz(pintor, tamano),
+    "🖍": lambda pintor, tamano: _lapiz(pintor, tamano),
+
+    #Guardar / archivos multimedia
+    "💾": lambda pintor, tamano: _disquete(pintor, tamano),
+    "📀": lambda pintor, tamano: _disco_optico(pintor, tamano),
+    "🖼": lambda pintor, tamano: (_rect_redondeado(pintor, tamano, 0.12, 0.16, 0.88, 0.84, "white", radio=0.04, borde="#94A3B8"),
+                        _disco(pintor, tamano, 0.24, 0.30, 0.38, 0.44, "#FBBF24"),
+                        _poligono(pintor, tamano, [(0.18, 0.76), (0.42, 0.50), (0.60, 0.66), (0.76, 0.46), (0.82, 0.76)], "#22C55E")),
+    "📷": lambda pintor, tamano: _camara(pintor, tamano),
+
+    #Papelera / limpieza
+    "🗑": lambda pintor, tamano: _papelera(pintor, tamano),
+    "🧹": lambda pintor, tamano: _escoba(pintor, tamano),
+
+    #Búsqueda
+    "🔍": lambda pintor, tamano: _lupa(pintor, tamano),
+    "🔎": lambda pintor, tamano: _lupa(pintor, tamano, color="#F59E0B"),
+
+    #Config / herramientas
+    "⚙": lambda pintor, tamano: _engranaje(pintor, tamano),
+    "🛠": lambda pintor, tamano: (_llave_inglesa(pintor, tamano), None),
+    "🔧": lambda pintor, tamano: _llave_inglesa(pintor, tamano, color="#F59E0B"),
+    "🧰": lambda pintor, tamano: (_rect_redondeado(pintor, tamano, 0.12, 0.42, 0.88, 0.82, "#EF4444", radio=0.06, borde="#7F1D1D"),
+                        _rect_redondeado(pintor, tamano, 0.38, 0.30, 0.62, 0.46, "#94A3B8", radio=0.05)),
+    "🎚": lambda pintor, tamano: _control_deslizante(pintor, tamano),
+    "🔽": lambda pintor, tamano: _flecha_abajo_pequena(pintor, tamano),
+    "🔌": lambda pintor, tamano: _enchufe(pintor, tamano),
+
+    #Puzzle / integraciones
+    "🧩": lambda pintor, tamano: _pieza_rompecabezas(pintor, tamano),
+    "🔗": lambda pintor, tamano: _eslabon(pintor, tamano),
+    "⛓": lambda pintor, tamano: _eslabon(pintor, tamano, color="#475569"),
+
+    #Menú / listas
+    "☰": lambda pintor, tamano: _menu_hamburguesa(pintor, tamano),
+
+    #Gráficos / reportes
+    "📊": lambda pintor, tamano: _grafico_barras(pintor, tamano),
+    "📈": lambda pintor, tamano: _grafico_lineas(pintor, tamano, "#22C55E"),
+    "📉": lambda pintor, tamano: _grafico_lineas(pintor, tamano, "#EF4444"),
+    "📐": lambda pintor, tamano: _regla(pintor, tamano),
+
+    #Fecha / hora
+    "📅": lambda pintor, tamano: _calendario(pintor, tamano),
+    "📆": lambda pintor, tamano: _calendario(pintor, tamano, color_top="#3B82F6"),
+    "🗓": lambda pintor, tamano: _calendario(pintor, tamano, color_top="#8B5CF6"),
+    "🕐": lambda pintor, tamano: _reloj(pintor, tamano),
+    "🕒": lambda pintor, tamano: _reloj(pintor, tamano),
+    "🕓": lambda pintor, tamano: _reloj(pintor, tamano),
+
+    #Envío / correo
+    "✉": lambda pintor, tamano: _sobre(pintor, tamano),
+    "📨": lambda pintor, tamano: _sobre(pintor, tamano),
+    "📞": lambda pintor, tamano: _telefono(pintor, tamano),
+    "📤": lambda pintor, tamano: (_sobre(pintor, tamano), _flecha(pintor, tamano, "#3B82F6", -90, cx=0.5, cy=0.5, largo=0.14, ancho_cabeza=0.09)),
+    "📥": lambda pintor, tamano: (_sobre(pintor, tamano), _flecha(pintor, tamano, "#22C55E", 90, cx=0.5, cy=0.5, largo=0.14, ancho_cabeza=0.09)),
+    "📦": lambda pintor, tamano: _paquete(pintor, tamano),
+
+    #Ubicación
+    "📌": lambda pintor, tamano: _pin_ubicacion(pintor, tamano),
+    "📍": lambda pintor, tamano: _pin_ubicacion(pintor, tamano, "#3B82F6"),
+    "🧭": lambda pintor, tamano: _brujula(pintor, tamano),
+
+    #Interfaz / dispositivos
+    "🖥": lambda pintor, tamano: _pantalla(pintor, tamano),
+    "💻": lambda pintor, tamano: _pantalla(pintor, tamano),
+    "🗔": lambda pintor, tamano: _ventana_app(pintor, tamano),
+    "🪟": lambda pintor, tamano: _ventana_app(pintor, tamano),
+    "🖨": lambda pintor, tamano: _impresora(pintor, tamano),
+    "🔤": lambda pintor, tamano: _fuente_texto(pintor, tamano),
+
+    #Nube
+    "☁": lambda pintor, tamano: _nube(pintor, tamano),
+    "🌫": lambda pintor, tamano: _nube(pintor, tamano, color="#CBD5E1"),
+    "🌤": lambda pintor, tamano: (_nube(pintor, tamano, color="#E2E8F0"), _sol(pintor, tamano)),
+
+    #Sol / luna (tema claro/oscuro)
+    "☀": lambda pintor, tamano: _sol(pintor, tamano),
+    "🌙": lambda pintor, tamano: _luna(pintor, tamano),
+    "🌗": lambda pintor, tamano: _luna(pintor, tamano),
+
+    #Emociones
+    "😊": lambda pintor, tamano: _sonrisa(pintor, tamano),
+    "🙂": lambda pintor, tamano: _sonrisa(pintor, tamano),
+    "❤": lambda pintor, tamano: _corazon(pintor, tamano),
+    "💙": lambda pintor, tamano: _corazon(pintor, tamano, "#3B82F6"),
+
+    #Notificaciones
+    "🔔": lambda pintor, tamano: _campana(pintor, tamano),
+
+    #Objetivos / ideas
+    "🎯": lambda pintor, tamano: _diana(pintor, tamano),
+    "💡": lambda pintor, tamano: _bombilla(pintor, tamano),
+    "🧠": lambda pintor, tamano: _cerebro(pintor, tamano),
+    "🎨": lambda pintor, tamano: _paleta(pintor, tamano),
+
+    #Logros
+    "🏆": lambda pintor, tamano: _trofeo(pintor, tamano),
+    "🏁": lambda pintor, tamano: _bandera(pintor, tamano, "#1E293B"),
+    "🏷": lambda pintor, tamano: _pin_ubicacion(pintor, tamano, "#F59E0B"),
+    "🎉": lambda pintor, tamano: (_chispas(pintor, tamano), _confeti(pintor, tamano) if False else None),
+    "⚡": lambda pintor, tamano: _poligono(pintor, tamano, [(0.56, 0.10), (0.24, 0.56), (0.46, 0.56), (0.40, 0.90), (0.78, 0.40),
+                                        (0.54, 0.40)], "#FBBF24", borde="#CA8A04"),
+
+    #Papel/negocio
+    "💼": lambda pintor, tamano: _maletin(pintor, tamano),
+    "⚖": lambda pintor, tamano: _balanza(pintor, tamano),
+    "🚀": lambda pintor, tamano: _cohete(pintor, tamano),
+    "💥": lambda pintor, tamano: _explosion(pintor, tamano),
+    "🧊": lambda pintor, tamano: _rect_redondeado(pintor, tamano, 0.20, 0.20, 0.80, 0.80, "#BAE6FD", radio=0.04, borde="#0284C7"),
+    "💧": lambda pintor, tamano: _gota(pintor, tamano),
+    "🧪": lambda pintor, tamano: _tubo_ensayo(pintor, tamano),
+}
+
+#Glifo privado para el KPI "Notas registradas (año actual)" de Calificaciones Técnicas: planilla con checks,
+#ver _registro_notas_kpi. (\uE035, NO \uE001 -esa clave ya es EMOJI_IMPORTAR más abajo; usarla aquí pisaba el
+#icono de "Importar" en toda la app, incluido el login).
+EMOJI_NOTAS_REGISTRADAS_KPI= "\uE035"
+
+#Glifos privados para IMPORTAR/EXPORTAR: bandeja + flecha, deliberadamente NO un sobre de correo (ver
+#_bandeja_flecha). Úsense en vez de 📥/📤 en cualquier botón cuya acción sea importar/exportar datos -no enviar
+#un correo-; para correo de verdad, 📨/✉ siguen siendo lo correcto.
+EMOJI_IMPORTAR= "\uE001"
+
+EMOJI_EXPORTAR= "\uE002"
+
+#Glifos privados para iconos específicos que no tienen un emoji Unicode
+#adecuado (o cuyo emoji genérico generaba confusión, ver funciones arriba).
+EMOJI_PROFESOR= "\uE003"          #Docente frente a un pizarrón (antes: 👥, genérico)
+
+EMOJI_ESTUDIANTE_RIESGO= "\uE004"  #Estudiante + insignia de alerta (antes: 🚨, sirena)
+
+EMOJI_SECCIONES_GRUPOS= "\uE005"   #Fichas de curso superpuestas (antes: 🏫, escuela)
+
+EMOJI_COPIA_SEGURIDAD= "\uE006"    #Carpeta con flecha circular (backup)
+
+EMOJI_AUDITORIA= "\uE007"          #Hoja de registro + lupa (antes: 📇/📋 genéricos)
+
+EMOJI_TUTORIAL= "\uE008"           #Libro + bombilla de idea (antes: sin icono, o ➕)
+
+#Glifo privado para la pestaña "Vista Previa y Edición" de Reportes: un documento que se está VIENDO (insignia
+#de ojo) y EDITANDO (lápiz apoyado sobre la hoja) al mismo tiempo -antes esa pestaña no tenía icono propio,
+#solo lo que el iconizador automático adivinara por el texto.
+EMOJI_VISTA_EDICION= "\uE009"
+
+#Glifos privados para alineación de texto (izquierda/centro/derecha): el único icono de alineación que existía
+#(\uE000) era "justificado". Se usan en las barras de formato de Excel/Word/PDF del editor de reportes, que
+#antes tenían estos botones con texto vacío y SIN icono -invisibles-.
+EMOJI_ALINEAR_IZQUIERDA= "\uE00A"
+
+EMOJI_ALINEAR_CENTRO= "\uE00B"
+
+EMOJI_ALINEAR_DERECHA= "\uE00C"
+
+#Glifos privados para los 3 estados de asistencia que no tenían icono
+#propio (antes: texto vacío, o -en el caso de "Permiso"- una llave 🔑
+#que el iconizador automático le ponía por casualidad de texto y que no tiene ningún sentido para un
+#permiso/ausencia justificada).
+EMOJI_EXCUSADO= "\uE00D"           #Nota/justificante con sello de aceptado
+
+EMOJI_LICENCIA_MEDICA= "\uE00E"    #Cruz médica
+
+EMOJI_PERMISO= "\uE00F"            #Mano levantada pidiendo/con permiso
+
+#Glifos privados para Calificaciones: el botón "Vincular a Competencias Específicas" usaba 🎓 (persona graduada,
+#"estudiante") sin ninguna relación con la acción de vincular, y varias pestañas de la barra de
+#tabs (Boletín/Promedios, Seguimiento RP, Evaluaciones Finales, Currículo
+#CE, Notas por Competencia, Compartir Calificaciones) o bien no tenían ningún icono dedicado, o el iconizador
+#automático les asignaba uno genérico por coincidencia de palabra (ver iconos_auto.py) que no las distinguía
+#entre sí.
+EMOJI_VINCULAR= "\uE010"
+
+EMOJI_BOLETIN_PROMEDIOS= "\uE011"
+
+EMOJI_SEGUIMIENTO_RP= "\uE012"
+
+EMOJI_EVALUACIONES_FINALES= "\uE013"
+
+EMOJI_CURRICULO_CE= "\uE014"
+
+EMOJI_NOTAS_COMPETENCIA= "\uE015"
+
+EMOJI_COMPARTIR_CALIFICACIONES= "\uE016"
+
+#Glifos privados para los 3 botones "Registrar Nota ___" de Evaluaciones
+#Finales (Completiva/Extraordinaria/Especial): antes los tres usaban el
+#mismo 📈 genérico -sin ninguna forma de distinguirlos a simple vista, obligando a leer el texto completo del
+#botón cada vez-. Comparten una misma base (la hoja de examen de _documento) para leerse como una
+#familia ("esto registra una nota"), y cada uno agrega una insignia
+#propia -coherente con su significado- en la esquina inferior derecha.
+EMOJI_NOTA_COMPLETIVA= "\uE017"      #Hoja + flecha circular: se "completa/retoma" lo pendiente
+
+EMOJI_NOTA_EXTRAORDINARIA= "\uE018"  #Hoja + estrella: convocatoria fuera del ciclo ordinario
+
+EMOJI_NOTA_ESPECIAL= "\uE019"        #Hoja + escudo: caso particular, con condiciones propias
+
+EMOJI_DESEMPENO_INDIVIDUAL= "\uE017"
+
+EMOJI_CALCULADORA= "\uE018"
+
+EMOJI_GENERAR_SEGUIMIENTO= "\uE019"
+
+EMOJI_MODULOS_RA= "\uE01A"
+
+EMOJI_REGISTRO_NOTAS_TECNICAS= "\uE01B"
+
+EMOJI_BOLETIN_TECNICO= "\uE01C"
+
+EMOJI_TALLERES_LABORATORIOS= "\uE01D"
+
+EMOJI_AREAS_TECNICAS= "\uE01E"
+
+EMOJI_EMPRESA_PASANTIA= "\uE01F"
+
+EMOJI_CONTROL_PASANTIAS= "\uE020"
+
+EMOJI_TAB_ENTREGAS= "\uE021"
+
+EMOJI_TAB_ACADEMICO= "\uE022"
+
+EMOJI_TAB_USUARIOS_ROLES= "\uE023"
+
+EMOJI_TAB_AUDITORIA= "\uE024"
+
+EMOJI_TAB_FACULTADES= "\uE025"
+
+EMOJI_TAB_CARRERAS= "\uE026"
+
+EMOJI_TAB_PENSUM= "\uE027"
+
+EMOJI_SYNC_SUBIR= "\uE025"
+
+EMOJI_SYNC_DESCARGAR= "\uE026"
+
+EMOJI_SYNC_SUBIR_DIRECTO= "\uE027"
+
+EMOJI_SYNC_DESCARGAR_DIRECTO= "\uE028"
+
+EMOJI_PAG_PRIMERA= "\uE029"
+
+EMOJI_PAG_ANTERIOR= "\uE02A"
+
+EMOJI_PAG_SIGUIENTE= "\uE02B"
+
+EMOJI_PAG_ULTIMA= "\uE02C"
+
+EMOJI_INSERTAR_FILA= "\uE02D"
+
+EMOJI_ELIMINAR_FILA= "\uE02E"
+
+EMOJI_INSERTAR_COLUMNA= "\uE02F"
+
+EMOJI_ELIMINAR_COLUMNA= "\uE030"
+
+EMOJI_CUADRO_TEXTO= "\uE031"
+
+EMOJI_SALUDO_DIA= "\uE032"
+
+EMOJI_SALUDO_NOCHE= "\uE033"
+
+EMOJI_SILUETA_PLACEHOLDER= "\uE034"
+
+#Glifo privado para los botones "Elegir/Cambiar y Recortar" de imágenes (Foto de estudiante/personal/profesor,
+#Logotipo, Firma Digital): imagen + tijeras -ver _foto_recortar-, en vez de solo las tijeras sueltas (✂) que
+#usaban antes y no dejaban claro que el botón abre un selector de imagen.
+EMOJI_FOTO_RECORTAR= "\uE036"
+
+#Respaldo genérico (por si algún emoji nuevo aparece en el futuro y todavía no tiene una forma dedicada
+#arriba): círculo de color derivado del propio caracter + su primera letra/silueta genérica, para que nunca se
+#quede sin icono ni rompa la UI.
+_PALETA_RESPALDO= ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#F472B6"]
+
 #Llamar tras cambiar el tema (y una vez al iniciar la app). Si el
 #modo realmente cambió, limpia la cache de íconos -para que los
 #PRÓXIMOS `icono_emoji`/`pixmap_emoji` reflejen el tema nuevo- y refresca
@@ -1707,254 +2112,6 @@ def _f(fn):
     return fn
 
 
-#Tabla emoji -> dibujo. Cada lambda recibe pintor= QPainter donde se dibuja y tamano= lado en píxeles
-#del lienzo cuadrado (se invoca como dibujar(p, size) en pixmap_emoji); devuelve el resultado de la
-#función auxiliar o, si es una tupla, ejecuta varios dibujos en orden (el último queda encima).
-#Las auxiliares (_flecha, _panel_dashboard...) usan size para pasar fracciones 0..1 a píxeles.
-#Panel y flechas: _flecha(pintor, tamano, color, angulo_deg) dibuja una flecha recta (0=derecha,
-#-90=arriba, 90=abajo, 180=izquierda); _flecha_curva y _flechas_circulares: deshacer/rehacer, refrescar.
-#Estado, símbolos y puntos: _disco/_check/_cruz/_mas/_menos/_estrella/_poligono pintan círculos,
-#marcas y formas básicas en un color fijo (verde ok, rojo error o eliminar, azul acción).
-#Resto de familias (personas, edificios, candados, documentos, libros, gráficos, nube...):
-#cada lambda solo delega en la función _xxx(pintor, tamano) que dibuja ese objeto; varios emojis
-#parecidos comparten dibujo y cambian solo el color o un flag (p. ej. _libro, _candado, _carpeta).
-_REGISTRO= {
-    #Panel / Dashboard
-    "▦": lambda pintor, tamano: _panel_dashboard(pintor, tamano),
-    "⛶": lambda pintor, tamano: _pantalla_completa(pintor, tamano),
-
-    #Flechas / navegación
-    "←": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", 180),
-    "→": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", 0),
-    "↔": lambda pintor, tamano: (_flecha(pintor, tamano, "#475569", 0, cx=0.65), _flecha(pintor, tamano, "#475569", 180, cx=0.35)),
-    "↑": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", -90),
-    "↓": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", 90),
-    "↗": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", -45),
-    "➡": lambda pintor, tamano: _flecha(pintor, tamano, "#3B82F6", 0),
-    "⬅": lambda pintor, tamano: _flecha(pintor, tamano, "#3B82F6", 180),
-    "⬆": lambda pintor, tamano: _flecha(pintor, tamano, "#22C55E", -90),
-    "⬇": lambda pintor, tamano: _flecha(pintor, tamano, "#EF4444", 90),
-    "↩": lambda pintor, tamano: _flecha_curva(pintor, tamano, "#475569", "undo"),
-    "↶": lambda pintor, tamano: _flecha_curva(pintor, tamano, "#475569", "undo"),
-    "↷": lambda pintor, tamano: _flecha_curva(pintor, tamano, "#475569", "redo"),
-    "⇪": lambda pintor, tamano: _flecha(pintor, tamano, "#475569", -90, largo=0.28),
-    "↺": lambda pintor, tamano: _flechas_circulares(pintor, tamano, "#3B82F6", "#60A5FA"),
-    "🔁": lambda pintor, tamano: _flechas_circulares(pintor, tamano, "#22C55E", "#4ADE80"),
-    "🔄": lambda pintor, tamano: _flechas_circulares(pintor, tamano, "#3B82F6", "#60A5FA"),
-    "♻": lambda pintor, tamano: _reciclaje(pintor, tamano),
-    "⏳": lambda pintor, tamano: _reloj_arena(pintor, tamano),
-    "⌛": lambda pintor, tamano: _reloj_arena(pintor, tamano, color_arena="#EF4444"),
-
-    #Estado / confirmación
-    "✅": lambda pintor, tamano: (_disco(pintor, tamano, 0.08, 0.08, 0.92, 0.92, "#22C55E"), _check(pintor, tamano, "white")),
-    "✓": lambda pintor, tamano: _check(pintor, tamano, "#22C55E", ancho=3.0),
-    "✔": lambda pintor, tamano: _check(pintor, tamano, "#22C55E", ancho=3.0),
-    "❌": lambda pintor, tamano: (_disco(pintor, tamano, 0.08, 0.08, 0.92, 0.92, "#EF4444"), _cruz(pintor, tamano, "white")),
-    "✖": lambda pintor, tamano: _cruz(pintor, tamano, "#EF4444", ancho=3.0),
-    "✕": lambda pintor, tamano: _cruz(pintor, tamano, "#EF4444", ancho=3.0),
-    "⚠": lambda pintor, tamano: _triangulo_alerta(pintor, tamano),
-    "❕": lambda pintor, tamano: _triangulo_alerta(pintor, tamano),
-    "🚨": lambda pintor, tamano: (_disco(pintor, tamano, 0.16, 0.10, 0.84, 0.78, "#EF4444", borde="#7F1D1D"),
-                        _rect_redondeado(pintor, tamano, 0.30, 0.78, 0.70, 0.90, "#1E293B", radio=0.1)),
-    "🚫": lambda pintor, tamano: _prohibido(pintor, tamano),
-    "⛔": lambda pintor, tamano: _prohibido(pintor, tamano),
-    "🚦": lambda pintor, tamano: _semaforo(pintor, tamano),
-    "🚧": lambda pintor, tamano: _construccion(pintor, tamano),
-
-    #Símbolos
-    "➕": lambda pintor, tamano: _mas(pintor, tamano, "#22C55E"),
-    "➖": lambda pintor, tamano: _menos(pintor, tamano, "#EF4444"),
-    "➗": lambda pintor, tamano: _dividir(pintor, tamano),
-    "✂": lambda pintor, tamano: _tijeras(pintor, tamano),
-    "⭐": lambda pintor, tamano: _estrella(pintor, tamano, 0.10, 0.10, 0.90, 0.90, "#FBBF24", borde="#CA8A04"),
-    "🌟": lambda pintor, tamano: (_estrella(pintor, tamano, 0.14, 0.14, 0.86, 0.86, "#FBBF24", borde="#CA8A04"), _chispas(pintor, tamano)),
-    "✨": lambda pintor, tamano: _chispas(pintor, tamano),
-    "🔘": lambda pintor, tamano: (_disco(pintor, tamano, 0.14, 0.14, 0.86, 0.86, "white", borde="#64748B"),
-                        _disco(pintor, tamano, 0.34, 0.34, 0.66, 0.66, "#3B82F6")),
-    "🔲": lambda pintor, tamano: _rect_redondeado(pintor, tamano, 0.18, 0.18, 0.82, 0.82, "#334155", radio=0.10),
-
-    #Puntos de color (semáforos de estado, indicadores)
-    "🔴": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#EF4444", borde="#991B1B"),
-    "🟢": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#22C55E", borde="#166534"),
-    "🟠": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#F97316", borde="#9A3412"),
-    "🔵": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#3B82F6", borde="#1E3A8A"),
-    "🔷": lambda pintor, tamano: _poligono(pintor, tamano, [(0.5, 0.10), (0.90, 0.5), (0.5, 0.90), (0.10, 0.5)], "#3B82F6", borde="#1E3A8A"),
-    "🔹": lambda pintor, tamano: _poligono(pintor, tamano, [(0.5, 0.24), (0.76, 0.5), (0.5, 0.76), (0.24, 0.5)], "#60A5FA"),
-    "⚪": lambda pintor, tamano: _disco(pintor, tamano, 0.16, 0.16, 0.84, 0.84, "#F1F5F9", borde="#94A3B8"),
-
-    #Ojos / visibilidad
-    "👁": lambda pintor, tamano: _ojo(pintor, tamano),
-    "🙈": lambda pintor, tamano: _ojo(pintor, tamano, cerrado=True),
-    "👓": lambda pintor, tamano: _lentes(pintor, tamano),
-
-    #Manos / gestos
-    "👆": lambda pintor, tamano: _flecha(pintor, tamano, "#F59E0B", -90, largo=0.24, ancho_cabeza=0.14),
-    "👇": lambda pintor, tamano: _flecha(pintor, tamano, "#F59E0B", 90, largo=0.24, ancho_cabeza=0.14),
-    "🤝": lambda pintor, tamano: _manos_saludo(pintor, tamano),
-
-    #Personas
-    "👤": lambda pintor, tamano: _persona(pintor, tamano, 1, "#64748B"),
-    "👥": lambda pintor, tamano: _persona(pintor, tamano, 2),
-    "👨": lambda pintor, tamano: _persona(pintor, tamano, 1, "#3B82F6"),
-    "🧑": lambda pintor, tamano: _persona(pintor, tamano, 1, "#F59E0B"),
-    "🎓": lambda pintor, tamano: _persona(pintor, tamano, 1, "#1D4ED8", graduado=True),
-
-    #Edificios
-    "🏠": lambda pintor, tamano: _casa(pintor, tamano),
-    "🏫": lambda pintor, tamano: _escuela(pintor, tamano),
-    "🏢": lambda pintor, tamano: _edificio(pintor, tamano),
-    "🏥": lambda pintor, tamano: _hospital(pintor, tamano),
-    "🏛": lambda pintor, tamano: _castillo(pintor, tamano),
-    "🚪": lambda pintor, tamano: _puerta_salida(pintor, tamano),
-
-    #Candados / seguridad / llaves
-    "🔒": lambda pintor, tamano: _candado(pintor, tamano),
-    "🔐": lambda pintor, tamano: _candado(pintor, tamano, color_cuerpo="#4F46E5", color_arco="#818CF8"),
-    "🔓": lambda pintor, tamano: _candado(pintor, tamano, abierto=True),
-    "🔑": lambda pintor, tamano: _llave(pintor, tamano),
-    "🛡": lambda pintor, tamano: _escudo(pintor, tamano),
-
-    #Documentos / carpetas / libros
-    "📁": lambda pintor, tamano: _carpeta(pintor, tamano),
-    "📂": lambda pintor, tamano: _carpeta(pintor, tamano, abierta=True),
-    "🗂": lambda pintor, tamano: _carpeta(pintor, tamano, color="#38BDF8", abierta=True),
-    "🗄": lambda pintor, tamano: _archivador(pintor, tamano),
-    "📄": lambda pintor, tamano: _documento(pintor, tamano),
-    "📃": lambda pintor, tamano: _documento(pintor, tamano, lineas=False),
-    "📋": lambda pintor, tamano: _clip_tablero(pintor, tamano),
-    "🗒": lambda pintor, tamano: _documento(pintor, tamano, color_esquina="#F59E0B"),
-    "📝": lambda pintor, tamano: (_documento(pintor, tamano, lineas=False), _lapiz(pintor, tamano)),
-    "📇": lambda pintor, tamano: _tarjeta_indice(pintor, tamano),
-    "📜": lambda pintor, tamano: _pergamino(pintor, tamano),
-    "📔": lambda pintor, tamano: _libro(pintor, tamano, "#EF4444", "#7F1D1D"),
-    "📖": lambda pintor, tamano: _libro(pintor, tamano, "#F59E0B", "#92400E"),
-    "📗": lambda pintor, tamano: _libro(pintor, tamano, "#22C55E", "#166534"),
-    "📘": lambda pintor, tamano: _libro(pintor, tamano, "#3B82F6", "#1E3A8A"),
-    "📙": lambda pintor, tamano: _libro(pintor, tamano, "#F97316", "#9A3412"),
-    "📚": lambda pintor, tamano: _libro(pintor, tamano, "#8B5CF6", "#5B21B6"),
-    "🗺": lambda pintor, tamano: _mapa(pintor, tamano),
-    "📜🗺": None,
-
-    #Edición
-    "✏": lambda pintor, tamano: _lapiz(pintor, tamano),
-    "✎": lambda pintor, tamano: _lapiz(pintor, tamano),
-    "✍": lambda pintor, tamano: _lapiz(pintor, tamano),
-    "🖌": lambda pintor, tamano: _lapiz(pintor, tamano),
-    "🖍": lambda pintor, tamano: _lapiz(pintor, tamano),
-
-    #Guardar / archivos multimedia
-    "💾": lambda pintor, tamano: _disquete(pintor, tamano),
-    "📀": lambda pintor, tamano: _disco_optico(pintor, tamano),
-    "🖼": lambda pintor, tamano: (_rect_redondeado(pintor, tamano, 0.12, 0.16, 0.88, 0.84, "white", radio=0.04, borde="#94A3B8"),
-                        _disco(pintor, tamano, 0.24, 0.30, 0.38, 0.44, "#FBBF24"),
-                        _poligono(pintor, tamano, [(0.18, 0.76), (0.42, 0.50), (0.60, 0.66), (0.76, 0.46), (0.82, 0.76)], "#22C55E")),
-    "📷": lambda pintor, tamano: _camara(pintor, tamano),
-
-    #Papelera / limpieza
-    "🗑": lambda pintor, tamano: _papelera(pintor, tamano),
-    "🧹": lambda pintor, tamano: _escoba(pintor, tamano),
-
-    #Búsqueda
-    "🔍": lambda pintor, tamano: _lupa(pintor, tamano),
-    "🔎": lambda pintor, tamano: _lupa(pintor, tamano, color="#F59E0B"),
-
-    #Config / herramientas
-    "⚙": lambda pintor, tamano: _engranaje(pintor, tamano),
-    "🛠": lambda pintor, tamano: (_llave_inglesa(pintor, tamano), None),
-    "🔧": lambda pintor, tamano: _llave_inglesa(pintor, tamano, color="#F59E0B"),
-    "🧰": lambda pintor, tamano: (_rect_redondeado(pintor, tamano, 0.12, 0.42, 0.88, 0.82, "#EF4444", radio=0.06, borde="#7F1D1D"),
-                        _rect_redondeado(pintor, tamano, 0.38, 0.30, 0.62, 0.46, "#94A3B8", radio=0.05)),
-    "🎚": lambda pintor, tamano: _control_deslizante(pintor, tamano),
-    "🔽": lambda pintor, tamano: _flecha_abajo_pequena(pintor, tamano),
-    "🔌": lambda pintor, tamano: _enchufe(pintor, tamano),
-
-    #Puzzle / integraciones
-    "🧩": lambda pintor, tamano: _pieza_rompecabezas(pintor, tamano),
-    "🔗": lambda pintor, tamano: _eslabon(pintor, tamano),
-    "⛓": lambda pintor, tamano: _eslabon(pintor, tamano, color="#475569"),
-
-    #Menú / listas
-    "☰": lambda pintor, tamano: _menu_hamburguesa(pintor, tamano),
-
-    #Gráficos / reportes
-    "📊": lambda pintor, tamano: _grafico_barras(pintor, tamano),
-    "📈": lambda pintor, tamano: _grafico_lineas(pintor, tamano, "#22C55E"),
-    "📉": lambda pintor, tamano: _grafico_lineas(pintor, tamano, "#EF4444"),
-    "📐": lambda pintor, tamano: _regla(pintor, tamano),
-
-    #Fecha / hora
-    "📅": lambda pintor, tamano: _calendario(pintor, tamano),
-    "📆": lambda pintor, tamano: _calendario(pintor, tamano, color_top="#3B82F6"),
-    "🗓": lambda pintor, tamano: _calendario(pintor, tamano, color_top="#8B5CF6"),
-    "🕐": lambda pintor, tamano: _reloj(pintor, tamano),
-    "🕒": lambda pintor, tamano: _reloj(pintor, tamano),
-    "🕓": lambda pintor, tamano: _reloj(pintor, tamano),
-
-    #Envío / correo
-    "✉": lambda pintor, tamano: _sobre(pintor, tamano),
-    "📨": lambda pintor, tamano: _sobre(pintor, tamano),
-    "📞": lambda pintor, tamano: _telefono(pintor, tamano),
-    "📤": lambda pintor, tamano: (_sobre(pintor, tamano), _flecha(pintor, tamano, "#3B82F6", -90, cx=0.5, cy=0.5, largo=0.14, ancho_cabeza=0.09)),
-    "📥": lambda pintor, tamano: (_sobre(pintor, tamano), _flecha(pintor, tamano, "#22C55E", 90, cx=0.5, cy=0.5, largo=0.14, ancho_cabeza=0.09)),
-    "📦": lambda pintor, tamano: _paquete(pintor, tamano),
-
-    #Ubicación
-    "📌": lambda pintor, tamano: _pin_ubicacion(pintor, tamano),
-    "📍": lambda pintor, tamano: _pin_ubicacion(pintor, tamano, "#3B82F6"),
-    "🧭": lambda pintor, tamano: _brujula(pintor, tamano),
-
-    #Interfaz / dispositivos
-    "🖥": lambda pintor, tamano: _pantalla(pintor, tamano),
-    "💻": lambda pintor, tamano: _pantalla(pintor, tamano),
-    "🗔": lambda pintor, tamano: _ventana_app(pintor, tamano),
-    "🪟": lambda pintor, tamano: _ventana_app(pintor, tamano),
-    "🖨": lambda pintor, tamano: _impresora(pintor, tamano),
-    "🔤": lambda pintor, tamano: _fuente_texto(pintor, tamano),
-
-    #Nube
-    "☁": lambda pintor, tamano: _nube(pintor, tamano),
-    "🌫": lambda pintor, tamano: _nube(pintor, tamano, color="#CBD5E1"),
-    "🌤": lambda pintor, tamano: (_nube(pintor, tamano, color="#E2E8F0"), _sol(pintor, tamano)),
-
-    #Sol / luna (tema claro/oscuro)
-    "☀": lambda pintor, tamano: _sol(pintor, tamano),
-    "🌙": lambda pintor, tamano: _luna(pintor, tamano),
-    "🌗": lambda pintor, tamano: _luna(pintor, tamano),
-
-    #Emociones
-    "😊": lambda pintor, tamano: _sonrisa(pintor, tamano),
-    "🙂": lambda pintor, tamano: _sonrisa(pintor, tamano),
-    "❤": lambda pintor, tamano: _corazon(pintor, tamano),
-    "💙": lambda pintor, tamano: _corazon(pintor, tamano, "#3B82F6"),
-
-    #Notificaciones
-    "🔔": lambda pintor, tamano: _campana(pintor, tamano),
-
-    #Objetivos / ideas
-    "🎯": lambda pintor, tamano: _diana(pintor, tamano),
-    "💡": lambda pintor, tamano: _bombilla(pintor, tamano),
-    "🧠": lambda pintor, tamano: _cerebro(pintor, tamano),
-    "🎨": lambda pintor, tamano: _paleta(pintor, tamano),
-
-    #Logros
-    "🏆": lambda pintor, tamano: _trofeo(pintor, tamano),
-    "🏁": lambda pintor, tamano: _bandera(pintor, tamano, "#1E293B"),
-    "🏷": lambda pintor, tamano: _pin_ubicacion(pintor, tamano, "#F59E0B"),
-    "🎉": lambda pintor, tamano: (_chispas(pintor, tamano), _confeti(pintor, tamano) if False else None),
-    "⚡": lambda pintor, tamano: _poligono(pintor, tamano, [(0.56, 0.10), (0.24, 0.56), (0.46, 0.56), (0.40, 0.90), (0.78, 0.40),
-                                        (0.54, 0.40)], "#FBBF24", borde="#CA8A04"),
-
-    #Papel/negocio
-    "💼": lambda pintor, tamano: _maletin(pintor, tamano),
-    "⚖": lambda pintor, tamano: _balanza(pintor, tamano),
-    "🚀": lambda pintor, tamano: _cohete(pintor, tamano),
-    "💥": lambda pintor, tamano: _explosion(pintor, tamano),
-    "🧊": lambda pintor, tamano: _rect_redondeado(pintor, tamano, 0.20, 0.20, 0.80, 0.80, "#BAE6FD", radio=0.04, borde="#0284C7"),
-    "💧": lambda pintor, tamano: _gota(pintor, tamano),
-    "🧪": lambda pintor, tamano: _tubo_ensayo(pintor, tamano),
-}
-
-
 def _confeti(pintor, tamano):
 
     pass
@@ -1969,29 +2126,12 @@ _REGISTRO.setdefault("📜", lambda pintor, tamano: _pergamino(pintor, tamano))
 #Glifo privado (área de uso privado Unicode) para FILTROS:
 #align-justify puro, sin lupa, tal como pide el diseño.
 _REGISTRO.setdefault("\uE000", lambda pintor, tamano: _alineacion_justificada(pintor, tamano))
-#Glifo privado para el KPI "Notas registradas (año actual)" de Calificaciones Técnicas: planilla con checks,
-#ver _registro_notas_kpi. (\uE035, NO \uE001 -esa clave ya es EMOJI_IMPORTAR más abajo; usarla aquí pisaba el
-#icono de "Importar" en toda la app, incluido el login).
-EMOJI_NOTAS_REGISTRADAS_KPI= "\uE035"
 _REGISTRO.setdefault(EMOJI_NOTAS_REGISTRADAS_KPI, lambda pintor, tamano: _registro_notas_kpi(pintor, tamano, "#10B981"))
-#Glifos privados para IMPORTAR/EXPORTAR: bandeja + flecha, deliberadamente NO un sobre de correo (ver
-#_bandeja_flecha). Úsense en vez de 📥/📤 en cualquier botón cuya acción sea importar/exportar datos -no enviar
-#un correo-; para correo de verdad, 📨/✉ siguen siendo lo correcto.
-EMOJI_IMPORTAR= "\uE001"
-EMOJI_EXPORTAR= "\uE002"
 _REGISTRO.setdefault(EMOJI_IMPORTAR, lambda pintor, tamano: _icono_importar(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_EXPORTAR, lambda pintor, tamano: _icono_exportar(pintor, tamano))
 _REGISTRO.setdefault("🎓", lambda pintor, tamano: _persona(pintor, tamano, 1, "#1D4ED8", graduado=True))
 _REGISTRO.pop("📜🗺", None)
 
-#Glifos privados para iconos específicos que no tienen un emoji Unicode
-#adecuado (o cuyo emoji genérico generaba confusión, ver funciones arriba).
-EMOJI_PROFESOR= "\uE003"          #Docente frente a un pizarrón (antes: 👥, genérico)
-EMOJI_ESTUDIANTE_RIESGO= "\uE004"  #Estudiante + insignia de alerta (antes: 🚨, sirena)
-EMOJI_SECCIONES_GRUPOS= "\uE005"   #Fichas de curso superpuestas (antes: 🏫, escuela)
-EMOJI_COPIA_SEGURIDAD= "\uE006"    #Carpeta con flecha circular (backup)
-EMOJI_AUDITORIA= "\uE007"          #Hoja de registro + lupa (antes: 📇/📋 genéricos)
-EMOJI_TUTORIAL= "\uE008"           #Libro + bombilla de idea (antes: sin icono, o ➕)
 _REGISTRO.setdefault(EMOJI_PROFESOR, lambda pintor, tamano: _profesor(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_ESTUDIANTE_RIESGO, lambda pintor, tamano: _estudiante_riesgo(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_SECCIONES_GRUPOS, lambda pintor, tamano: _secciones_grupos(pintor, tamano))
@@ -1999,46 +2139,16 @@ _REGISTRO.setdefault(EMOJI_COPIA_SEGURIDAD, lambda pintor, tamano: _copia_seguri
 _REGISTRO.setdefault(EMOJI_AUDITORIA, lambda pintor, tamano: _auditoria(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_TUTORIAL, lambda pintor, tamano: _tutorial_guia(pintor, tamano))
 
-#Glifo privado para la pestaña "Vista Previa y Edición" de Reportes: un documento que se está VIENDO (insignia
-#de ojo) y EDITANDO (lápiz apoyado sobre la hoja) al mismo tiempo -antes esa pestaña no tenía icono propio,
-#solo lo que el iconizador automático adivinara por el texto.
-EMOJI_VISTA_EDICION= "\uE009"
 _REGISTRO.setdefault(EMOJI_VISTA_EDICION, lambda pintor, tamano: _archivo_vista_edicion(pintor, tamano))
 
-#Glifos privados para alineación de texto (izquierda/centro/derecha): el único icono de alineación que existía
-#(\uE000) era "justificado". Se usan en las barras de formato de Excel/Word/PDF del editor de reportes, que
-#antes tenían estos botones con texto vacío y SIN icono -invisibles-.
-EMOJI_ALINEAR_IZQUIERDA= "\uE00A"
-EMOJI_ALINEAR_CENTRO= "\uE00B"
-EMOJI_ALINEAR_DERECHA= "\uE00C"
 _REGISTRO.setdefault(EMOJI_ALINEAR_IZQUIERDA, lambda pintor, tamano: _alineacion_lineas(pintor, tamano, "izquierda"))
 _REGISTRO.setdefault(EMOJI_ALINEAR_CENTRO, lambda pintor, tamano: _alineacion_lineas(pintor, tamano, "centro"))
 _REGISTRO.setdefault(EMOJI_ALINEAR_DERECHA, lambda pintor, tamano: _alineacion_lineas(pintor, tamano, "derecha"))
 
-#Glifos privados para los 3 estados de asistencia que no tenían icono
-#propio (antes: texto vacío, o -en el caso de "Permiso"- una llave 🔑
-#que el iconizador automático le ponía por casualidad de texto y que no tiene ningún sentido para un
-#permiso/ausencia justificada).
-EMOJI_EXCUSADO= "\uE00D"           #Nota/justificante con sello de aceptado
-EMOJI_LICENCIA_MEDICA= "\uE00E"    #Cruz médica
-EMOJI_PERMISO= "\uE00F"            #Mano levantada pidiendo/con permiso
 _REGISTRO.setdefault(EMOJI_EXCUSADO, lambda pintor, tamano: _excusa_justificante(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_LICENCIA_MEDICA, lambda pintor, tamano: _licencia_medica(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_PERMISO, lambda pintor, tamano: _permiso_mano(pintor, tamano))
 
-#Glifos privados para Calificaciones: el botón "Vincular a Competencias Específicas" usaba 🎓 (persona graduada,
-#"estudiante") sin ninguna relación con la acción de vincular, y varias pestañas de la barra de
-#tabs (Boletín/Promedios, Seguimiento RP, Evaluaciones Finales, Currículo
-#CE, Notas por Competencia, Compartir Calificaciones) o bien no tenían ningún icono dedicado, o el iconizador
-#automático les asignaba uno genérico por coincidencia de palabra (ver iconos_auto.py) que no las distinguía
-#entre sí.
-EMOJI_VINCULAR= "\uE010"
-EMOJI_BOLETIN_PROMEDIOS= "\uE011"
-EMOJI_SEGUIMIENTO_RP= "\uE012"
-EMOJI_EVALUACIONES_FINALES= "\uE013"
-EMOJI_CURRICULO_CE= "\uE014"
-EMOJI_NOTAS_COMPETENCIA= "\uE015"
-EMOJI_COMPARTIR_CALIFICACIONES= "\uE016"
 _REGISTRO.setdefault(EMOJI_VINCULAR, lambda pintor, tamano: _vinculacion(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_BOLETIN_PROMEDIOS, lambda pintor, tamano: _boletin_promedios(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_SEGUIMIENTO_RP, lambda pintor, tamano: _seguimiento_rp(pintor, tamano))
@@ -2047,15 +2157,6 @@ _REGISTRO.setdefault(EMOJI_CURRICULO_CE, lambda pintor, tamano: _curriculo_ce(pi
 _REGISTRO.setdefault(EMOJI_NOTAS_COMPETENCIA, lambda pintor, tamano: _notas_competencia(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_COMPARTIR_CALIFICACIONES, lambda pintor, tamano: _compartir_calificaciones(pintor, tamano))
 
-#Glifos privados para los 3 botones "Registrar Nota ___" de Evaluaciones
-#Finales (Completiva/Extraordinaria/Especial): antes los tres usaban el
-#mismo 📈 genérico -sin ninguna forma de distinguirlos a simple vista, obligando a leer el texto completo del
-#botón cada vez-. Comparten una misma base (la hoja de examen de _documento) para leerse como una
-#familia ("esto registra una nota"), y cada uno agrega una insignia
-#propia -coherente con su significado- en la esquina inferior derecha.
-EMOJI_NOTA_COMPLETIVA= "\uE017"      #Hoja + flecha circular: se "completa/retoma" lo pendiente
-EMOJI_NOTA_EXTRAORDINARIA= "\uE018"  #Hoja + estrella: convocatoria fuera del ciclo ordinario
-EMOJI_NOTA_ESPECIAL= "\uE019"        #Hoja + escudo: caso particular, con condiciones propias
 _REGISTRO.setdefault(EMOJI_NOTA_COMPLETIVA, lambda pintor, tamano: _nota_completiva(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_NOTA_EXTRAORDINARIA, lambda pintor, tamano: _nota_extraordinaria(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_NOTA_ESPECIAL, lambda pintor, tamano: _nota_especial(pintor, tamano))
@@ -2116,9 +2217,6 @@ def _generar_seguimiento(pintor, size):
     _estrella(pintor, size, 0.60, 0.58, 0.82, 0.80, "#FBBF24", borde="#CA8A04")
 
 
-EMOJI_DESEMPENO_INDIVIDUAL= "\uE017"
-EMOJI_CALCULADORA= "\uE018"
-EMOJI_GENERAR_SEGUIMIENTO= "\uE019"
 _REGISTRO.setdefault(EMOJI_DESEMPENO_INDIVIDUAL, lambda pintor, tamano: _desempeno_individual(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_CALCULADORA, lambda pintor, tamano: _calculadora(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_GENERAR_SEGUIMIENTO, lambda pintor, tamano: _generar_seguimiento(pintor, tamano))
@@ -2199,9 +2297,6 @@ def _boletin_tecnico(pintor, size):
     _estrella(pintor, size, 0.42, 0.68, 0.58, 0.84, "#FEF3C7", borde="#CA8A04", puntas=5)
 
 
-EMOJI_MODULOS_RA= "\uE01A"
-EMOJI_REGISTRO_NOTAS_TECNICAS= "\uE01B"
-EMOJI_BOLETIN_TECNICO= "\uE01C"
 _REGISTRO.setdefault(EMOJI_MODULOS_RA, lambda pintor, tamano: _modulos_ra(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_REGISTRO_NOTAS_TECNICAS, lambda pintor, tamano: _registro_notas_tecnicas(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_BOLETIN_TECNICO, lambda pintor, tamano: _boletin_tecnico(pintor, tamano))
@@ -2294,10 +2389,6 @@ def _control_pasantias(pintor, size):
     pintor.restore()
 
 
-EMOJI_TALLERES_LABORATORIOS= "\uE01D"
-EMOJI_AREAS_TECNICAS= "\uE01E"
-EMOJI_EMPRESA_PASANTIA= "\uE01F"
-EMOJI_CONTROL_PASANTIAS= "\uE020"
 _REGISTRO.setdefault(EMOJI_TALLERES_LABORATORIOS, lambda pintor, tamano: _talleres_laboratorios(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_AREAS_TECNICAS, lambda pintor, tamano: _areas_tecnicas(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_EMPRESA_PASANTIA, lambda pintor, tamano: _empresa_pasantia(pintor, tamano))
@@ -2420,13 +2511,6 @@ def _pensum_universidad_tab(p, size):
         _rect_redondeado(p, size, x - 0.10, y - 0.09, x + 0.10, y + 0.09, color, radio=0.04)
 
 
-EMOJI_TAB_ENTREGAS= "\uE021"
-EMOJI_TAB_ACADEMICO= "\uE022"
-EMOJI_TAB_USUARIOS_ROLES= "\uE023"
-EMOJI_TAB_AUDITORIA= "\uE024"
-EMOJI_TAB_FACULTADES= "\uE025"
-EMOJI_TAB_CARRERAS= "\uE026"
-EMOJI_TAB_PENSUM= "\uE027"
 _REGISTRO.setdefault(EMOJI_TAB_ENTREGAS, lambda pintor, tamano: _entregas_tab(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_TAB_ACADEMICO, lambda pintor, tamano: _academico_tab(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_TAB_USUARIOS_ROLES, lambda pintor, tamano: _usuarios_roles_tab(pintor, tamano))
@@ -2531,10 +2615,6 @@ def _sync_descargar_directo(p, size):
     _flecha_sincronizacion(p, size, False, "#3B82F6", "#1D4ED8")
 
 
-EMOJI_SYNC_SUBIR= "\uE025"
-EMOJI_SYNC_DESCARGAR= "\uE026"
-EMOJI_SYNC_SUBIR_DIRECTO= "\uE027"
-EMOJI_SYNC_DESCARGAR_DIRECTO= "\uE028"
 _REGISTRO.setdefault(EMOJI_SYNC_SUBIR, lambda pintor, tamano: _sync_subir(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_SYNC_DESCARGAR, lambda pintor, tamano: _sync_descargar(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_SYNC_SUBIR_DIRECTO, lambda pintor, tamano: _sync_subir_directo(pintor, tamano))
@@ -2601,10 +2681,6 @@ def _pag_ultima(p, size):
     _chevron_paginacion(p, size, False, 0.34, 0.60)
 
 
-EMOJI_PAG_PRIMERA= "\uE029"
-EMOJI_PAG_ANTERIOR= "\uE02A"
-EMOJI_PAG_SIGUIENTE= "\uE02B"
-EMOJI_PAG_ULTIMA= "\uE02C"
 _REGISTRO.setdefault(EMOJI_PAG_PRIMERA, lambda pintor, tamano: _pag_primera(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_PAG_ANTERIOR, lambda pintor, tamano: _pag_anterior(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_PAG_SIGUIENTE, lambda pintor, tamano: _pag_siguiente(pintor, tamano))
@@ -2682,10 +2758,6 @@ def _eliminar_columna_hoja(p, size):
     _signo_operacion(p, size, False)
 
 
-EMOJI_INSERTAR_FILA= "\uE02D"
-EMOJI_ELIMINAR_FILA= "\uE02E"
-EMOJI_INSERTAR_COLUMNA= "\uE02F"
-EMOJI_ELIMINAR_COLUMNA= "\uE030"
 _REGISTRO.setdefault(EMOJI_INSERTAR_FILA, lambda pintor, tamano: _insertar_fila_hoja(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_ELIMINAR_FILA, lambda pintor, tamano: _eliminar_fila_hoja(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_INSERTAR_COLUMNA, lambda pintor, tamano: _insertar_columna_hoja(pintor, tamano))
@@ -2710,7 +2782,6 @@ def _cuadro_texto_hoja(pintor, size):
     pintor.drawLine(QPointF(0.50 * size, 0.36 * size), QPointF(0.50 * size, 0.70 * size))
 
 
-EMOJI_CUADRO_TEXTO= "\uE031"
 _REGISTRO.setdefault(EMOJI_CUADRO_TEXTO, lambda pintor, tamano: _cuadro_texto_hoja(pintor, tamano))
 
 
@@ -2759,8 +2830,6 @@ def _saludo_noche(pintor, size):
     _estrella(pintor, size, 0.80, 0.42, 0.92, 0.54, "#FDE68A", puntas=4)
 
 
-EMOJI_SALUDO_DIA= "\uE032"
-EMOJI_SALUDO_NOCHE= "\uE033"
 _REGISTRO.setdefault(EMOJI_SALUDO_DIA, lambda pintor, tamano: _saludo_dia(pintor, tamano))
 _REGISTRO.setdefault(EMOJI_SALUDO_NOCHE, lambda pintor, tamano: _saludo_noche(pintor, tamano))
 
@@ -2779,20 +2848,9 @@ def _silueta_persona_placeholder(pintor, size):
     pintor.drawEllipse(_r(size, 0.06, 0.52, 0.94, 1.30))
 
 
-EMOJI_SILUETA_PLACEHOLDER= "\uE034"
 _REGISTRO.setdefault(EMOJI_SILUETA_PLACEHOLDER, lambda pintor, tamano: _silueta_persona_placeholder(pintor, tamano))
 
-#Glifo privado para los botones "Elegir/Cambiar y Recortar" de imágenes (Foto de estudiante/personal/profesor,
-#Logotipo, Firma Digital): imagen + tijeras -ver _foto_recortar-, en vez de solo las tijeras sueltas (✂) que
-#usaban antes y no dejaban claro que el botón abre un selector de imagen.
-EMOJI_FOTO_RECORTAR= "\uE036"
 _REGISTRO.setdefault(EMOJI_FOTO_RECORTAR, lambda pintor, tamano: _foto_recortar(pintor, tamano))
-
-
-#Respaldo genérico (por si algún emoji nuevo aparece en el futuro y todavía no tiene una forma dedicada
-#arriba): círculo de color derivado del propio caracter + su primera letra/silueta genérica, para que nunca se
-#quede sin icono ni rompa la UI.
-_PALETA_RESPALDO= ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#F472B6"]
 
 
 #Respaldo para emojis futuros sin dibujo dedicado: ficha redondeada

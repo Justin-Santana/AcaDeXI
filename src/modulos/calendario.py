@@ -79,33 +79,6 @@ def _normalizar(texto):
     return sin_acentos.lower()
 
 
-#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-#(mismo diseño que configuracion.py, horario.py y asistencia.py).
-class IconoLupa(QWidget):
-
-    def __init__(self, parent=None):
-
-        super().__init__(parent)
-        self.setFixedSize(17, 17)
-        self._color= "#64748B"
-
-    def establecer_color(self, color):
-
-        self._color= color
-        self.update()
-
-    def paintEvent(self, evento):
-
-        painter= QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen= QPen(QColor(self._color), 1.7)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawEllipse(QRectF(1.5, 1.5, 9.5, 9.5))
-        painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
-
-
 #Aparece/desaparece `widget` con un fundido de opacidad. Segura ante
 #llamadas repetidas y rápidas: nunca deja un efecto huérfano ni un widget
 #en un estado de visibilidad incorrecto.
@@ -161,6 +134,63 @@ def _glow_invalido(widget):
     anim.finished.connect(_fin)
     widget._anim_glow_activo= anim
     anim.start()
+
+
+#Dibuja a mano un icono circular verde con '+' (colapsado) o '−'
+#(expandido) -mismo criterio que IconoLupa en horario.py: no depender de
+#que el sistema tenga instalado un glifo/emoji concreto (el '+'/'−' de
+#algunas fuentes se ve desalineado o directamente no existe)-. Es el
+#icono que reemplaza a la flecha de texto (▸/▾) en el encabezado de
+#PanelDesplegable, para que 'Añadir/Nueva ...' se lea de un vistazo como
+#una acción de agregar en TODOS los módulos que usan este panel.
+def _pixmap_circulo_mas_menos(expandido, diametro=18):
+
+    pixmap= QPixmap(diametro, diametro)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter= QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    color= QColor("#22C55E")
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(QBrush(color))
+    margen= 1.0
+    painter.drawEllipse(QRectF(margen, margen, diametro - 2 * margen, diametro - 2 * margen))
+    pen= QPen(QColor("#FFFFFF"), 1.8)
+    pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+    painter.setPen(pen)
+    centro= diametro / 2
+    brazo= diametro * 0.24
+    painter.drawLine(QPointF(centro - brazo, centro), QPointF(centro + brazo, centro))
+    if not expandido:
+        painter.drawLine(QPointF(centro, centro - brazo), QPointF(centro, centro + brazo))
+    painter.end()
+    return pixmap
+
+
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que configuracion.py, horario.py y asistencia.py).
+class IconoLupa(QWidget):
+
+    def __init__(self, parent=None):
+
+        super().__init__(parent)
+        self.setFixedSize(17, 17)
+        self._color= "#64748B"
+
+    def establecer_color(self, color):
+
+        self._color= color
+        self.update()
+
+    def paintEvent(self, evento):
+
+        painter= QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pen= QPen(QColor(self._color), 1.7)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawEllipse(QRectF(1.5, 1.5, 9.5, 9.5))
+        painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
 #Punto circular que 'respira' en bucle — usado para señalar 'hoy' o el
@@ -445,36 +475,6 @@ class _ToastFlotante(QFrame):
         anim_out.finished.connect(self.hide)
         self._anim_out= anim_out
         anim_out.start()
-
-
-#Dibuja a mano un icono circular verde con '+' (colapsado) o '−'
-#(expandido) -mismo criterio que IconoLupa en horario.py: no depender de
-#que el sistema tenga instalado un glifo/emoji concreto (el '+'/'−' de
-#algunas fuentes se ve desalineado o directamente no existe)-. Es el
-#icono que reemplaza a la flecha de texto (▸/▾) en el encabezado de
-#PanelDesplegable, para que 'Añadir/Nueva ...' se lea de un vistazo como
-#una acción de agregar en TODOS los módulos que usan este panel.
-def _pixmap_circulo_mas_menos(expandido, diametro=18):
-
-    pixmap= QPixmap(diametro, diametro)
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter= QPainter(pixmap)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    color= QColor("#22C55E")
-    painter.setPen(Qt.PenStyle.NoPen)
-    painter.setBrush(QBrush(color))
-    margen= 1.0
-    painter.drawEllipse(QRectF(margen, margen, diametro - 2 * margen, diametro - 2 * margen))
-    pen= QPen(QColor("#FFFFFF"), 1.8)
-    pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-    painter.setPen(pen)
-    centro= diametro / 2
-    brazo= diametro * 0.24
-    painter.drawLine(QPointF(centro - brazo, centro), QPointF(centro + brazo, centro))
-    if not expandido:
-        painter.drawLine(QPointF(centro, centro - brazo), QPointF(centro, centro + brazo))
-    painter.end()
-    return pixmap
 
 
 #Bloque colapsable con un encabezado clicable (icono ⊕/⊖ + título).

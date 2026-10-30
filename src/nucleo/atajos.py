@@ -184,6 +184,93 @@ def atajos_de(widget):
     return list(getattr(widget, "_atajos_registrados", []))
 
 
+#Retroalimentación visual al presionar un botón — global, para TODA la app IMPORTANTE: en Qt,
+#`widget.setGraphicsEffect(nuevo)` no solo "reemplaza" el efecto anterior -lo DESTRUYE de verdad (borra el
+#objeto C++)-. Guardar
+#una referencia al efecto viejo para "restaurarlo" después NO funciona:
+#esa referencia queda apuntando a un objeto ya borrado, y usarla revienta con "Internal C++ object already
+#deleted". Esto rompía, en concreto, la sombra de "BotonAnimado" (self._sombra en estudiantes.py, personal.py,
+#profesores.py, reportes.py, universidad.py), que es un QGraphicsEffect propio y persistente para su animación
+#de hover.
+##Por eso este módulo NUNCA reemplaza un graphicsEffect ajeno:
+#- Si el botón NO tiene ningún efecto puesto, se le pone un
+#QGraphicsOpacityEffect propio de esta función (se crea y se destruye aquí mismo, nunca choca con nada de otro
+#módulo).
+#- Si el botón YA tiene un efecto puesto (p. ej. la sombra de
+#BotonAnimado), no se toca ese efecto para nada: en su lugar se superpone un pequeño overlay semitransparente
+#-un QWidget hijo, no un graphicsEffect- que aparece mientras se sostiene el clic y se quita al soltar. Cero
+#interferencia con el efecto que ya tenía el botón.
+#Al bajar el mouse sobre el botón: se atenúa y SE QUEDA atenuado
+#mientras se sostiene, como un botón físico hundido.
+def _iniciar_presion(boton):
+
+    if getattr(boton, "_retroalim_presionado", False):
+        return
+    boton._retroalim_presionado= True
+
+    if boton.graphicsEffect() is None:
+        efecto= QGraphicsOpacityEffect(boton)
+        efecto.setOpacity(1.0)
+        boton.setGraphicsEffect(efecto)
+        boton._retroalim_via_opacidad= True
+        anim= QPropertyAnimation(efecto, b"opacity", boton)
+        anim.setDuration(110)
+        anim.setStartValue(1.0)
+        anim.setEndValue(0.55)
+        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        boton._anim_presion= anim  #evita que el recolector de basura la corte a mitad de vuelo
+        anim.start()
+    else:
+        #El botón ya tiene su propio efecto (p. ej. la sombra de BotonAnimado): no se toca. Overlay aparte,
+        #semitransparente, encima del botón -no es un graphicsEffect, así que no compite con el que ya tenía.
+        boton._retroalim_via_opacidad= False
+        overlay= QWidget(boton)
+        overlay.setObjectName("_overlayRetroalimentacionClic")
+        overlay.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        overlay.setStyleSheet("background-color: rgba(0, 0, 0, 60);")
+        overlay.setGeometry(boton.rect())
+        overlay.show()
+        overlay.raise_()
+        boton._overlay_presion= overlay
+
+
+#Al soltar el mouse (o al cancelarse el clic, p. ej. arrastrando el
+#cursor fuera del botón sin soltar): vuelve a la apariencia normal.
+def _terminar_presion(boton):
+
+    if not getattr(boton, "_retroalim_presionado", False):
+        return
+    boton._retroalim_presionado= False
+
+    if getattr(boton, "_retroalim_via_opacidad", False):
+        efecto= boton.graphicsEffect()
+        if isinstance(efecto, QGraphicsOpacityEffect):
+            anim_previa= getattr(boton, "_anim_presion", None)
+            if anim_previa is not None and anim_previa.state() == QPropertyAnimation.State.Running:
+                anim_previa.stop()
+            anim= QPropertyAnimation(efecto, b"opacity", boton)
+            anim.setDuration(110)
+            anim.setStartValue(efecto.opacity())
+            anim.setEndValue(1.0)
+            anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+            def _quitar_efecto_propio():
+
+                #Solo se quita si sigue siendo EL MISMO efecto que pusimos
+                #nosotros (por si, entre medio, algo más le puso otro).
+                if boton.graphicsEffect() is efecto:
+                    boton.setGraphicsEffect(None)
+
+            anim.finished.connect(_quitar_efecto_propio)
+            boton._anim_presion= anim
+            anim.start()
+    else:
+        overlay= getattr(boton, "_overlay_presion", None)
+        if overlay is not None:
+            overlay.deleteLater()
+        boton._overlay_presion= None
+
+
 #Ventanita flotante de ayuda (asíncrona, no intrusiva)
 #Panel flotante, sin bordes, que no roba foco y es transparente a los
 #clics del mouse (no hay forma de "interactuar" con ella: solo se ve).
@@ -451,93 +538,6 @@ class GestorAtajos(QObject):
 
         if self._ventana is not None and self._ventana.isVisible():
             self._ventana.ocultar_con_fundido()
-
-#Retroalimentación visual al presionar un botón — global, para TODA la app IMPORTANTE: en Qt,
-#`widget.setGraphicsEffect(nuevo)` no solo "reemplaza" el efecto anterior -lo DESTRUYE de verdad (borra el
-#objeto C++)-. Guardar
-#una referencia al efecto viejo para "restaurarlo" después NO funciona:
-#esa referencia queda apuntando a un objeto ya borrado, y usarla revienta con "Internal C++ object already
-#deleted". Esto rompía, en concreto, la sombra de "BotonAnimado" (self._sombra en estudiantes.py, personal.py,
-#profesores.py, reportes.py, universidad.py), que es un QGraphicsEffect propio y persistente para su animación
-#de hover.
-##Por eso este módulo NUNCA reemplaza un graphicsEffect ajeno:
-#- Si el botón NO tiene ningún efecto puesto, se le pone un
-#QGraphicsOpacityEffect propio de esta función (se crea y se destruye aquí mismo, nunca choca con nada de otro
-#módulo).
-#- Si el botón YA tiene un efecto puesto (p. ej. la sombra de
-#BotonAnimado), no se toca ese efecto para nada: en su lugar se superpone un pequeño overlay semitransparente
-#-un QWidget hijo, no un graphicsEffect- que aparece mientras se sostiene el clic y se quita al soltar. Cero
-#interferencia con el efecto que ya tenía el botón.
-#Al bajar el mouse sobre el botón: se atenúa y SE QUEDA atenuado
-#mientras se sostiene, como un botón físico hundido.
-def _iniciar_presion(boton):
-
-    if getattr(boton, "_retroalim_presionado", False):
-        return
-    boton._retroalim_presionado= True
-
-    if boton.graphicsEffect() is None:
-        efecto= QGraphicsOpacityEffect(boton)
-        efecto.setOpacity(1.0)
-        boton.setGraphicsEffect(efecto)
-        boton._retroalim_via_opacidad= True
-        anim= QPropertyAnimation(efecto, b"opacity", boton)
-        anim.setDuration(110)
-        anim.setStartValue(1.0)
-        anim.setEndValue(0.55)
-        anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        boton._anim_presion= anim  #evita que el recolector de basura la corte a mitad de vuelo
-        anim.start()
-    else:
-        #El botón ya tiene su propio efecto (p. ej. la sombra de BotonAnimado): no se toca. Overlay aparte,
-        #semitransparente, encima del botón -no es un graphicsEffect, así que no compite con el que ya tenía.
-        boton._retroalim_via_opacidad= False
-        overlay= QWidget(boton)
-        overlay.setObjectName("_overlayRetroalimentacionClic")
-        overlay.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        overlay.setStyleSheet("background-color: rgba(0, 0, 0, 60);")
-        overlay.setGeometry(boton.rect())
-        overlay.show()
-        overlay.raise_()
-        boton._overlay_presion= overlay
-
-
-#Al soltar el mouse (o al cancelarse el clic, p. ej. arrastrando el
-#cursor fuera del botón sin soltar): vuelve a la apariencia normal.
-def _terminar_presion(boton):
-
-    if not getattr(boton, "_retroalim_presionado", False):
-        return
-    boton._retroalim_presionado= False
-
-    if getattr(boton, "_retroalim_via_opacidad", False):
-        efecto= boton.graphicsEffect()
-        if isinstance(efecto, QGraphicsOpacityEffect):
-            anim_previa= getattr(boton, "_anim_presion", None)
-            if anim_previa is not None and anim_previa.state() == QPropertyAnimation.State.Running:
-                anim_previa.stop()
-            anim= QPropertyAnimation(efecto, b"opacity", boton)
-            anim.setDuration(110)
-            anim.setStartValue(efecto.opacity())
-            anim.setEndValue(1.0)
-            anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-
-            def _quitar_efecto_propio():
-
-                #Solo se quita si sigue siendo EL MISMO efecto que pusimos
-                #nosotros (por si, entre medio, algo más le puso otro).
-                if boton.graphicsEffect() is efecto:
-                    boton.setGraphicsEffect(None)
-
-            anim.finished.connect(_quitar_efecto_propio)
-            boton._anim_presion= anim
-            anim.start()
-    else:
-        overlay= getattr(boton, "_overlay_presion", None)
-        if overlay is not None:
-            overlay.deleteLater()
-        boton._overlay_presion= None
-
 
 #Event filter instalado UNA sola vez en la QApplication (ver
 #main.py) que da el efecto "mantener presionado" de arriba a cualquier

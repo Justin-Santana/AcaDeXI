@@ -32,20 +32,6 @@ MAX_BYTES_BD= 200 * 1024 * 1024
 TABLAS_IGNORADAS= {"auditoria", "backups", "historial_cambios_calificaciones", "tokens_recuperacion"}
 
 
-class Grabacion:
-
-    def __init__(self, etiqueta):
-
-        self.etiqueta= etiqueta
-        self.cambios= []            #[(tabla, columnas_pk, antes, despues)], antes/despues son dict o None
-        self.no_deshacible= False
-
-    @property
-    def vacia(self):
-
-        return not self.cambios and not self.no_deshacible
-
-
 # -----------------------------------------
 # copia y comparación
 # -----------------------------------------
@@ -116,39 +102,6 @@ def _comparar(copia_antes, conn_ahora):
     return cambios
 
 
-# -----------------------------------------
-# grabar
-# -----------------------------------------
-@contextmanager
-def grabar(etiqueta="Eliminó un registro"):
-
-    g= Grabacion(etiqueta)
-    copia= _copiar_a_memoria()
-    if copia is None:
-        g.no_deshacible= True
-        yield g
-        return
-
-    try:
-
-        yield g
-        conn= bd.obtener_conexion()
-        try:
-
-            g.cambios= _comparar(copia, conn)
-        finally:
-            conn.close()
-    finally:
-        copia.close()
-
-    if len(g.cambios) > MAX_FILAS_CAMBIADAS:
-        g.cambios= []
-        g.no_deshacible= True
-
-
-# -----------------------------------------
-# aplicar al revés
-# -----------------------------------------
 def _sin_rowid(fila, columnas_clave):
 
     if columnas_clave == ["rowid"]:
@@ -266,6 +219,55 @@ def rehacer_grabacion(g):
     if _fila_ya_no_existe(g):
         return False, "un registro editado ya no existe"
     return _aplicar_inverso(g)
+
+
+class Grabacion:
+
+    def __init__(self, etiqueta):
+
+        self.etiqueta= etiqueta
+        self.cambios= []            #[(tabla, columnas_pk, antes, despues)], antes/despues son dict o None
+        self.no_deshacible= False
+
+    @property
+    def vacia(self):
+
+        return not self.cambios and not self.no_deshacible
+
+
+# -----------------------------------------
+# grabar
+# -----------------------------------------
+@contextmanager
+def grabar(etiqueta="Eliminó un registro"):
+
+    g= Grabacion(etiqueta)
+    copia= _copiar_a_memoria()
+    if copia is None:
+        g.no_deshacible= True
+        yield g
+        return
+
+    try:
+
+        yield g
+        conn= bd.obtener_conexion()
+        try:
+
+            g.cambios= _comparar(copia, conn)
+        finally:
+            conn.close()
+    finally:
+        copia.close()
+
+    if len(g.cambios) > MAX_FILAS_CAMBIADAS:
+        g.cambios= []
+        g.no_deshacible= True
+
+
+# -----------------------------------------
+# aplicar al revés
+# -----------------------------------------
 
 
 #El nombre que importa deshacer_rehacer_ui.py: `from ... import deshacer_rehacer as _d`

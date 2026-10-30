@@ -22,6 +22,38 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, EMOJI_PAG_PRIMER
 #`ajustar_anchos_columnas`. Evita que una sola celda con un valor larguísimo (texto pegado, observación larga,
 #etc.) acapare todo el ancho visible de la tabla — ver el docstring de esa función.
 ANCHO_MAXIMO_COLUMNA= 420
+#OPTIMIZACIÓN: caché de miniaturas circulares (fotos de tabla)
+_CACHE_PIXMAPS_CIRCULARES= {}
+
+_CACHE_PIXMAPS_LIMITE= 500  #suficiente para varias páginas de fotos distintas
+
+#Rol dedicado (fuera del rango que usan otros módulos) para guardar la RUTA real del archivo de foto sobre el
+#QTableWidgetItem decorativo de la columna "Foto" (que solo trae un QPixmap pequeño para la tabla, vía
+#DecorationRole). mostrar_detalle_fila() lo lee para poder mostrar la fotografía en grande arriba del detalle
+#en vez de dejar ese campo vacío.
+ROL_RUTA_FOTO= int(Qt.ItemDataRole.UserRole) + 1
+
+#Columna "foto" de las tablas — tamaño estándar + placeholder + config Diámetro estándar (px) de la miniatura
+#circular en la columna "Foto" de Estudiantes/Profesores/Personal. Vive aquí -un solo lugar- para que la
+#miniatura real (obtener_pixmap_circular_cacheado), el placeholder de "sin foto"
+#(pixmap_placeholder_foto_tabla) y el ajuste de la propia
+#columna (configurar_columna_foto) usen siempre el MISMO número: si
+#alguno de los tres queda desalineado con los otros dos es exactamente lo que causaba que la foto se viera
+#"cortada" en la tabla (ver abajo).
+TAMANO_FOTO_TABLA= 56
+
+_CACHE_PLACEHOLDER_FOTO= {}
+
+TAMANOS_DEFECTO= [("10 por página", 10), ("25 por página", 25), ("50 por página", 50),
+                    ("100 por página", 100), ("Todos (sin paginar)", 0)]
+
+ICONO_TABLA= "tableico.ico"
+
+#Pantalla completa para tablas Solo puede haber una tabla en pantalla completa abierta a la vez en TODA la app
+#(no una por módulo): si ya hay una abierta, el botón ⛶ de cualquier otro lugar debe limitarse a traerla al
+#frente, nunca apilar una segunda instancia encima.
+_ESTADO_PANTALLA_COMPLETA= {"dialogo": None}
+
 #Deja una QTableWidget escalable, con scrollbars propias que aparecen
 #solo cuando hacen falta: vertical cuando hay muchos registros y
 #horizontal cuando el ancho del contenido (columnas) no cabe.
@@ -183,18 +215,6 @@ def tabla_pausada(tabla):
         tabla.setSortingEnabled(tenia_orden)
 
 
-#OPTIMIZACIÓN: caché de miniaturas circulares (fotos de tabla)
-_CACHE_PIXMAPS_CIRCULARES= {}
-_CACHE_PIXMAPS_LIMITE= 500  #suficiente para varias páginas de fotos distintas
-
-
-#Rol dedicado (fuera del rango que usan otros módulos) para guardar la RUTA real del archivo de foto sobre el
-#QTableWidgetItem decorativo de la columna "Foto" (que solo trae un QPixmap pequeño para la tabla, vía
-#DecorationRole). mostrar_detalle_fila() lo lee para poder mostrar la fotografía en grande arriba del detalle
-#en vez de dejar ese campo vacío.
-ROL_RUTA_FOTO= int(Qt.ItemDataRole.UserRole) + 1
-
-
 #Igual que recortar una foto en círculo para mostrarla en una tabla,
 #pero cacheado por (ruta, tamaño, fecha de modificación del archivo).
 #
@@ -242,18 +262,6 @@ def obtener_pixmap_circular_cacheado(ruta, tamano):
     return resultado
 
 
-#Columna "foto" de las tablas — tamaño estándar + placeholder + config Diámetro estándar (px) de la miniatura
-#circular en la columna "Foto" de Estudiantes/Profesores/Personal. Vive aquí -un solo lugar- para que la
-#miniatura real (obtener_pixmap_circular_cacheado), el placeholder de "sin foto"
-#(pixmap_placeholder_foto_tabla) y el ajuste de la propia
-#columna (configurar_columna_foto) usen siempre el MISMO número: si
-#alguno de los tres queda desalineado con los otros dos es exactamente lo que causaba que la foto se viera
-#"cortada" en la tabla (ver abajo).
-TAMANO_FOTO_TABLA= 56
-
-_CACHE_PLACEHOLDER_FOTO= {}
-
-
 #Círculo gris neutro con una silueta de persona, para la columna
 #"Foto" de una tabla cuando ese registro todavía no tiene fotografía
 #guardada. Antes esa celda se dejaba completamente vacía -sin ninguna
@@ -285,31 +293,6 @@ def pixmap_placeholder_foto_tabla(tamano=TAMANO_FOTO_TABLA):
     pintor2.end()
     _CACHE_PLACEHOLDER_FOTO[tamano]= resultado
     return resultado
-
-
-#Dibuja la columna "Foto" (fondo de selección, hover, etc. incluidos)
-#forzando la decoración (la miniatura circular o su placeholder) a
-#quedar centrada horizontal Y verticalmente en la celda.
-#
-#Por qué hace falta: el estilo de Qt por defecto (en varias plataformas)
-#pega la decoración de un QTableWidgetItem contra el borde IZQUIERDO de
-#la celda sin importar cuán ancha sea esa celda -`item.setTextAlignment`
-#no cambia esto, porque esa propiedad solo controla el TEXTO, no la
-#decoración-. Este delegado reemplaza el pintado estándar únicamente
-#para forzar `decorationAlignment = AlignCenter`, dejando todo lo demás
-#(colores, selección, fuente...) exactamente igual porque sigue
-#delegando el dibujo real al estilo activo (`style().drawControl`).
-class _DelegadoFotoCentrada(QStyledItemDelegate):
-
-    def paint(self, painter, option, indice):
-
-        opcion= QStyleOptionViewItem(option)
-        self.initStyleOption(opcion, indice)
-        opcion.decorationAlignment= Qt.AlignmentFlag.AlignCenter
-        opcion.displayAlignment= Qt.AlignmentFlag.AlignCenter
-        widget= opcion.widget
-        style= widget.style() if widget is not None else QApplication.style()
-        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opcion, painter, widget)
 
 
 #Deja la columna "Foto" de `tabla` lista para mostrar la miniatura
@@ -387,10 +370,268 @@ def _pixmap_circular_con_anillo(ruta, diametro, grosor_anillo=4, color_anillo="#
     pintor.end()
     return resultado
 
-TAMANOS_DEFECTO= [("10 por página", 10), ("25 por página", 25), ("50 por página", 50),
-                    ("100 por página", 100), ("Todos (sin paginar)", 0)]
 
-ICONO_TABLA= "tableico.ico"
+def mostrar_detalle_fila(parent, tabla, fila, titulo="Detalle del Registro", extra_botones=None):
+
+    if fila < 0 or fila >= tabla.rowCount():
+        return
+    campos= []
+    foto_path= None
+    for col in range(tabla.columnCount()):
+        #Una columna oculta (p. ej. un ID interno que la tabla ya no muestra) no debe reaparecer aquí: si se ocultó en
+        #la tabla es porque no es algo que el usuario necesite ver, y el detalle no es una puerta trasera para volver a
+        #mostrarla.
+        if tabla.isColumnHidden(col):
+            continue
+        header_item= tabla.horizontalHeaderItem(col)
+        etiqueta= header_item.text() if header_item else f"Columna {col + 1}"
+        #Columna puramente decorativa sin encabezado (p. ej. un punto de color junto al nombre): no aporta un campo
+        #propio al detalle, solo saldría con etiqueta y valor vacíos.
+        if not etiqueta.strip():
+            continue
+        item= tabla.item(fila, col)
+        #La columna "Foto" es decorativa (un QPixmap chico vía DecorationRole, sin texto): en vez de agregarla como un
+        #campo más -que saldría vacío ("—")-, se saca la ruta real guardada en
+        #ROL_RUTA_FOTO (ver estudiantes.py/personal.py/profesores.py) y se
+        #muestra aparte, en grande, arriba de todo el detalle.
+        if item is not None and etiqueta.strip().lower() == "foto":
+            ruta= item.data(ROL_RUTA_FOTO)
+            if ruta:
+                foto_path= ruta
+            continue
+        #Algunas tablas (p. ej. Estudiantes vistos por Director/Admin) no tienen una columna dedicada "Foto" -esa
+        #columna la ocupa "Matrícula"-, pero el registro sí tiene una fotografía guardada. En ese caso el módulo deja
+        #la ruta en ROL_RUTA_FOTO sobre esa misma columna (sin decoración, para no tapar el texto) y aquí se recupera
+        #como respaldo, SIN quitar el campo de la lista -a diferencia de la columna "Foto" pura, este campo sigue
+        #mostrando su valor de texto normal (la matrícula) además de la foto grande.
+        if item is not None and foto_path is None:
+            ruta_respaldo= item.data(ROL_RUTA_FOTO)
+            if ruta_respaldo:
+                foto_path= ruta_respaldo
+        valor= item.text() if item else ""
+        if item is not None and not valor:
+            #Algunas columnas se muestran con un widget decorativo encima (p. ej. la "píldora" de color de Tipo en
+            #Calendario) y dejan el texto del item vacío A PROPÓSITO -si tuviera texto, se vería detrás del widget,
+            #mezclado y encimado-, guardando el valor real solo como tooltip. Sin este respaldo, el detalle de esas
+            #columnas salía en blanco aunque la tabla sí mostrara el dato con toda claridad.
+            valor= item.toolTip()
+        campos.append((etiqueta, valor))
+    DialogoDetalleRegistro(parent, titulo, campos, extra_botones=extra_botones, foto_path=foto_path).exec()
+
+
+def mostrar_detalle_campos(parent, titulo, campos, extra_botones=None, foto_path=None):
+
+    DialogoDetalleRegistro(parent, titulo, campos, extra_botones=extra_botones, foto_path=foto_path).exec()
+
+
+#Ventana simple de solo-lectura para mostrar un texto que puede ser
+#largo (ej. la descripción completa de una tarea/calificación) sin
+#truncarlo ni forzarlo dentro de una fila de detalle.
+def mostrar_texto_largo(parent, titulo, texto):
+
+    dialogo= QDialog(padre_de_dialogo(parent))
+    dialogo.setWindowTitle(titulo)
+    dialogo.setWindowIcon(obtener_icono(ICONO_TABLA))
+    dialogo.setMinimumSize(440, 320)
+    disposicion= QVBoxLayout(dialogo)
+    disposicion.setContentsMargins(22, 20, 22, 20)
+    disposicion.setSpacing(10)
+    lbl_encabezado= QLabel(titulo)
+    lbl_encabezado.setStyleSheet("font-size: 15px; font-weight: bold;")
+    disposicion.addWidget(lbl_encabezado)
+    in_caja_texto= QTextEdit()
+    limitar_campo_texto(in_caja_texto, 5000)
+    in_caja_texto.setReadOnly(True)
+    in_caja_texto.setPlainText(texto.strip() if texto else "— Sin descripción —")
+    disposicion.addWidget(in_caja_texto, 1)
+    btn_cerrar= QPushButton("Cerrar")
+    btn_cerrar.setIcon(icono_emoji("✖"))
+    btn_cerrar.setIconSize(_QSize_emoji(16, 16))
+    btn_cerrar.setObjectName("BtnAccionNeutro")
+    btn_cerrar.clicked.connect(dialogo.accept)
+    disposicion.addWidget(btn_cerrar)
+    dialogo.exec()
+
+
+#proveedor_extra_botones (opcional): función que recibe la fila
+#seleccionada (índice) y devuelve una lista de (texto, callback) para
+#agregarse como botones extra dentro del diálogo de detalle.
+def agregar_boton_detalle(layout_botones, tabla, parent, titulo="Detalle del Registro", texto_boton="Ver Detalle",
+                           proveedor_extra_botones= None):
+
+    btn_detalle= QPushButton(texto_boton)
+    btn_detalle.setObjectName("BtnAccionNeutro")
+
+    def _abrir():
+
+        fila_sel= tabla.currentRow()
+        if fila_sel < 0:
+            mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro de la tabla.", parent)
+            return
+        extra_botones= proveedor_extra_botones(fila_sel) if proveedor_extra_botones else None
+        mostrar_detalle_fila(parent, tabla, fila_sel, titulo, extra_botones=extra_botones)
+
+    btn_detalle.clicked.connect(_abrir)
+    if layout_botones is not None:
+        layout_botones.addWidget(btn_detalle)
+    return btn_detalle
+
+
+#Devuelve el diálogo de pantalla completa abierto ahora mismo, o None.
+#
+#Los módulos lo usan para parentar a él cualquier ventana que abran
+#(filtros, detalle, mensajes): el diálogo de pantalla completa es MODAL,
+#así que cualquier ventana parentada a la ventana principal queda DETRÁS
+#de él e inaccesible -se ve el problema al abrir los filtros estando en
+#pantalla completa-. Mismo criterio que reportes_editor._padre_dialogo.
+def dialogo_pantalla_completa_activo():
+
+    return _ESTADO_PANTALLA_COMPLETA["dialogo"]
+
+
+#Devuelve el padre que debe usar un diálogo que se abre desde `parent`:
+#el diálogo de pantalla completo si hay uno activo (ver
+#`dialogo_pantalla_completa_activo`), o `parent` tal cual si no.
+def padre_de_dialogo(parent):
+
+    activo= _ESTADO_PANTALLA_COMPLETA["dialogo"]
+    if activo is not None and parent is not None:
+        return activo
+    return parent
+
+
+#Busca, recursivamente dentro de `layout` (bajando por sub-layouts
+#anidados con addLayout, p. ej. el `contenido` de TarjetaSeccion en
+#configuracion.py), el layout que contiene a `widget` DIRECTAMENTE.
+#
+#`QLayout.indexOf(widget)` -usado más abajo- NO es recursivo: solo
+#encuentra widgets agregados directamente a ESE layout, no a un
+#sub-layout suyo. Sin esto, para cualquier widget que viva dentro de un
+#layout anidado (como TarjetaSeccion.contenido, que a su vez está
+#metido dentro del layout raíz de la tarjeta), `layout.indexOf(widget)`
+#siempre da -1 y, al restaurar, el widget termina agregado al FINAL del
+#layout raíz en vez de volver a su posición real dentro del anidado
+#-reordenando visualmente el resto de la tarjeta cada vez que se sale
+#de pantalla completa-.
+#
+#Devuelve el sub-layout directo, o None si no se encuentra (p. ej. el
+#widget está suelto sin layout todavía).
+def _buscar_layout_directo(disposicion, widget):
+
+    if disposicion is None:
+        return None
+    if disposicion.indexOf(widget) >= 0:
+        return disposicion
+    for i in range(disposicion.count()):
+        item= disposicion.itemAt(i)
+        sub= item.layout()
+        if sub is not None:
+            encontrado= _buscar_layout_directo(sub, widget)
+            if encontrado is not None:
+                return encontrado
+    return None
+
+
+#Agrega un botón cuadrado con el icono ⛶ a `layout_cabecera` (p. ej.
+#una fila QHBoxLayout puesta como encabezado de la tarjeta de la tabla)
+#que abre `widgets` -típicamente [tarjeta_filtros, tarjeta_tabla,
+#control_paginacion]- dentro de un diálogo maximizado, con búsqueda y
+#filtros funcionando exactamente igual que en la pantalla normal.
+#
+#El mismo botón sirve para entrar y para salir: si esta tabla ya está
+#en pantalla completa, volver a pulsarlo la cierra. Si hay OTRA tabla
+#en pantalla completa abierta (de otro módulo), en vez de abrir una
+#segunda instancia simplemente la trae al frente -solo puede existir
+#una a la vez en toda la app-.
+#
+#`parent` debe ser el propio módulo/página (para que el diálogo se
+#centre sobre la ventana principal); si se omite, se usa el primer
+#widget de la lista.
+#
+#Uso típico, justo después de armar tarjeta_filtros/tarjeta_tabla/pagina:
+#agregar_boton_pantalla_completa(
+#None,  #o una QHBoxLayout donde alojar el botón
+#[self.tarjeta_filtros, self.tarjeta_tabla, self.pagina],
+#titulo= "Materiales", parent=self)
+#Con layout_cabecera=None el botón ⛶ vive a la derecha del control de
+#paginación (o del primer widget si no hay paginación).
+def agregar_boton_pantalla_completa(layout_cabecera, widgets, titulo="Tabla", parent=None):
+
+    btn= QPushButton()
+    btn.setObjectName("BtnPantallaCompleta")
+    btn.setIcon(icono_emoji("⛶"))
+    btn.setIconSize(QSize(16, 16))
+    btn.setFixedSize(30, 30)
+    btn.setToolTip("Abrir en pantalla completa (búsqueda y filtros completos)")
+    btn.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    estado= {"dialogo_propio": None}
+
+    def _abrir():
+
+        activo= _ESTADO_PANTALLA_COMPLETA["dialogo"]
+        if activo is not None:
+            if activo is estado["dialogo_propio"]:
+                #Ya es esta misma tabla: el botón actúa como "salir".
+                activo.accept()
+            else:
+                #Hay OTRA tabla en pantalla completa: no se apila una segunda, solo se trae al frente la que ya está abierta.
+                activo.raise_()
+                activo.activateWindow()
+            return
+        dialogo_ref= _DialogoTablaCompleta(widgets, titulo=titulo, parent=parent or widgets[0])
+        estado["dialogo_propio"]= dialogo_ref
+        #_: resultado del diálogo, que no se usa; al cerrarse se olvida la referencia
+        dialogo_ref.finished.connect(lambda _: estado.__setitem__("dialogo_propio", None))
+        dialogo_ref.exec()
+
+    btn.clicked.connect(_abrir)
+    if layout_cabecera is None:
+        #Los labels de cabecera de las tablas se quitaron (ocupaban una fila entera solo para decir de qué era la
+        #tabla), así que varios módulos ya no tienen esa fila donde alojar el botón ⛶. En ese caso el botón vive dentro
+        #del control de paginación de la propia tabla (a su derecha), o -si el módulo no tiene paginación- en el primer
+        #widget de la lista (típicamente la barra de búsqueda).
+        destino= None
+        for widget in widgets:
+            pag= widget if isinstance(widget, ControlPaginacion) else widget.findChild(ControlPaginacion)
+            if pag is not None:
+                destino= pag.layout()
+                break
+        if destino is None:
+            for widget in widgets:
+                if widget.layout() is not None:
+                    destino= widget.layout()
+                    break
+        if destino is not None:
+            destino.addWidget(btn)
+    else:
+        layout_cabecera.addWidget(btn)
+    return btn
+
+
+#Dibuja la columna "Foto" (fondo de selección, hover, etc. incluidos)
+#forzando la decoración (la miniatura circular o su placeholder) a
+#quedar centrada horizontal Y verticalmente en la celda.
+#
+#Por qué hace falta: el estilo de Qt por defecto (en varias plataformas)
+#pega la decoración de un QTableWidgetItem contra el borde IZQUIERDO de
+#la celda sin importar cuán ancha sea esa celda -`item.setTextAlignment`
+#no cambia esto, porque esa propiedad solo controla el TEXTO, no la
+#decoración-. Este delegado reemplaza el pintado estándar únicamente
+#para forzar `decorationAlignment = AlignCenter`, dejando todo lo demás
+#(colores, selección, fuente...) exactamente igual porque sigue
+#delegando el dibujo real al estilo activo (`style().drawControl`).
+class _DelegadoFotoCentrada(QStyledItemDelegate):
+
+    def paint(self, painter, option, indice):
+
+        opcion= QStyleOptionViewItem(option)
+        self.initStyleOption(opcion, indice)
+        opcion.decorationAlignment= Qt.AlignmentFlag.AlignCenter
+        opcion.displayAlignment= Qt.AlignmentFlag.AlignCenter
+        widget= opcion.widget
+        style= widget.style() if widget is not None else QApplication.style()
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opcion, painter, widget)
 
 
 class ControlPaginacion(QWidget):
@@ -676,173 +917,6 @@ class DialogoDetalleRegistro(QDialog):
         disposicion.addWidget(btn_cerrar)
 
 
-def mostrar_detalle_fila(parent, tabla, fila, titulo="Detalle del Registro", extra_botones=None):
-
-    if fila < 0 or fila >= tabla.rowCount():
-        return
-    campos= []
-    foto_path= None
-    for col in range(tabla.columnCount()):
-        #Una columna oculta (p. ej. un ID interno que la tabla ya no muestra) no debe reaparecer aquí: si se ocultó en
-        #la tabla es porque no es algo que el usuario necesite ver, y el detalle no es una puerta trasera para volver a
-        #mostrarla.
-        if tabla.isColumnHidden(col):
-            continue
-        header_item= tabla.horizontalHeaderItem(col)
-        etiqueta= header_item.text() if header_item else f"Columna {col + 1}"
-        #Columna puramente decorativa sin encabezado (p. ej. un punto de color junto al nombre): no aporta un campo
-        #propio al detalle, solo saldría con etiqueta y valor vacíos.
-        if not etiqueta.strip():
-            continue
-        item= tabla.item(fila, col)
-        #La columna "Foto" es decorativa (un QPixmap chico vía DecorationRole, sin texto): en vez de agregarla como un
-        #campo más -que saldría vacío ("—")-, se saca la ruta real guardada en
-        #ROL_RUTA_FOTO (ver estudiantes.py/personal.py/profesores.py) y se
-        #muestra aparte, en grande, arriba de todo el detalle.
-        if item is not None and etiqueta.strip().lower() == "foto":
-            ruta= item.data(ROL_RUTA_FOTO)
-            if ruta:
-                foto_path= ruta
-            continue
-        #Algunas tablas (p. ej. Estudiantes vistos por Director/Admin) no tienen una columna dedicada "Foto" -esa
-        #columna la ocupa "Matrícula"-, pero el registro sí tiene una fotografía guardada. En ese caso el módulo deja
-        #la ruta en ROL_RUTA_FOTO sobre esa misma columna (sin decoración, para no tapar el texto) y aquí se recupera
-        #como respaldo, SIN quitar el campo de la lista -a diferencia de la columna "Foto" pura, este campo sigue
-        #mostrando su valor de texto normal (la matrícula) además de la foto grande.
-        if item is not None and foto_path is None:
-            ruta_respaldo= item.data(ROL_RUTA_FOTO)
-            if ruta_respaldo:
-                foto_path= ruta_respaldo
-        valor= item.text() if item else ""
-        if item is not None and not valor:
-            #Algunas columnas se muestran con un widget decorativo encima (p. ej. la "píldora" de color de Tipo en
-            #Calendario) y dejan el texto del item vacío A PROPÓSITO -si tuviera texto, se vería detrás del widget,
-            #mezclado y encimado-, guardando el valor real solo como tooltip. Sin este respaldo, el detalle de esas
-            #columnas salía en blanco aunque la tabla sí mostrara el dato con toda claridad.
-            valor= item.toolTip()
-        campos.append((etiqueta, valor))
-    DialogoDetalleRegistro(parent, titulo, campos, extra_botones=extra_botones, foto_path=foto_path).exec()
-
-
-def mostrar_detalle_campos(parent, titulo, campos, extra_botones=None, foto_path=None):
-
-    DialogoDetalleRegistro(parent, titulo, campos, extra_botones=extra_botones, foto_path=foto_path).exec()
-
-
-#Ventana simple de solo-lectura para mostrar un texto que puede ser
-#largo (ej. la descripción completa de una tarea/calificación) sin
-#truncarlo ni forzarlo dentro de una fila de detalle.
-def mostrar_texto_largo(parent, titulo, texto):
-
-    dialogo= QDialog(padre_de_dialogo(parent))
-    dialogo.setWindowTitle(titulo)
-    dialogo.setWindowIcon(obtener_icono(ICONO_TABLA))
-    dialogo.setMinimumSize(440, 320)
-    disposicion= QVBoxLayout(dialogo)
-    disposicion.setContentsMargins(22, 20, 22, 20)
-    disposicion.setSpacing(10)
-    lbl_encabezado= QLabel(titulo)
-    lbl_encabezado.setStyleSheet("font-size: 15px; font-weight: bold;")
-    disposicion.addWidget(lbl_encabezado)
-    in_caja_texto= QTextEdit()
-    limitar_campo_texto(in_caja_texto, 5000)
-    in_caja_texto.setReadOnly(True)
-    in_caja_texto.setPlainText(texto.strip() if texto else "— Sin descripción —")
-    disposicion.addWidget(in_caja_texto, 1)
-    btn_cerrar= QPushButton("Cerrar")
-    btn_cerrar.setIcon(icono_emoji("✖"))
-    btn_cerrar.setIconSize(_QSize_emoji(16, 16))
-    btn_cerrar.setObjectName("BtnAccionNeutro")
-    btn_cerrar.clicked.connect(dialogo.accept)
-    disposicion.addWidget(btn_cerrar)
-    dialogo.exec()
-
-
-#proveedor_extra_botones (opcional): función que recibe la fila
-#seleccionada (índice) y devuelve una lista de (texto, callback) para
-#agregarse como botones extra dentro del diálogo de detalle.
-def agregar_boton_detalle(layout_botones, tabla, parent, titulo="Detalle del Registro", texto_boton="Ver Detalle",
-                           proveedor_extra_botones= None):
-
-    btn_detalle= QPushButton(texto_boton)
-    btn_detalle.setObjectName("BtnAccionNeutro")
-
-    def _abrir():
-
-        fila_sel= tabla.currentRow()
-        if fila_sel < 0:
-            mostrar_mensaje("advertencia", "Sin selección", "Selecciona un registro de la tabla.", parent)
-            return
-        extra_botones= proveedor_extra_botones(fila_sel) if proveedor_extra_botones else None
-        mostrar_detalle_fila(parent, tabla, fila_sel, titulo, extra_botones=extra_botones)
-
-    btn_detalle.clicked.connect(_abrir)
-    if layout_botones is not None:
-        layout_botones.addWidget(btn_detalle)
-    return btn_detalle
-
-
-#Pantalla completa para tablas Solo puede haber una tabla en pantalla completa abierta a la vez en TODA la app
-#(no una por módulo): si ya hay una abierta, el botón ⛶ de cualquier otro lugar debe limitarse a traerla al
-#frente, nunca apilar una segunda instancia encima.
-_ESTADO_PANTALLA_COMPLETA= {"dialogo": None}
-
-
-#Devuelve el diálogo de pantalla completa abierto ahora mismo, o None.
-#
-#Los módulos lo usan para parentar a él cualquier ventana que abran
-#(filtros, detalle, mensajes): el diálogo de pantalla completa es MODAL,
-#así que cualquier ventana parentada a la ventana principal queda DETRÁS
-#de él e inaccesible -se ve el problema al abrir los filtros estando en
-#pantalla completa-. Mismo criterio que reportes_editor._padre_dialogo.
-def dialogo_pantalla_completa_activo():
-
-    return _ESTADO_PANTALLA_COMPLETA["dialogo"]
-
-
-#Devuelve el padre que debe usar un diálogo que se abre desde `parent`:
-#el diálogo de pantalla completo si hay uno activo (ver
-#`dialogo_pantalla_completa_activo`), o `parent` tal cual si no.
-def padre_de_dialogo(parent):
-
-    activo= _ESTADO_PANTALLA_COMPLETA["dialogo"]
-    if activo is not None and parent is not None:
-        return activo
-    return parent
-
-
-#Busca, recursivamente dentro de `layout` (bajando por sub-layouts
-#anidados con addLayout, p. ej. el `contenido` de TarjetaSeccion en
-#configuracion.py), el layout que contiene a `widget` DIRECTAMENTE.
-#
-#`QLayout.indexOf(widget)` -usado más abajo- NO es recursivo: solo
-#encuentra widgets agregados directamente a ESE layout, no a un
-#sub-layout suyo. Sin esto, para cualquier widget que viva dentro de un
-#layout anidado (como TarjetaSeccion.contenido, que a su vez está
-#metido dentro del layout raíz de la tarjeta), `layout.indexOf(widget)`
-#siempre da -1 y, al restaurar, el widget termina agregado al FINAL del
-#layout raíz en vez de volver a su posición real dentro del anidado
-#-reordenando visualmente el resto de la tarjeta cada vez que se sale
-#de pantalla completa-.
-#
-#Devuelve el sub-layout directo, o None si no se encuentra (p. ej. el
-#widget está suelto sin layout todavía).
-def _buscar_layout_directo(disposicion, widget):
-
-    if disposicion is None:
-        return None
-    if disposicion.indexOf(widget) >= 0:
-        return disposicion
-    for i in range(disposicion.count()):
-        item= disposicion.itemAt(i)
-        sub= item.layout()
-        if sub is not None:
-            encontrado= _buscar_layout_directo(sub, widget)
-            if encontrado is not None:
-                return encontrado
-    return None
-
-
 #Diálogo maximizado que "toma prestados" temporalmente los widgets
 #reales de un módulo (filtros + tabla + paginación) en vez de duplicar
 #su lógica. Como son los MISMOS objetos -no copias-, la búsqueda, los
@@ -1076,80 +1150,3 @@ class _DialogoTablaCompleta(QDialog):
         evento.accept()
         if not self._cerrando:
             self.reject()
-
-
-#Agrega un botón cuadrado con el icono ⛶ a `layout_cabecera` (p. ej.
-#una fila QHBoxLayout puesta como encabezado de la tarjeta de la tabla)
-#que abre `widgets` -típicamente [tarjeta_filtros, tarjeta_tabla,
-#control_paginacion]- dentro de un diálogo maximizado, con búsqueda y
-#filtros funcionando exactamente igual que en la pantalla normal.
-#
-#El mismo botón sirve para entrar y para salir: si esta tabla ya está
-#en pantalla completa, volver a pulsarlo la cierra. Si hay OTRA tabla
-#en pantalla completa abierta (de otro módulo), en vez de abrir una
-#segunda instancia simplemente la trae al frente -solo puede existir
-#una a la vez en toda la app-.
-#
-#`parent` debe ser el propio módulo/página (para que el diálogo se
-#centre sobre la ventana principal); si se omite, se usa el primer
-#widget de la lista.
-#
-#Uso típico, justo después de armar tarjeta_filtros/tarjeta_tabla/pagina:
-#agregar_boton_pantalla_completa(
-#None,  #o una QHBoxLayout donde alojar el botón
-#[self.tarjeta_filtros, self.tarjeta_tabla, self.pagina],
-#titulo= "Materiales", parent=self)
-#Con layout_cabecera=None el botón ⛶ vive a la derecha del control de
-#paginación (o del primer widget si no hay paginación).
-def agregar_boton_pantalla_completa(layout_cabecera, widgets, titulo="Tabla", parent=None):
-
-    btn= QPushButton()
-    btn.setObjectName("BtnPantallaCompleta")
-    btn.setIcon(icono_emoji("⛶"))
-    btn.setIconSize(QSize(16, 16))
-    btn.setFixedSize(30, 30)
-    btn.setToolTip("Abrir en pantalla completa (búsqueda y filtros completos)")
-    btn.setCursor(Qt.CursorShape.PointingHandCursor)
-
-    estado= {"dialogo_propio": None}
-
-    def _abrir():
-
-        activo= _ESTADO_PANTALLA_COMPLETA["dialogo"]
-        if activo is not None:
-            if activo is estado["dialogo_propio"]:
-                #Ya es esta misma tabla: el botón actúa como "salir".
-                activo.accept()
-            else:
-                #Hay OTRA tabla en pantalla completa: no se apila una segunda, solo se trae al frente la que ya está abierta.
-                activo.raise_()
-                activo.activateWindow()
-            return
-        dialogo_ref= _DialogoTablaCompleta(widgets, titulo=titulo, parent=parent or widgets[0])
-        estado["dialogo_propio"]= dialogo_ref
-        #_: resultado del diálogo, que no se usa; al cerrarse se olvida la referencia
-        dialogo_ref.finished.connect(lambda _: estado.__setitem__("dialogo_propio", None))
-        dialogo_ref.exec()
-
-    btn.clicked.connect(_abrir)
-    if layout_cabecera is None:
-        #Los labels de cabecera de las tablas se quitaron (ocupaban una fila entera solo para decir de qué era la
-        #tabla), así que varios módulos ya no tienen esa fila donde alojar el botón ⛶. En ese caso el botón vive dentro
-        #del control de paginación de la propia tabla (a su derecha), o -si el módulo no tiene paginación- en el primer
-        #widget de la lista (típicamente la barra de búsqueda).
-        destino= None
-        for widget in widgets:
-            pag= widget if isinstance(widget, ControlPaginacion) else widget.findChild(ControlPaginacion)
-            if pag is not None:
-                destino= pag.layout()
-                break
-        if destino is None:
-            for widget in widgets:
-                if widget.layout() is not None:
-                    destino= widget.layout()
-                    break
-        if destino is not None:
-            destino.addWidget(btn)
-    else:
-        layout_cabecera.addWidget(btn)
-    return btn

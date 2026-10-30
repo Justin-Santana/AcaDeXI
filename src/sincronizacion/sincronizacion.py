@@ -220,6 +220,28 @@ TOOLTIPS_MODOS_TRABAJO= {
 _CACHE_HASHES= {}  #ruta -> ((mtime_ns, tamaño), hash) — evita rehashear archivos sin cambios
 
 
+#Capa visual — componentes reutilizables (tarjetas, spinner, animaciones)
+ESTADOS_VISUAL= {
+    "sin_carpeta":      {"color": "#94A3B8", "icono": "📁", "pulso": False,
+                          "titulo": "Sin configurar",
+                          "detalle": "No hay carpeta de sincronización configurada."},
+    "sin_copia_remota": {"color": "#6366F1", "icono": "\uE002", "pulso": True,
+                          "titulo": "Lista para el primer envío",
+                          "detalle": "Carpeta configurada, pero aún no hay copia allí. Usa “Subir Cambios”."},
+    "sincronizado":     {"color": "#22C55E", "icono": "✅", "pulso": False,
+                          "titulo": "Todo sincronizado",
+                          "detalle": "Este equipo y la carpeta compartida tienen la misma versión."},
+    "hay_novedades":    {"color": "#3B82F6", "icono": "\uE001", "pulso": True,
+                          "titulo": "Hay novedades disponibles",
+                          "detalle": "La carpeta compartida cambió. Usa “Descargar Novedades”."},
+    "cambios_locales":  {"color": "#F59E0B", "icono": "\uE002", "pulso": True,
+                          "titulo": "Tienes cambios sin subir",
+                          "detalle": "Este equipo tiene cambios locales. Usa “Subir Cambios”."},
+    "conflicto":        {"color": "#EF4444", "icono": "⚠", "pulso": True,
+                          "titulo": "Conflicto de sincronización",
+                          "detalle": "Este equipo y la carpeta compartida cambiaron por separado."},
+}
+
 def _hash_archivo(ruta):
 
     if not ruta or not os.path.exists(ruta):
@@ -316,29 +338,6 @@ def descargar_novedades(main_window):
     return ruta_respaldo
 
 
-#Capa visual — componentes reutilizables (tarjetas, spinner, animaciones)
-ESTADOS_VISUAL= {
-    "sin_carpeta":      {"color": "#94A3B8", "icono": "📁", "pulso": False,
-                          "titulo": "Sin configurar",
-                          "detalle": "No hay carpeta de sincronización configurada."},
-    "sin_copia_remota": {"color": "#6366F1", "icono": "\uE002", "pulso": True,
-                          "titulo": "Lista para el primer envío",
-                          "detalle": "Carpeta configurada, pero aún no hay copia allí. Usa “Subir Cambios”."},
-    "sincronizado":     {"color": "#22C55E", "icono": "✅", "pulso": False,
-                          "titulo": "Todo sincronizado",
-                          "detalle": "Este equipo y la carpeta compartida tienen la misma versión."},
-    "hay_novedades":    {"color": "#3B82F6", "icono": "\uE001", "pulso": True,
-                          "titulo": "Hay novedades disponibles",
-                          "detalle": "La carpeta compartida cambió. Usa “Descargar Novedades”."},
-    "cambios_locales":  {"color": "#F59E0B", "icono": "\uE002", "pulso": True,
-                          "titulo": "Tienes cambios sin subir",
-                          "detalle": "Este equipo tiene cambios locales. Usa “Subir Cambios”."},
-    "conflicto":        {"color": "#EF4444", "icono": "⚠", "pulso": True,
-                          "titulo": "Conflicto de sincronización",
-                          "detalle": "Este equipo y la carpeta compartida cambiaron por separado."},
-}
-
-
 def _hex_a_rgba(color_hex, alpha):
 
     color_hex= color_hex.lstrip("#")
@@ -425,6 +424,59 @@ def _fundido_entrada(widget, duracion=260):
 
     anim.finished.connect(_limpiar)
     anim.start()
+
+
+#Arma, al vuelo, un ZIP autocontenido con servidor_institucional.py,
+#sus dependencias, scripts para iniciarlo con un doble clic (sin
+#terminal) y una guía en español con 3 formas reales de tenerlo
+#accesible — de gratis (un equipo del colegio, o una capa gratuita en
+#la nube) a de pago (un VPS propio) — pensadas para instituciones con
+#presupuestos muy distintos, no solo para las que puedan pagar un
+#servidor dedicado. Es una función de módulo (no un método) para que
+#tanto el panel de Sincronización como el Asistente de Configuración
+#puedan ofrecer el mismo botón sin duplicar esta lógica.
+#
+#`padre` es el widget que sirve de contexto para los diálogos (el
+#propio panel o la página del asistente que llama a esta función).
+def exportar_paquete_servidor(main_window, padre):
+
+    ruta_servidor= buscar_dato("servidor_institucional.py")
+    ruta_requisitos= buscar_dato("requirements_servidor.txt")
+    if not os.path.exists(ruta_servidor) or not os.path.exists(ruta_requisitos):
+        mostrar_mensaje("advertencia", "Archivos no encontrados",
+                        "No se encontraron servidor_institucional.py y/o "
+                        "requirements_servidor.txt junto a la aplicación.", padre)
+        return
+
+    destino, _= QFileDialog.getSaveFileName(
+        padre, "Exportar Servidor Institucional",
+        "AcaDeXI_Servidor_Institucional.zip", "Archivo ZIP (*.zip)")
+    if not destino:
+        return
+    if not destino.lower().endswith(".zip"):
+        destino += ".zip"
+
+    try:
+
+        with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as z:
+            z.write(ruta_servidor, "servidor_institucional.py")
+            z.write(ruta_requisitos, "requirements_servidor.txt")
+            z.writestr("iniciar_servidor.sh", _SCRIPT_INICIO_SH)
+            z.writestr("iniciar_servidor.bat", _SCRIPT_INICIO_BAT)
+            z.writestr("LEEME_PRIMERO.txt", _GUIA_SERVIDOR_TXT)
+    except Exception as error:
+        mostrar_mensaje("error", "Error", f"No se pudo crear el paquete:\n{error}", padre)
+        return
+
+    if main_window is not None:
+        registrar_auditoria("Sistema", "Exportó el paquete del Servidor Institucional",
+                            getattr(main_window, "usuario_actual", None), destino)
+    mostrar_mensaje("exito", "Paquete exportado",
+                    f"Se guardó en:\n{destino}\n\n"
+                    "Contiene el servidor, sus dependencias, scripts para iniciarlo con "
+                    "un doble clic (sin necesitar terminal) y una guía — LEEME_PRIMERO.txt "
+                    "— con 3 formas de tenerlo accesible, de gratis a de pago. Compártelo "
+                    "con quien vaya a ponerlo en marcha (por ejemplo, por correo o USB).", padre)
 
 
 #Indicador de carga circular animado (arco giratorio), dibujado a mano
@@ -596,59 +648,6 @@ class TarjetaEstado(QFrame):
     def ocultar_ocupado(self):
 
         self.spinner.detener()
-
-
-#Arma, al vuelo, un ZIP autocontenido con servidor_institucional.py,
-#sus dependencias, scripts para iniciarlo con un doble clic (sin
-#terminal) y una guía en español con 3 formas reales de tenerlo
-#accesible — de gratis (un equipo del colegio, o una capa gratuita en
-#la nube) a de pago (un VPS propio) — pensadas para instituciones con
-#presupuestos muy distintos, no solo para las que puedan pagar un
-#servidor dedicado. Es una función de módulo (no un método) para que
-#tanto el panel de Sincronización como el Asistente de Configuración
-#puedan ofrecer el mismo botón sin duplicar esta lógica.
-#
-#`padre` es el widget que sirve de contexto para los diálogos (el
-#propio panel o la página del asistente que llama a esta función).
-def exportar_paquete_servidor(main_window, padre):
-
-    ruta_servidor= buscar_dato("servidor_institucional.py")
-    ruta_requisitos= buscar_dato("requirements_servidor.txt")
-    if not os.path.exists(ruta_servidor) or not os.path.exists(ruta_requisitos):
-        mostrar_mensaje("advertencia", "Archivos no encontrados",
-                        "No se encontraron servidor_institucional.py y/o "
-                        "requirements_servidor.txt junto a la aplicación.", padre)
-        return
-
-    destino, _= QFileDialog.getSaveFileName(
-        padre, "Exportar Servidor Institucional",
-        "AcaDeXI_Servidor_Institucional.zip", "Archivo ZIP (*.zip)")
-    if not destino:
-        return
-    if not destino.lower().endswith(".zip"):
-        destino += ".zip"
-
-    try:
-
-        with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as z:
-            z.write(ruta_servidor, "servidor_institucional.py")
-            z.write(ruta_requisitos, "requirements_servidor.txt")
-            z.writestr("iniciar_servidor.sh", _SCRIPT_INICIO_SH)
-            z.writestr("iniciar_servidor.bat", _SCRIPT_INICIO_BAT)
-            z.writestr("LEEME_PRIMERO.txt", _GUIA_SERVIDOR_TXT)
-    except Exception as error:
-        mostrar_mensaje("error", "Error", f"No se pudo crear el paquete:\n{error}", padre)
-        return
-
-    if main_window is not None:
-        registrar_auditoria("Sistema", "Exportó el paquete del Servidor Institucional",
-                            getattr(main_window, "usuario_actual", None), destino)
-    mostrar_mensaje("exito", "Paquete exportado",
-                    f"Se guardó en:\n{destino}\n\n"
-                    "Contiene el servidor, sus dependencias, scripts para iniciarlo con "
-                    "un doble clic (sin necesitar terminal) y una guía — LEEME_PRIMERO.txt "
-                    "— con 3 formas de tenerlo accesible, de gratis a de pago. Compártelo "
-                    "con quien vaya a ponerlo en marcha (por ejemplo, por correo o USB).", padre)
 
 
 #Módulo principal

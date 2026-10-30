@@ -130,6 +130,45 @@ def _sistema_calificacion_actual():
 #de los datos para su costo de pintado (son formas geométricas fijas), así que no afectan el rendimiento aunque
 #haya muchas filas en las tablas de al lado.
 
+#Escribe (o actualiza) la fila de `calificacion_ra` para este
+#estudiante+RA+año a partir de un ajuste hecho desde Observaciones.
+#Sistema numérico (RD): `ajuste` son +/- puntos sobre la nota actual del
+#RA (o sobre NOTA_MINIMA_RD si todavía no tenía nota). Sistema de
+#dominio: `domina` ("Competente"/"No Competente") se guarda tal cual.
+def guardar_ajuste_ra(main_window, estudiante_id, ra_id, anio, ajuste, domina, texto_obs):
+
+    conn= obtener_conexion()
+    c= conn.cursor()
+    c.execute("""SELECT nota FROM calificacion_ra
+                 WHERE estudiante_id=? AND resultado_aprendizaje_id=? AND anio_academico=?""",
+              (estudiante_id, ra_id, anio))
+    existente= c.fetchone()
+    if ajuste is not None:
+        base= existente["nota"] if (existente and existente["nota"] is not None) else NOTA_MINIMA_RD
+        nueva_nota= max(0, min(100, base + ajuste))
+        nuevo_domina= ""
+        signo= "+" if ajuste >= 0 else ""
+        detalle= f"Ajuste por observación ({signo}{ajuste} pts): {texto_obs[:80]}"
+    else:
+        nueva_nota= None
+        nuevo_domina= domina or ""
+        detalle= f"Ajuste por observación ({nuevo_domina or 'sin dominio'}): {texto_obs[:80]}"
+    usuario= main_window.usuario_actual
+    ahora= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("""INSERT INTO calificacion_ra
+                 (estudiante_id, resultado_aprendizaje_id, anio_academico, nota, domina, observacion,
+                  usuario, actualizado)
+                 VALUES (?,?,?,?,?,?,?,?)
+                 ON CONFLICT(estudiante_id, resultado_aprendizaje_id, anio_academico) DO UPDATE SET
+                    nota= excluded.nota, domina=excluded.domina, observacion=excluded.observacion,
+                    usuario= excluded.usuario, actualizado=excluded.actualizado""",
+              (estudiante_id, ra_id, anio, nueva_nota, nuevo_domina, detalle, usuario, ahora))
+    conn.commit()
+    conn.close()
+    registrar_auditoria("Calificaciones Técnicas", "Ajustó RA desde una observación", usuario,
+                         f"Estudiante ID {estudiante_id} - RA ID {ra_id} - Año {anio}")
+
+
 #Tarjeta de indicador con una insignia HEXAGONAL (motivo técnico/
 #industrial, en vez del círculo genérico de otras pantallas) y el valor
 #animado con un conteo incremental cada vez que se actualiza.
@@ -970,45 +1009,6 @@ class DialogoAjusteRA(QDialog):
             "ajuste": self.spin_ajuste.value() if self.spin_ajuste is not None else None,
             "domina": self.combo_domina.currentData() if self.combo_domina is not None else None,
         }
-
-
-#Escribe (o actualiza) la fila de `calificacion_ra` para este
-#estudiante+RA+año a partir de un ajuste hecho desde Observaciones.
-#Sistema numérico (RD): `ajuste` son +/- puntos sobre la nota actual del
-#RA (o sobre NOTA_MINIMA_RD si todavía no tenía nota). Sistema de
-#dominio: `domina` ("Competente"/"No Competente") se guarda tal cual.
-def guardar_ajuste_ra(main_window, estudiante_id, ra_id, anio, ajuste, domina, texto_obs):
-
-    conn= obtener_conexion()
-    c= conn.cursor()
-    c.execute("""SELECT nota FROM calificacion_ra
-                 WHERE estudiante_id=? AND resultado_aprendizaje_id=? AND anio_academico=?""",
-              (estudiante_id, ra_id, anio))
-    existente= c.fetchone()
-    if ajuste is not None:
-        base= existente["nota"] if (existente and existente["nota"] is not None) else NOTA_MINIMA_RD
-        nueva_nota= max(0, min(100, base + ajuste))
-        nuevo_domina= ""
-        signo= "+" if ajuste >= 0 else ""
-        detalle= f"Ajuste por observación ({signo}{ajuste} pts): {texto_obs[:80]}"
-    else:
-        nueva_nota= None
-        nuevo_domina= domina or ""
-        detalle= f"Ajuste por observación ({nuevo_domina or 'sin dominio'}): {texto_obs[:80]}"
-    usuario= main_window.usuario_actual
-    ahora= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("""INSERT INTO calificacion_ra
-                 (estudiante_id, resultado_aprendizaje_id, anio_academico, nota, domina, observacion,
-                  usuario, actualizado)
-                 VALUES (?,?,?,?,?,?,?,?)
-                 ON CONFLICT(estudiante_id, resultado_aprendizaje_id, anio_academico) DO UPDATE SET
-                    nota= excluded.nota, domina=excluded.domina, observacion=excluded.observacion,
-                    usuario= excluded.usuario, actualizado=excluded.actualizado""",
-              (estudiante_id, ra_id, anio, nueva_nota, nuevo_domina, detalle, usuario, ahora))
-    conn.commit()
-    conn.close()
-    registrar_auditoria("Calificaciones Técnicas", "Ajustó RA desde una observación", usuario,
-                         f"Estudiante ID {estudiante_id} - RA ID {ra_id} - Año {anio}")
 
 
 #Módulo principal

@@ -23,6 +23,13 @@ from src.nucleo.iconos_emoji import (icono_emoji, pixmap_emoji, icono_boton_filt
                           EMOJI_EXCUSADO, EMOJI_LICENCIA_MEDICA, EMOJI_PERMISO,
                           EMOJI_SECCIONES_GRUPOS)
 
+#FlowLayout: layout tipo "wrap" (como texto que hace salto de línea). Coloca los widgets uno tras otro y, en
+#cuanto ya no caben en el ancho disponible, salta a la fila de abajo — así el contenedor crece en ALTURA (nunca
+#empuja el ancho de la ventana ni desborda la pantalla). Es el reemplazo de QHBoxLayout para la barra de chips
+#de filtros: con pocos filtros ocupa una sola fila; con muchos, se acomoda solo en 2, 3 o las filas que hagan
+#falta, sin romper el layout del módulo.
+from PySide6.QtWidgets import QLayout
+from PySide6.QtCore import QSize, QRect, QPoint
 ESTADOS_ASISTENCIA= ["Presente", "Ausente", "Tardanza", "Excusado", "Licencia Médica", "Permiso"]
 UMBRAL_INASISTENCIA_DEFECTO= 25.0
 
@@ -73,6 +80,11 @@ VALORES_ESTADO_DEFECTO= {
 }
 
 
+_DIAS_ES= ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+
+_MESES_ES= ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+             "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+
 #Lee de la BD la clasificación de estados configurada por el usuario y la
 #completa con los valores predeterminados para cualquier estado nuevo que
 #todavía no tenga un valor guardado (ej. si se agregó un estado en una
@@ -109,10 +121,6 @@ def guardar_valores_estado(valores):
     conn.commit()
     conn.close()
 
-_DIAS_ES= ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
-_MESES_ES= ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
-             "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-
 
 #Reemplaza el texto del placeholder (ítem 0, sin dato asociado) de un
 #combo de Curso/Sección poblado por filtros_curso_seccion.poblar_combo_curso /
@@ -142,33 +150,6 @@ def _normalizar(texto):
     descompuesto= unicodedata.normalize("NFKD", str(texto))
     sin_acentos= "".join(c for c in descompuesto if not unicodedata.combining(c))
     return sin_acentos.lower()
-
-
-#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
-#(mismo diseño que configuracion.py).
-class IconoLupa(QWidget):
-
-    def __init__(self, parent=None):
-
-        super().__init__(parent)
-        self.setFixedSize(17, 17)
-        self._color= "#64748B"
-
-    def establecer_color(self, color):
-
-        self._color= color
-        self.update()
-
-    def paintEvent(self, evento):
-
-        painter= QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen= QPen(QColor(self._color), 1.7)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawEllipse(QRectF(1.5, 1.5, 9.5, 9.5))
-        painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
 #Etiqueta de formulario con un pequeño icono (dibujado con QPainter vía
@@ -242,6 +223,33 @@ def _boton_estado_color(texto, color, callback):
     if callback is not None:
         btn.clicked.connect(callback)
     return btn
+
+
+#Icono de lupa dibujado a mano con QPainter para la barra de búsqueda
+#(mismo diseño que configuracion.py).
+class IconoLupa(QWidget):
+
+    def __init__(self, parent=None):
+
+        super().__init__(parent)
+        self.setFixedSize(17, 17)
+        self._color= "#64748B"
+
+    def establecer_color(self, color):
+
+        self._color= color
+        self.update()
+
+    def paintEvent(self, evento):
+
+        painter= QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pen= QPen(QColor(self._color), 1.7)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawEllipse(QRectF(1.5, 1.5, 9.5, 9.5))
+        painter.drawLine(QPointF(9.7, 9.7), QPointF(15, 15))
 
 
 #Widgets animados reutilizables
@@ -483,15 +491,6 @@ class DialogoValoresAsistencia(QDialog):
     def valores(self):
 
         return {estado: combo.currentData() for estado, combo in self._combos.items()}
-
-
-#FlowLayout: layout tipo "wrap" (como texto que hace salto de línea). Coloca los widgets uno tras otro y, en
-#cuanto ya no caben en el ancho disponible, salta a la fila de abajo — así el contenedor crece en ALTURA (nunca
-#empuja el ancho de la ventana ni desborda la pantalla). Es el reemplazo de QHBoxLayout para la barra de chips
-#de filtros: con pocos filtros ocupa una sola fila; con muchos, se acomoda solo en 2, 3 o las filas que hagan
-#falta, sin romper el layout del módulo.
-from PySide6.QtWidgets import QLayout
-from PySide6.QtCore import QSize, QRect, QPoint
 
 
 class FlowLayout(QLayout):

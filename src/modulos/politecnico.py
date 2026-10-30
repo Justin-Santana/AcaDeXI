@@ -31,16 +31,6 @@ from src.nucleo.iconos_emoji import (icono_emoji, html_icono_emoji, icono_boton_
 ESTADOS_PASANTIA= ["En curso", "Finalizada", "Suspendida"]
 
 
-#Muestra las horas acumuladas de una pasantía como '2 horas' (o
-#'1 hora' en singular) en vez del número "pelado" que se guarda en la
-#base de datos -mismo criterio que el sufijo " horas" del spinbox del
-#formulario, para que lo que se ve al registrar coincida con lo que se
-#ve luego en la tabla.
-def _formatear_horas(valor):
-
-    n= valor or 0
-    n= int(n) if float(n).is_integer() else n
-    return f"{n} hora" if n == 1 else f"{n} horas"
 RUBROS_SUGERIDOS= ["Tecnología / Software", "Electrónica", "Contabilidad / Finanzas",
  "Manufactura / Industrial", "Salud", "Turismo y Hotelería", "Comercio y Ventas",
  "Construcción", "Logística y Transporte", "Agroindustria", "Educación",
@@ -55,11 +45,23 @@ SEGMENTOS_TALLERES= [
     ("vinculado", "Vinculados", "#22C55E"),
     ("sin_vincular", "Sin vincular", "#F59E0B"),
 ]
+
 SEGMENTOS_PASANTIAS= [
     ("En curso", "En curso", "#0EA5E9"),
     ("Finalizada", "Finalizadas", "#22C55E"),
     ("Suspendida", "Suspendidas", "#EF4444"),
 ]
+
+#Muestra las horas acumuladas de una pasantía como '2 horas' (o
+#'1 hora' en singular) en vez del número "pelado" que se guarda en la
+#base de datos -mismo criterio que el sufijo " horas" del spinbox del
+#formulario, para que lo que se ve al registrar coincida con lo que se
+#ve luego en la tabla.
+def _formatear_horas(valor):
+
+    n= valor or 0
+    n= int(n) if float(n).is_integer() else n
+    return f"{n} hora" if n == 1 else f"{n} horas"
 
 
 #Lee la paleta/tema activo de la ventana principal (mismo criterio que

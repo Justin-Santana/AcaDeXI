@@ -59,6 +59,30 @@ from src.nucleo.iconos_emoji import (_r, _pluma, _sin_pluma, _linea, _rect_redon
                            emoji_soportado, pixmap_emoji)
 
 
+_cache_categoria= {}
+
+_cache_categoria_color= {}
+
+#Set curado que ofrece el selector de íconos de "Gestionar categorías" en materiales.py: (clave a guardar en
+#categorias_material.icono, etiqueta). El orden aquí es el orden en que se muestran en la grilla del selector.
+CATEGORIAS_SUGERIDAS_MATERIAL= [
+    ("libros", "Libros / Biblioteca"),
+    ("laboratorio", "Laboratorio"),
+    ("taller", "Taller / Herramientas"),
+    ("tecnologia", "Tecnología"),
+    ("audiovisual", "Audiovisual"),
+    ("arte", "Artes plásticas"),
+    ("deportivo", "Deportivo"),
+    ("musica", "Música"),
+    ("uniforme", "Uniformes"),
+    ("mobiliario", "Mobiliario"),
+    ("papeleria", "Papelería / Oficina"),
+    ("salud", "Salud / Botiquín"),
+    ("otro", "Otro / General"),
+]
+
+_cache_categoria_material= {}
+
 #CATEGORÍAS
 #Patrón de las funciones _cat_* y _nat_* (monocromo): reciben el QPainter `p` (en algunas se llama
 #`pintor`, es lo mismo) ya activo sobre el pixmap creado por _nuevo_lienzo; `size` es el lado en
@@ -350,9 +374,6 @@ _DISPATCH= {
     "negativa": _nat_negativa,
 }
 
-_cache_categoria= {}
-
-
 #QPixmap (transparente, `size`x`size`) del icono de la categoría/
 #naturaleza `clave`, dibujado en un solo `color`. Cacheado por
 #(clave, color, size).
@@ -583,9 +604,6 @@ _DISPATCH_COLOR= {
     "negativa": _catc_negativa,
 }
 
-_cache_categoria_color= {}
-
-
 #QPixmap (transparente, `size`x`size`) MULTICOLOR del icono de la
 #categoría/naturaleza `clave` (ver sección 2 del docstring del módulo).
 #Cacheado por (clave, size) -a diferencia de `pixmap_categoria`, aquí no
@@ -774,27 +792,6 @@ _DISPATCH_MATERIAL= {
     "otro": _matc_otro,
     "general": _matc_otro,
 }
-
-#Set curado que ofrece el selector de íconos de "Gestionar categorías" en materiales.py: (clave a guardar en
-#categorias_material.icono, etiqueta). El orden aquí es el orden en que se muestran en la grilla del selector.
-CATEGORIAS_SUGERIDAS_MATERIAL= [
-    ("libros", "Libros / Biblioteca"),
-    ("laboratorio", "Laboratorio"),
-    ("taller", "Taller / Herramientas"),
-    ("tecnologia", "Tecnología"),
-    ("audiovisual", "Audiovisual"),
-    ("arte", "Artes plásticas"),
-    ("deportivo", "Deportivo"),
-    ("musica", "Música"),
-    ("uniforme", "Uniformes"),
-    ("mobiliario", "Mobiliario"),
-    ("papeleria", "Papelería / Oficina"),
-    ("salud", "Salud / Botiquín"),
-    ("otro", "Otro / General"),
-]
-
-_cache_categoria_material= {}
-
 
 #Quita tildes/mayúsculas/espacios para que 'Laboratorio', 'laboratorio'
 #y 'Laboratório' (o una clave vieja con espacios) resuelvan al mismo
